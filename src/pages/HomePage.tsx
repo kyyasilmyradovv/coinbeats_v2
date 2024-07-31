@@ -6,6 +6,9 @@ const HomePage: React.FC = () => {
         <div style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', flexDirection: 'column' }}>
             <h1 style={{ fontSize: '4em' }}>Hello world!</h1>
             <DateDisplay />
+            <h1 className="text-6xl font-bold underline">
+      Hello world!
+    </h1>
         </div>
     )
 }
