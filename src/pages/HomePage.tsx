@@ -1,3 +1,5 @@
+// src/pages/HomePage
+
 import React, { useMemo, useState, useLayoutEffect } from 'react';
 import { useInitData } from '@telegram-apps/sdk-react';
 import { TonConnectButton } from '@tonconnect/ui-react';
@@ -19,184 +21,56 @@ import {
   Popover,
   NavbarBackLink,
 } from 'konsta/react';
+import { MdEmojiEvents, MdBookmarks } from 'react-icons/md';
+import { useNavigate } from 'react-router-dom'; // Import useNavigate hook from react-router-dom
+import { useBookmarks } from '../contexts/BookmarkContext'; // Import the context
 import logo from '../images/coinbeats-logo.png';
+import bunny from '../images/bunny-mascot.png';
+import basedAI from '../images/basedAI.jpg';
+import carv from '../images/carv.jpeg';
+import revert from '../images/revert.png';
+import pingpong from '../images/pingpong.jpeg';
+import iyk from '../images/IYK.jpeg';
+import skale from '../images/skale.png';
+import ton from '../images/ton.png';
+import d1 from '../images/d1.jpeg';
+import borpa from '../images/borpa.png';
+import mantle from '../images/mantle.png';
+import aurelius from '../images/aurelius.png';
+import berachain from '../images/berachain.png';
+import sei from '../images/sei.png';
+import frax from '../images/frax.jpg';
+import clip from '../images/clip.png';
+import defiAcademy from '../images/coinbeats-l.svg';
+import voltage from '../images/voltage.jpg';
+import bittensor from '../images/bittensor.jpeg';
+import aarna from '../images/aarna.png';
 
 const mockData = [
-  {
-    id: 1,
-    name: 'BasedAI',
-    category: 'AI',
-    chain: 'Ethereum',
-    link: 'https://coinbeats.xyz/academies/getbased/',
-    image: '../images/basedAI.jpg',
-    sponsored: true,
-  },
-  {
-    id: 2,
-    name: 'Revert Finance',
-    category: 'Finance',
-    chain: 'Binance',
-    link: 'https://coinbeats.xyz/academies/revert-finance/',
-    image: '../images/revert.png',
-    new: true,
-  },
-  {
-    id: 3,
-    name: 'PingPong',
-    category: 'Game',
-    chain: 'Solana',
-    link: 'https://coinbeats.xyz/academies/pingpong/',
-    image: '../images/pingpong.jpeg',
-    topRated: true,
-  },
-  {
-    id: 4,
-    name: 'carv',
-    category: 'NFT',
-    chain: 'Ethereum',
-    link: 'https://coinbeats.xyz/academies/carv/',
-    image: '../images/carv.jpeg',
-    sponsored: true,
-  },
-  {
-    id: 5,
-    name: 'IYK',
-    category: 'Technology',
-    chain: 'Polygon',
-    link: 'https://coinbeats.xyz/academies/iyk/',
-    image: '../images/IYK.jpeg',
-    new: true,
-  },
-  {
-    id: 6,
-    name: 'SKALE Network',
-    category: 'Network',
-    chain: 'Avalanche',
-    link: 'https://coinbeats.xyz/academies/skale-network/',
-    image: '../images/skale.png',
-    topRated: true,
-  },
-  {
-    id: 7,
-    name: 'Ton Blockchain',
-    category: 'AI',
-    chain: 'Ethereum',
-    link: 'https://coinbeats.xyz/academies/ton-blockchain/',
-    image: '../images/ton.png',
-    sponsored: true,
-  },
-  {
-    id: 8,
-    name: 'Districtone',
-    category: 'Finance',
-    chain: 'Binance',
-    link: 'https://coinbeats.xyz/academies/districtone/',
-    image: '../images/d1.jpeg',
-    new: true,
-  },
-  {
-    id: 9,
-    name: 'BorpaToken',
-    category: 'Game',
-    chain: 'Solana',
-    link: 'https://coinbeats.xyz/academies/borpatoken/',
-    image: '../images/borpa.png',
-    topRated: true,
-  },
-  {
-    id: 10,
-    name: 'Mantle',
-    category: 'NFT',
-    chain: 'Ethereum',
-    link: 'https://coinbeats.xyz/academies/mantle/',
-    image: '../images/mantle.png',
-    sponsored: true,
-  },
-  {
-    id: 11,
-    name: 'Aurelius',
-    category: 'Technology',
-    chain: 'Polygon',
-    link: 'https://coinbeats.xyz/academies/aurelius/',
-    image: '../images/aurelius.png',
-    new: true,
-  },
-  {
-    id: 12,
-    name: 'Berachain',
-    category: 'Network',
-    chain: 'Avalanche',
-    link: 'https://coinbeats.xyz/academies/berachain/',
-    image: '../images/berachain.png',
-    topRated: true,
-  },
-  {
-    id: 13,
-    name: 'SEI',
-    category: 'AI',
-    chain: 'Ethereum',
-    link: 'https://coinbeats.xyz/academies/sei/',
-    image: '../images/sei.png',
-    sponsored: true,
-  },
-  {
-    id: 14,
-    name: 'Frax',
-    category: 'Finance',
-    chain: 'Binance',
-    link: 'https://coinbeats.xyz/academies/frax/',
-    image: '../images/frax.jpg',
-    new: true,
-  },
-  {
-    id: 15,
-    name: 'Clip Finance',
-    category: 'Game',
-    chain: 'Solana',
-    link: 'https://coinbeats.xyz/academies/clipfinance/',
-    image: '../images/clip.png',
-    topRated: true,
-  },
-  {
-    id: 16,
-    name: 'DeFi Academy',
-    category: 'NFT',
-    chain: 'Ethereum',
-    link: 'https://coinbeats.xyz/academies/defi-academy/',
-    image: '../images/coinbeats-l.svg',
-    sponsored: true,
-  },
-  {
-    id: 17,
-    name: 'Voltage Finance',
-    category: 'Technology',
-    chain: 'Polygon',
-    link: 'https://coinbeats.xyz/academies/voltage-finance/',
-    image: '../images/voltage.jpg',
-    new: true,
-  },
-  {
-    id: 18,
-    name: 'Bittensor',
-    category: 'Network',
-    chain: 'Avalanche',
-    link: 'https://coinbeats.xyz/academies/bittensor/',
-    image: '../images/bittensor.jpeg',
-    topRated: true,
-  },
-  {
-    id: 19,
-    name: 'aarnâ',
-    category: 'Network',
-    chain: 'Avalanche',
-    link: 'https://coinbeats.xyz/academies/aarna/',
-    image: '../images/aarna.png',
-    topRated: true,
-  },
+  { id: 1, name: 'BasedAI', category: 'AI', chain: 'Ethereum', link: 'https://coinbeats.xyz/academies/getbased/', image: basedAI, sponsored: true, xp: 100 },
+  { id: 2, name: 'Revert Finance', category: 'Finance', chain: 'Binance', link: 'https://coinbeats.xyz/academies/revert-finance/', image: revert, new: true, xp: 100 },
+  { id: 3, name: 'PingPong', category: 'Game', chain: 'Solana', link: 'https://coinbeats.xyz/academies/pingpong/', image: pingpong, topRated: true, xp: 100 },
+  { id: 4, name: 'carv', category: 'NFT', chain: 'Ethereum', link: 'https://coinbeats.xyz/academies/carv/', image: carv, sponsored: true, xp: 100 },
+  { id: 5, name: 'IYK', category: 'Technology', chain: 'Polygon', link: 'https://coinbeats.xyz/academies/iyk/', image: iyk, new: true, xp: 100 },
+  { id: 6, name: 'SKALE Network', category: 'Network', chain: 'Avalanche', link: 'https://coinbeats.xyz/academies/skale-network/', image: skale, topRated: true, xp: 100 },
+  { id: 7, name: 'Ton Blockchain', category: 'AI', chain: 'Ethereum', link: 'https://coinbeats.xyz/academies/ton-blockchain/', image: ton, sponsored: true, xp: 100 },
+  { id: 8, name: 'Districtone', category: 'Finance', chain: 'Binance', link: 'https://coinbeats.xyz/academies/districtone/', image: d1, new: true, xp: 100 },
+  { id: 9, name: 'BorpaToken', category: 'Game', chain: 'Solana', link: 'https://coinbeats.xyz/academies/borpatoken/', image: borpa, topRated: true, xp: 100 },
+  { id: 10, name: 'Mantle', category: 'NFT', chain: 'Ethereum', link: 'https://coinbeats.xyz/academies/mantle/', image: mantle, sponsored: true, xp: 100 },
+  { id: 11, name: 'Aurelius', category: 'Technology', chain: 'Polygon', link: 'https://coinbeats.xyz/academies/aurelius/', image: aurelius, new: true, xp: 100 },
+  { id: 12, name: 'Berachain', category: 'Network', chain: 'Avalanche', link: 'https://coinbeats.xyz/academies/berachain/', image: berachain, topRated: true, xp: 100 },
+  { id: 13, name: 'SEI', category: 'AI', chain: 'Ethereum', link: 'https://coinbeats.xyz/academies/sei/', image: sei, sponsored: true, xp: 100 },
+  { id: 14, name: 'Frax', category: 'Finance', chain: 'Binance', link: 'https://coinbeats.xyz/academies/frax/', image: frax, new: true, xp: 100 },
+  { id: 15, name: 'Clip Finance', category: 'Game', chain: 'Solana', link: 'https://coinbeats.xyz/academies/clipfinance/', image: clip, topRated: true, xp: 100 },
+  { id: 16, name: 'DeFi Academy', category: 'NFT', chain: 'Ethereum', link: 'https://coinbeats.xyz/academies/defi-academy/', image: defiAcademy, sponsored: true, xp: 100 },
+  { id: 17, name: 'Voltage Finance', category: 'Technology', chain: 'Polygon', link: 'https://coinbeats.xyz/academies/voltage-finance/', image: voltage, new: true, xp: 100 },
+  { id: 18, name: 'Bittensor', category: 'Network', chain: 'Avalanche', link: 'https://coinbeats.xyz/academies/bittensor/', image: bittensor, topRated: true, xp: 100 },
+  { id: 19, name: 'aarnâ', category: 'Network', chain: 'Avalanche', link: 'https://coinbeats.xyz/academies/aarna/', image: aarna, topRated: true, xp: 100 },
 ];
 
 export default function HomePage({ theme, setTheme, setColorTheme }) {
   const initData = useInitData();
+  const { bookmarks, addBookmark } = useBookmarks(); // Use the context
   const [category, setCategory] = useState('');
   const [chain, setChain] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
@@ -224,6 +98,8 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
     setDarkMode(document.documentElement.classList.contains('dark'));
   });
 
+  const navigate = useNavigate(); // Initialize useNavigate hook
+
   const filteredData = useMemo(() => {
     let data = mockData;
     if (category) data = data.filter((item) => item.category === category);
@@ -236,8 +112,8 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
     return data;
   }, [category, chain, activeFilter]);
 
-  const handleMoreClick = (link) => {
-    window.location.href = link;
+  const handleMoreClick = (academy) => {
+    navigate(`/product/${academy.id}`, { state: { academy } }); // Navigate to the product page with academy data
   };
 
   return (
@@ -245,8 +121,8 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
       <Navbar
         title={<img src={logo} alt="Company Logo" style={{ height: '40px' }} />}
         className="top-0 sticky"
-        large
         transparent
+        large
         right={
           <Chip
             className="m-0.5"
@@ -265,8 +141,18 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
         centerTitle={true}
       />
 
+      <div className="flex justify-center items-center flex-col mb-4 mt-1">
+        <div className="bg-white rounded-full shadow-lg p-4 flex flex-row items-center px-6">
+          <img src={bunny} className="h-12 w-12 mr-4" alt="bunny mascot" />
+          <div className="text-lg text-gray-500 font-semibold mr-4">
+            Your Bunny XP:
+          </div>
+          <div className="text-xl font-bold text-black">100567467</div>
+        </div>
+      </div>
+
       <div className="flex justify-between bg-white rounded-2xl m-4 shadow-lg">
-        <List className="w-full">
+        <List className="w-full my-0">
           <ListInput
             label="Category"
             type="select"
@@ -285,7 +171,7 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
             <option value="Network">Network</option>
           </ListInput>
         </List>
-        <List className="w-full">
+        <List className="w-full my-0">
           <ListInput
             label="Chain"
             type="select"
@@ -362,27 +248,40 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 px-2 pt-6 pb-16">
+      <div className="grid grid-cols-2 px-4 pt-6 pb-16">
         {filteredData.map((academy) => (
           <Card
             key={academy.id}
-            className="flex flex-col items-center text-center px-4 py-4 rounded-3xl shadow-lg justify-center"
+            className="relative flex flex-col items-center text-center p-6 rounded-2xl shadow-lg"
           >
+            <div className="absolute top-0 left-0 p-2">
+              <button
+                className="text-amber-500 rounded-full shadow-md focus:outline-none"
+                onClick={() => addBookmark(academy)}
+              >
+                <MdBookmarks className="h-5 w-5 " />
+              </button>
+            </div>
+            <div className="absolute top-0 right-0 p-2 bg-white bg-opacity-75 rounded-full text-sm font-bold text-gray-800">
+              {academy.xp} XP
+            </div>
+            <div className="flex items-center text-center w-full justify-center">
             <img
               alt={academy.name}
-              className="h-18 w-18 rounded-full mb-2 mx-auto"
+              className="h-16 w-16 rounded-full mb-2"
               src={academy.image}
             />
+            </div>
             <div className="text-lg font-bold whitespace-nowrap">
               {academy.name}
             </div>
             <Button
               rounded
               large
-              className="mt-2 w-full min-w-32 font-extrabold shadow-xl"
-              onClick={() => handleMoreClick(academy.link)}
+              className="mt-2 w-full font-bold shadow-xl w-32"
+              onClick={() => handleMoreClick(academy)}
             >
-              more
+              More
             </Button>
           </Card>
         ))}

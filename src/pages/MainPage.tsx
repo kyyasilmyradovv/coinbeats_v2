@@ -1,3 +1,5 @@
+// src/pages/MainPage.tsx
+
 import React, { useState } from 'react';
 import { Tabbar, TabbarLink, Icon } from 'konsta/react';
 import { BookFill, Star, GamecontrollerAltFill } from 'framework7-icons/react';
