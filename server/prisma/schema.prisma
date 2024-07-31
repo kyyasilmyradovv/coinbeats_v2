@@ -1,0 +1,91 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+// /prisma/schema.prisma
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(USER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  academies Academy[]
+  points    Point[]
+}
+
+model Academy {
+  id          Int       @id @default(autoincrement())
+  name        String
+  category    String
+  chain       String
+  link        String
+  image       String
+  xp          Int
+  creatorId   Int
+  creator     User      @relation(fields: [creatorId], references: [id])
+  questions   Question[]
+  videos      Video[]
+  socialQuests SocialQuest[]
+  Point       Point[]
+}
+
+model Question {
+  id         Int      @id @default(autoincrement())
+  text       String
+  choices    Choice[]
+  academyId  Int
+  academy    Academy  @relation(fields: [academyId], references: [id])
+}
+
+model Choice {
+  id         Int      @id @default(autoincrement())
+  text       String
+  isCorrect  Boolean
+  questionId Int
+  question   Question @relation(fields: [questionId], references: [id])
+}
+
+model Video {
+  id         Int      @id @default(autoincrement())
+  link       String
+  academyId  Int
+  academy    Academy  @relation(fields: [academyId], references: [id])
+}
+
+model SocialQuest {
+  id         Int      @id @default(autoincrement())
+  name       String
+  link       String
+  academyId  Int
+  academy    Academy  @relation(fields: [academyId], references: [id])
+}
+
+model Point {
+  id        Int      @id @default(autoincrement())
+  value     Int
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  academyId Int
+  academy   Academy  @relation(fields: [academyId], references: [id])
+}
+
+enum Role {
+  USER
+  CREATOR
+  ADMIN
+  SUPERADMIN
+}

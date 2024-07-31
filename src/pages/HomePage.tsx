@@ -1,16 +1,50 @@
-import React from 'react'
-import DateDisplay from '../components/DateDisplay'
+// src/pages/HomePage.tsx
 
-const HomePage: React.FC = () => {
-    return (
-        <div style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', flexDirection: 'column' }}>
-            <h1 style={{ fontSize: '4em' }}>Hello world!</h1>
-            <DateDisplay />
-            <h1 className="text-6xl font-bold underline">
-      Hello world!
-    </h1>
-        </div>
-    )
+import React, { useEffect, useState } from 'react';
+import axios from '../api/axiosInstance';
+import DateDisplay from '../components/DateDisplay';
+import LoginForm from '../components/LoginForm';
+import UserForm from '../components/UserForm';
+
+interface User {
+  id: number;
+  name: string;
+  email: string;
+  role: string;
 }
 
-export default HomePage
+const HomePage: React.FC = () => {
+  const [users, setUsers] = useState<User[]>([]);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const response = await axios.get('/users');
+        setUsers(response.data);
+      } catch (error) {
+        console.error('Error fetching users:', error);
+      }
+    };
+
+    fetchUsers();
+  }, []);
+
+  return (
+    <div>
+      <DateDisplay />
+      <h1 className="text-6xl font-bold underline">Hello world!</h1>
+      <LoginForm />
+      <UserForm />
+      <h2>Users List</h2>
+      <ul>
+        {users.map((user) => (
+          <li key={user.id}>
+            {user.name} - {user.email} - Role: {user.role}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+};
+
+export default HomePage;
