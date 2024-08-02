@@ -1,16 +1,18 @@
-// src/pages/HomePage
+// src/pages/HomePage.tsx
 
-import React, { useMemo, useState, useLayoutEffect } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useInitData } from '@telegram-apps/sdk-react';
 import { TonConnectButton } from '@tonconnect/ui-react';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import useSessionStore from '../store/useSessionStore';
+import useUserStore from '../store/useUserStore';
 import {
   Page,
   Navbar,
-  BlockTitle,
   List,
   ListInput,
   Card,
-  Block,
   Button,
   Chip,
   Panel,
@@ -19,12 +21,13 @@ import {
   Radio,
   Toggle,
   Popover,
-  NavbarBackLink,
+  Block,
+  BlockTitle,
 } from 'konsta/react';
-import { MdEmojiEvents, MdBookmarks } from 'react-icons/md';
-import { useNavigate } from 'react-router-dom'; // Import useNavigate hook from react-router-dom
-import { useBookmarks } from '../contexts/BookmarkContext'; // Import the context
-import logo from '../images/coinbeats-logo.png';
+import { MdBookmarks } from 'react-icons/md';
+import { useBookmarks } from '../contexts/BookmarkContext';
+import logoLight from '../images/coinbeats-light.svg';
+import logoDark from '../images/coinbeats-dark.svg';
 import bunny from '../images/bunny-mascot.png';
 import basedAI from '../images/basedAI.jpg';
 import carv from '../images/carv.jpeg';
@@ -70,7 +73,11 @@ const mockData = [
 
 export default function HomePage({ theme, setTheme, setColorTheme }) {
   const initData = useInitData();
-  const { bookmarks, addBookmark } = useBookmarks(); // Use the context
+  const navigate = useNavigate();
+  const startSession = useSessionStore((state) => state.startSession);
+  const endSession = useSessionStore((state) => state.endSession);
+  const setCurrentRoute = useSessionStore((state) => state.setCurrentRoute);
+  const { bookmarks, addBookmark } = useBookmarks();
   const [category, setCategory] = useState('');
   const [chain, setChain] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
@@ -78,48 +85,149 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
   const [darkMode, setDarkMode] = useState(false);
   const [colorPickerOpened, setColorPickerOpened] = useState(false);
 
-  const username = useMemo(() => {
-    return initData?.user?.username || 'Guest';
-  }, [initData]);
+  // Zustand User Store
+  const { userId, role, setUser } = useUserStore((state) => ({
+    userId: state.userId,
+    role: state.role,
+    setUser: state.setUser,
+  }));
 
-  const userAvatar = useMemo(() => {
-    return (
-      initData?.user?.photoUrl ||
-      'https://cdn.framework7.io/placeholder/people-100x100-7.jpg'
-    );
-  }, [initData]);
+  const username = useMemo(() => initData?.user?.username || 'Guest', [initData]);
+  const userAvatar = useMemo(() => initData?.user?.photoUrl || 'https://cdn.framework7.io/placeholder/people-100x100-7.jpg', [initData]);
 
   const toggleDarkMode = () => {
     setDarkMode(!darkMode);
     document.documentElement.classList.toggle('dark');
   };
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     setDarkMode(document.documentElement.classList.contains('dark'));
-  });
+  }, []);
 
-  const navigate = useNavigate(); // Initialize useNavigate hook
+  useEffect(() => {
+    const initializeUserSession = async () => {
+      if (initData) {
+        const telegramUserId = initData.user.id;
+
+        console.log('Telegram User ID:', telegramUserId);
+
+        try {
+          // Check if user exists in the database
+          const response = await axios.get(`http://localhost:7000/api/users/${telegramUserId}`);
+
+          console.log('Response:', response.data);
+
+          if (response.status === 200 && response.data) {
+            // User found, update Zustand store with user's data
+            const { id, username, role } = response.data;
+            console.log('User found:', response.data);
+            setUser(id, username, role);
+          } else {
+            // User not found, initialize with default role
+            console.log('User not found, initializing with default role');
+            setUser(null, username, 'USER');
+          }
+        } catch (error) {
+          if (error.response && error.response.status === 404) {
+            console.log('User not found in database, setting default role');
+            // Set default values if user not found
+            setUser(null, username, 'USER');
+          } else {
+            console.error('Error fetching user:', error);
+          }
+        }
+
+        // Start a new session
+        const sessionStartTime = Date.now();
+        startSession({
+          sessionStartTime,
+          userId: telegramUserId,
+          username: username,
+          roles: ['USER'],
+        });
+
+        // Log session start
+        // Removed initial session logging here
+
+        // Track route changes
+        const handleRouteChange = () => {
+          const currentRoute = window.location.pathname;
+          setCurrentRoute(currentRoute);
+        };
+
+        window.addEventListener('popstate', handleRouteChange);
+
+        // Handle session end using beforeunload
+        const handleSessionEnd = async () => {
+          const sessionEndTime = Date.now();
+          const duration = Math.floor((sessionEndTime - sessionStartTime) / 1000);
+
+          try {
+            await axios.post('http://localhost:7000/api/log-session', {
+              telegramUserId,
+              sessionStart: sessionStartTime,
+              sessionEnd: sessionEndTime,
+              duration,
+              routeDurations: {}, // Collect actual durations
+            });
+            console.log('Session ended and logged');
+          } catch (error) {
+            console.error('Error logging session end:', error);
+          }
+
+          endSession(sessionEndTime);
+        };
+
+        window.addEventListener('beforeunload', handleSessionEnd);
+
+        return () => {
+          // Cleanup event listeners
+          window.removeEventListener('popstate', handleRouteChange);
+          window.removeEventListener('beforeunload', handleSessionEnd);
+        };
+      }
+    };
+
+    initializeUserSession();
+  }, [initData, startSession, setCurrentRoute, endSession, setUser, username, role]);
 
   const filteredData = useMemo(() => {
     let data = mockData;
     if (category) data = data.filter((item) => item.category === category);
     if (chain) data = data.filter((item) => item.chain === chain);
-    if (activeFilter === 'sponsored')
-      data = data.filter((item) => item.sponsored);
+    if (activeFilter === 'sponsored') data = data.filter((item) => item.sponsored);
     if (activeFilter === 'new') data = data.filter((item) => item.new);
-    if (activeFilter === 'topRated')
-      data = data.filter((item) => item.topRated);
+    if (activeFilter === 'topRated') data = data.filter((item) => item.topRated);
     return data;
   }, [category, chain, activeFilter]);
 
   const handleMoreClick = (academy) => {
-    navigate(`/product/${academy.id}`, { state: { academy } }); // Navigate to the product page with academy data
+    navigate(`/product/${academy.id}`, { state: { academy } });
+  };
+
+  const renderSidePanelButtons = () => {
+    const buttons = [];
+
+    if (role?.includes('SUPERADMIN')) {
+      buttons.push(<Button rounded outline key="superadmin" onClick={() => navigate('/superadmin-dashboard')} className="!w-fit !px-4 !py-4 !mx-auto k-color-brand-blue">Log in as Superadmin</Button>);
+    }
+    if (role?.includes('ADMIN')) {
+      buttons.push(<Button rounded outline key="admin" onClick={() => navigate('/admin-dashboard')} className="!w-fit !px-4 !py-4 !mx-auto k-color-brand-blue">Log in as Admin</Button>);
+    }
+    if (role?.includes('CREATOR')) {
+      buttons.push(<Button rounded outline key="creator" onClick={() => navigate('/creator-dashboard')} className="!w-fit !px-4 !py-4 !mx-auto k-color-brand-blue">Log in as Creator</Button>);
+    }
+    if (role === 'USER' && !role?.includes('CREATOR')) {
+      buttons.push(<Button rounded outline key="become-creator" onClick={() => navigate('/register-creator')} className="!w-fit !px-4 !py-4 !mx-auto k-color-brand-blue">Become Academy Creator</Button>);
+    }
+
+    return buttons;
   };
 
   return (
     <Page>
       <Navbar
-        title={<img src={logo} alt="Company Logo" style={{ height: '40px' }} />}
+        title={<img src={darkMode ? logoLight : logoDark} alt="Company Logo" className="h-9 mx-auto" />}
         className="top-0 sticky"
         transparent
         large
@@ -142,8 +250,8 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
       />
 
       <div className="flex justify-center items-center flex-col mb-4 mt-1">
-        <div className="bg-white rounded-full shadow-lg p-4 flex flex-row items-center px-6">
-          <img src={bunny} className="h-12 w-12 mr-4" alt="bunny mascot" />
+        <div className="bg-white rounded-full shadow-lg p-2 flex flex-row items-center px-6">
+          <img src={bunny} className="h-10 w-10 mr-4" alt="bunny mascot" />
           <div className="text-lg text-gray-500 font-semibold mr-4">
             Your Bunny XP:
           </div>
@@ -152,7 +260,7 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
       </div>
 
       <div className="flex justify-between bg-white rounded-2xl m-4 shadow-lg">
-        <List className="w-full my-0">
+        <List className="w-full !my-0">
           <ListInput
             label="Category"
             type="select"
@@ -171,7 +279,7 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
             <option value="Network">Network</option>
           </ListInput>
         </List>
-        <List className="w-full my-0">
+        <List className="w-full !my-0">
           <ListInput
             label="Chain"
             type="select"
@@ -200,8 +308,8 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
             onClick={() => setActiveFilter('all')}
             className={`${
               activeFilter === 'all'
-                ? 'bg-gray-100 k-color-brand-purple shadow-lg'
-                : 'bg-white shadow-lg'
+                ? 'bg-gray-100 k-color-brand-purple shadow-lg !text-2xs'
+                : 'bg-white shadow-lg !text-2xs'
             }`}
           >
             All
@@ -213,8 +321,8 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
             onClick={() => setActiveFilter('sponsored')}
             className={`${
               activeFilter === 'sponsored'
-                ? 'bg-gray-100 k-color-brand-purple shadow-lg'
-                : 'bg-white shadow-lg'
+                ? 'bg-gray-100 k-color-brand-purple shadow-lg !text-2xs'
+                : 'bg-white shadow-lg !text-2xs'
             }`}
           >
             Sponsored
@@ -226,8 +334,8 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
             onClick={() => setActiveFilter('new')}
             className={`${
               activeFilter === 'new'
-                ? 'bg-gray-100 k-color-brand-purple shadow-lg'
-                : 'bg-white shadow-lg'
+                ? 'bg-gray-100 k-color-brand-purple shadow-lg !text-2xs'
+                : 'bg-white shadow-lg !text-2xs'
             }`}
           >
             New
@@ -239,8 +347,8 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
             onClick={() => setActiveFilter('topRated')}
             className={`${
               activeFilter === 'topRated'
-                ? 'bg-gray-100 k-color-brand-purple shadow-lg'
-                : 'bg-white shadow-lg'
+                ? 'bg-gray-100 k-color-brand-purple shadow-lg !text-2xs'
+                : 'bg-white shadow-lg !text-2xs'
             }`}
           >
             Top Viewed
@@ -248,29 +356,29 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 px-4 pt-6 pb-16">
+      <div className="grid grid-cols-2 px-2 pt-6 pb-16">
         {filteredData.map((academy) => (
           <Card
             key={academy.id}
-            className="relative flex flex-col items-center text-center p-6 rounded-2xl shadow-lg"
+            className="relative flex flex-col items-center text-center !p-3 !rounded-2xl shadow-lg"
           >
             <div className="absolute top-0 left-0 p-2">
               <button
-                className="text-amber-500 rounded-full shadow-md focus:outline-none"
+                className="text-amber-500 rounded-full shadow-md focus:outline-none m-1"
                 onClick={() => addBookmark(academy)}
               >
                 <MdBookmarks className="h-5 w-5 " />
               </button>
             </div>
-            <div className="absolute top-0 right-0 p-2 bg-white bg-opacity-75 rounded-full text-sm font-bold text-gray-800">
+            <div className="absolute top-0 right-0 p-1 bg-white bg-opacity-75 rounded-full text-sm font-bold text-gray-800 m-1">
               {academy.xp} XP
             </div>
-            <div className="flex items-center text-center w-full justify-center">
-            <img
-              alt={academy.name}
-              className="h-16 w-16 rounded-full mb-2"
-              src={academy.image}
-            />
+            <div className="flex items-center text-center w-full justify-center mt-1">
+              <img
+                alt={academy.name}
+                className="h-16 w-16 rounded-full mb-2"
+                src={academy.image}
+              />
             </div>
             <div className="text-lg font-bold whitespace-nowrap">
               {academy.name}
@@ -278,7 +386,7 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
             <Button
               rounded
               large
-              className="mt-2 w-full font-bold shadow-xl w-32"
+              className="mt-2 font-bold shadow-xl min-w-28"
               onClick={() => handleMoreClick(academy)}
             >
               More
@@ -305,6 +413,7 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
           <Block className="space-y-4">
             <BlockTitle className="mb-1">Connect your TON Wallet</BlockTitle>
             <TonConnectButton className="mx-auto" />
+            {renderSidePanelButtons()}
             <BlockTitle>Theme</BlockTitle>
             <List strong inset>
               <ListItem

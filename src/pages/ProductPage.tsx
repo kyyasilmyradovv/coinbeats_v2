@@ -21,20 +21,23 @@ import {
   Radio,
   Toggle,
   Popover,
-  Card,
 } from 'konsta/react';
-import { MdBookmarks } from 'react-icons/md';
-import { useBookmarks } from '../contexts/BookmarkContext';
-import logo from '../images/coinbeats-logo.png';
+import {
+  MdSchool,
+  MdBookmarks,
+  MdVideogameAsset,
+  MdEmojiEvents,
+} from 'react-icons/md';
 
-export default function BookmarksPage({ theme, setTheme, setColorTheme }) {
+export default function ProductPage({ theme, setTheme, setColorTheme }) {
   const initData = useInitData();
   const location = useLocation();
-  const navigate = useNavigate(); // Initialize useNavigate hook
-  const { bookmarks, removeBookmark } = useBookmarks();
+  const navigate = useNavigate();
+  const { academy } = location.state;
   const [darkMode, setDarkMode] = useState(false);
   const [rightPanelOpened, setRightPanelOpened] = useState(false);
   const [colorPickerOpened, setColorPickerOpened] = useState(false);
+  const [activeFilter, setActiveFilter] = useState();
 
   const username = useMemo(() => {
     return initData?.user?.username || 'Guest';
@@ -56,15 +59,12 @@ export default function BookmarksPage({ theme, setTheme, setColorTheme }) {
     setDarkMode(document.documentElement.classList.contains('dark'));
   });
 
-  const handleMoreClick = (academy) => {
-    navigate(`/product/${academy.id}`, { state: { academy } }); // Navigate to the product page with academy data
-  };
-
   return (
     <Page>
       <Navbar
-        title={<img src={logo} alt="Company Logo" style={{ height: '40px' }} />}
+        title={academy.name}
         className="top-0 sticky"
+        transparent
         backlink
         left={<NavbarBackLink onClick={() => history.back()} />}
         right={
@@ -85,48 +85,96 @@ export default function BookmarksPage({ theme, setTheme, setColorTheme }) {
         centerTitle={true}
       />
 
-      <div className="text-center flex w-full items-center justify-center">
-        <BlockTitle large>Bookmarks</BlockTitle>
+      <div className="text-center mt-4">
+        <img
+          alt={academy.name}
+          className="h-18 w-18 rounded-full mb-2 mx-auto"
+          src={academy.image}
+        />
+        <h1 className="text-3xl font-bold">{academy.name}</h1>
+        <div className="flex justify-center gap-2 mt-4 mx-4">
+          <Button
+            outline
+            rounded
+            onClick={() => setActiveFilter()}
+            className={`${
+              activeFilter
+                ? 'bg-gray-100 k-color-brand-purple shadow-lg'
+                : 'bg-white shadow-lg'
+            }`}
+          >
+            Read
+          </Button>
+          <Button
+            outline
+            rounded
+            onClick={() => setActiveFilter()}
+            className={`${
+              activeFilter
+                ? 'bg-gray-100 k-color-brand-purple shadow-lg'
+                : 'bg-white shadow-lg'
+            }`}
+          >
+            Watch
+          </Button>
+          <Button
+            outline
+            rounded
+            onClick={() => setActiveFilter()}
+            className={`${
+              activeFilter
+                ? 'bg-gray-100 k-color-brand-purple shadow-lg'
+                : 'bg-white shadow-lg'
+            }`}
+          >
+            Quests
+          </Button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-2 px-2 pt-6 pb-16">
-        {bookmarks.map((academy) => (
-          <Card
-          key={academy.id}
-          className="relative flex flex-col items-center text-center !p-3 !rounded-2xl shadow-lg"
-        >
-          <div className="absolute top-0 left-0 p-2">
-            <button
-              className="text-red-600 rounded-full shadow-md focus:outline-none m-1"
-              onClick={() => removeBookmark(academy)}
-            >
-              <MdBookmarks className="h-5 w-5 " />
-            </button>
-          </div>
-          <div className="absolute top-0 right-0 p-1 bg-white bg-opacity-75 rounded-full text-sm font-bold text-gray-800 m-1">
-            {academy.xp} XP
-          </div>
-          <div className="flex items-center text-center w-full justify-center mt-1">
-            <img
-              alt={academy.name}
-              className="h-16 w-16 rounded-full mb-2"
-              src={academy.image}
-            />
-          </div>
-          <div className="text-lg font-bold whitespace-nowrap">
-            {academy.name}
-          </div>
-          <Button
-            rounded
-            large
-            className="mt-2 font-bold shadow-xl min-w-28"
-            onClick={() => handleMoreClick(academy)}
-          >
-            More
-          </Button>
-        </Card>
-        ))}
+      <div className="p-4">
+        <BlockTitle className="mb-2">Academy Details</BlockTitle>
+        <List>
+          <ListInput label="Name" type="text" value={academy.name} readOnly />
+          <ListInput
+            label="Category"
+            type="text"
+            value={academy.category}
+            readOnly
+          />
+          <ListInput label="Chain" type="text" value={academy.chain} readOnly />
+
+          <ListInput
+            label="Website"
+            type="text"
+            value="Link" // Mocked value
+            readOnly
+          />
+        </List>
       </div>
+
+      <Tabbar labels icons className="left-0 bottom-0 fixed bg-[#FADAF9]">
+        <TabbarLink
+          onClick={() => navigate('/')}
+          icon={<MdSchool className="w-6 h-6" />}
+          label="Learn"
+        />
+        <TabbarLink
+          onClick={() => navigate('/saved')}
+          icon={<MdBookmarks className="w-6 h-6" />}
+          label="Saved"
+        />
+        <TabbarLink
+          onClick={() => navigate('/games')}
+          icon={<MdVideogameAsset className="w-6 h-6" />}
+          label="Games"
+        />
+        <TabbarLink
+          onClick={() => navigate('/points')}
+          icon={<MdEmojiEvents className="w-6 h-6" />}
+          label="Points"
+        />
+      </Tabbar>
 
       <Panel
         side="right"

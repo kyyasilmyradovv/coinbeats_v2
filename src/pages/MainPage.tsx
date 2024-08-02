@@ -73,7 +73,7 @@ export default function MainPage({ theme, setTheme, setColorTheme }) {
               material={<MdEmojiEvents className="w-6 h-6" />}
             />
           }
-          label="Points"
+          label="Earn"
         />
       </Tabbar>
     </div>

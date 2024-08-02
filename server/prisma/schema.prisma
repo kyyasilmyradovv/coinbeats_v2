@@ -6,6 +6,8 @@
 
 // /prisma/schema.prisma
 
+// /prisma/schema.prisma
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -16,15 +18,17 @@ generator client {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  name      String
-  email     String   @unique
-  password  String
-  role      Role     @default(USER)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  academies Academy[]
-  points    Point[]
+  id             Int             @id @default(autoincrement())
+  telegramUserId Int             @unique // Ensure Telegram user ID is unique
+  name           String
+  email          String?         // Make email optional
+  password       String?         // Optional password for roles that don't need it initially
+  role           Role            @default(USER)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  academies      Academy[]
+  points         Point[]
+  sessionLogs    SessionLog[]
 }
 
 model Academy {
@@ -81,6 +85,18 @@ model Point {
   user      User     @relation(fields: [userId], references: [id])
   academyId Int
   academy   Academy  @relation(fields: [academyId], references: [id])
+}
+
+model SessionLog {
+  id             Int      @id @default(autoincrement())
+  userId         Int?     // Make userId optional
+  user           User?    @relation(fields: [userId], references: [id]) // Relation is now optional
+  telegramUserId Int      // Add field to store telegram user ID directly
+  sessionStart   DateTime
+  sessionEnd     DateTime
+  duration       Int
+  routeDurations Json
+  createdAt      DateTime @default(now())
 }
 
 enum Role {
