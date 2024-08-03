@@ -1,3 +1,5 @@
+// server/server.js
+
 const express = require('express');
 const { PrismaClient } = require('@prisma/client');
 const cors = require('cors');
@@ -44,6 +46,58 @@ app.post('/users', async (req, res) => {
       res.json({ user, token });
     } catch (error) {
       res.status(500).json({ error: 'Error creating user' });
+    }
+  });
+
+  app.delete('/users/:userId', async (req, res) => {
+    const { userId } = req.params;
+    try {
+      await prisma.user.delete({
+        where: { id: parseInt(userId, 10) },
+      });
+      res.status(204).end();
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      res.status(500).json({ error: 'Error deleting user' });
+    }
+  });
+  
+  app.get('/inbox', async (req, res) => {
+    try {
+      const messages = await prisma.inboxMessage.findMany();
+      res.json(messages);
+    } catch (error) {
+      console.error('Error fetching inbox messages:', error);
+      res.status(500).json({ error: 'Error fetching inbox messages' });
+    }
+  });
+  
+  app.post('/inbox/:id/approve', async (req, res) => {
+    const { id } = req.params;
+    try {
+      await prisma.inboxMessage.update({
+        where: { id: parseInt(id, 10) },
+        data: { status: 'approved' },
+      });
+      res.status(200).json({ message: 'Message approved' });
+    } catch (error) {
+      console.error('Error approving message:', error);
+      res.status(500).json({ error: 'Error approving message' });
+    }
+  });
+  
+  app.post('/inbox/:id/reject', async (req, res) => {
+    const { id } = req.params;
+    const { reason } = req.body;
+    try {
+      await prisma.inboxMessage.update({
+        where: { id: parseInt(id, 10) },
+        data: { status: 'rejected', rejectReason: reason },
+      });
+      res.status(200).json({ message: 'Message rejected' });
+    } catch (error) {
+      console.error('Error rejecting message:', error);
+      res.status(500).json({ error: 'Error rejecting message' });
     }
   });
 
@@ -98,36 +152,48 @@ app.post('/users', async (req, res) => {
     }
   });
 
+  // server/server.js
+
   app.post('/api/register-creator', async (req, res) => {
     try {
-      const { telegramUserId, name, email, password } = req.body;
+      const { telegramUserId, name, email, password } = req.body; // Ensure email is being read correctly
   
       // Check if user already exists
       let user = await prisma.user.findUnique({ where: { telegramUserId } });
+  
       if (user) {
-        return res.status(400).json({ error: 'User already exists' });
+        // Update role if necessary
+        if (user.role !== 'CREATOR') {
+          user = await prisma.user.update({
+            where: { telegramUserId },
+            data: { role: 'CREATOR' },
+          });
+          return res.status(200).json({ message: 'User role updated to CREATOR', user });
+        } else {
+          return res.status(200).json({ message: 'User already has the CREATOR role' });
+        }
+      } else {
+        // Hash the password
+        const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+  
+        // Create the user with the CREATOR role
+        user = await prisma.user.create({
+          data: {
+            telegramUserId,
+            name,
+            email, // Make sure email is included here
+            password: hashedPassword,
+            role: 'CREATOR',
+          },
+        });
+  
+        res.status(201).json({ message: 'User registered as a CREATOR', userId: user.id });
       }
-  
-      // Hash the password
-      const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
-  
-      // Create the user with CREATOR role
-      user = await prisma.user.create({
-        data: {
-          telegramUserId,
-          name,
-          email,
-          password: hashedPassword,
-          role: 'CREATOR',
-        },
-      });
-  
-      res.status(201).json({ userId: user.id });
     } catch (error) {
       console.error('Error registering creator:', error);
       res.status(500).json({ error: 'Error registering creator' });
     }
-  });
+  });  
   
   app.post('/api/update-role', async (req, res) => {
     try {

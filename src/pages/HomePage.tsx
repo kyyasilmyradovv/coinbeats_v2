@@ -7,9 +7,10 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import useSessionStore from '../store/useSessionStore';
 import useUserStore from '../store/useUserStore';
+import Navbar from '../components/common/Navbar';
+import Sidebar from '../components/common/Sidebar';
 import {
   Page,
-  Navbar,
   List,
   ListInput,
   Card,
@@ -98,6 +99,10 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
   const toggleDarkMode = () => {
     setDarkMode(!darkMode);
     document.documentElement.classList.toggle('dark');
+  };
+
+  const toggleSidebar = () => {
+    setRightPanelOpened(!rightPanelOpened);
   };
 
   useEffect(() => {
@@ -226,27 +231,13 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
 
   return (
     <Page>
-      <Navbar
-        title={<img src={darkMode ? logoLight : logoDark} alt="Company Logo" className="h-9 mx-auto" />}
-        className="top-0 sticky"
-        transparent
-        large
-        right={
-          <Chip
-            className="m-0.5"
-            media={
-              <img
-                alt="avatar"
-                className="ios:h-7 material:h-6 rounded-full"
-                src={userAvatar}
-              />
-            }
-            onClick={() => setRightPanelOpened(true)}
-          >
-            {username}
-          </Chip>
-        }
-        centerTitle={true}
+      <Navbar darkMode={darkMode} onToggleSidebar={toggleSidebar} />
+      <Sidebar
+        opened={rightPanelOpened}
+        onClose={() => setRightPanelOpened(false)}
+        theme={theme}
+        setTheme={setTheme}
+        setColorTheme={setColorTheme}
       />
 
       <div className="flex justify-center items-center flex-col mb-4 mt-1">
@@ -394,120 +385,6 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
           </Card>
         ))}
       </div>
-
-      <Panel
-        side="right"
-        floating
-        opened={rightPanelOpened}
-        onBackdropClick={() => setRightPanelOpened(false)}
-      >
-        <Page>
-          <Navbar
-            title="User Settings"
-            right={
-              <Link navbar onClick={() => setRightPanelOpened(false)}>
-                Close
-              </Link>
-            }
-          />
-          <Block className="space-y-4">
-            <BlockTitle className="mb-1">Connect your TON Wallet</BlockTitle>
-            <TonConnectButton className="mx-auto" />
-            {renderSidePanelButtons()}
-            <BlockTitle>Theme</BlockTitle>
-            <List strong inset>
-              <ListItem
-                label
-                title="iOS Theme"
-                media={
-                  <Radio
-                    onChange={() => setTheme('ios')}
-                    component="div"
-                    checked={theme === 'ios'}
-                  />
-                }
-              />
-              <ListItem
-                label
-                title="Material Theme"
-                media={
-                  <Radio
-                    onChange={() => setTheme('material')}
-                    component="div"
-                    checked={theme === 'material'}
-                  />
-                }
-              />
-            </List>
-            <List strong inset>
-              <ListItem
-                title="Dark Mode"
-                label
-                after={
-                  <Toggle
-                    component="div"
-                    onChange={() => toggleDarkMode()}
-                    checked={darkMode}
-                  />
-                }
-              />
-              <ListItem
-                title="Color Theme"
-                link
-                onClick={() => setColorPickerOpened(true)}
-                after={
-                  <div className="w-6 h-6 rounded-full bg-primary home-color-picker" />
-                }
-              />
-            </List>
-            <Popover
-              opened={colorPickerOpened}
-              onBackdropClick={() => setColorPickerOpened(false)}
-              size="w-36"
-              target=".home-color-picker"
-              className="transform translate-x-[-95%] translate-y-[-30%]"
-            >
-              <div className="grid grid-cols-3 py-2">
-                <Link
-                  touchRipple
-                  className="overflow-hidden h-12"
-                  onClick={() => setColorTheme('')}
-                >
-                  <span className="bg-brand-primary w-6 h-6 rounded-full" />
-                </Link>
-                <Link
-                  touchRipple
-                  className="overflow-hidden h-12"
-                  onClick={() => setColorTheme('k-color-brand-red')}
-                >
-                  <span className="bg-brand-red w-6 h-6 rounded-full" />
-                </Link>
-                <Link
-                  touchRipple
-                  className="overflow-hidden h-12"
-                  onClick={() => setColorTheme('k-color-brand-green')}
-                >
-                  <span className="bg-brand-green w-6 h-6 rounded-full" />
-                </Link>
-                <Link
-                  touchRipple
-                  className="overflow-hidden h-12"
-                  onClick={() => setColorTheme('k-color-brand-yellow')}
-                >
-                  <span className="bg-brand-yellow w-6 h-6 rounded-full" />
-                </Link>
-                <Link
-                  touchRipple
-                  className="overflow-hidden h-12"
-                  onClick={() => setColorTheme('k-color-brand-purple')}
-                >
-                  <span className="bg-brand-purple w-6 h-6 rounded-full" />
-                </Link>
-              </div>
-            </Popover>
-          </Block>
-        </Page>
-      </Panel>
     </Page>
   );
 }

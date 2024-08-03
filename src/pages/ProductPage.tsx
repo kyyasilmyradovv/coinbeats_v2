@@ -1,3 +1,5 @@
+// src/pages/ProductPage
+
 import React, { useMemo, useState, useLayoutEffect } from 'react';
 import { useInitData } from '@telegram-apps/sdk-react';
 import { useLocation, useNavigate } from 'react-router-dom';

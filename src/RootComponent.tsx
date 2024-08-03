@@ -9,6 +9,11 @@ import ProductPage from './pages/ProductPage';
 import BookmarksPage from './pages/BookmarksPage';
 import RegisterCreatorPage from './pages/RegisterCreatorPage';
 import SessionAnalysisPage from './pages/SessionAnalysisPage';
+import CreatorDashboardPage from './pages/CreatorDashboardPage';
+import UserManagementPage from './pages/UserManagementPage'; // New Import
+import InboxPage from './pages/InboxPage'; // New Import
+import AcademyStatisticsPage from './pages/AcademyStatisticsPage'; // New Import
+import UserProfilePage from './pages/UserProfilePage'; // New Import
 import { BookmarkProvider } from './contexts/BookmarkContext';
 import './index.css';
 
@@ -25,13 +30,13 @@ function RootComponent() {
     setCurrentColorTheme(color);
   };
 
-    useEffect(() => {
-        window.setTheme = (t) => setTheme(t);
-        window.setMode = (mode) => {
-            if (mode === 'dark') document.documentElement.classList.add('dark');
-            else document.documentElement.classList.remove('dark');
-        };
-    }, []);
+  useEffect(() => {
+    window.setTheme = (t) => setTheme(t);
+    window.setMode = (mode) => {
+      if (mode === 'dark') document.documentElement.classList.add('dark');
+      else document.documentElement.classList.remove('dark');
+    };
+  }, []);
 
   const inIFrame = window.parent !== window;
   useLayoutEffect(() => {
@@ -56,6 +61,11 @@ function RootComponent() {
               <Route path="/saved" element={<BookmarksPage theme={theme} setTheme={setTheme} colorTheme={currentColorTheme} setColorTheme={setColorTheme} />} />
               <Route path="/register-creator" element={<RegisterCreatorPage />} />
               <Route path="/session-analyses" element={<SessionAnalysisPage />} />
+              <Route path="/creator-dashboard" element={<CreatorDashboardPage theme={theme} setTheme={setTheme} colorTheme={currentColorTheme} setColorTheme={setColorTheme} />} />
+              <Route path="/user-management" element={<UserManagementPage />} /> {/* New route */}
+              <Route path="/inbox" element={<InboxPage />} /> {/* New route */}
+              <Route path="/academy-statistics" element={<AcademyStatisticsPage />} /> {/* New route */}
+              <Route path="/user-profile" element={<UserProfilePage />} /> {/* New route */}
             </Routes>
           </Router>
         </BookmarkProvider>

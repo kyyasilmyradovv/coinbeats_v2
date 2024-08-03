@@ -4,28 +4,45 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import useUserStore from '../store/useUserStore';
-import useSessionStore from '../store/useSessionStore'; // Import session store
+import useSessionStore from '../store/useSessionStore';
+import {
+  Page,
+  Navbar,
+  List,
+  ListInput,
+  Button,
+  BlockTitle,
+  NavbarBackLink,
+  Block,
+  Chip,
+  Link,
+  Panel
+} from 'konsta/react';
+import { useTheme } from 'konsta/react';
+import logoLight from '../images/coinbeats-light.svg';
+import logoDark from '../images/coinbeats-dark.svg';
 
 const RegisterCreatorPage: React.FC = () => {
   const navigate = useNavigate();
-
-  // Fetch user data from session store instead of user store
   const { userId: telegramUserId, username } = useSessionStore((state) => ({
     userId: state.userId,
     username: state.username,
   }));
-
   const { setUser, updateUserRole } = useUserStore((state) => ({
     setUser: state.setUser,
     updateUserRole: state.updateUserRole,
   }));
-
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
     confirmPassword: '',
   });
+
+  const [rightPanelOpened, setRightPanelOpened] = useState(false);
+  const theme = useTheme();
+  const darkMode = theme === 'dark';
+  const userAvatar = 'https://cdn.framework7.io/placeholder/people-100x100-7.jpg';
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -36,89 +53,161 @@ const RegisterCreatorPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
+  
     if (formData.password !== formData.confirmPassword) {
       alert('Passwords do not match!');
       return;
     }
-
+  
     try {
       const response = await axios.post('http://localhost:7000/api/register-creator', {
         telegramUserId,
-        ...formData,
+        ...formData, // Ensure formData includes email
       });
-
-      if (response.status !== 201) {
-        throw new Error('Failed to register');
+  
+      if (response.status === 201 || response.status === 200) {
+        updateUserRole('CREATOR');
+        setUser(telegramUserId, username, 'CREATOR');
+        alert(response.data.message || 'Successfully registered as a creator!');
+        navigate('/creator-dashboard');
       }
-
-      // Update Zustand user store
-      updateUserRole('CREATOR');
-      setUser(telegramUserId, username, 'CREATOR');
-
-      alert('Successfully registered as a creator!');
-      navigate('/creator-dashboard');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Registration failed:', error);
-      alert('Failed to register as a creator');
+      alert(error.response?.data?.error || 'Failed to register as a creator');
     }
-  };
+  };  
 
   return (
-    <div className="max-w-md mx-auto p-4">
-      <h2 className="text-2xl font-bold mb-4">Register as Academy Creator</h2>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <div>
-          <label htmlFor="name" className="block font-semibold">Name</label>
-          <input
-            type="text"
-            id="name"
-            name="name"
-            value={formData.name}
-            onChange={handleChange}
-            required
-            className="w-full p-2 border rounded"
+    <Page>
+      <Navbar
+        title={<img src={darkMode ? logoLight : logoDark} alt="Company Logo" className="h-7 mx-auto" />}
+        left={<NavbarBackLink onClick={() => navigate(-1)} />}
+        right={
+          <Chip
+            className="m-0.5"
+            media={
+              <img
+                alt="avatar"
+                className="ios:h-7 material:h-6 rounded-full"
+                src={userAvatar}
+              />
+            }
+            onClick={() => setRightPanelOpened(true)}
+          >
+            {username || 'Guest'}
+          </Chip>
+        }
+        centerTitle={true}
+      />
+
+      <div className="text-center flex w-full items-center justify-center top-8 mb-10">
+        <BlockTitle large>Register as Academy Creator</BlockTitle>
+      </div>
+      <Block strong className="mx-4 my-4 bg-white rounded-2xl shadow-lg p-6">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <List className="rounded-2xl">
+            <ListInput
+              label="Name"
+              type="text"
+              placeholder="Enter your name"
+              outline
+              clearButton
+              required
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              className="rounded-2xl"
+            />
+            <ListInput
+              label="Email"
+              type="email"
+              placeholder="Enter your email"
+              outline
+              clearButton
+              required
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              className="rounded-2xl"
+            />
+            <ListInput
+              label="Password"
+              type="password"
+              placeholder="Enter your password"
+              outline
+              clearButton
+              required
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              className="rounded-2xl"
+            />
+            <ListInput
+              label="Confirm Password"
+              type="password"
+              placeholder="Confirm your password"
+              outline
+              clearButton
+              required
+              name="confirmPassword"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              className="rounded-2xl"
+            />
+          </List>
+          <Button
+            type="submit"
+            large
+            raised
+            strong
+            className="w-full rounded-2xl"
+          >
+            Register
+          </Button>
+        </form>
+      </Block>
+
+      <Panel
+        side="right"
+        floating
+        opened={rightPanelOpened}
+        onBackdropClick={() => setRightPanelOpened(false)}
+      >
+        <Page>
+          <Navbar
+            title="User Settings"
+            right={
+              <Link navbar onClick={() => setRightPanelOpened(false)}>
+                Close
+              </Link>
+            }
           />
-        </div>
-        <div>
-          <label htmlFor="email" className="block font-semibold">Email</label>
-          <input
-            type="email"
-            id="email"
-            name="email"
-            value={formData.email}
-            onChange={handleChange}
-            required
-            className="w-full p-2 border rounded"
-          />
-        </div>
-        <div>
-          <label htmlFor="password" className="block font-semibold">Password</label>
-          <input
-            type="password"
-            id="password"
-            name="password"
-            value={formData.password}
-            onChange={handleChange}
-            required
-            className="w-full p-2 border rounded"
-          />
-        </div>
-        <div>
-          <label htmlFor="confirmPassword" className="block font-semibold">Confirm Password</label>
-          <input
-            type="password"
-            id="confirmPassword"
-            name="confirmPassword"
-            value={formData.confirmPassword}
-            onChange={handleChange}
-            required
-            className="w-full p-2 border rounded"
-          />
-        </div>
-        <button type="submit" className="w-full bg-blue-500 text-white py-2 rounded">Register</button>
-      </form>
-    </div>
+          <Block className="space-y-4">
+            <BlockTitle>Profile Settings</BlockTitle>
+            <List className="rounded-2xl">
+              <ListInput
+                label="Username"
+                type="text"
+                outline
+                clearButton
+                value={username}
+                disabled
+                className="rounded-2xl"
+              />
+              <ListInput
+                label="User ID"
+                type="text"
+                outline
+                clearButton
+                value={telegramUserId}
+                disabled
+                className="rounded-2xl"
+              />
+            </List>
+          </Block>
+        </Page>
+      </Panel>
+    </Page>
   );
 };
 
