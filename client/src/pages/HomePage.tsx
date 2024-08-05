@@ -221,25 +221,6 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
     navigate(`/product/${academy.id}`, { state: { academy } });
   };
 
-  const renderSidePanelButtons = () => {
-    const buttons = [];
-
-    if (role?.includes('SUPERADMIN')) {
-      buttons.push(<Button rounded outline key="superadmin" onClick={() => navigate('/superadmin-dashboard')} className="!w-fit !px-4 !py-4 !mx-auto k-color-brand-blue">Log in as Superadmin</Button>);
-    }
-    if (role?.includes('ADMIN')) {
-      buttons.push(<Button rounded outline key="admin" onClick={() => navigate('/admin-dashboard')} className="!w-fit !px-4 !py-4 !mx-auto k-color-brand-blue">Log in as Admin</Button>);
-    }
-    if (role?.includes('CREATOR')) {
-      buttons.push(<Button rounded outline key="creator" onClick={() => navigate('/creator-dashboard')} className="!w-fit !px-4 !py-4 !mx-auto k-color-brand-blue">Log in as Creator</Button>);
-    }
-    if (role === 'USER' && !role?.includes('CREATOR')) {
-      buttons.push(<Button rounded outline key="become-creator" onClick={() => navigate('/register-creator')} className="!w-fit !px-4 !py-4 !mx-auto k-color-brand-blue">Become Academy Creator</Button>);
-    }
-
-    return buttons;
-  };
-
   return (
     <Page>
       <Navbar darkMode={darkMode} onToggleSidebar={toggleSidebar} />

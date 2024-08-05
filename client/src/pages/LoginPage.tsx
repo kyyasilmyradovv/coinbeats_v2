@@ -4,32 +4,20 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Page, Navbar, List, ListInput, Button, BlockTitle, Block } from 'konsta/react';
-import useUserStore from '../store/useUserStore';
+import useAuthStore from '../store/useAuthStore'; // Import the correct auth store
 
 const LoginPage: React.FC = () => {
-  const [formData, setFormData] = useState({ email: '', password: '' });
+  const [email, setEmail] = useState(''); // Separate state for email
+  const [password, setPassword] = useState(''); // Separate state for password
   const navigate = useNavigate();
-  const loginUser = useUserStore((state) => state.loginUser);
+  const login = useAuthStore((state) => state.login); // Use the login function from useAuthStore
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
-  };
-
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     try {
-      const response = await axios.post('http://localhost:7000/login', formData);
-
-      if (response.status === 200) {
-        const { user, token } = response.data;
-        loginUser({ ...user, token });
-        alert('Login successful!');
-        navigate('/user-profile'); // Redirect to user profile or dashboard
-      }
+      await login(email, password); // Use the login function to handle authentication
+      alert('Login successful!');
+      navigate('/user-profile'); // Redirect to user profile or dashboard
     } catch (error: any) {
       console.error('Login failed:', error);
       alert(error.response?.data?.error || 'Failed to login');
@@ -41,7 +29,7 @@ const LoginPage: React.FC = () => {
       <Navbar title="Login" />
       <BlockTitle large>Login</BlockTitle>
       <Block strong className="mx-4 my-4 bg-white rounded-2xl shadow-lg p-6">
-        <form onSubmit={handleLogin} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <List className="rounded-2xl">
             <ListInput
               label="Email"
@@ -51,8 +39,8 @@ const LoginPage: React.FC = () => {
               clearButton
               required
               name="email"
-              value={formData.email}
-              onChange={handleChange}
+              value={email} // Use email state
+              onChange={(e) => setEmail(e.target.value)} // Update email state
               className="rounded-2xl"
             />
             <ListInput
@@ -63,8 +51,8 @@ const LoginPage: React.FC = () => {
               clearButton
               required
               name="password"
-              value={formData.password}
-              onChange={handleChange}
+              value={password} // Use password state
+              onChange={(e) => setPassword(e.target.value)} // Update password state
               className="rounded-2xl"
             />
           </List>

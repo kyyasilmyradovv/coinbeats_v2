@@ -1,5 +1,3 @@
-// src/store/useUserStore.ts
-
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 
@@ -48,4 +46,3 @@ const useUserStore = create<UserState>()(
 );
 
 export default useUserStore;
-
