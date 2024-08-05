@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import useSessionStore from '../store/useSessionStore';
 import useUserStore from '../store/useUserStore';
+import useCategoryChainStore from '../store/useCategoryChainStore'; // Import the store
 import Navbar from '../components/common/Navbar';
 import Sidebar from '../components/common/Sidebar';
 import {
@@ -91,6 +92,13 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
     userId: state.userId,
     role: state.role,
     setUser: state.setUser,
+  }));
+
+  // Zustand CategoryChain Store
+  const { categories, chains, fetchCategoriesAndChains } = useCategoryChainStore((state) => ({
+    categories: state.categories,
+    chains: state.chains,
+    fetchCategoriesAndChains: state.fetchCategoriesAndChains,
   }));
 
   const username = useMemo(() => initData?.user?.username || 'Guest', [initData]);
@@ -194,7 +202,10 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
     };
 
     initializeUserSession();
-  }, [initData, startSession, setCurrentRoute, endSession, setUser, username, role]);
+
+    // Fetch categories and chains from the Zustand store
+    fetchCategoriesAndChains();
+  }, [initData, startSession, setCurrentRoute, endSession, setUser, username, role, fetchCategoriesAndChains]);
 
   const filteredData = useMemo(() => {
     let data = mockData;
@@ -240,9 +251,9 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
         setColorTheme={setColorTheme}
       />
 
-      <div className="flex justify-center items-center flex-col mb-4 mt-1">
+      <div className="flex justify-center items-center flex-col mb-6 mt-6">
         <div className="bg-white rounded-full shadow-lg p-2 flex flex-row items-center px-6">
-          <img src={bunny} className="h-10 w-10 mr-4" alt="bunny mascot" />
+          <img src={bunny} className="h-8 w-8 mr-4" alt="bunny mascot" />
           <div className="text-lg text-gray-500 font-semibold mr-4">
             Your Bunny XP:
           </div>
@@ -262,12 +273,11 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
             onChange={(e) => setCategory(e.target.value)}
           >
             <option value="">All</option>
-            <option value="AI">AI</option>
-            <option value="Finance">Finance</option>
-            <option value="Game">Game</option>
-            <option value="NFT">NFT</option>
-            <option value="Technology">Technology</option>
-            <option value="Network">Network</option>
+            {categories.map((category) => (
+              <option key={category.id} value={category.name}>
+                {category.name}
+              </option>
+            ))}
           </ListInput>
         </List>
         <List className="w-full !my-0">
@@ -281,11 +291,11 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
             onChange={(e) => setChain(e.target.value)}
           >
             <option value="">All</option>
-            <option value="Ethereum">Ethereum</option>
-            <option value="Binance">Binance</option>
-            <option value="Solana">Solana</option>
-            <option value="Polygon">Polygon</option>
-            <option value="Avalanche">Avalanche</option>
+            {chains.map((chain) => (
+              <option key={chain.id} value={chain.name}>
+                {chain.name}
+              </option>
+            ))}
           </ListInput>
         </List>
       </div>

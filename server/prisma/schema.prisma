@@ -4,10 +4,6 @@
 // Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
-// /prisma/schema.prisma
-
-// /prisma/schema.prisma
-
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -19,61 +15,103 @@ generator client {
 
 model User {
   id             Int             @id @default(autoincrement())
-  telegramUserId Int             @unique // Ensure Telegram user ID is unique
+  telegramUserId Int             @unique
   name           String
-  email          String?         // Make email optional
-  password       String?         // Optional password for roles that don't need it initially
+  email          String?
+  password       String?
   role           Role            @default(USER)
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
   academies      Academy[]
   points         Point[]
   sessionLogs    SessionLog[]
+  userResponses  UserResponse[]  // Track responses
 }
 
 model Academy {
-  id          Int       @id @default(autoincrement())
-  name        String
-  category    String
-  chain       String
-  link        String
-  image       String
-  xp          Int
-  creatorId   Int
-  creator     User      @relation(fields: [creatorId], references: [id])
-  questions   Question[]
-  videos      Video[]
-  socialQuests SocialQuest[]
-  Point       Point[]
+  id             Int               @id @default(autoincrement())
+  name           String
+  ticker         String
+  categories     Category[]
+  chains         Chain[]
+  twitter        String?
+  telegram       String?
+  discord        String?
+  coingecko      String?
+  academyQuestions AcademyQuestion[] // Academy-specific questions and answers
+  tokenomics     String?
+  teamBackground String?
+  congratsVideo  String?
+  getStarted     String?
+  raffles        Raffle[]
+  quests         Quest[]
+  logoUrl        String?           // Academy logo URL
+  coverPhotoUrl  String?           // Academy cover photo URL
+  webpageUrl     String?           // Academy webpage URL
+  status         String
+  creatorId      Int
+  creator        User              @relation(fields: [creatorId], references: [id])
+
+  Point          Point[]
 }
 
-model Question {
-  id         Int      @id @default(autoincrement())
-  text       String
-  choices    Choice[]
-  academyId  Int
-  academy    Academy  @relation(fields: [academyId], references: [id])
+model InitialQuestion {
+  id          Int       @id @default(autoincrement())
+  question    String    // The question itself
+  description String?   // Optional description or content related to the question
+
+  AcademyQuestion AcademyQuestion[]
+}
+
+model AcademyQuestion {
+  id               Int              @id @default(autoincrement())
+  initialQuestionId Int
+  initialQuestion  InitialQuestion @relation(fields: [initialQuestionId], references: [id])
+  academyId        Int
+  academy          Academy          @relation(fields: [academyId], references: [id])
+  question         String           // Academy-specific question
+  answer           String?          // The answer to the initial question
+  quizQuestion     String           // Question to test users based on the academy's content
+  choices          Choice[]         // Multiple choice answers for the quizQuestion
 }
 
 model Choice {
-  id         Int      @id @default(autoincrement())
-  text       String
-  isCorrect  Boolean
-  questionId Int
-  question   Question @relation(fields: [questionId], references: [id])
+  id                Int              @id @default(autoincrement())
+  text              String
+  isCorrect         Boolean          // Correct answer as defined by academy creator
+  academyQuestionId Int
+  academyQuestion   AcademyQuestion  @relation(fields: [academyQuestionId], references: [id])
+
+  UserResponse      UserResponse[]   // Responses associated with this choice
 }
 
-model Video {
+model UserResponse {
+  id            Int         @id @default(autoincrement())
+  userId        Int
+  user          User        @relation(fields: [userId], references: [id])
+  choiceId      Int
+  choice        Choice      @relation(fields: [choiceId], references: [id])
+  isCorrect     Boolean     // Whether the response is correct
+  pointsAwarded Int
+}
+
+model Raffle {
   id         Int      @id @default(autoincrement())
-  link       String
+  amount     Int
+  reward     String
+  currency   String
+  chain      String
+  dates      String
+  totalPool  Int
   academyId  Int
   academy    Academy  @relation(fields: [academyId], references: [id])
 }
 
-model SocialQuest {
+model Quest {
   id         Int      @id @default(autoincrement())
   name       String
   link       String
+  platform   String
   academyId  Int
   academy    Academy  @relation(fields: [academyId], references: [id])
 }
@@ -89,14 +127,26 @@ model Point {
 
 model SessionLog {
   id             Int      @id @default(autoincrement())
-  userId         Int?     // Make userId optional
-  user           User?    @relation(fields: [userId], references: [id]) // Relation is now optional
-  telegramUserId Int      // Add field to store telegram user ID directly
+  userId         Int?
+  user           User?    @relation(fields: [userId], references: [id])
+  telegramUserId Int
   sessionStart   DateTime
   sessionEnd     DateTime
   duration       Int
   routeDurations Json
   createdAt      DateTime @default(now())
+}
+
+model Category {
+  id          Int       @id @default(autoincrement())
+  name        String    @unique
+  academies   Academy[]
+}
+
+model Chain {
+  id          Int       @id @default(autoincrement())
+  name        String    @unique
+  academies   Academy[]
 }
 
 enum Role {

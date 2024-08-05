@@ -10,10 +10,12 @@ import BookmarksPage from './pages/BookmarksPage';
 import RegisterCreatorPage from './pages/RegisterCreatorPage';
 import SessionAnalysisPage from './pages/SessionAnalysisPage';
 import CreatorDashboardPage from './pages/CreatorDashboardPage';
-import UserManagementPage from './pages/UserManagementPage'; // New Import
-import InboxPage from './pages/InboxPage'; // New Import
-import AcademyStatisticsPage from './pages/AcademyStatisticsPage'; // New Import
-import UserProfilePage from './pages/UserProfilePage'; // New Import
+import UserManagementPage from './pages/UserManagementPage';
+import InboxPage from './pages/InboxPage';
+import AcademyStatisticsPage from './pages/AcademyStatisticsPage';
+import UserProfilePage from './pages/UserProfilePage';
+import CreateAcademyPage from './pages/CreateAcademyPage'; // New Import
+import MyAcademiesPage from './pages/MyAcademiesPage'; // New Import
 import { BookmarkProvider } from './contexts/BookmarkContext';
 import './index.css';
 
@@ -62,10 +64,12 @@ function RootComponent() {
               <Route path="/register-creator" element={<RegisterCreatorPage />} />
               <Route path="/session-analyses" element={<SessionAnalysisPage />} />
               <Route path="/creator-dashboard" element={<CreatorDashboardPage theme={theme} setTheme={setTheme} colorTheme={currentColorTheme} setColorTheme={setColorTheme} />} />
-              <Route path="/user-management" element={<UserManagementPage />} /> {/* New route */}
-              <Route path="/inbox" element={<InboxPage />} /> {/* New route */}
-              <Route path="/academy-statistics" element={<AcademyStatisticsPage />} /> {/* New route */}
-              <Route path="/user-profile" element={<UserProfilePage />} /> {/* New route */}
+              <Route path="/user-management" element={<UserManagementPage />} />
+              <Route path="/inbox" element={<InboxPage />} />
+              <Route path="/academy-statistics" element={<AcademyStatisticsPage />} />
+              <Route path="/user-profile" element={<UserProfilePage />} />
+              <Route path="/create-academy" element={<CreateAcademyPage />} /> {/* New route */}
+              <Route path="/my-academies" element={<MyAcademiesPage />} /> {/* New route */}
             </Routes>
           </Router>
         </BookmarkProvider>

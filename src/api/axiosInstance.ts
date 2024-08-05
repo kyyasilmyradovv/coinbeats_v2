@@ -8,9 +8,12 @@ const instance = axios.create({
 
 // Add a request interceptor to include the JWT token
 instance.interceptors.request.use(config => {
-  const token = localStorage.getItem('authToken');
+  const token = localStorage.getItem('authToken'); // Ensure token is set
   if (token) {
     config.headers.Authorization = `Bearer ${token}`; // Attach the token to headers
+    console.log('Token attached to request:', token); // Log token usage
+  } else {
+    console.warn('No auth token found. Request may be unauthorized.');
   }
   return config;
 }, error => {

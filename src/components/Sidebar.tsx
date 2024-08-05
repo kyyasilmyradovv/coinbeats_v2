@@ -99,31 +99,51 @@ const Sidebar: React.FC<SidebarProps> = ({
       case 'CREATOR':
         return (
           <>
-            <ListItem
-              link
-              title="Create Academy"
+            <Button
+              raised
+              clear
+              rounded
               onClick={() => navigate('/create-academy')}
-            />
-            <ListItem
-              link
-              title="Edit Academy"
-              onClick={() => navigate('/edit-academy')}
-            />
-            <ListItem
-              link
-              title="User Profile"
+              className="bg-white"
+            >
+              Create Academy
+            </Button>
+            <Button
+              raised
+              clear
+              rounded
+              onClick={() => navigate('/my-academies')}
+              className="bg-white"
+            >
+              My Academies
+            </Button>
+            <Button
+              raised
+              clear
+              rounded
               onClick={() => navigate('/user-profile')}
-            />
-            <ListItem
-              link
-              title="Academy Statistics"
+              className="bg-white"
+            >
+              User Profile
+            </Button>
+            <Button
+              raised
+              clear
+              rounded
               onClick={() => navigate('/academy-statistics')}
-            />
-            <ListItem
-              link
-              title="Inbox"
+              className="bg-white"
+            >
+              Academy Statistics
+            </Button>
+            <Button
+              raised
+              clear
+              rounded
               onClick={() => navigate('/inbox')}
-            />
+              className="bg-white"
+            >
+              Inbox
+            </Button>
           </>
         );
       default:

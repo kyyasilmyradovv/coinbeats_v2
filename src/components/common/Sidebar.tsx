@@ -50,7 +50,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   const renderRoleBasedButtons = () => {
     const buttons = [];
 
-    if (role?.includes('SUPERADMIN')) {
+    if (role === 'SUPERADMIN') {
       buttons.push(
         <Button
           key="superadmin"
@@ -63,7 +63,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         </Button>
       );
     }
-    if (role?.includes('ADMIN')) {
+    if (role === 'ADMIN') {
       buttons.push(
         <Button
           key="admin"
@@ -76,7 +76,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         </Button>
       );
     }
-    if (role?.includes('CREATOR')) {
+    if (role === 'CREATOR') {
       buttons.push(
         <Button
           key="creator"
