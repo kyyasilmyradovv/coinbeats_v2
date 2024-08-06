@@ -228,3 +228,63 @@ exports.updateAcademy = async (req, res) => {
     res.status(500).json({ error: 'Error updating academy' });
   }
 };
+
+// Fetch all pending academies
+exports.getPendingAcademies = async (req, res) => {
+  try {
+    const academies = await prisma.academy.findMany({
+      where: {
+        status: 'pending', // Ensure you're filtering academies by their pending status
+      },
+      include: {
+        creator: true, // If you need to include creator info, ensure your schema supports this
+      },
+    });
+
+    // Send the academies back as JSON
+    res.json(academies);
+  } catch (error) {
+    console.error('Failed to fetch pending academies:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+// Approve academy
+exports.approveAcademy = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const updatedAcademy = await prisma.academy.update({
+      where: { id: parseInt(id) },
+      data: { status: 'approved' }, // Update the status to approved
+    });
+
+    res.json(updatedAcademy);
+  } catch (error) {
+    console.error('Error approving academy:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+// Reject academy
+exports.rejectAcademy = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+
+    // Update the academy status to rejected and add rejection reason if necessary
+    const updatedAcademy = await prisma.academy.update({
+      where: { id: parseInt(id) },
+      data: {
+        status: 'rejected',
+        // Add a field to store rejection reason if your schema supports it
+        rejectionReason: reason || null,
+      },
+    });
+
+    res.json(updatedAcademy);
+  } catch (error) {
+    console.error('Error rejecting academy:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};

@@ -11,7 +11,8 @@ const chainRoutes = require('./routes/chain');
 const sessionRoutes = require('./routes/session');
 const questionsRoutes = require('./routes/question');
 const subscriptionRoutes = require('./routes/subscriptions');
-const statsRoutes = require('./routes/stats'); // New stats routes
+const statsRoutes = require('./routes/stats');
+const inboxRoutes = require('./routes/inbox'); // Import inbox routes
 
 const app = express();
 const PORT = process.env.PORT || 7000;
@@ -30,7 +31,8 @@ app.use('/api/chains', chainRoutes);
 app.use('/api', sessionRoutes);
 app.use('/api/questions', questionsRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
-app.use('/api/stats', statsRoutes); // Add stats routes
+app.use('/api/stats', statsRoutes);
+app.use('/api/inbox', inboxRoutes); // Add inbox routes
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
