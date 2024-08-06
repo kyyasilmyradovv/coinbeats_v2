@@ -1,8 +1,6 @@
-// src/store/useCategoryChainStore.ts
-
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import axios from 'axios';
+import axiosInstance from '../api/axiosInstance'; // Import your configured axios instance
 
 interface Category {
   id: number;
@@ -28,8 +26,8 @@ const useCategoryChainStore = create<CategoryChainState>()(
     fetchCategoriesAndChains: async () => {
       try {
         const [categoriesResponse, chainsResponse] = await Promise.all([
-          axios.get('http://localhost:7000/api/categories'),
-          axios.get('http://localhost:7000/api/chains'),
+          axiosInstance.get('/api/categories'),
+          axiosInstance.get('/api/chains'),
         ]);
 
         set({ 

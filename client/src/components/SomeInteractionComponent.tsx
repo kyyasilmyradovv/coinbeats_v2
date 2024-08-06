@@ -8,7 +8,7 @@ const SomeInteractionComponent = () => {
 
   const handleUserInteraction = async (actionType: string) => {
     try {
-      await axios.post('http://localhost:7000/api/user-interaction', {
+      await axios.post('/api/user-interaction', {
         telegramUserId,
         action: actionType,
         email: 'user@example.com', // Pass user email if available

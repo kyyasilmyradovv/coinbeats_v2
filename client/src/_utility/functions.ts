@@ -1,3 +1,5 @@
+// client/src/utility/functions.ts
+
 /**
  * This function can be used anywhere in the app to greet the user
  * @param userName The user's first name

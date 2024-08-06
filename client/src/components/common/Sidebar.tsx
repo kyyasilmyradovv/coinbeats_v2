@@ -1,3 +1,5 @@
+// client/src/components/common/Sidebar.tsx
+
 import React, { useState, useLayoutEffect } from 'react';
 import {
   Page,

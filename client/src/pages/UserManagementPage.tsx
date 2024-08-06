@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Page, Block, List, ListItem, Button } from 'konsta/react';
+import { Page, Block, List, ListItem, Button, BlockTitle } from 'konsta/react';
 
 const UserManagementPage: React.FC = () => {
   const [users, setUsers] = useState<any[]>([]);
@@ -10,7 +10,7 @@ const UserManagementPage: React.FC = () => {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await axios.get('http://localhost:7000/users');
+        const response = await axios.get('/api/users');
         setUsers(response.data);
       } catch (error) {
         console.error('Error fetching users:', error);
@@ -22,7 +22,7 @@ const UserManagementPage: React.FC = () => {
 
   const handleDeleteUser = async (userId: number) => {
     try {
-      await axios.delete(`http://localhost:7000/users/${userId}`);
+      await axios.delete(`/api/users/${userId}`);
       setUsers(users.filter((user) => user.id !== userId));
     } catch (error) {
       console.error('Error deleting user:', error);

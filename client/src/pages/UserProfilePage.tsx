@@ -12,7 +12,7 @@ const UserProfilePage: React.FC = () => {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const response = await axios.get(`http://localhost:7000/users/${userId}`);
+        const response = await axios.get(`/api/users/${userId}`);
         setUserData(response.data);
       } catch (error) {
         console.error('Error fetching user data:', error);
@@ -24,7 +24,7 @@ const UserProfilePage: React.FC = () => {
 
   const handleSaveChanges = async () => {
     try {
-      await axios.put(`http://localhost:7000/users/${userId}`, userData);
+      await axios.put(`/api/users/${userId}`, userData);
       alert('Profile updated successfully');
     } catch (error) {
       console.error('Error updating profile:', error);

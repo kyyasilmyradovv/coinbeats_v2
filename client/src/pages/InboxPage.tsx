@@ -11,7 +11,7 @@ const InboxPage: React.FC = () => {
   useEffect(() => {
     const fetchMessages = async () => {
       try {
-        const response = await axios.get('http://localhost:7000/inbox');
+        const response = await axios.get('/api/inbox');
         setMessages(response.data);
       } catch (error) {
         console.error('Error fetching messages:', error);
@@ -23,7 +23,7 @@ const InboxPage: React.FC = () => {
 
   const handleApprove = async (id: number) => {
     try {
-      await axios.post(`http://localhost:7000/inbox/${id}/approve`);
+      await axios.post(`/api/inbox/${id}/approve`);
       setMessages(messages.filter((message) => message.id !== id));
     } catch (error) {
       console.error('Error approving message:', error);
@@ -32,7 +32,7 @@ const InboxPage: React.FC = () => {
 
   const handleReject = async (id: number) => {
     try {
-      await axios.post(`http://localhost:7000/inbox/${id}/reject`, { reason: rejectReason });
+      await axios.post(`/api/inbox/${id}/reject`, { reason: rejectReason });
       setMessages(messages.filter((message) => message.id !== id));
       setRejectReason('');
     } catch (error) {

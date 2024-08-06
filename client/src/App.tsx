@@ -1,4 +1,5 @@
 // src/App.tsx
+
 import React from 'react';
 import { TonConnectUIProvider } from '@tonconnect/ui-react';
 import { SDKProvider } from '@telegram-apps/sdk-react';

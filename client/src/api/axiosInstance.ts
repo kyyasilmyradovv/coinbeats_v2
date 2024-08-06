@@ -1,23 +1,43 @@
 // src/api/axiosInstance.ts
-
 import axios from 'axios';
+import useAuthStore from '../store/useAuthStore';
 
-const instance = axios.create({
-  baseURL: 'http://localhost:7000', // Set the base URL for your API
+const axiosInstance = axios.create({
+  baseURL: 'http://localhost:7000', // Ensure this base URL is correct
 });
 
-// Add a request interceptor to include the JWT token
-instance.interceptors.request.use(config => {
-  const token = localStorage.getItem('authToken'); // Ensure token is set
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`; // Attach the token to headers
-    console.log('Token attached to request:', token); // Log token usage
-  } else {
-    console.warn('No auth token found. Request may be unauthorized.');
+// Request interceptor for adding token to requests
+axiosInstance.interceptors.request.use(
+  (config) => {
+    const accessToken = useAuthStore.getState().accessToken || localStorage.getItem('authToken');
+    if (accessToken) {
+      config.headers['Authorization'] = `Bearer ${accessToken}`;
+    } else {
+      console.warn('No auth token found. Request may be unauthorized.');
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+// Response interceptor for handling token refresh
+axiosInstance.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+      try {
+        await useAuthStore.getState().refreshAccessToken();
+        const newAccessToken = useAuthStore.getState().accessToken;
+        originalRequest.headers['Authorization'] = `Bearer ${newAccessToken}`;
+        return axiosInstance(originalRequest);
+      } catch (refreshError) {
+        console.error('Refresh token failed:', refreshError);
+      }
+    }
+    return Promise.reject(error);
   }
-  return config;
-}, error => {
-  return Promise.reject(error);
-});
+);
 
-export default instance;
+export default axiosInstance;

@@ -18,7 +18,6 @@ import {
   Link,
   Panel
 } from 'konsta/react';
-import { useTheme } from 'konsta/react';
 import logoLight from '../images/coinbeats-light.svg';
 import logoDark from '../images/coinbeats-dark.svg';
 
@@ -32,6 +31,7 @@ const RegisterCreatorPage: React.FC = () => {
     setUser: state.setUser,
     updateUserRole: state.updateUserRole,
   }));
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -40,8 +40,6 @@ const RegisterCreatorPage: React.FC = () => {
   });
 
   const [rightPanelOpened, setRightPanelOpened] = useState(false);
-  const theme = useTheme();
-  const darkMode = theme === 'dark';
   const userAvatar = 'https://cdn.framework7.io/placeholder/people-100x100-7.jpg';
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -58,21 +56,36 @@ const RegisterCreatorPage: React.FC = () => {
       alert('Passwords do not match!');
       return;
     }
-  
+
     try {
-      const response = await axios.post('http://localhost:7000/api/register-creator', {
+      // Ensure that all data fields are correctly defined and used
+      console.log('Attempting to register creator with data:', {
         telegramUserId,
-        ...formData, // Ensure formData includes email
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
       });
-  
+
+      const response = await axios.post('http://localhost:7000/api/users/register-creator', {
+        telegramUserId,
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
       if (response.status === 201 || response.status === 200) {
+        console.log('Registration successful:', response.data);
         updateUserRole('CREATOR');
         setUser(telegramUserId, username, 'CREATOR');
         alert(response.data.message || 'Successfully registered as a creator!');
-        navigate('/creator-dashboard');
+        navigate('/login');  // Redirect to login page instead of creator dashboard
       }
     } catch (error: any) {
-      console.error('Registration failed:', error);
+      console.error('Registration failed:', error.response ? error.response.data : error.message);
       alert(error.response?.data?.error || 'Failed to register as a creator');
     }
   };  
@@ -80,7 +93,7 @@ const RegisterCreatorPage: React.FC = () => {
   return (
     <Page>
       <Navbar
-        title={<img src={darkMode ? logoLight : logoDark} alt="Company Logo" className="h-7 mx-auto" />}
+        title={<img src={logoLight} alt="Company Logo" className="h-7 mx-auto" />}
         left={<NavbarBackLink onClick={() => navigate(-1)} />}
         right={
           <Chip

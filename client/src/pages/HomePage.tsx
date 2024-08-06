@@ -4,8 +4,6 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { useInitData } from '@telegram-apps/sdk-react';
 import { TonConnectButton } from '@tonconnect/ui-react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import useSessionStore from '../store/useSessionStore';
 import useUserStore from '../store/useUserStore';
 import useCategoryChainStore from '../store/useCategoryChainStore'; // Import the store
 import Navbar from '../components/common/Navbar';
@@ -16,20 +14,9 @@ import {
   ListInput,
   Card,
   Button,
-  Chip,
-  Panel,
-  Link,
-  ListItem,
-  Radio,
-  Toggle,
-  Popover,
-  Block,
-  BlockTitle,
 } from 'konsta/react';
 import { MdBookmarks } from 'react-icons/md';
 import { useBookmarks } from '../contexts/BookmarkContext';
-import logoLight from '../images/coinbeats-light.svg';
-import logoDark from '../images/coinbeats-dark.svg';
 import bunny from '../images/bunny-mascot.png';
 import basedAI from '../images/basedAI.jpg';
 import carv from '../images/carv.jpeg';
@@ -51,6 +38,7 @@ import voltage from '../images/voltage.jpg';
 import bittensor from '../images/bittensor.jpeg';
 import aarna from '../images/aarna.png';
 
+// Example mock data
 const mockData = [
   { id: 1, name: 'BasedAI', category: 'AI', chain: 'Ethereum', link: 'https://coinbeats.xyz/academies/getbased/', image: basedAI, sponsored: true, xp: 100 },
   { id: 2, name: 'Revert Finance', category: 'Finance', chain: 'Binance', link: 'https://coinbeats.xyz/academies/revert-finance/', image: revert, new: true, xp: 100 },
@@ -74,11 +62,7 @@ const mockData = [
 ];
 
 export default function HomePage({ theme, setTheme, setColorTheme }) {
-  const initData = useInitData();
   const navigate = useNavigate();
-  const startSession = useSessionStore((state) => state.startSession);
-  const endSession = useSessionStore((state) => state.endSession);
-  const setCurrentRoute = useSessionStore((state) => state.setCurrentRoute);
   const { bookmarks, addBookmark } = useBookmarks();
   const [category, setCategory] = useState('');
   const [chain, setChain] = useState('');
@@ -88,9 +72,10 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
   const [colorPickerOpened, setColorPickerOpened] = useState(false);
 
   // Zustand User Store
-  const { userId, role, setUser } = useUserStore((state) => ({
+  const { userId, role, points, setUser } = useUserStore((state) => ({
     userId: state.userId,
     role: state.role,
+    points: state.points,
     setUser: state.setUser,
   }));
 
@@ -101,111 +86,10 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
     fetchCategoriesAndChains: state.fetchCategoriesAndChains,
   }));
 
-  const username = useMemo(() => initData?.user?.username || 'Guest', [initData]);
-  const userAvatar = useMemo(() => initData?.user?.photoUrl || 'https://cdn.framework7.io/placeholder/people-100x100-7.jpg', [initData]);
-
-  const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
-    document.documentElement.classList.toggle('dark');
-  };
-
-  const toggleSidebar = () => {
-    setRightPanelOpened(!rightPanelOpened);
-  };
-
   useEffect(() => {
-    setDarkMode(document.documentElement.classList.contains('dark'));
-  }, []);
-
-  useEffect(() => {
-    const initializeUserSession = async () => {
-      if (initData) {
-        const telegramUserId = initData.user.id;
-
-        console.log('Telegram User ID:', telegramUserId);
-
-        try {
-          // Check if user exists in the database
-          const response = await axios.get(`http://localhost:7000/api/users/${telegramUserId}`);
-
-          console.log('Response:', response.data);
-
-          if (response.status === 200 && response.data) {
-            // User found, update Zustand store with user's data
-            const { id, username, role } = response.data;
-            console.log('User found:', response.data);
-            setUser(id, username, role);
-          } else {
-            // User not found, initialize with default role
-            console.log('User not found, initializing with default role');
-            setUser(null, username, 'USER');
-          }
-        } catch (error) {
-          if (error.response && error.response.status === 404) {
-            console.log('User not found in database, setting default role');
-            // Set default values if user not found
-            setUser(null, username, 'USER');
-          } else {
-            console.error('Error fetching user:', error);
-          }
-        }
-
-        // Start a new session
-        const sessionStartTime = Date.now();
-        startSession({
-          sessionStartTime,
-          userId: telegramUserId,
-          username: username,
-          roles: ['USER'],
-        });
-
-        // Log session start
-        // Removed initial session logging here
-
-        // Track route changes
-        const handleRouteChange = () => {
-          const currentRoute = window.location.pathname;
-          setCurrentRoute(currentRoute);
-        };
-
-        window.addEventListener('popstate', handleRouteChange);
-
-        // Handle session end using beforeunload
-        const handleSessionEnd = async () => {
-          const sessionEndTime = Date.now();
-          const duration = Math.floor((sessionEndTime - sessionStartTime) / 1000);
-
-          try {
-            await axios.post('http://localhost:7000/api/log-session', {
-              telegramUserId,
-              sessionStart: sessionStartTime,
-              sessionEnd: sessionEndTime,
-              duration,
-              routeDurations: {}, // Collect actual durations
-            });
-            console.log('Session ended and logged');
-          } catch (error) {
-            console.error('Error logging session end:', error);
-          }
-
-          endSession(sessionEndTime);
-        };
-
-        window.addEventListener('beforeunload', handleSessionEnd);
-
-        return () => {
-          // Cleanup event listeners
-          window.removeEventListener('popstate', handleRouteChange);
-          window.removeEventListener('beforeunload', handleSessionEnd);
-        };
-      }
-    };
-
-    initializeUserSession();
-
     // Fetch categories and chains from the Zustand store
     fetchCategoriesAndChains();
-  }, [initData, startSession, setCurrentRoute, endSession, setUser, username, role, fetchCategoriesAndChains]);
+  }, [fetchCategoriesAndChains]);
 
   const filteredData = useMemo(() => {
     let data = mockData;
@@ -223,7 +107,7 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
 
   return (
     <Page>
-      <Navbar darkMode={darkMode} onToggleSidebar={toggleSidebar} />
+      <Navbar darkMode={darkMode} onToggleSidebar={() => setRightPanelOpened(!rightPanelOpened)} />
       <Sidebar
         opened={rightPanelOpened}
         onClose={() => setRightPanelOpened(false)}
@@ -238,7 +122,7 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
           <div className="text-lg text-gray-500 font-semibold mr-4">
             Your Bunny XP:
           </div>
-          <div className="text-xl font-bold text-black">100567467</div>
+          <div className="text-xl font-bold text-black">{points}</div>
         </div>
       </div>
 

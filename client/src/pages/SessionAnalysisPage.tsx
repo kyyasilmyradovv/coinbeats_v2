@@ -12,7 +12,7 @@ const SessionAnalysisPage: React.FC = () => {
   useEffect(() => {
     const fetchSessions = async () => {
       try {
-        const response = await axios.get('http://localhost:7000/api/sessions');
+        const response = await axios.get('/api/sessions');
         console.log('Fetched sessions:', response.data); // Debugging line
         setSessions(response.data);
       } catch (error) {

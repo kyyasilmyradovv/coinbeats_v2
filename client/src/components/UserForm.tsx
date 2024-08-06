@@ -12,7 +12,7 @@ const UserForm: React.FC = () => {
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     try {
-      const response = await axios.post('http://localhost:7000/users', { name, email, password, role });
+      const response = await axios.post('/api/users', { name, email, password, role });
       console.log('User created:', response.data);
       // Optionally, clear the form or show a success message
       setName('');

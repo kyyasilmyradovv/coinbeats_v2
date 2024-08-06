@@ -1,4 +1,4 @@
-// src/components/Sidebar.tsx
+// src/components/common/Sidebar.tsx
 
 import React, { useState, useLayoutEffect } from 'react';
 import {
@@ -64,41 +64,97 @@ const Sidebar: React.FC<SidebarProps> = ({
       case 'SUPERADMIN':
         return (
           <>
-            <ListItem
-              link
-              title="Session Analysis"
-              onClick={() => navigate('/session-analysis')}
-            />
-            <ListItem
-              link
-              title="User Management"
+            <Button
+              raised
+              clear
+              rounded
+              onClick={() => navigate('/superadmin-dashboard')}
+              className="bg-white"
+            >
+              Dashboard
+            </Button>
+            <Button
+              raised
+              clear
+              rounded
               onClick={() => navigate('/user-management')}
-            />
-            <ListItem
-              link
-              title="Inbox"
+              className="bg-white"
+            >
+              User Management
+            </Button>
+            <Button
+              raised
+              clear
+              rounded
+              onClick={() => navigate('/academy-statistics')}
+              className="bg-white"
+            >
+              Academy Statistics
+            </Button>
+            <Button
+              raised
+              clear
+              rounded
               onClick={() => navigate('/inbox')}
-            />
+              className="bg-white"
+            >
+              Inbox
+            </Button>
+            <Button
+              raised
+              clear
+              rounded
+              onClick={() => navigate('/subscription-management')}
+              className="bg-white"
+            >
+              Subscription Management
+            </Button>
           </>
         );
       case 'ADMIN':
         return (
           <>
-            <ListItem
-              link
-              title="User Management"
+            <Button
+              raised
+              clear
+              rounded
+              onClick={() => navigate('/admin-dashboard')}
+              className="bg-white"
+            >
+              Admin Dashboard
+            </Button>
+            <Button
+              raised
+              clear
+              rounded
               onClick={() => navigate('/user-management')}
-            />
-            <ListItem
-              link
-              title="Inbox"
+              className="bg-white"
+            >
+              User Management
+            </Button>
+            <Button
+              raised
+              clear
+              rounded
               onClick={() => navigate('/inbox')}
-            />
+              className="bg-white"
+            >
+              Inbox
+            </Button>
           </>
         );
       case 'CREATOR':
         return (
           <>
+            <Button
+              raised
+              clear
+              rounded
+              onClick={() => navigate('/creator-dashboard')}
+              className="bg-white"
+            >
+              Creator Dashboard
+            </Button>
             <Button
               raised
               clear

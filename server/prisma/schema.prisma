@@ -17,7 +17,7 @@ model User {
   id             Int             @id @default(autoincrement())
   telegramUserId Int             @unique
   name           String
-  email          String?
+  email          String?         @unique
   password       String?
   role           Role            @default(USER)
   createdAt      DateTime        @default(now())
@@ -29,30 +29,47 @@ model User {
 }
 
 model Academy {
-  id             Int               @id @default(autoincrement())
-  name           String
-  ticker         String
-  categories     Category[]
-  chains         Chain[]
-  twitter        String?
-  telegram       String?
-  discord        String?
-  coingecko      String?
+  id               Int               @id @default(autoincrement())
+  name             String
+  ticker           String
+  categories       Category[]
+  chains           Chain[]
+  twitter          String?
+  telegram         String?
+  discord          String?
+  coingecko        String?
   academyQuestions AcademyQuestion[] // Academy-specific questions and answers
-  tokenomics     String?
-  teamBackground String?
-  congratsVideo  String?
-  getStarted     String?
-  raffles        Raffle[]
-  quests         Quest[]
-  logoUrl        String?           // Academy logo URL
-  coverPhotoUrl  String?           // Academy cover photo URL
-  webpageUrl     String?           // Academy webpage URL
-  status         String
-  creatorId      Int
-  creator        User              @relation(fields: [creatorId], references: [id])
+  tokenomics       String?
+  teamBackground   String?
+  congratsVideo    String?
+  getStarted       String?
+  raffles          Raffle[]
+  quests           Quest[]
+  logoUrl          String?           // Academy logo URL
+  coverPhotoUrl    String?           // Academy cover photo URL
+  webpageUrl       String?           // Academy webpage URL
+  status           String
+  creatorId        Int
+  creator          User              @relation(fields: [creatorId], references: [id])
+  subscription     Subscription?
 
-  Point          Point[]
+  Point            Point[]
+}
+
+model Subscription {
+  id           Int       @id @default(autoincrement())
+  academyId    Int       @unique
+  academy      Academy   @relation(fields: [academyId], references: [id])
+  startDate    DateTime
+  endDate      DateTime?
+  active       Boolean   @default(false)
+  monthlyFee   Float
+}
+
+model SubscriptionSettings {
+  id          Int      @id @default(autoincrement())
+  enabled     Boolean  @default(false)
+  monthlyFee  Float    @default(0.0)
 }
 
 model InitialQuestion {

@@ -2,22 +2,43 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import { Page, Navbar, List, ListInput, Button, BlockTitle, Block } from 'konsta/react';
+import { Page, List, ListInput, Button, BlockTitle, Block } from 'konsta/react';
 import useAuthStore from '../store/useAuthStore'; // Import the correct auth store
+import Navbar from '../components/common/Navbar';
+import Sidebar from '../components/common/Sidebar';
 
-const LoginPage: React.FC = () => {
-  const [email, setEmail] = useState(''); // Separate state for email
-  const [password, setPassword] = useState(''); // Separate state for password
+const LoginPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const navigate = useNavigate();
-  const login = useAuthStore((state) => state.login); // Use the login function from useAuthStore
+  const { login, userRole } = useAuthStore((state) => ({
+    login: state.login,
+    userRole: state.userRole,
+  }));
+  const [rightPanelOpened, setRightPanelOpened] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await login(email, password); // Use the login function to handle authentication
+      await login(email, password);
       alert('Login successful!');
-      navigate('/user-profile'); // Redirect to user profile or dashboard
+
+      // Use navigate to handle redirection based on role
+      switch (userRole) {
+        case 'SUPERADMIN':
+          navigate('/superadmin-dashboard');
+          break;
+        case 'ADMIN':
+          navigate('/admin-dashboard');
+          break;
+        case 'CREATOR':
+          navigate('/creator-dashboard');
+          break;
+        default:
+          navigate('/'); // Redirect to home or other appropriate page
+          break;
+      }
     } catch (error: any) {
       console.error('Login failed:', error);
       alert(error.response?.data?.error || 'Failed to login');
@@ -26,8 +47,19 @@ const LoginPage: React.FC = () => {
 
   return (
     <Page>
-      <Navbar title="Login" />
-      <BlockTitle large>Login</BlockTitle>
+      <Navbar darkMode={darkMode} onToggleSidebar={() => setRightPanelOpened(!rightPanelOpened)} />
+      <Sidebar
+        opened={rightPanelOpened}
+        onClose={() => setRightPanelOpened(false)}
+        theme={theme}
+        setTheme={setTheme}
+        setColorTheme={setColorTheme}
+      />
+
+      <div className="text-center flex w-full items-center justify-center top-8 mb-10">
+        <BlockTitle large>Login</BlockTitle>
+      </div>
+
       <Block strong className="mx-4 my-4 bg-white rounded-2xl shadow-lg p-6">
         <form onSubmit={handleSubmit} className="space-y-4">
           <List className="rounded-2xl">
@@ -39,8 +71,8 @@ const LoginPage: React.FC = () => {
               clearButton
               required
               name="email"
-              value={email} // Use email state
-              onChange={(e) => setEmail(e.target.value)} // Update email state
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className="rounded-2xl"
             />
             <ListInput
@@ -51,8 +83,8 @@ const LoginPage: React.FC = () => {
               clearButton
               required
               name="password"
-              value={password} // Use password state
-              onChange={(e) => setPassword(e.target.value)} // Update password state
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               className="rounded-2xl"
             />
           </List>
