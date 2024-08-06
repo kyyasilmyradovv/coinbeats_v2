@@ -8,13 +8,93 @@ const prisma = new PrismaClient();
 const SALT_ROUNDS = 10;
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
 
+// server/controllers/userController.js
+
 exports.getAllUsers = async (req, res) => {
   try {
-    const users = await prisma.user.findMany();
-    res.json(users);
+    const users = await prisma.user.findMany({
+      include: {
+        points: true, // Include points data
+        sessionLogs: true, // Include session logs for session count
+        academies: {
+          include: {
+            subscription: true, // Include subscription details
+          },
+        },
+      },
+    });
+
+    // Map through users to calculate additional data
+    const usersWithDetails = users.map(user => {
+      // Calculate total points
+      const totalPoints = user.points.reduce((sum, point) => sum + point.value, 0);
+
+      // Count sessions
+      const sessionCount = user.sessionLogs.length;
+
+      // Determine subscription validity and status
+      const subscription = user.academies.find(academy => academy.subscription);
+      const subscriptionStatus = subscription && subscription.subscription ? 'Active' : 'Inactive';
+      const subscriptionValidUntil = subscription && subscription.subscription ? new Date(subscription.subscription.endDate).toLocaleDateString() : 'N/A';
+
+      return {
+        ...user,
+        totalPoints,
+        sessionCount,
+        subscriptionStatus,
+        subscriptionValidUntil,
+      };
+    });
+
+    res.json(usersWithDetails);
   } catch (error) {
     console.error('Error fetching users:', error);
     res.status(500).json({ error: 'Error fetching users' });
+  }
+};
+
+exports.getUserDetailsById = async (req, res) => {
+  const { userId } = req.params; // Retrieve userId from request parameters
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: parseInt(userId, 10) }, // Fetch user by internal database ID
+      include: {
+        points: true, // Include user's points data
+        sessionLogs: true, // Include session logs data
+        academies: {
+          include: {
+            subscription: true, // Include subscription details
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' }); // Handle case where user is not found
+    }
+
+    // Calculate total points from user's points data
+    const totalPoints = user.points.reduce((sum, point) => sum + point.value, 0);
+
+    // Calculate session count from user's session logs
+    const sessionCount = user.sessionLogs.length;
+
+    // Determine subscription status and validity
+    const subscription = user.academies.find(academy => academy.subscription);
+    const subscriptionStatus = subscription ? 'Active' : 'Inactive';
+    const subscriptionValidUntil = subscription && subscription.subscription.endDate ? new Date(subscription.subscription.endDate).toLocaleDateString() : 'N/A';
+
+    res.json({
+      ...user,
+      totalPoints,
+      sessionCount,
+      subscriptionStatus,
+      subscriptionValidUntil,
+    });
+  } catch (error) {
+    console.error('Error fetching user:', error);
+    res.status(500).json({ error: 'Error fetching user' });
   }
 };
 

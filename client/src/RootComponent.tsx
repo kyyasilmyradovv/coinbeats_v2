@@ -17,7 +17,8 @@ import AcademyStatisticsPage from './pages/AcademyStatisticsPage';
 import UserProfilePage from './pages/UserProfilePage';
 import CreateAcademyPage from './pages/CreateAcademyPage';
 import MyAcademiesPage from './pages/MyAcademiesPage';
-import SuperAdminDashboardPage from './pages/SuperAdminDashboardPage'; // Import the SuperAdmin page
+import SuperAdminDashboardPage from './pages/SuperAdminDashboardPage';
+import UserDetailPage from './pages/UserDetailPage'; // Import the UserDetailPage
 import { BookmarkProvider } from './contexts/BookmarkContext';
 import { useInitData } from '@telegram-apps/sdk-react';
 import useSessionStore from './store/useSessionStore';
@@ -158,7 +159,16 @@ function RootComponent() {
                 <SuperAdminDashboardPage theme={theme} setTheme={setTheme} colorTheme={currentColorTheme} setColorTheme={setColorTheme} />
               </RouteGuard>
             } />
-            <Route path="/user-management" element={<UserManagementPage />} />
+            <Route path="/user-management" element={
+              <RouteGuard requiredRole="SUPERADMIN">
+                <UserManagementPage theme={theme} setTheme={setTheme} colorTheme={currentColorTheme} setColorTheme={setColorTheme} />
+              </RouteGuard>
+            } />
+            <Route path="/user/:userId" element={
+              <RouteGuard requiredRole="SUPERADMIN">
+                <UserDetailPage theme={theme} setTheme={setTheme} colorTheme={currentColorTheme} setColorTheme={setColorTheme} />
+              </RouteGuard>
+            } />
             <Route path="/inbox" element={<InboxPage />} />
             <Route path="/academy-statistics" element={<AcademyStatisticsPage />} />
             <Route path="/user-profile" element={<UserProfilePage />} />

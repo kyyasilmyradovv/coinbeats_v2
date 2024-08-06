@@ -6,7 +6,8 @@ const {
   getAllUsers,
   createUser,
   deleteUser,
-  getUserByTelegramId,
+  getUserDetailsById, // Import the new function
+  getUserByTelegramId, // Existing function
   updateUserRole,
   registerCreator,
   userInteraction
@@ -16,9 +17,10 @@ const router = express.Router();
 
 // Define user-related routes
 router.get('/', authenticateToken, authorizeRoles('ADMIN', 'SUPERADMIN'), getAllUsers);
+router.get('/details/:userId', authenticateToken, authorizeRoles('ADMIN', 'SUPERADMIN'), getUserDetailsById); // New route to get user details by database ID
 router.post('/', authenticateToken, authorizeRoles('ADMIN', 'SUPERADMIN'), createUser);
 router.delete('/:userId', authenticateToken, authorizeRoles('ADMIN', 'SUPERADMIN'), deleteUser);
-router.get('/:telegramUserId', getUserByTelegramId);
+router.get('/:telegramUserId', getUserByTelegramId); // Existing route by Telegram ID
 router.post('/update-role', authenticateToken, authorizeRoles('ADMIN', 'SUPERADMIN'), updateUserRole);
 router.post('/register-creator', registerCreator);
 router.post('/user-interaction', userInteraction);
