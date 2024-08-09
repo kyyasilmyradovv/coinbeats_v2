@@ -59,7 +59,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           rounded
           outline
           onClick={() => navigate('/superadmin-dashboard')}
-          className="!w-full !px-4 !py-2 !mx-auto k-color-brand-blue"
+          className="!w-full !px-4 !py-2 !mx-auto k-color-brand-blue !text-[13px]"
         >
           Log in as Superadmin
         </Button>
@@ -72,7 +72,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           rounded
           outline
           onClick={() => navigate('/admin-dashboard')}
-          className="!w-full !px-4 !py-2 !mx-auto k-color-brand-blue"
+          className="!w-full !px-4 !py-2 !mx-auto k-color-brand-blue !text-[13px]"
         >
           Log in as Admin
         </Button>
@@ -85,7 +85,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           rounded
           outline
           onClick={() => navigate('/creator-dashboard')}
-          className="!w-full !px-4 !py-2 !mx-auto k-color-brand-blue"
+          className="!w-full !px-4 !py-2 !mx-auto k-color-brand-blue !text-[13px]"
         >
           Log in as Creator
         </Button>
@@ -98,7 +98,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           rounded
           outline
           onClick={() => navigate('/register-creator')}
-          className="!w-full !px-4 !py-2 !mx-auto k-color-brand-blue"
+          className="!w-full !px-4 !py-2 !mx-auto k-color-brand-blue !text-[13px]"
         >
           Become Academy Creator
         </Button>
