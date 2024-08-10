@@ -1,3 +1,5 @@
+// client/src/mockEnv.ts
+
 import { mockTelegramEnv, parseInitData, retrieveLaunchParams } from '@telegram-apps/sdk-react';
 
 // It is important, to mock the environment only for development purposes. When building the
