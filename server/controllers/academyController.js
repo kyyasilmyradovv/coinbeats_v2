@@ -284,3 +284,80 @@ exports.rejectAcademy = async (req, res, next) => {
     next(createError(500, 'Internal server error'));
   }
 };
+
+exports.addRaffles = async (req, res, next) => {
+  const { id } = req.params;
+  const { raffles } = req.body;
+
+  try {
+    const academy = await prisma.academy.update({
+      where: { id: parseInt(id, 10) },
+      data: {
+        raffles: {
+          create: raffles.map((raffle) => ({
+            amount: parseInt(raffle.amount, 10) || 0,
+            reward: raffle.reward || '',
+            currency: raffle.currency || '',
+            chain: raffle.chain || '',
+            dates: raffle.dates || '',
+            totalPool: parseInt(raffle.totalPool, 10) || 0,
+          })),
+        },
+      },
+    });
+
+    res.status(200).json({ message: 'Raffles added successfully', academy });
+  } catch (error) {
+    console.error('Error adding raffles:', error);
+    next(createError(500, 'Error adding raffles'));
+  }
+};
+
+exports.addQuests = async (req, res, next) => {
+  const { id } = req.params;
+  const { quests } = req.body;
+
+  try {
+    const academy = await prisma.academy.update({
+      where: { id: parseInt(id, 10) },
+      data: {
+        quests: {
+          create: quests.map((quest) => ({
+            name: quest.name || '',
+            link: quest.link || '',
+            platform: quest.platform || '',
+          })),
+        },
+      },
+    });
+
+    res.status(200).json({ message: 'Quests added successfully', academy });
+  } catch (error) {
+    console.error('Error adding quests:', error);
+    next(createError(500, 'Error adding quests'));
+  }
+};
+
+exports.updateAcademyWithVideos = async (req, res, next) => {
+  const { id } = req.params;
+  const { videoUrls = [] } = req.body;
+
+  try {
+    const updatedAcademy = await prisma.academy.update({
+      where: { id: parseInt(id, 10) },
+      data: {
+        academyQuestions: {
+          updateMany: videoUrls.map((videoUrl, index) => ({
+            where: { initialQuestionId: videoUrl.initialQuestionId },
+            data: { video: videoUrl.url },
+          })),
+        },
+      },
+    });
+
+    res.json({ message: 'Video lessons added successfully', academy: updatedAcademy });
+  } catch (error) {
+    console.error('Error updating academy with videos:', error);
+    next(createError(500, 'Error updating academy with videos'));
+  }
+};

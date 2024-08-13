@@ -1,5 +1,3 @@
-// client/src/store/useAcademyStore.ts
-
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import axios from '../api/axiosInstance';
@@ -55,10 +53,27 @@ interface AcademyState {
   quests: Quest[];
   visibleQuestionsCount: number;
   currentStep: number;
+  videoUrls: { initialQuestionId: number; url: string }[];
+  setVideoUrl: (index: number, url: string) => void;
+  submitVideoLessons: (academyId: number) => Promise<void>;
   setField: (
     field: keyof Omit<
       AcademyState,
-      'setField' | 'setInitialAnswer' | 'toggleCorrectAnswer' | 'addRaffle' | 'addQuest' | 'submitAcademy' | 'resetAcademyData' | 'fetchQuestions' | 'nextStep' | 'prevStep' | 'removeRaffle' | 'removeQuest'
+      | 'setField'
+      | 'setInitialAnswer'
+      | 'toggleCorrectAnswer'
+      | 'addRaffle'
+      | 'addQuest'
+      | 'submitAcademy'
+      | 'resetAcademyData'
+      | 'fetchQuestions'
+      | 'nextStep'
+      | 'prevStep'
+      | 'removeRaffle'
+      | 'removeQuest'
+      | 'setVideoUrl'
+      | 'submitVideoLessons'
+      | 'setPrefilledAcademyData'
     >,
     value: any
   ) => void;
@@ -73,6 +88,7 @@ interface AcademyState {
   fetchQuestions: () => Promise<void>;
   nextStep: () => void;
   prevStep: () => void;
+  setPrefilledAcademyData: (data: any) => void;
 }
 
 const useAcademyStore = create<AcademyState>()(
@@ -94,29 +110,14 @@ const useAcademyStore = create<AcademyState>()(
       teamBackground: '',
       congratsVideo: '',
       getStarted: '',
-      raffles: [
-        {
-          amount: '',
-          reward: '',
-          currency: '',
-          chain: '',
-          dates: '',
-          totalPool: '',
-        },
-      ],
-      quests: [{ name: '', link: '', platform: '' }],
+      raffles: [],
+      quests: [],
       visibleQuestionsCount: 1,
       currentStep: 0,
+      videoUrls: [],
 
       setField: (field, value) =>
-        set(
-          (state) => ({
-            ...state,
-            [field]: value,
-          }),
-          false,
-          `setField: ${field}`
-        ),
+        set((state) => ({ ...state, [field]: value }), false, `setField: ${field}`),
 
       setInitialAnswer: (index, field, value) =>
         set((state) => {
@@ -139,56 +140,31 @@ const useAcademyStore = create<AcademyState>()(
           const updatedAnswers = [...state.initialAnswers];
           const currentCorrect = updatedAnswers[questionIndex].choices[choiceIndex].correct;
           updatedAnswers[questionIndex].choices[choiceIndex].correct = !currentCorrect;
-
-          console.log(`Toggling: Question ${questionIndex + 1}, Choice ${choiceIndex + 1} set to ${!currentCorrect}`);
           return { initialAnswers: updatedAnswers };
-        }),        
+        }),
 
       addRaffle: () =>
-        set(
-          (state) => ({
-            raffles: [
-              ...state.raffles,
-              {
-                amount: '',
-                reward: '',
-                currency: '',
-                chain: '',
-                dates: '',
-                totalPool: '',
-              },
-            ],
-          }),
-          false,
-          'addRaffle'
-        ),
+        set((state) => ({
+          raffles: [
+            ...state.raffles,
+            { amount: '', reward: '', currency: '', chain: '', dates: '', totalPool: '' },
+          ],
+        })),
 
       removeRaffle: (index: number) =>
-        set(
-          (state) => ({
-            raffles: state.raffles.filter((_, i) => i !== index),
-          }),
-          false,
-          'removeRaffle'
-        ),
+        set((state) => ({
+          raffles: state.raffles.filter((_, i) => i !== index),
+        })),
 
       addQuest: () =>
-        set(
-          (state) => ({
-            quests: [...state.quests, { name: '', link: '', platform: '' }],
-          }),
-          false,
-          'addQuest'
-        ),
+        set((state) => ({
+          quests: [...state.quests, { name: '', link: '', platform: '' }],
+        })),
 
       removeQuest: (index: number) =>
-        set(
-          (state) => ({
-            quests: state.quests.filter((_, i) => i !== index),
-          }),
-          false,
-          'removeQuest'
-        ),
+        set((state) => ({
+          quests: state.quests.filter((_, i) => i !== index),
+        })),
 
       submitAcademy: async () => {
         const state = get();
@@ -201,22 +177,22 @@ const useAcademyStore = create<AcademyState>()(
 
         try {
           const payload = {
-            name: state.name || '',
-            ticker: state.ticker || '',
-            categories: state.categories || [],
-            chains: state.chains || [],
-            twitter: state.twitter || '',
-            telegram: state.telegram || '',
-            discord: state.discord || '',
-            coingecko: state.coingecko || '',
-            webpageUrl: state.webpageUrl || '',
-            tokenomics: state.tokenomics || '',
-            teamBackground: state.teamBackground || '',
-            congratsVideo: state.congratsVideo || '',
-            getStarted: state.getStarted || '',
-            initialAnswers: state.initialAnswers || [],
-            raffles: state.raffles || [],
-            quests: state.quests || [],
+            name: state.name,
+            ticker: state.ticker,
+            categories: state.categories,
+            chains: state.chains,
+            twitter: state.twitter,
+            telegram: state.telegram,
+            discord: state.discord,
+            coingecko: state.coingecko,
+            webpageUrl: state.webpageUrl,
+            tokenomics: state.tokenomics,
+            teamBackground: state.teamBackground,
+            congratsVideo: state.congratsVideo,
+            getStarted: state.getStarted,
+            initialAnswers: state.initialAnswers,
+            raffles: state.raffles,
+            quests: state.quests,
             status: 'pending',
           };
 
@@ -227,6 +203,7 @@ const useAcademyStore = create<AcademyState>()(
             },
           });
 
+          // Display notification or handle success state
           alert(`Your academy "${state.name}" is under review.`);
           state.resetAcademyData();
         } catch (error) {
@@ -252,17 +229,9 @@ const useAcademyStore = create<AcademyState>()(
           teamBackground: '',
           congratsVideo: '',
           getStarted: '',
-          raffles: [
-            {
-              amount: '',
-              reward: '',
-              currency: '',
-              chain: '',
-              dates: '',
-              totalPool: '',
-            },
-          ],
-          quests: [{ name: '', link: '', platform: '' }],
+          raffles: [],
+          quests: [],
+          videoUrls: [],
           visibleQuestionsCount: 1,
           currentStep: 0,
         }),
@@ -282,7 +251,7 @@ const useAcademyStore = create<AcademyState>()(
               question: question.question,
               answer: '',
               quizQuestion: '',
-              choices: Array(5).fill({ answer: '', correct: false }),
+              choices: Array(4).fill({ answer: '', correct: false }),
               video: '',
             })),
           }));
@@ -291,22 +260,93 @@ const useAcademyStore = create<AcademyState>()(
         }
       },
 
-      // Modify the nextStep function to handle the correct number of slides
-nextStep: () => {
-  const state = get();
-  const totalSlides = 1 + state.initialAnswers.length + 4 + state.initialAnswers.length + 1; // Calculate the total number of slides
-  if (state.currentStep < totalSlides - 1) {
-    set({ currentStep: state.currentStep + 1 });
-  }
-},
+      setVideoUrl: (index: number, url: string) =>
+        set((state) => {
+          const updatedVideoUrls = [...state.videoUrls];
+          updatedVideoUrls[index] = { initialQuestionId: state.initialAnswers[index].initialQuestionId, url };
+          return { videoUrls: updatedVideoUrls };
+        }),
 
-// Modify the prevStep function to handle the correct number of slides
-prevStep: () => {
-  const state = get();
-  if (state.currentStep > 0) {
-    set({ currentStep: state.currentStep - 1 });
-  }
-},
+      submitVideoLessons: async (academyId: number) => {
+        const state = get();
+        const { accessToken } = useAuthStore.getState();
+
+        if (!accessToken) {
+          throw new Error('Authorization token is missing');
+        }
+
+        try {
+          await axios.put(
+            `/api/academies/${academyId}/videos`,
+            { videoUrls: state.videoUrls },
+            {
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${accessToken}`,
+              },
+            }
+          );
+        } catch (error) {
+          console.error('Error submitting video lessons:', error);
+          throw error;
+        }
+      },
+
+      nextStep: () => {
+        const state = get();
+        const totalSlides = 1 + state.initialAnswers.length + 4 + state.initialAnswers.length + 1; // Adjust the number of slides as necessary
+        if (state.currentStep < totalSlides - 1) {
+          set({ currentStep: state.currentStep + 1 });
+        }
+      },
+
+      prevStep: () => {
+        const state = get();
+        if (state.currentStep > 0) {
+          set({ currentStep: state.currentStep - 1 });
+        }
+      },
+
+      setPrefilledAcademyData: (data) => {
+        const initialAnswers = data.academyQuestions.map((question) => ({
+          initialQuestionId: question.initialQuestionId,
+          question: question.question,
+          answer: question.answer,
+          quizQuestion: question.quizQuestion,
+          choices: question.choices.map((choice) => ({
+            answer: choice.text,
+            correct: choice.isCorrect,
+          })),
+          video: question.video || '',
+        }));
+
+        const videoUrls = initialAnswers.map((answer) => ({
+          initialQuestionId: answer.initialQuestionId,
+          url: answer.video,
+        }));
+
+        set({
+          name: data.name,
+          ticker: data.ticker,
+          categories: data.categories.map((cat) => cat.name),
+          chains: data.chains.map((chain) => chain.name),
+          twitter: data.twitter || '',
+          telegram: data.telegram || '',
+          discord: data.discord || '',
+          coingecko: data.coingecko || '',
+          logo: data.logoUrl || null,
+          coverPhoto: data.coverPhotoUrl || null,
+          webpageUrl: data.webpageUrl || '',
+          initialAnswers,
+          tokenomics: data.tokenomics || '',
+          teamBackground: data.teamBackground || '',
+          congratsVideo: data.congratsVideo || '',
+          getStarted: data.getStarted || '',
+          raffles: data.raffles || [],
+          quests: data.quests || [],
+          videoUrls,
+        });
+      },
     }),
     { name: 'AcademyStore' }
   )

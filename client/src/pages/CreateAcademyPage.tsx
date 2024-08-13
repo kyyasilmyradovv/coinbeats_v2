@@ -32,14 +32,10 @@ const CreateAcademyPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
     webpageUrl,
     coverPhoto,
     initialAnswers,
-    raffles,
-    quests,
     currentStep,
     setField,
     setInitialAnswer,
     toggleCorrectAnswer,
-    addRaffle,
-    addQuest,
     submitAcademy,
     fetchQuestions,
     nextStep,
@@ -400,256 +396,6 @@ const CreateAcademyPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
     </Block>
   );
 
-  const renderRaffleSlide = () => (
-    <Block key="slide-raffle" strong className="mx-4 my-4 bg-white rounded-2xl shadow-lg p-6 space-y-4">
-      <div className="flex items-center justify-center relative">
-        <h2 className="text-lg font-bold mb-4 text-center">Raffle Section</h2>
-        <button
-          className="ml-2 rounded-full bg-gray-700 text-white text-xs font-bold w-5 h-5 flex items-center justify-center mb-4"
-          onClick={() => toggleTooltip(3)}
-        >
-          ?
-        </button>
-        {visibleTooltip === 3 && (
-          <div className="tooltip absolute bg-gray-700 text-white text-xs rounded-2xl p-4 mt-2 z-10">
-            In this section, set up raffles that your academy participants can enter. Define the number of raffles, rewards, and associated blockchain details.
-            <button
-              className="absolute top-0 right-0 text-white text-sm mt-1 mr-1"
-              onClick={() => setVisibleTooltip(null)}
-            >
-              &times;
-            </button>
-          </div>
-        )}
-      </div>
-      {raffles.map((raffle, index) => (
-        <div key={index} className="mb-4 p-4 border rounded-lg shadow-sm relative">
-          <h4 className="font-medium mb-2">Raffle {index + 1}</h4>
-          <List>
-            <ListInput
-              label="Amount of Raffles"
-              type="textarea"
-              inputClassName="!resize-none"
-              outline
-              placeholder="Enter Amount"
-              value={raffle.amount}
-              onChange={(e) => {
-                setField('raffles', [
-                  ...raffles.slice(0, index),
-                  { ...raffle, amount: e.target.value },
-                  ...raffles.slice(index + 1),
-                ]);
-                autoresize(e);
-              }}
-            />
-            <ListInput
-              label="Reward per Raffle"
-              type="textarea"
-              inputClassName="!resize-none"
-              outline
-              placeholder="Enter Reward"
-              value={raffle.reward}
-              onChange={(e) => {
-                setField('raffles', [
-                  ...raffles.slice(0, index),
-                  { ...raffle, reward: e.target.value },
-                  ...raffles.slice(index + 1),
-                ]);
-                autoresize(e);
-              }}
-            />
-            <ListInput
-              label="Raffle Reward Currency"
-              type="textarea"
-              inputClassName="!resize-none"
-              outline
-              placeholder="Enter Currency"
-              value={raffle.currency}
-              onChange={(e) => {
-                setField('raffles', [
-                  ...raffles.slice(0, index),
-                  { ...raffle, currency: e.target.value },
-                  ...raffles.slice(index + 1),
-                ]);
-                autoresize(e);
-              }}
-            />
-            <ListInput
-              label="Chain"
-              type="textarea"
-              inputClassName="!resize-none"
-              outline
-              placeholder="Enter Chain"
-              value={raffle.chain}
-              onChange={(e) => {
-                setField('raffles', [
-                  ...raffles.slice(0, index),
-                  { ...raffle, chain: e.target.value },
-                  ...raffles.slice(index + 1),
-                ]);
-                autoresize(e);
-              }}
-            />
-            <ListInput
-              label="Raffle Dates"
-              type="textarea"
-              inputClassName="!resize-none"
-              outline
-              placeholder="Enter Dates"
-              value={raffle.dates}
-              onChange={(e) => {
-                setField('raffles', [
-                  ...raffles.slice(0, index),
-                  { ...raffle, dates: e.target.value },
-                  ...raffles.slice(index + 1),
-                ]);
-                autoresize(e);
-              }}
-            />
-            <ListInput
-              label="Total Raffle Pool"
-              type="textarea"
-              inputClassName="!resize-none"
-              outline
-              placeholder="Enter Total Pool"
-              value={raffle.totalPool}
-              onChange={(e) => {
-                setField('raffles', [
-                  ...raffles.slice(0, index),
-                  { ...raffle, totalPool: e.target.value },
-                  ...raffles.slice(index + 1),
-                ]);
-                autoresize(e);
-              }}
-            />
-          </List>
-          <button
-            className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-full"
-            onClick={() => {
-              setField('raffles', raffles.filter((_, i) => i !== index));
-            }}
-          >
-            &times;
-          </button>
-        </div>
-      ))}
-      <Button onClick={addRaffle} className="rounded-full">
-        Add Raffle
-      </Button>
-      <div className="flex justify-between mt-4">
-        <Button onClick={prevStep} className="w-1/2 bg-brand-primary text-white rounded-full mr-2" large raised>
-          Back
-        </Button>
-        <Button onClick={nextStep} className="w-1/2 bg-brand-primary text-white rounded-full ml-2" large raised>
-          Next
-        </Button>
-      </div>
-    </Block>
-  );
-
-  const renderQuestSlide = () => (
-    <Block key="slide-quest" strong className="mx-4 my-4 bg-white rounded-2xl shadow-lg p-6 space-y-4">
-      <div className="flex items-center justify-center relative">
-        <h2 className="text-lg font-bold mb-4 text-center">Quest Section</h2>
-        <button
-          className="ml-2 rounded-full bg-gray-700 text-white text-xs font-bold w-5 h-5 flex items-center justify-center mb-4"
-          onClick={() => toggleTooltip(4)}
-        >
-          ?
-        </button>
-        {visibleTooltip === 4 && (
-          <div className="tooltip absolute bg-gray-700 text-white text-xs rounded-2xl p-4 mt-2 z-10">
-            Create quests for users to complete. These could be tasks or challenges related to your academy, and can include links and platform details.
-            <button
-              className="absolute top-0 right-0 text-white text-sm mt-1 mr-1"
-              onClick={() => setVisibleTooltip(null)}
-            >
-              &times;
-            </button>
-          </div>
-        )}
-      </div>
-      {quests.map((quest, index) => (
-        <div key={index} className="mb-4 p-4 border rounded-lg shadow-sm relative">
-          <h4 className="font-medium mb-2">Quest {index + 1}</h4>
-          <List>
-            <ListInput
-              label="Quest Name"
-              type="textarea"
-              inputClassName="!resize-none"
-              outline
-              placeholder="Enter Quest Name"
-              value={quest.name}
-              onChange={(e) => {
-                setField('quests', [
-                  ...quests.slice(0, index),
-                  { ...quest, name: e.target.value },
-                  ...quests.slice(index + 1),
-                ]);
-                autoresize(e);
-              }}
-            />
-            <ListInput
-              label="Quest Link"
-              type="textarea"
-              inputClassName="!resize-none"
-              outline
-              placeholder="Enter Quest Link"
-              value={quest.link}
-              onChange={(e) => {
-                setField('quests', [
-                  ...quests.slice(0, index),
-                  { ...quest, link: e.target.value },
-                  ...quests.slice(index + 1),
-                ]);
-                autoresize(e);
-              }}
-            />
-            <ListInput
-              label="Platform Binding"
-              type="select"
-              outline
-              placeholder="Select Platform"
-              value={quest.platform}
-              onChange={(e) => {
-                setField('quests', [
-                  ...quests.slice(0, index),
-                  { ...quest, platform: e.target.value },
-                  ...quests.slice(index + 1),
-                ]);
-                autoresize(e);
-              }}
-            >
-              <option value="">Select Platform</option>
-              <option value="facebook">Facebook</option>
-              <option value="linkedin">LinkedIn</option>
-              <option value="twitter">Twitter</option>
-            </ListInput>
-          </List>
-          <button
-            className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-full"
-            onClick={() => {
-              setField('quests', quests.filter((_, i) => i !== index));
-            }}
-          >
-            &times;
-          </button>
-        </div>
-      ))}
-      <Button onClick={addQuest} className="rounded-full">
-        Add Quest
-      </Button>
-      <div className="flex justify-between mt-4">
-        <Button onClick={prevStep} className="w-1/2 bg-brand-primary text-white rounded-full mr-2" large raised>
-          Back
-        </Button>
-        <Button onClick={nextStep} className="w-1/2 bg-brand-primary text-white rounded-full ml-2" large raised>
-          Next
-        </Button>
-      </div>
-    </Block>
-  );
-
   const renderEducationalQuizSlide = (questionIndex: number) => {
     const quizQuestionLimit = 100;
 
@@ -700,7 +446,7 @@ const CreateAcademyPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
               <h4 className="font-medium mt-2">Choices</h4>
               <h4 className="font-medium mt-2">Correct<br />answer</h4>
             </div>
-            {initialAnswers[questionIndex].choices.map((choice, choiceIndex) => (
+            {initialAnswers[questionIndex].choices.slice(0, 4).map((choice, choiceIndex) => (
               <div key={choiceIndex} className="flex items-center">
                 <ListInput
                   label={`Answer ${choiceIndex + 1}`}
@@ -726,18 +472,6 @@ const CreateAcademyPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
                 />
               </div>
             ))}
-            <ListInput
-              label={`Video URL for Quiz Question ${questionIndex + 1}`}
-              type="textarea"
-              inputClassName="!resize-none"
-              outline
-              placeholder="Enter Video URL"
-              value={initialAnswers[questionIndex].video || ''}
-              onChange={(e) => {
-                setInitialAnswer(questionIndex, 'video', e.target.value);
-                autoresize(e);
-              }}
-            />
           </List>
         </div>
         <div className="flex justify-between">
@@ -833,40 +567,10 @@ const CreateAcademyPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
             <h4 className="font-medium">{`Quiz Question ${index + 1}: ${question.quizQuestion}`}</h4>
             <p><strong>Choices:</strong></p>
             <ul className="list-disc ml-5">
-              {question.choices.map((choice, choiceIndex) => (
+              {question.choices.slice(0, 4).map((choice, choiceIndex) => (
                 <li key={choiceIndex}>{choice.answer || 'N/A'} {choice.correct && '(Correct)'}</li>
               ))}
             </ul>
-            <p><strong>Video URL:</strong> {question.video || 'N/A'}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Raffle Section */}
-      <div className="mb-4">
-        <h3 className="font-medium">Raffle Section:</h3>
-        {raffles.map((raffle, index) => (
-          <div key={index} className="mb-4">
-            <h4 className="font-medium">Raffle {index + 1}</h4>
-            <p><strong>Amount of Raffles:</strong> {raffle.amount || 'N/A'}</p>
-            <p><strong>Reward per Raffle:</strong> {raffle.reward || 'N/A'}</p>
-            <p><strong>Raffle Reward Currency:</strong> {raffle.currency || 'N/A'}</p>
-            <p><strong>Chain:</strong> {raffle.chain || 'N/A'}</p>
-            <p><strong>Raffle Dates:</strong> {raffle.dates || 'N/A'}</p>
-            <p><strong>Total Raffle Pool:</strong> {raffle.totalPool || 'N/A'}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Quest Section */}
-      <div className="mb-4">
-        <h3 className="font-medium">Quest Section:</h3>
-        {quests.map((quest, index) => (
-          <div key={index} className="mb-4">
-            <h4 className="font-medium">Quest {index + 1}</h4>
-            <p><strong>Quest Name:</strong> {quest.name || 'N/A'}</p>
-            <p><strong>Quest Link:</strong> {quest.link || 'N/A'}</p>
-            <p><strong>Platform:</strong> {quest.platform || 'N/A'}</p>
           </div>
         ))}
       </div>
@@ -946,12 +650,6 @@ const CreateAcademyPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
     // Slide for Social Links
     renderSocialLinksSlide(),
 
-    // Slide for Raffle Section
-    renderRaffleSlide(),
-
-    // Slide for Quest Section
-    renderQuestSlide(),
-
     // Dynamically render each educational quiz slide
     ...initialAnswers.map((_, index) => renderEducationalQuizSlide(index)),
 
@@ -964,7 +662,7 @@ const CreateAcademyPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
       <Navbar darkMode={darkMode} onToggleSidebar={toggleSidebar} />
       <Sidebar
         opened={rightPanelOpened}
-        onClose={() => setRightPanelOpened(false)}
+        onClose={() => setVisibleTooltip(false)}
         theme={theme}
         setTheme={setTheme}
         setColorTheme={setColorTheme}

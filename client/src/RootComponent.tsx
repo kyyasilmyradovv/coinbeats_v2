@@ -19,6 +19,10 @@ import CreateAcademyPage from './pages/CreateAcademyPage';
 import MyAcademiesPage from './pages/MyAcademiesPage';
 import SuperAdminDashboardPage from './pages/SuperAdminDashboardPage';
 import UserDetailPage from './pages/UserDetailPage';
+import AddRafflesPage from './pages/AddRafflesPage';  // New import
+import AddQuestsPage from './pages/AddQuestsPage';    // New import
+import EditAcademyPage from './pages/EditAcademyPage';
+import AddVideoLessonsPage from './pages/AddVideoLessonsPage';
 import { BookmarkProvider } from './contexts/BookmarkContext';
 import { useInitData } from '@telegram-apps/sdk-react';
 import useSessionStore from './store/useSessionStore';
@@ -195,7 +199,31 @@ function RootComponent() {
                 <CreateAcademyPage />
               </RouteGuard>
             } />
-            <Route path="/my-academies" element={<MyAcademiesPage />} />
+            <Route path="/my-academies" element={
+              <RouteGuard requiredRole="CREATOR">
+                <MyAcademiesPage />
+              </RouteGuard>
+            } />
+            <Route path="/add-video-lessons/:id" element={
+              <RouteGuard requiredRole="CREATOR">
+                <AddVideoLessonsPage />
+              </RouteGuard>
+            } />
+            <Route path="/add-raffles/:id" element={
+              <RouteGuard requiredRole="CREATOR">
+                <AddRafflesPage />
+              </RouteGuard>
+            } />
+            <Route path="/add-tasks/:id" element={
+              <RouteGuard requiredRole="CREATOR">
+                <AddQuestsPage />
+              </RouteGuard>
+            } />
+            <Route path="/edit-academy/:id" element={
+              <RouteGuard requiredRole="CREATOR">
+                <EditAcademyPage />
+              </RouteGuard>
+            } />
           </Routes>
         </BookmarkProvider>
       </KonstaApp>
