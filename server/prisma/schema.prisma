@@ -15,18 +15,20 @@ generator client {
 }
 
 model User {
-  id             Int             @id @default(autoincrement())
-  telegramUserId Int             @unique
-  name           String
-  email          String?         @unique
-  password       String?
-  role           Role            @default(USER)
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  academies      Academy[]
-  points         Point[]
-  sessionLogs    SessionLog[]
-  userResponses  UserResponse[]  // Track responses
+  id                    Int             @id @default(autoincrement())
+  telegramUserId        Int             @unique
+  name                  String
+  email                 String?         @unique
+  password              String?
+  role                  Role            @default(USER)
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+  academies             Academy[]
+  points                Point[]
+  sessionLogs           SessionLog[]
+  userResponses         UserResponse[]  // Track responses
+  emailConfirmed        Boolean         @default(false)
+  emailConfirmationToken String?         @unique
 }
 
 model Academy {

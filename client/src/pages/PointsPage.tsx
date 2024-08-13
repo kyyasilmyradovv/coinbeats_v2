@@ -6,7 +6,6 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { TonConnectButton } from '@tonconnect/ui-react';
 import {
   Page,
-  Navbar,
   BlockTitle,
   Button,
   List,
@@ -27,7 +26,8 @@ import {
 } from 'konsta/react';
 import { MdBookmarks, MdEmojiEvents } from 'react-icons/md';
 import { useBookmarks } from '../contexts/BookmarkContext';
-import logo from '../images/coinbeats-logo.png';
+import Navbar from '../components/common/Navbar';
+import Sidebar from '../components/common/Sidebar';
 import bunny from '../images/bunny-mascot.png';
 import { Icon as Iconify } from '@iconify/react';
 
@@ -66,31 +66,17 @@ export default function PointsPage({ theme, setTheme, setColorTheme }) {
 
   return (
     <Page>
-      <Navbar
-        title={<img src={logo} alt="Company Logo" style={{ height: '40px' }} />}
-        className="top-0 sticky"
-        backlink
-        left={<NavbarBackLink onClick={() => history.back()} />}
-        right={
-          <Chip
-            className="m-0.5"
-            media={
-              <img
-                alt="avatar"
-                className="ios:h-7 material:h-6 rounded-full"
-                src={userAvatar}
-              />
-            }
-            onClick={() => setRightPanelOpened(true)}
-          >
-            {username}
-          </Chip>
-        }
-        centerTitle={true}
+      <Navbar darkMode={darkMode} onToggleSidebar={() => setRightPanelOpened(!rightPanelOpened)} />
+      <Sidebar
+        opened={rightPanelOpened}
+        onClose={() => setRightPanelOpened(false)}
+        theme={theme}
+        setTheme={setTheme}
+        setColorTheme={setColorTheme}
       />
 
       <div className="text-center flex w-full items-center justify-center absolute top-8">
-        <BlockTitle large>Points page</BlockTitle>
+        <BlockTitle large>Points</BlockTitle>
       </div>
 
       <div className="flex justify-center items-center flex-col mb-4 mt-14">

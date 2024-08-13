@@ -117,16 +117,16 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
       />
 
       <div className="flex justify-center items-center flex-col mb-6 mt-6">
-        <div className="bg-white rounded-full shadow-lg p-2 flex flex-row items-center px-6">
+        <div className="bg-white dark:bg-zinc-900 rounded-full shadow-lg p-2 flex flex-row items-center px-6">
           <img src={bunny} className="h-8 w-8 mr-4" alt="bunny mascot" />
-          <div className="text-lg text-gray-500 font-semibold mr-4">
+          <div className="text-lg text-gray-500 dark:text-gray-400 font-semibold mr-4">
             Your Bunny XP:
           </div>
-          <div className="text-xl font-bold text-black">{points}</div>
+          <div className="text-xl font-bold text-black dark:text-white">{points}</div>
         </div>
       </div>
 
-      <div className="flex justify-between bg-white rounded-2xl m-4 shadow-lg">
+      <div className="flex justify-between bg-white dark:bg-zinc-900 rounded-2xl m-4 shadow-lg">
         <List className="w-full !my-0">
           <ListInput
             label="Category"
@@ -174,8 +174,8 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
             onClick={() => setActiveFilter('all')}
             className={`${
               activeFilter === 'all'
-                ? 'bg-gray-100 k-color-brand-purple shadow-lg !text-2xs'
-                : 'bg-white shadow-lg !text-2xs'
+                ? 'bg-gray-100 dark:bg-gray-800 k-color-brand-purple shadow-lg !text-2xs'
+                : 'bg-white dark:bg-gray-900 shadow-lg !text-2xs'
             }`}
           >
             All
@@ -187,8 +187,8 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
             onClick={() => setActiveFilter('sponsored')}
             className={`${
               activeFilter === 'sponsored'
-                ? 'bg-gray-100 k-color-brand-purple shadow-lg !text-2xs'
-                : 'bg-white shadow-lg !text-2xs'
+                ? 'bg-gray-100 dark:bg-gray-800 k-color-brand-purple shadow-lg !text-2xs'
+                : 'bg-white dark:bg-gray-900 shadow-lg !text-2xs'
             }`}
           >
             Sponsored
@@ -200,8 +200,8 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
             onClick={() => setActiveFilter('new')}
             className={`${
               activeFilter === 'new'
-                ? 'bg-gray-100 k-color-brand-purple shadow-lg !text-2xs'
-                : 'bg-white shadow-lg !text-2xs'
+                ? 'bg-gray-100 dark:bg-gray-800 k-color-brand-purple shadow-lg !text-2xs'
+                : 'bg-white dark:bg-gray-900 shadow-lg !text-2xs'
             }`}
           >
             New
@@ -213,8 +213,8 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
             onClick={() => setActiveFilter('topRated')}
             className={`${
               activeFilter === 'topRated'
-                ? 'bg-gray-100 k-color-brand-purple shadow-lg !text-2xs'
-                : 'bg-white shadow-lg !text-2xs'
+                ? 'bg-gray-100 dark:bg-gray-800 k-color-brand-purple shadow-lg !text-2xs !whitespace-nowrap'
+                : 'bg-white dark:bg-gray-900 shadow-lg !text-2xs !whitespace-nowrap'
             }`}
           >
             Top Viewed

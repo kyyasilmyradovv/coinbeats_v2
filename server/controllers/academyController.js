@@ -1,13 +1,13 @@
 // server/controllers/academyController.js
+
 const { PrismaClient } = require('@prisma/client');
+const createError = require('http-errors');
 const prisma = new PrismaClient();
 
-exports.createAcademy = async (req, res) => {
+exports.createAcademy = async (req, res, next) => {
   try {
-    // Log incoming request data
     console.log('Received academy creation request:', req.body);
 
-    // Extract data from request body
     const {
       name,
       ticker,
@@ -27,15 +27,13 @@ exports.createAcademy = async (req, res) => {
       webpageUrl = '',
     } = req.body;
 
-    const { userId } = req.user; // Assuming userId is extracted from the token middleware
+    const { userId } = req.user;
 
-    // Verify that mandatory fields are provided
     if (!name || !ticker) {
       console.error('Missing name or ticker');
-      return res.status(400).json({ error: 'Name and ticker are required' });
+      return next(createError(400, 'Name and ticker are required'));
     }
 
-    // Create an academy and associate initial questions and their answers
     const academy = await prisma.academy.create({
       data: {
         name,
@@ -53,7 +51,7 @@ exports.createAcademy = async (req, res) => {
         academyQuestions: {
           create: initialAnswers.map((initialAnswer) => ({
             initialQuestionId: initialAnswer.initialQuestionId,
-            question: initialAnswer.question || '',  // Include the question field
+            question: initialAnswer.question || '',
             answer: initialAnswer.answer || '',
             quizQuestion: initialAnswer.quizQuestion || '',
             choices: {
@@ -94,11 +92,11 @@ exports.createAcademy = async (req, res) => {
     res.status(201).json({ message: 'Academy created successfully', academy });
   } catch (error) {
     console.error('Error creating academy:', error);
-    res.status(500).json({ error: 'Error creating academy' });
+    next(createError(500, 'Error creating academy'));
   }
 };
 
-exports.listMyAcademies = async (req, res) => {
+exports.listMyAcademies = async (req, res, next) => {
   try {
     const { userId } = req.user;
 
@@ -106,14 +104,18 @@ exports.listMyAcademies = async (req, res) => {
       where: { creatorId: userId },
     });
 
+    if (!academies.length) {
+      return next(createError(404, 'No academies found for this user'));
+    }
+
     res.json(academies);
   } catch (error) {
     console.error('Error fetching academies:', error);
-    res.status(500).json({ error: 'Error fetching academies' });
+    next(createError(500, 'Error fetching academies'));
   }
 };
 
-exports.getAcademyDetails = async (req, res) => {
+exports.getAcademyDetails = async (req, res, next) => {
   const { id } = req.params;
   try {
     const academy = await prisma.academy.findUnique({
@@ -133,17 +135,17 @@ exports.getAcademyDetails = async (req, res) => {
     });
 
     if (!academy) {
-      return res.status(404).json({ error: 'Academy not found' });
+      return next(createError(404, 'Academy not found'));
     }
 
     res.json(academy);
   } catch (error) {
     console.error('Error fetching academy details:', error);
-    res.status(500).json({ error: 'Error fetching academy details' });
+    next(createError(500, 'Error fetching academy details'));
   }
 };
 
-exports.updateAcademy = async (req, res) => {
+exports.updateAcademy = async (req, res, next) => {
   const { id } = req.params;
   const {
     name,
@@ -225,66 +227,60 @@ exports.updateAcademy = async (req, res) => {
     res.json({ message: 'Academy updated successfully', academy: updatedAcademy });
   } catch (error) {
     console.error('Error updating academy:', error);
-    res.status(500).json({ error: 'Error updating academy' });
+    next(createError(500, 'Error updating academy'));
   }
 };
 
-// Fetch all pending academies
-exports.getPendingAcademies = async (req, res) => {
+exports.getPendingAcademies = async (req, res, next) => {
   try {
     const academies = await prisma.academy.findMany({
-      where: {
-        status: 'pending', // Ensure you're filtering academies by their pending status
-      },
-      include: {
-        creator: true, // If you need to include creator info, ensure your schema supports this
-      },
+      where: { status: 'pending' },
+      include: { creator: true },
     });
 
-    // Send the academies back as JSON
+    if (!academies.length) {
+      return next(createError(404, 'No pending academies found'));
+    }
+
     res.json(academies);
   } catch (error) {
     console.error('Failed to fetch pending academies:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    next(createError(500, 'Internal server error'));
   }
 };
 
-// Approve academy
-exports.approveAcademy = async (req, res) => {
+exports.approveAcademy = async (req, res, next) => {
   try {
     const { id } = req.params;
 
     const updatedAcademy = await prisma.academy.update({
-      where: { id: parseInt(id) },
-      data: { status: 'approved' }, // Update the status to approved
+      where: { id: parseInt(id, 10) },
+      data: { status: 'approved' },
     });
 
-    res.json(updatedAcademy);
+    res.json({ message: 'Academy approved successfully', academy: updatedAcademy });
   } catch (error) {
     console.error('Error approving academy:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    next(createError(500, 'Internal server error'));
   }
 };
 
-// Reject academy
-exports.rejectAcademy = async (req, res) => {
+exports.rejectAcademy = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { reason } = req.body;
 
-    // Update the academy status to rejected and add rejection reason if necessary
     const updatedAcademy = await prisma.academy.update({
-      where: { id: parseInt(id) },
+      where: { id: parseInt(id, 10) },
       data: {
         status: 'rejected',
-        // Add a field to store rejection reason if your schema supports it
         rejectionReason: reason || null,
       },
     });
 
-    res.json(updatedAcademy);
+    res.json({ message: 'Academy rejected successfully', academy: updatedAcademy });
   } catch (error) {
     console.error('Error rejecting academy:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    next(createError(500, 'Internal server error'));
   }
 };

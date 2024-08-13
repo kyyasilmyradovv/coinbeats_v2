@@ -1,32 +1,11 @@
+// server/controllers/authController.js
+
 const bcrypt = require('bcrypt');
 const { PrismaClient } = require('@prisma/client');
 const { generateAccessToken, generateRefreshToken } = require('../utils/jwt');
 
 const prisma = new PrismaClient();
 const SALT_ROUNDS = 10;
-
-exports.registerCreator = async (req, res) => {
-  const { telegramUserId, name, email, password } = req.body;
-
-  try {
-    const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
-
-    const newUser = await prisma.user.create({
-      data: {
-        telegramUserId,
-        name,
-        email,
-        password: hashedPassword,
-        role: 'CREATOR',
-      },
-    });
-
-    res.status(201).json({ message: 'Creator registered successfully', user: newUser });
-  } catch (error) {
-    console.error('Error during registration:', error);
-    res.status(500).json({ message: 'Server error', error });
-  }
-};
 
 exports.login = async (req, res) => {
   const { email, password } = req.body;

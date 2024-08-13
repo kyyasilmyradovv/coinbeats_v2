@@ -1,5 +1,3 @@
-// src/components/common/Sidebar.tsx
-
 import React, { useState, useLayoutEffect } from 'react';
 import {
   Page,
@@ -18,47 +16,54 @@ import { TonConnectButton } from '@tonconnect/ui-react';
 import { useNavigate } from 'react-router-dom';
 import useUserStore from '../store/useUserStore';
 
-interface SidebarProps {
-  opened: boolean;
-  onClose: () => void;
-  theme: string;
-  setTheme: (theme: string) => void;
-  setColorTheme: (color: string) => void;
-}
-
-const Sidebar: React.FC<SidebarProps> = ({
-  opened,
-  onClose,
-  theme,
-  setTheme,
-  setColorTheme,
-}) => {
-  const [darkMode, setDarkMode] = useState(false);
-  const [colorPickerOpened, setColorPickerOpened] = useState(false);
+const Sidebar: React.FC = () => {
   const navigate = useNavigate();
 
-  // Access role from Zustand store
-  const { role, setUser } = useUserStore((state) => ({
+  // Zustand store states
+  const {
+    role,
+    theme,
+    darkMode,
+    sidebarOpened,
+    toggleSidebar,
+    setTheme,
+    setColorTheme,
+    setDarkMode,
+    setUser,
+  } = useUserStore((state) => ({
     role: state.role,
+    theme: state.theme,
+    darkMode: state.darkMode,
+    sidebarOpened: state.sidebarOpened,
+    toggleSidebar: state.toggleSidebar,
+    setTheme: state.setTheme,
+    setColorTheme: state.setColorTheme,
+    setDarkMode: state.setDarkMode,
     setUser: state.setUser,
   }));
+
+  const [colorPickerOpened, setColorPickerOpened] = useState(false);
+
+  useLayoutEffect(() => {
+    setDarkMode(document.documentElement.classList.contains('dark'));
+  }, [setDarkMode]);
+
+  const handleLogout = () => {
+    setUser(null, 'Guest', '',  'USER', 100, null, false); // Reset user state
+    navigate('/'); // Redirect to home page
+    toggleSidebar(); // Close sidebar
+  };
+
+  const handleNavigation = (path: string) => {
+    navigate(path);
+    toggleSidebar(); // Close sidebar after navigating
+  };
 
   const toggleDarkMode = () => {
     setDarkMode(!darkMode);
     document.documentElement.classList.toggle('dark');
   };
 
-  useLayoutEffect(() => {
-    setDarkMode(document.documentElement.classList.contains('dark'));
-  }, []);
-
-  const handleLogout = () => {
-    // Implement logout logic
-    setUser(null, 'Guest', 'USER');
-    navigate('/'); // Redirect to login page
-  };
-
-  // Render role-based routes in the sidebar
   const renderRoleBasedLinks = () => {
     switch (role) {
       case 'SUPERADMIN':
@@ -68,7 +73,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               raised
               clear
               rounded
-              onClick={() => navigate('/superadmin-dashboard')}
+              onClick={() => handleNavigation('/superadmin-dashboard')}
               className="bg-white"
             >
               Dashboard
@@ -77,7 +82,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               raised
               clear
               rounded
-              onClick={() => navigate('/user-management')}
+              onClick={() => handleNavigation('/user-management')}
               className="bg-white"
             >
               User Management
@@ -86,7 +91,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               raised
               clear
               rounded
-              onClick={() => navigate('/academy-statistics')}
+              onClick={() => handleNavigation('/academy-statistics')}
               className="bg-white"
             >
               Academy Statistics
@@ -95,7 +100,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               raised
               clear
               rounded
-              onClick={() => navigate('/inbox')}
+              onClick={() => handleNavigation('/inbox')}
               className="bg-white"
             >
               Inbox
@@ -104,7 +109,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               raised
               clear
               rounded
-              onClick={() => navigate('/subscription-management')}
+              onClick={() => handleNavigation('/subscription-management')}
               className="bg-white"
             >
               Subscription Management
@@ -118,7 +123,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               raised
               clear
               rounded
-              onClick={() => navigate('/admin-dashboard')}
+              onClick={() => handleNavigation('/admin-dashboard')}
               className="bg-white"
             >
               Admin Dashboard
@@ -127,7 +132,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               raised
               clear
               rounded
-              onClick={() => navigate('/user-management')}
+              onClick={() => handleNavigation('/user-management')}
               className="bg-white"
             >
               User Management
@@ -136,7 +141,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               raised
               clear
               rounded
-              onClick={() => navigate('/inbox')}
+              onClick={() => handleNavigation('/inbox')}
               className="bg-white"
             >
               Inbox
@@ -150,7 +155,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               raised
               clear
               rounded
-              onClick={() => navigate('/creator-dashboard')}
+              onClick={() => handleNavigation('/creator-dashboard')}
               className="bg-white"
             >
               Creator Dashboard
@@ -159,7 +164,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               raised
               clear
               rounded
-              onClick={() => navigate('/create-academy')}
+              onClick={() => handleNavigation('/create-academy')}
               className="bg-white"
             >
               Create Academy
@@ -168,7 +173,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               raised
               clear
               rounded
-              onClick={() => navigate('/my-academies')}
+              onClick={() => handleNavigation('/my-academies')}
               className="bg-white"
             >
               My Academies
@@ -177,7 +182,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               raised
               clear
               rounded
-              onClick={() => navigate('/user-profile')}
+              onClick={() => handleNavigation('/user-profile')}
               className="bg-white"
             >
               User Profile
@@ -186,7 +191,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               raised
               clear
               rounded
-              onClick={() => navigate('/academy-statistics')}
+              onClick={() => handleNavigation('/academy-statistics')}
               className="bg-white"
             >
               Academy Statistics
@@ -195,7 +200,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               raised
               clear
               rounded
-              onClick={() => navigate('/inbox')}
+              onClick={() => handleNavigation('/inbox')}
               className="bg-white"
             >
               Inbox
@@ -208,7 +213,12 @@ const Sidebar: React.FC<SidebarProps> = ({
   };
 
   return (
-    <Panel side="right" floating opened={opened} onBackdropClick={onClose}>
+    <Panel
+      side="right"
+      floating
+      opened={sidebarOpened}
+      onBackdropClick={toggleSidebar}
+    >
       <Page>
         <Block className="space-y-4">
           <BlockTitle className="mb-1">Connect your TON Wallet</BlockTitle>
@@ -273,35 +283,50 @@ const Sidebar: React.FC<SidebarProps> = ({
               <Link
                 touchRipple
                 className="overflow-hidden h-12"
-                onClick={() => setColorTheme('')}
+                onClick={() => {
+                  setColorTheme('');
+                  setColorPickerOpened(false); // Close the popover
+                }}
               >
                 <span className="bg-brand-primary w-6 h-6 rounded-full" />
               </Link>
               <Link
                 touchRipple
                 className="overflow-hidden h-12"
-                onClick={() => setColorTheme('k-color-brand-red')}
+                onClick={() => {
+                  setColorTheme('k-color-brand-red');
+                  setColorPickerOpened(false); // Close the popover
+                }}
               >
                 <span className="bg-brand-red w-6 h-6 rounded-full" />
               </Link>
               <Link
                 touchRipple
                 className="overflow-hidden h-12"
-                onClick={() => setColorTheme('k-color-brand-green')}
+                onClick={() => {
+                  setColorTheme('k-color-brand-green');
+                  setColorPickerOpened(false); // Close the popover
+                }}
               >
                 <span className="bg-brand-green w-6 h-6 rounded-full" />
               </Link>
               <Link
                 touchRipple
                 className="overflow-hidden h-12"
-                onClick={() => setColorTheme('k-color-brand-yellow')}
+                onClick={() => {
+                  setColorTheme('k-color-brand-yellow');
+                  setColorPickerOpened(false); // Close the popover
+                }}
               >
                 <span className="bg-brand-yellow w-6 h-6 rounded-full" />
               </Link>
               <Link
                 touchRipple
                 className="overflow-hidden h-12"
-                onClick={() => setColorTheme('k-color-brand-purple')}
+                onClick={() => {
+                  setColorTheme('k-color-brand-purple');
+                  setColorPickerOpened(false); // Close the popover
+                }}
               >
                 <span className="bg-brand-purple w-6 h-6 rounded-full" />
               </Link>

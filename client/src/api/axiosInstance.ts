@@ -1,9 +1,10 @@
-// src/api/axiosInstance.ts
+// client/src/api/axiosInstance.ts
 import axios from 'axios';
 import useAuthStore from '../store/useAuthStore';
 
 const axiosInstance = axios.create({
-  baseURL: 'https://subscribes.lt', // Ensure this base URL is correct
+  // baseURL: 'https://subscribes.lt',
+  baseURL: 'http://localhost:4000',
 });
 
 // Request interceptor for adding token to requests

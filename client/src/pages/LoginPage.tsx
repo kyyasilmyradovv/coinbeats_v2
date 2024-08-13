@@ -3,7 +3,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Page, List, ListInput, Button, BlockTitle, Block } from 'konsta/react';
-import useAuthStore from '../store/useAuthStore'; // Import the correct auth store
+import useAuthStore from '../store/useAuthStore'; 
+import useUserStore from '../store/useUserStore';
 import Navbar from '../components/common/Navbar';
 import Sidebar from '../components/common/Sidebar';
 
@@ -11,33 +12,53 @@ const LoginPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
-  const { login, userRole } = useAuthStore((state) => ({
+  const { login } = useAuthStore((state) => ({
     login: state.login,
-    userRole: state.userRole,
   }));
   const [rightPanelOpened, setRightPanelOpened] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
+  
+  // Access role, hasAcademy, and emailConfirmed flag from Zustand store
+  const { role, hasAcademy, emailConfirmed } = useUserStore((state) => ({
+    role: state.role,
+    hasAcademy: state.hasAcademy,
+    emailConfirmed: state.emailConfirmed,
+  }));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      console.log('Attempting login with email:', email);
       await login(email, password);
-      alert('Login successful!');
 
-      // Use navigate to handle redirection based on role
-      switch (userRole) {
-        case 'SUPERADMIN':
-          navigate('/superadmin-dashboard');
-          break;
-        case 'ADMIN':
-          navigate('/admin-dashboard');
-          break;
-        case 'CREATOR':
+      if (!emailConfirmed) {
+        alert('Please confirm your email before logging in.');
+        return;
+      }
+
+      console.log('Login successful!');
+      console.log('User role from useUserStore:', role);
+      console.log('Has academy from useUserStore:', hasAcademy);
+
+      // Redirect based on the user's role and academy status
+      if (role === 'CREATOR') {
+        console.log('User is a CREATOR');
+        if (hasAcademy) {
+          console.log('User has an academy, redirecting to /creator-dashboard');
           navigate('/creator-dashboard');
-          break;
-        default:
-          navigate('/'); // Redirect to home or other appropriate page
-          break;
+        } else {
+          console.log('User does not have an academy, redirecting to /create-academy');
+          navigate('/create-academy');
+        }
+      } else if (role === 'SUPERADMIN') {
+        console.log('User is a SUPERADMIN, redirecting to /superadmin-dashboard');
+        navigate('/superadmin-dashboard');
+      } else if (role === 'ADMIN') {
+        console.log('User is an ADMIN, redirecting to /admin-dashboard');
+        navigate('/admin-dashboard');
+      } else {
+        console.log('User role did not match, redirecting to /');
+        navigate('/');
       }
     } catch (error: any) {
       console.error('Login failed:', error);

@@ -2,30 +2,26 @@
 
 import React, { useState } from 'react';
 import { Tabbar, TabbarLink, Icon } from 'konsta/react';
-import { BookFill, Star, GamecontrollerAltFill } from 'framework7-icons/react';
-import {
-  MdSchool,
-  MdBookmarks,
-  MdVideogameAsset,
-  MdEmojiEvents,
-} from 'react-icons/md';
+import { MdSchool, MdBookmarks, MdVideogameAsset, MdEmojiEvents } from 'react-icons/md';
 import HomePage from './HomePage';
 import BookmarksPage from './BookmarksPage';
 import GamesPage from './GamesPage';
 import PointsPage from './PointsPage';
+import useUserStore from '../store/useUserStore';
 
-export default function MainPage({ theme, setTheme, setColorTheme }) {
+export default function MainPage() {
   const [activeTab, setActiveTab] = useState('tab-1');
+  
+  // Access the theme-related state from the store
+  const { theme, setTheme, setColorTheme } = useUserStore((state) => ({
+    theme: state.theme,
+    setTheme: state.setTheme,
+    setColorTheme: state.setColorTheme,
+  }));
 
   return (
     <div>
-      {activeTab === 'tab-1' && (
-        <HomePage
-          theme={theme}
-          setTheme={setTheme}
-          setColorTheme={setColorTheme}
-        />
-      )}
+      {activeTab === 'tab-1' && <HomePage />}
       {activeTab === 'tab-2' && <BookmarksPage />}
       {activeTab === 'tab-3' && <GamesPage />}
       {activeTab === 'tab-4' && <PointsPage />}
@@ -62,7 +58,7 @@ export default function MainPage({ theme, setTheme, setColorTheme }) {
               material={<MdVideogameAsset className="w-6 h-6" />}
             />
           }
-          label="Games"
+          label="Earn"
         />
         <TabbarLink
           active={activeTab === 'tab-4'}
@@ -73,7 +69,7 @@ export default function MainPage({ theme, setTheme, setColorTheme }) {
               material={<MdEmojiEvents className="w-6 h-6" />}
             />
           }
-          label="Earn"
+          label="Points"
         />
       </Tabbar>
     </div>

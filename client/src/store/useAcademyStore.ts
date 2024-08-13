@@ -1,7 +1,9 @@
+// client/src/store/useAcademyStore.ts
+
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import axios from 'axios';
-import useAuthStore from './useAuthStore';  // Use the correct store for authentication
+import axios from '../api/axiosInstance';
+import useAuthStore from './useAuthStore';
 
 interface Choice {
   answer: string;
@@ -41,8 +43,8 @@ interface AcademyState {
   telegram: string;
   discord: string;
   coingecko: string;
-  logo: File | null;
-  coverPhoto: File | null;
+  logo: string | null;
+  coverPhoto: string | null;
   webpageUrl: string;
   initialAnswers: InitialAnswer[];
   tokenomics: string;
@@ -52,26 +54,30 @@ interface AcademyState {
   raffles: Raffle[];
   quests: Quest[];
   visibleQuestionsCount: number;
+  currentStep: number;
   setField: (
     field: keyof Omit<
       AcademyState,
-      'setField' | 'setInitialAnswer' | 'toggleCorrectAnswer' | 'addRaffle' | 'addQuest' | 'submitAcademy' | 'resetAcademyData' | 'fetchQuestions'
+      'setField' | 'setInitialAnswer' | 'toggleCorrectAnswer' | 'addRaffle' | 'addQuest' | 'submitAcademy' | 'resetAcademyData' | 'fetchQuestions' | 'nextStep' | 'prevStep' | 'removeRaffle' | 'removeQuest'
     >,
     value: any
   ) => void;
   setInitialAnswer: (index: number, field: keyof InitialAnswer, value: any) => void;
   toggleCorrectAnswer: (questionIndex: number, choiceIndex: number) => void;
   addRaffle: () => void;
+  removeRaffle: (index: number) => void;
   addQuest: () => void;
+  removeQuest: (index: number) => void;
   submitAcademy: () => Promise<void>;
   resetAcademyData: () => void;
   fetchQuestions: () => Promise<void>;
+  nextStep: () => void;
+  prevStep: () => void;
 }
 
 const useAcademyStore = create<AcademyState>()(
   devtools(
     (set, get) => ({
-      // Initial state
       name: '',
       ticker: '',
       categories: [],
@@ -100,8 +106,8 @@ const useAcademyStore = create<AcademyState>()(
       ],
       quests: [{ name: '', link: '', platform: '' }],
       visibleQuestionsCount: 1,
+      currentStep: 0,
 
-      // Actions
       setField: (field, value) =>
         set(
           (state) => ({
@@ -114,33 +120,29 @@ const useAcademyStore = create<AcademyState>()(
 
       setInitialAnswer: (index, field, value) =>
         set((state) => {
-          console.log(`Setting initial answer - index: ${index}, field: ${field}, value: `, value);
           const updatedAnswers = [...state.initialAnswers];
           if (field === 'choices') {
-            const newChoices = [...updatedAnswers[index].choices]; // Create a new array for choices
-            console.log('Current choices:', newChoices);
+            const newChoices = [...updatedAnswers[index].choices];
             newChoices[value.index] = {
               ...newChoices[value.index],
               ...value.choice,
             };
-            console.log('Updated choice:', newChoices[value.index]);
-            updatedAnswers[index].choices = newChoices; // Assign the new array back to the choices
+            updatedAnswers[index].choices = newChoices;
           } else {
             updatedAnswers[index][field] = value;
           }
-          console.log('Updated initial answers:', updatedAnswers);
           return { initialAnswers: updatedAnswers };
         }),
 
       toggleCorrectAnswer: (questionIndex, choiceIndex) =>
         set((state) => {
-          console.log(`Toggling correct answer for question ${questionIndex}, choice ${choiceIndex}`);
           const updatedAnswers = [...state.initialAnswers];
           const currentCorrect = updatedAnswers[questionIndex].choices[choiceIndex].correct;
           updatedAnswers[questionIndex].choices[choiceIndex].correct = !currentCorrect;
-          console.log('Updated initial answers with toggled correct:', updatedAnswers);
+
+          console.log(`Toggling: Question ${questionIndex + 1}, Choice ${choiceIndex + 1} set to ${!currentCorrect}`);
           return { initialAnswers: updatedAnswers };
-        }),
+        }),        
 
       addRaffle: () =>
         set(
@@ -161,6 +163,15 @@ const useAcademyStore = create<AcademyState>()(
           'addRaffle'
         ),
 
+      removeRaffle: (index: number) =>
+        set(
+          (state) => ({
+            raffles: state.raffles.filter((_, i) => i !== index),
+          }),
+          false,
+          'removeRaffle'
+        ),
+
       addQuest: () =>
         set(
           (state) => ({
@@ -170,122 +181,129 @@ const useAcademyStore = create<AcademyState>()(
           'addQuest'
         ),
 
-        submitAcademy: async () => {
-          const state = get(); // Get the current state
-          const { accessToken } = useAuthStore.getState(); // Retrieve token from AuthStore
-        
-          if (!accessToken) {
-            console.error('Authorization token is missing');
-            throw new Error('Authorization token is missing');
-          }
-        
-          try {
-            const payload = {
-              name: state.name || '', // Ensure default values for missing data
-              ticker: state.ticker || '',
-              categories: state.categories || [],
-              chains: state.chains || [],
-              twitter: state.twitter || '',
-              telegram: state.telegram || '',
-              discord: state.discord || '',
-              coingecko: state.coingecko || '',
-              webpageUrl: state.webpageUrl || '',
-              tokenomics: state.tokenomics || '',
-              teamBackground: state.teamBackground || '',
-              congratsVideo: state.congratsVideo || '',
-              getStarted: state.getStarted || '',
-              initialAnswers: state.initialAnswers || [],
-              raffles: state.raffles || [],
-              quests: state.quests || [],
-              status: 'pending',
-              // Remove file uploads for JSON submission
-            };
-        
-            console.log('Payload to be sent:', payload);
-        
-            // Send JSON payload
-            await axios.post('http://localhost:7000/api/academies', payload, {
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${accessToken}`, // Ensure the token is included
-              },
-            });
-        
-            alert(`Your academy "${state.name}" is under review.`);
-            state.resetAcademyData(); // Reset data after submission
-          } catch (error) {
-            console.error('Error creating academy:', error);
-          }
-        },        
-        
-      resetAcademyData: () =>
+      removeQuest: (index: number) =>
         set(
-          {
-            name: '',
-            ticker: '',
-            categories: [],
-            chains: [],
-            twitter: '',
-            telegram: '',
-            discord: '',
-            coingecko: '',
-            logo: null,
-            coverPhoto: null,
-            webpageUrl: '',
-            initialAnswers: [],
-            tokenomics: '',
-            teamBackground: '',
-            congratsVideo: '',
-            getStarted: '',
-            raffles: [
-              {
-                amount: '',
-                reward: '',
-                currency: '',
-                chain: '',
-                dates: '',
-                totalPool: '',
-              },
-            ],
-            quests: [{ name: '', link: '', platform: '' }],
-            visibleQuestionsCount: 1,
-          },
+          (state) => ({
+            quests: state.quests.filter((_, i) => i !== index),
+          }),
           false,
-          'resetAcademyData'
+          'removeQuest'
         ),
 
-      // Ensure choices are initialized as arrays correctly
-      // Inside your React application or zustand store
-fetchQuestions: async () => {
-  try {
-    console.log('Fetching initial questions');
-    const questionsResponse = await axios.get('http://localhost:7000/api/questions/initial-questions');
-    const questions = questionsResponse.data;
+      submitAcademy: async () => {
+        const state = get();
+        const { accessToken } = useAuthStore.getState();
 
-    // Check if the response is an array
-    if (!Array.isArray(questions)) {
-      throw new Error('Unexpected response format');
-    }
+        if (!accessToken) {
+          console.error('Authorization token is missing');
+          throw new Error('Authorization token is missing');
+        }
 
-    set(
-      () => ({
-        initialAnswers: questions.map((question) => ({
-          initialQuestionId: question.id,
-          question: question.question,
-          answer: '',
-          quizQuestion: '',
-          choices: Array(5).fill({ answer: '', correct: false }), // Initialize with correct as false
-          video: '',
-        })),
-      }),
-      false,
-      'fetchQuestions'
-    );
-  } catch (error) {
-    console.error('Error fetching initial questions:', error);
-  }
-},
-     
+        try {
+          const payload = {
+            name: state.name || '',
+            ticker: state.ticker || '',
+            categories: state.categories || [],
+            chains: state.chains || [],
+            twitter: state.twitter || '',
+            telegram: state.telegram || '',
+            discord: state.discord || '',
+            coingecko: state.coingecko || '',
+            webpageUrl: state.webpageUrl || '',
+            tokenomics: state.tokenomics || '',
+            teamBackground: state.teamBackground || '',
+            congratsVideo: state.congratsVideo || '',
+            getStarted: state.getStarted || '',
+            initialAnswers: state.initialAnswers || [],
+            raffles: state.raffles || [],
+            quests: state.quests || [],
+            status: 'pending',
+          };
+
+          await axios.post('/api/academies', payload, {
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${accessToken}`,
+            },
+          });
+
+          alert(`Your academy "${state.name}" is under review.`);
+          state.resetAcademyData();
+        } catch (error) {
+          console.error('Error creating academy:', error);
+        }
+      },
+
+      resetAcademyData: () =>
+        set({
+          name: '',
+          ticker: '',
+          categories: [],
+          chains: [],
+          twitter: '',
+          telegram: '',
+          discord: '',
+          coingecko: '',
+          logo: null,
+          coverPhoto: null,
+          webpageUrl: '',
+          initialAnswers: [],
+          tokenomics: '',
+          teamBackground: '',
+          congratsVideo: '',
+          getStarted: '',
+          raffles: [
+            {
+              amount: '',
+              reward: '',
+              currency: '',
+              chain: '',
+              dates: '',
+              totalPool: '',
+            },
+          ],
+          quests: [{ name: '', link: '', platform: '' }],
+          visibleQuestionsCount: 1,
+          currentStep: 0,
+        }),
+
+      fetchQuestions: async () => {
+        try {
+          const questionsResponse = await axios.get('/api/questions/initial-questions');
+          const questions = questionsResponse.data;
+
+          if (!Array.isArray(questions)) {
+            throw new Error('Unexpected response format');
+          }
+
+          set(() => ({
+            initialAnswers: questions.map((question) => ({
+              initialQuestionId: question.id,
+              question: question.question,
+              answer: '',
+              quizQuestion: '',
+              choices: Array(5).fill({ answer: '', correct: false }),
+              video: '',
+            })),
+          }));
+        } catch (error) {
+          console.error('Error fetching initial questions:', error);
+        }
+      },
+
+      nextStep: () => {
+        const state = get();
+        if (state.currentStep < 10) {
+          set({ currentStep: state.currentStep + 1 });
+        }
+      },
+
+      prevStep: () => {
+        const state = get();
+        if (state.currentStep > 0) {
+          set({ currentStep: state.currentStep - 1 });
+        }
+      },
     }),
     { name: 'AcademyStore' }
   )

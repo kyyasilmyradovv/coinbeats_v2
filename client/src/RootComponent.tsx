@@ -1,6 +1,6 @@
 // src/RootComponent.tsx
 
-import React, { useLayoutEffect, useState, useEffect } from 'react';
+import React, { useLayoutEffect, useEffect } from 'react';
 import { Route, Routes, useLocation } from 'react-router-dom';
 import { App as KonstaApp, KonstaProvider } from 'konsta/react';
 import MainPage from './pages/MainPage';
@@ -18,7 +18,7 @@ import UserProfilePage from './pages/UserProfilePage';
 import CreateAcademyPage from './pages/CreateAcademyPage';
 import MyAcademiesPage from './pages/MyAcademiesPage';
 import SuperAdminDashboardPage from './pages/SuperAdminDashboardPage';
-import UserDetailPage from './pages/UserDetailPage'; // Import the UserDetailPage
+import UserDetailPage from './pages/UserDetailPage';
 import { BookmarkProvider } from './contexts/BookmarkContext';
 import { useInitData } from '@telegram-apps/sdk-react';
 import useSessionStore from './store/useSessionStore';
@@ -28,18 +28,20 @@ import axios from './api/axiosInstance';
 import RouteGuard from './components/RouteGuard';
 
 function RootComponent() {
-  const [theme, setTheme] = useState('ios');
-  const [currentColorTheme, setCurrentColorTheme] = useState('');
   const initData = useInitData();
-
-  const setColorTheme = (color) => {
-    const htmlEl = document.documentElement;
-    htmlEl.classList.forEach((c) => {
-      if (c.includes('k-color')) htmlEl.classList.remove(c);
-    });
-    if (color) htmlEl.classList.add(color);
-    setCurrentColorTheme(color);
-  };
+  const {
+    theme,
+    setTheme,
+    colorTheme,
+    darkMode,
+    setDarkMode,
+  } = useUserStore((state) => ({
+    theme: state.theme,
+    setTheme: state.setTheme,
+    colorTheme: state.colorTheme,
+    darkMode: state.darkMode,
+    setDarkMode: state.setDarkMode,
+  }));
 
   const startSession = useSessionStore((state) => state.startSession);
   const endSession = useSessionStore((state) => state.endSession);
@@ -56,20 +58,20 @@ function RootComponent() {
       if (initData) {
         const telegramUserId = initData.user.id;
         const username = initData.user.username || 'Guest';
-
+    
         try {
-          // Check if user exists in the database
           const response = await axios.get(`/api/users/${telegramUserId}`);
-
+    
           if (response.status === 200 && response.data) {
-            const { id, email, role, totalPoints } = response.data;
-            setUser(id, username, email, role, totalPoints || 100, null);
+            const { id, email, role, totalPoints, academies, emailConfirmed } = response.data;
+            const hasAcademy = academies && academies.length > 0;
+            setUser(id, username, email, emailConfirmed, role, totalPoints || 100, null, hasAcademy);
           } else {
-            setUser(null, username, '', 'USER', 100, null);
+            setUser(null, username, '', false, 'USER', 100, null, false);
           }
         } catch (error) {
           if (error.response && error.response.status === 404) {
-            setUser(null, username, '', 'USER', 100, null);
+            setUser(null, username, '', false, 'USER', 100, null, false);
           } else {
             console.error('Error fetching user:', error);
           }
@@ -137,42 +139,62 @@ function RootComponent() {
     }
   }, [theme]);
 
+  useLayoutEffect(() => {
+    // Apply dark mode and color theme
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    if (colorTheme) {
+      const htmlEl = document.documentElement;
+      htmlEl.classList.forEach((c) => {
+        if (c.includes('k-color')) htmlEl.classList.remove(c);
+      });
+      htmlEl.classList.add(colorTheme);
+    }
+  }, [darkMode, colorTheme]);
+
   return (
     <KonstaProvider theme={theme}>
       <KonstaApp theme={theme} safeAreas={!inIFrame}>
         <BookmarkProvider>
           <Routes>
             <Route path="*" element={<NotFoundPage />} />
-            <Route path="/" element={<MainPage theme={theme} setTheme={setTheme} colorTheme={currentColorTheme} setColorTheme={setColorTheme} />} />
-            <Route path="/product/:id" element={<ProductPage theme={theme} setTheme={setTheme} colorTheme={currentColorTheme} setColorTheme={setColorTheme} />} />
-            <Route path="/saved" element={<BookmarksPage theme={theme} setTheme={setTheme} colorTheme={currentColorTheme} setColorTheme={setColorTheme} />} />
+            <Route path="/" element={<MainPage />} />
+            <Route path="/product/:id" element={<ProductPage />} />
+            <Route path="/saved" element={<BookmarksPage />} />
             <Route path="/register-creator" element={<RegisterCreatorPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/session-analyses" element={<SessionAnalysisPage />} />
             <Route path="/creator-dashboard" element={
               <RouteGuard requiredRole="CREATOR">
-                <CreatorDashboardPage theme={theme} setTheme={setTheme} colorTheme={currentColorTheme} setColorTheme={setColorTheme} />
+                <CreatorDashboardPage />
               </RouteGuard>
             } />
             <Route path="/superadmin-dashboard" element={
               <RouteGuard requiredRole="SUPERADMIN">
-                <SuperAdminDashboardPage theme={theme} setTheme={setTheme} colorTheme={currentColorTheme} setColorTheme={setColorTheme} />
+                <SuperAdminDashboardPage />
               </RouteGuard>
             } />
             <Route path="/user-management" element={
               <RouteGuard requiredRole="SUPERADMIN">
-                <UserManagementPage theme={theme} setTheme={setTheme} colorTheme={currentColorTheme} setColorTheme={setColorTheme} />
+                <UserManagementPage />
               </RouteGuard>
             } />
             <Route path="/user/:userId" element={
               <RouteGuard requiredRole="SUPERADMIN">
-                <UserDetailPage theme={theme} setTheme={setTheme} colorTheme={currentColorTheme} setColorTheme={setColorTheme} />
+                <UserDetailPage />
               </RouteGuard>
             } />
             <Route path="/inbox" element={<InboxPage />} />
             <Route path="/academy-statistics" element={<AcademyStatisticsPage />} />
             <Route path="/user-profile" element={<UserProfilePage />} />
-            <Route path="/create-academy" element={<CreateAcademyPage />} />
+            <Route path="/create-academy" element={
+              <RouteGuard requiredRole="CREATOR">
+                <CreateAcademyPage />
+              </RouteGuard>
+            } />
             <Route path="/my-academies" element={<MyAcademiesPage />} />
           </Routes>
         </BookmarkProvider>

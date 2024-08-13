@@ -1,13 +1,15 @@
 // server/server.js
+
 const path = require('path');
 const dotenv = require('dotenv');
 
-// Load environment variables based on NODE_ENV
+// Determine the appropriate environment file based on NODE_ENV
 const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.env.local';
 dotenv.config({ path: path.resolve(__dirname, envFile) });
 
 const express = require('express');
 const cors = require('cors');
+const createError = require('http-errors'); // Import http-errors for structured error handling
 
 // Import routes
 const authRoutes = require('./routes/auth');
@@ -20,9 +22,11 @@ const questionsRoutes = require('./routes/question');
 const subscriptionRoutes = require('./routes/subscriptions');
 const statsRoutes = require('./routes/stats');
 const inboxRoutes = require('./routes/inbox');
+const emailRoutes = require('./routes/email'); // Import the new email routes
+const sseRoutes = require('./routes/sse');
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 4000;
 
 // Middleware
 app.use(cors());
@@ -40,6 +44,27 @@ app.use('/api/questions', questionsRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/inbox', inboxRoutes);
+app.use('/api/email', emailRoutes); // Add the new email routes
+app.use('/api/sse', sseRoutes); // Use SSE routes
+
+// Catch 404 and forward to error handler
+app.use((req, res, next) => {
+  next(createError(404, 'Not Found'));
+});
+
+// Error handler middleware
+app.use((err, req, res, next) => {
+  console.error('Global Error Handler:', err.message);
+  
+  // Prepare error response
+  const response = {
+    message: err.message,
+    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined, // Only show stack trace in development
+  };
+
+  res.status(err.status || 500);
+  res.json(response);
+});
 
 // Start the server
 app.listen(PORT, () => {

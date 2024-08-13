@@ -1,59 +1,75 @@
 // server/controllers/chainController.js
 
 const { PrismaClient } = require('@prisma/client');
+const createError = require('http-errors');
 const prisma = new PrismaClient();
 
-// Create a new chain
-exports.createChain = async (req, res) => {
+exports.createChain = async (req, res, next) => {
   try {
     const { name } = req.body;
+
+    if (!name) {
+      return next(createError(400, 'Chain name is required'));
+    }
+
     const chain = await prisma.chain.create({
       data: { name },
     });
+
     res.status(201).json({ message: 'Chain created successfully', chain });
   } catch (error) {
     console.error('Error creating chain:', error);
-    res.status(500).json({ error: 'Error creating chain' });
+    next(createError(500, 'Error creating chain'));
   }
 };
 
-// Get all chains
-exports.getChains = async (req, res) => {
+exports.getChains = async (req, res, next) => {
   try {
     const chains = await prisma.chain.findMany();
+
+    if (!chains.length) {
+      return next(createError(404, 'No chains found'));
+    }
+
     res.json(chains);
   } catch (error) {
     console.error('Error fetching chains:', error);
-    res.status(500).json({ error: 'Error fetching chains' });
+    next(createError(500, 'Error fetching chains'));
   }
 };
 
-// Update a chain
-exports.updateChain = async (req, res) => {
+exports.updateChain = async (req, res, next) => {
   const { id } = req.params;
   const { name } = req.body;
+
+  if (!name) {
+    return next(createError(400, 'Chain name is required'));
+  }
+
   try {
     const updatedChain = await prisma.chain.update({
       where: { id: parseInt(id, 10) },
       data: { name },
     });
+
     res.json({ message: 'Chain updated successfully', chain: updatedChain });
   } catch (error) {
     console.error('Error updating chain:', error);
-    res.status(500).json({ error: 'Error updating chain' });
+    next(createError(500, 'Error updating chain'));
   }
 };
 
-// Delete a chain
-exports.deleteChain = async (req, res) => {
+exports.deleteChain = async (req, res, next) => {
   const { id } = req.params;
+
   try {
     await prisma.chain.delete({
       where: { id: parseInt(id, 10) },
     });
+
     res.status(204).end();
   } catch (error) {
     console.error('Error deleting chain:', error);
-    res.status(500).json({ error: 'Error deleting chain' });
+    next(createError(500, 'Error deleting chain'));
   }
 };

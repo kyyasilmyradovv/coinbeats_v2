@@ -1,54 +1,55 @@
 // server/controllers/statsController.js
 
 const { PrismaClient } = require('@prisma/client');
+const createError = require('http-errors');
 const prisma = new PrismaClient();
 
-exports.getUserCount = async (req, res) => {
+exports.getUserCount = async (req, res, next) => {
   try {
     const count = await prisma.user.count();
     res.json({ count });
   } catch (error) {
     console.error('Error fetching user count:', error);
-    res.status(500).json({ error: 'Error fetching user count' });
+    next(createError(500, 'Error fetching user count'));
   }
 };
 
-exports.getAcademyCount = async (req, res) => {
+exports.getAcademyCount = async (req, res, next) => {
   try {
     const count = await prisma.academy.count();
     res.json({ count });
   } catch (error) {
     console.error('Error fetching academy count:', error);
-    res.status(500).json({ error: 'Error fetching academy count' });
+    next(createError(500, 'Error fetching academy count'));
   }
 };
 
-exports.getSessionCount = async (req, res) => {
+exports.getSessionCount = async (req, res, next) => {
   try {
     const count = await prisma.sessionLog.count();
     res.json({ count });
   } catch (error) {
     console.error('Error fetching session count:', error);
-    res.status(500).json({ error: 'Error fetching session count' });
+    next(createError(500, 'Error fetching session count'));
   }
 };
 
-exports.getUnreadInboxCount = async (req, res) => {
+exports.getUnreadInboxCount = async (req, res, next) => {
   try {
     const count = await prisma.inbox.count({ where: { read: false } });
     res.json({ count });
   } catch (error) {
     console.error('Error fetching unread inbox count:', error);
-    res.status(500).json({ error: 'Error fetching unread inbox count' });
+    next(createError(500, 'Error fetching unread inbox count'));
   }
 };
 
-exports.getSubscriptionCount = async (req, res) => {
+exports.getSubscriptionCount = async (req, res, next) => {
   try {
     const count = await prisma.subscription.count();
     res.json({ count });
   } catch (error) {
     console.error('Error fetching subscription count:', error);
-    res.status(500).json({ error: 'Error fetching subscription count' });
+    next(createError(500, 'Error fetching subscription count'));
   }
 };

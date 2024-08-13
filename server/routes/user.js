@@ -1,28 +1,30 @@
 // server/routes/user.js
-
 const express = require('express');
 const { authenticateToken, authorizeRoles } = require('../middleware/auth');
 const {
   getAllUsers,
   createUser,
   deleteUser,
-  getUserDetailsById, // Import the new function
-  getUserByTelegramId, // Existing function
+  getUserDetailsById,
+  getUserByTelegramId,
   updateUserRole,
   registerCreator,
-  userInteraction
+  userInteraction,
+  confirmEmail
 } = require('../controllers/userController');
+const asyncHandler = require('express-async-handler');
 
 const router = express.Router();
 
 // Define user-related routes
-router.get('/', authenticateToken, authorizeRoles('ADMIN', 'SUPERADMIN'), getAllUsers);
-router.get('/details/:userId', authenticateToken, authorizeRoles('ADMIN', 'SUPERADMIN'), getUserDetailsById); // New route to get user details by database ID
-router.post('/', authenticateToken, authorizeRoles('ADMIN', 'SUPERADMIN'), createUser);
-router.delete('/:userId', authenticateToken, authorizeRoles('ADMIN', 'SUPERADMIN'), deleteUser);
-router.get('/:telegramUserId', getUserByTelegramId); // Existing route by Telegram ID
-router.post('/update-role', authenticateToken, authorizeRoles('ADMIN', 'SUPERADMIN'), updateUserRole);
-router.post('/register-creator', registerCreator);
-router.post('/user-interaction', userInteraction);
+router.get('/', authenticateToken, authorizeRoles('ADMIN', 'SUPERADMIN'), asyncHandler(getAllUsers));
+router.get('/details/:userId', authenticateToken, authorizeRoles('ADMIN', 'SUPERADMIN'), asyncHandler(getUserDetailsById));
+router.post('/', authenticateToken, authorizeRoles('ADMIN', 'SUPERADMIN'), asyncHandler(createUser));
+router.delete('/:userId', authenticateToken, authorizeRoles('ADMIN', 'SUPERADMIN'), asyncHandler(deleteUser));
+router.get('/:telegramUserId', asyncHandler(getUserByTelegramId));
+router.post('/update-role', authenticateToken, authorizeRoles('ADMIN', 'SUPERADMIN'), asyncHandler(updateUserRole));
+router.post('/register-creator', asyncHandler(registerCreator));
+router.post('/user-interaction', asyncHandler(userInteraction));
+router.get('/confirm-email', asyncHandler(confirmEmail));
 
 module.exports = router;

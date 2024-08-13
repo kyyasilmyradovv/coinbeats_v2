@@ -1,5 +1,5 @@
-# Use the latest Node.js Alpine image
-FROM node:20-alpine
+# Use a Debian-based Node.js image instead of Alpine
+FROM node:20-bullseye-slim
 
 # Set the working directory
 WORKDIR /app

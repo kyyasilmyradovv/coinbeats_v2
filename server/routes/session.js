@@ -2,10 +2,10 @@
 
 const express = require('express');
 const { logSession } = require('../controllers/sessionController');
+const asyncHandler = require('express-async-handler');
 
 const router = express.Router();
 
-// Route to log session data
-router.post('/log-session', logSession);
+router.post('/log-session', asyncHandler(logSession));
 
 module.exports = router;

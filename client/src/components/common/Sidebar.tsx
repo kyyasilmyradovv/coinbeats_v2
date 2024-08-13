@@ -12,42 +12,44 @@ import {
   Toggle,
   Popover,
   Link,
-  Button
+  Button,
 } from 'konsta/react';
 import { TonConnectButton } from '@tonconnect/ui-react';
 import { useNavigate } from 'react-router-dom';
 import useUserStore from '../../store/useUserStore';
 
-interface SidebarProps {
-  opened: boolean;
-  onClose: () => void;
-  theme: string;
-  setTheme: (theme: string) => void;
-  setColorTheme: (color: string) => void;
-}
-
-const Sidebar: React.FC<SidebarProps> = ({
-  opened,
-  onClose,
-  theme,
-  setTheme,
-  setColorTheme,
-}) => {
-  const [darkMode, setDarkMode] = useState(false);
-  const [colorPickerOpened, setColorPickerOpened] = useState(false);
+const Sidebar: React.FC = () => {
   const navigate = useNavigate();
-  const { role } = useUserStore((state) => ({
+  const {
+    role,
+    theme,
+    darkMode,
+    sidebarOpened,
+    toggleSidebar,
+    setTheme,
+    setColorTheme,
+    setDarkMode,
+  } = useUserStore((state) => ({
     role: state.role,
+    theme: state.theme,
+    darkMode: state.darkMode,
+    sidebarOpened: state.sidebarOpened,
+    toggleSidebar: state.toggleSidebar,
+    setTheme: state.setTheme,
+    setColorTheme: state.setColorTheme,
+    setDarkMode: state.setDarkMode,
   }));
 
-  const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
-    document.documentElement.classList.toggle('dark');
-  };
+  const [colorPickerOpened, setColorPickerOpened] = useState(false);
 
   useLayoutEffect(() => {
     setDarkMode(document.documentElement.classList.contains('dark'));
-  }, []);
+  }, [setDarkMode]);
+
+  const handleNavigation = (path: string) => {
+    navigate(path);
+    toggleSidebar(); // Close sidebar after navigating
+  };
 
   const renderRoleBasedButtons = () => {
     const buttons = [];
@@ -58,7 +60,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           key="superadmin"
           rounded
           outline
-          onClick={() => navigate('/superadmin-dashboard')}
+          onClick={() => handleNavigation('/superadmin-dashboard')}
           className="!w-full !px-4 !py-2 !mx-auto k-color-brand-blue !text-[13px]"
         >
           Log in as Superadmin
@@ -71,7 +73,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           key="admin"
           rounded
           outline
-          onClick={() => navigate('/admin-dashboard')}
+          onClick={() => handleNavigation('/admin-dashboard')}
           className="!w-full !px-4 !py-2 !mx-auto k-color-brand-blue !text-[13px]"
         >
           Log in as Admin
@@ -84,7 +86,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           key="creator"
           rounded
           outline
-          onClick={() => navigate('/creator-dashboard')}
+          onClick={() => handleNavigation('/creator-dashboard')}
           className="!w-full !px-4 !py-2 !mx-auto k-color-brand-blue !text-[13px]"
         >
           Log in as Creator
@@ -97,8 +99,8 @@ const Sidebar: React.FC<SidebarProps> = ({
           key="become-creator"
           rounded
           outline
-          onClick={() => navigate('/register-creator')}
-          className="!w-full !px-4 !py-2 !mx-auto k-color-brand-blue !text-[13px]"
+          onClick={() => handleNavigation('/register-creator')}
+          className="!w-full !px-4 !py-2 !mx-auto k-color-brand-blue !text-[13px] !whitespace-nowrap"
         >
           Become Academy Creator
         </Button>
@@ -108,16 +110,24 @@ const Sidebar: React.FC<SidebarProps> = ({
     return buttons;
   };
 
+  const toggleDarkModeHandler = () => {
+    toggleDarkMode();
+    toggleSidebar(); // Close sidebar after toggling dark mode
+  };
+
   return (
-    <Panel side="right" floating opened={opened} onBackdropClick={onClose}>
+    <Panel
+      side="right"
+      floating
+      opened={sidebarOpened}
+      onBackdropClick={toggleSidebar}
+    >
       <Page>
         <Block className="space-y-4">
           <BlockTitle className="mb-1">Connect your TON Wallet</BlockTitle>
           <TonConnectButton className="mx-auto" />
 
-          <Block className="space-y-2">
-            {renderRoleBasedButtons()}
-          </Block>
+          <Block className="space-y-2">{renderRoleBasedButtons()}</Block>
 
           <BlockTitle>Theme</BlockTitle>
           <List strong inset>
@@ -126,7 +136,10 @@ const Sidebar: React.FC<SidebarProps> = ({
               title="iOS Theme"
               media={
                 <Radio
-                  onChange={() => setTheme('ios')}
+                  onChange={() => {
+                    setTheme('ios');
+                    toggleSidebar(); // Close sidebar after selecting theme
+                  }}
                   component="div"
                   checked={theme === 'ios'}
                 />
@@ -137,7 +150,10 @@ const Sidebar: React.FC<SidebarProps> = ({
               title="Material Theme"
               media={
                 <Radio
-                  onChange={() => setTheme('material')}
+                  onChange={() => {
+                    setTheme('material');
+                    toggleSidebar(); // Close sidebar after selecting theme
+                  }}
                   component="div"
                   checked={theme === 'material'}
                 />
@@ -152,7 +168,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               after={
                 <Toggle
                   component="div"
-                  onChange={() => toggleDarkMode()}
+                  onChange={toggleDarkModeHandler}
                   checked={darkMode}
                 />
               }
@@ -178,35 +194,55 @@ const Sidebar: React.FC<SidebarProps> = ({
               <Link
                 touchRipple
                 className="overflow-hidden h-12"
-                onClick={() => setColorTheme('')}
+                onClick={() => {
+                  setColorTheme('');
+                  setColorPickerOpened(false); // Close the popover
+                  toggleSidebar(); // Close sidebar after selecting color
+                }}
               >
                 <span className="bg-brand-primary w-6 h-6 rounded-full" />
               </Link>
               <Link
                 touchRipple
                 className="overflow-hidden h-12"
-                onClick={() => setColorTheme('k-color-brand-red')}
+                onClick={() => {
+                  setColorTheme('k-color-brand-red');
+                  setColorPickerOpened(false); // Close the popover
+                  toggleSidebar(); // Close sidebar after selecting color
+                }}
               >
                 <span className="bg-brand-red w-6 h-6 rounded-full" />
               </Link>
               <Link
                 touchRipple
                 className="overflow-hidden h-12"
-                onClick={() => setColorTheme('k-color-brand-green')}
+                onClick={() => {
+                  setColorTheme('k-color-brand-green');
+                  setColorPickerOpened(false); // Close the popover
+                  toggleSidebar(); // Close sidebar after selecting color
+                }}
               >
                 <span className="bg-brand-green w-6 h-6 rounded-full" />
               </Link>
               <Link
                 touchRipple
                 className="overflow-hidden h-12"
-                onClick={() => setColorTheme('k-color-brand-yellow')}
+                onClick={() => {
+                  setColorTheme('k-color-brand-yellow');
+                  setColorPickerOpened(false); // Close the popover
+                  toggleSidebar(); // Close sidebar after selecting color
+                }}
               >
                 <span className="bg-brand-yellow w-6 h-6 rounded-full" />
               </Link>
               <Link
                 touchRipple
                 className="overflow-hidden h-12"
-                onClick={() => setColorTheme('k-color-brand-purple')}
+                onClick={() => {
+                  setColorTheme('k-color-brand-purple');
+                  setColorPickerOpened(false); // Close the popover
+                  toggleSidebar(); // Close sidebar after selecting color
+                }}
               >
                 <span className="bg-brand-purple w-6 h-6 rounded-full" />
               </Link>
