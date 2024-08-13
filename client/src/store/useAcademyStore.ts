@@ -291,19 +291,22 @@ const useAcademyStore = create<AcademyState>()(
         }
       },
 
-      nextStep: () => {
-        const state = get();
-        if (state.currentStep < 10) {
-          set({ currentStep: state.currentStep + 1 });
-        }
-      },
+      // Modify the nextStep function to handle the correct number of slides
+nextStep: () => {
+  const state = get();
+  const totalSlides = 1 + state.initialAnswers.length + 4 + state.initialAnswers.length + 1; // Calculate the total number of slides
+  if (state.currentStep < totalSlides - 1) {
+    set({ currentStep: state.currentStep + 1 });
+  }
+},
 
-      prevStep: () => {
-        const state = get();
-        if (state.currentStep > 0) {
-          set({ currentStep: state.currentStep - 1 });
-        }
-      },
+// Modify the prevStep function to handle the correct number of slides
+prevStep: () => {
+  const state = get();
+  if (state.currentStep > 0) {
+    set({ currentStep: state.currentStep - 1 });
+  }
+},
     }),
     { name: 'AcademyStore' }
   )

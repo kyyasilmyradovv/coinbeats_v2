@@ -1,3 +1,5 @@
+// client/src/pages/CreateAcademyPages
+
 import React, { useState, useEffect } from 'react';
 import {
   Page,
@@ -42,8 +44,6 @@ const CreateAcademyPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
     fetchQuestions,
     nextStep,
     prevStep,
-    removeRaffle,
-    removeQuest,
   } = useAcademyStore();
 
   const navigate = useNavigate();
@@ -107,14 +107,13 @@ const CreateAcademyPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
     setField('chains', chains.filter((_, i) => i !== index));
   };
 
-  const renderQuestionSlide = (questionIndex: number) => {
+  const renderInitialQuestionSlide = (questionIndex: number) => {
     const answerLimit = 300;
-    const quizQuestionLimit = 100;
 
     return (
-      <Block key={`slide-question-${questionIndex}`} strong className="mx-4 my-4 bg-white rounded-2xl shadow-lg p-6 space-y-4">
+      <Block key={`initial-question-${questionIndex}`} strong className="mx-4 my-4 bg-white rounded-2xl shadow-lg p-6 space-y-4">
         <div className="flex items-center justify-center relative">
-          <h2 className="text-lg font-bold mb-4 text-center">Educational Quiz Section</h2>
+          <h2 className="text-lg font-bold mb-4 text-center">Answer Initial Question</h2>
           <button
             className="ml-2 rounded-full bg-gray-700 text-white text-xs font-bold w-5 h-5 flex items-center justify-center mb-4"
             onClick={() => toggleTooltip(questionIndex)}
@@ -123,7 +122,7 @@ const CreateAcademyPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
           </button>
           {visibleTooltip === questionIndex && (
             <div className="tooltip absolute bg-gray-700 text-white text-xs rounded-2xl p-4 mt-2 z-10">
-              This section is designed to assess the learner’s understanding of the material presented. Provide a detailed answer to the quiz question and use the additional options to set up multiple choices and the correct answer.
+              Provide a detailed answer to the initial question presented.
               <button
                 className="absolute top-0 right-0 text-white text-sm mt-1 mr-1"
                 onClick={() => setVisibleTooltip(null)}
@@ -138,7 +137,7 @@ const CreateAcademyPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
           <List>
             <div className="relative mb-6">
               <ListInput
-                label={`Answer to Question ${questionIndex + 1}`}
+                label={`Your Answer to Question ${questionIndex + 1}`}
                 outline
                 type="textarea"
                 placeholder="Enter your answer"
@@ -155,66 +154,6 @@ const CreateAcademyPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
                 {initialAnswers[questionIndex].answer.length}/{answerLimit}
               </span>
             </div>
-            <div className="relative">
-              <ListInput
-                label={`Quiz Question ${questionIndex + 1}`}
-                outline
-                type="textarea"
-                inputClassName="!resize-none"
-                placeholder={`Quiz question for Question ${questionIndex + 1}`}
-                value={initialAnswers[questionIndex].quizQuestion || ''}
-                maxLength={quizQuestionLimit}
-                onChange={(e) => {
-                  setInitialAnswer(questionIndex, 'quizQuestion', e.target.value);
-                  handleCharacterLimit(e, quizQuestionLimit);
-                }}
-              />
-              <span className="absolute -top-6 right-2 text-xs text-gray-500 mt-2 mr-2">
-                {initialAnswers[questionIndex].quizQuestion.length}/{quizQuestionLimit}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <h4 className="font-medium mt-2">Choices</h4>
-              <h4 className="font-medium mt-2">Correct<br />answer</h4>
-            </div>
-            {initialAnswers[questionIndex].choices.map((choice, choiceIndex) => (
-              <div key={choiceIndex} className="flex items-center">
-                <ListInput
-                  label={`Answer ${choiceIndex + 1}`}
-                  type="textarea"
-                  inputClassName="!resize-none"
-                  outline
-                  placeholder={`Enter Answer ${choiceIndex + 1}`}
-                  value={choice.answer}
-                  onChange={(e) => {
-                    setInitialAnswer(questionIndex, 'choices', {
-                      index: choiceIndex,
-                      choice: { ...choice, answer: e.target.value },
-                    });
-                    autoresize(e);
-                  }}
-                />
-                <input
-                  type="checkbox"
-                  checked={choice.correct}
-                  onChange={() => toggleCorrectAnswer(questionIndex, choiceIndex)}
-                  className="custom-radio"
-                  disabled={!choice.answer} 
-                />
-              </div>
-            ))}
-            <ListInput
-              label={`Video URL for Question ${questionIndex + 1}`}
-              type="textarea"
-              inputClassName="!resize-none"
-              outline
-              placeholder="Enter Video URL"
-              value={initialAnswers[questionIndex].video || ''}
-              onChange={(e) => {
-                setInitialAnswer(questionIndex, 'video', e.target.value);
-                autoresize(e);
-              }}
-            />
           </List>
         </div>
         <div className="flex justify-between">
@@ -484,13 +423,7 @@ const CreateAcademyPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
         )}
       </div>
       {raffles.map((raffle, index) => (
-        <div key={index} className="relative mb-4 p-4 border rounded-lg shadow-sm">
-          <button
-            className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-full"
-            onClick={() => removeRaffle(index)}
-          >
-            &times;
-          </button>
+        <div key={index} className="mb-4 p-4 border rounded-lg shadow-sm relative">
           <h4 className="font-medium mb-2">Raffle {index + 1}</h4>
           <List>
             <ListInput
@@ -590,6 +523,14 @@ const CreateAcademyPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
               }}
             />
           </List>
+          <button
+            className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-full"
+            onClick={() => {
+              setField('raffles', raffles.filter((_, i) => i !== index));
+            }}
+          >
+            &times;
+          </button>
         </div>
       ))}
       <Button onClick={addRaffle} className="rounded-full">
@@ -629,13 +570,7 @@ const CreateAcademyPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
         )}
       </div>
       {quests.map((quest, index) => (
-        <div key={index} className="relative mb-4 p-4 border rounded-lg shadow-sm">
-          <button
-            className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-full"
-            onClick={() => removeQuest(index)}
-          >
-            &times;
-          </button>
+        <div key={index} className="mb-4 p-4 border rounded-lg shadow-sm relative">
           <h4 className="font-medium mb-2">Quest {index + 1}</h4>
           <List>
             <ListInput
@@ -691,6 +626,14 @@ const CreateAcademyPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
               <option value="twitter">Twitter</option>
             </ListInput>
           </List>
+          <button
+            className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-full"
+            onClick={() => {
+              setField('quests', quests.filter((_, i) => i !== index));
+            }}
+          >
+            &times;
+          </button>
         </div>
       ))}
       <Button onClick={addQuest} className="rounded-full">
@@ -706,6 +649,108 @@ const CreateAcademyPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
       </div>
     </Block>
   );
+
+  const renderEducationalQuizSlide = (questionIndex: number) => {
+    const quizQuestionLimit = 100;
+
+    return (
+      <Block key={`quiz-question-${questionIndex}`} strong className="mx-4 my-4 bg-white rounded-2xl shadow-lg p-6 space-y-4">
+        <div className="flex items-center justify-center relative">
+          <h2 className="text-lg font-bold mb-4 text-center">Educational Quiz Section</h2>
+          <button
+            className="ml-2 rounded-full bg-gray-700 text-white text-xs font-bold w-5 h-5 flex items-center justify-center mb-4"
+            onClick={() => toggleTooltip(questionIndex)}
+          >
+            ?
+          </button>
+          {visibleTooltip === questionIndex && (
+            <div className="tooltip absolute bg-gray-700 text-white text-xs rounded-2xl p-4 mt-2 z-10">
+              Set up quiz questions for your learners. Provide multiple choices and mark the correct answer.
+              <button
+                className="absolute top-0 right-0 text-white text-sm mt-1 mr-1"
+                onClick={() => setVisibleTooltip(null)}
+              >
+                &times;
+              </button>
+            </div>
+          )}
+        </div>
+        <div className="mb-4 rounded-lg shadow-sm">
+          <p className="font-medium mb-2">{`Quiz Question ${questionIndex + 1}: ${initialAnswers[questionIndex].question}`}</p>
+          <List>
+            <div className="relative">
+              <ListInput
+                label={`Quiz Question`}
+                outline
+                type="textarea"
+                inputClassName="!resize-none"
+                placeholder={`Quiz question for Question ${questionIndex + 1}`}
+                value={initialAnswers[questionIndex].quizQuestion || ''}
+                maxLength={quizQuestionLimit}
+                onChange={(e) => {
+                  setInitialAnswer(questionIndex, 'quizQuestion', e.target.value);
+                  handleCharacterLimit(e, quizQuestionLimit);
+                }}
+              />
+              <span className="absolute -top-6 right-2 text-xs text-gray-500 mt-2 mr-2">
+                {initialAnswers[questionIndex].quizQuestion.length}/{quizQuestionLimit}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <h4 className="font-medium mt-2">Choices</h4>
+              <h4 className="font-medium mt-2">Correct<br />answer</h4>
+            </div>
+            {initialAnswers[questionIndex].choices.map((choice, choiceIndex) => (
+              <div key={choiceIndex} className="flex items-center">
+                <ListInput
+                  label={`Answer ${choiceIndex + 1}`}
+                  type="textarea"
+                  inputClassName="!resize-none"
+                  outline
+                  placeholder={`Enter Answer ${choiceIndex + 1}`}
+                  value={choice.answer}
+                  onChange={(e) => {
+                    setInitialAnswer(questionIndex, 'choices', {
+                      index: choiceIndex,
+                      choice: { ...choice, answer: e.target.value },
+                    });
+                    autoresize(e);
+                  }}
+                />
+                <input
+                  type="checkbox"
+                  checked={choice.correct}
+                  onChange={() => toggleCorrectAnswer(questionIndex, choiceIndex)}
+                  className="custom-radio"
+                  disabled={!choice.answer} 
+                />
+              </div>
+            ))}
+            <ListInput
+              label={`Video URL for Quiz Question ${questionIndex + 1}`}
+              type="textarea"
+              inputClassName="!resize-none"
+              outline
+              placeholder="Enter Video URL"
+              value={initialAnswers[questionIndex].video || ''}
+              onChange={(e) => {
+                setInitialAnswer(questionIndex, 'video', e.target.value);
+                autoresize(e);
+              }}
+            />
+          </List>
+        </div>
+        <div className="flex justify-between">
+          <Button onClick={prevStep} className="w-1/2 bg-brand-primary text-white rounded-full mr-2" large raised>
+            Back
+          </Button>
+          <Button onClick={nextStep} className="w-1/2 bg-brand-primary text-white rounded-full ml-2" large raised>
+            Next
+          </Button>
+        </div>
+      </Block>
+    );
+  };
 
   const renderReviewSlide = () => (
     <Block key="slide-review" strong className="mx-4 my-4 bg-white rounded-2xl shadow-lg p-6 space-y-4">
@@ -785,9 +830,7 @@ const CreateAcademyPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
         <h3 className="font-medium">Educational Quiz Section:</h3>
         {initialAnswers.map((question, index) => (
           <div key={index} className="mb-4">
-            <h4 className="font-medium">{`Question ${index + 1}: ${question.question}`}</h4>
-            <p><strong>Answer:</strong> {question.answer || 'N/A'}</p>
-            <p><strong>Quiz Question:</strong> {question.quizQuestion || 'N/A'}</p>
+            <h4 className="font-medium">{`Quiz Question ${index + 1}: ${question.quizQuestion}`}</h4>
             <p><strong>Choices:</strong></p>
             <ul className="list-disc ml-5">
               {question.choices.map((choice, choiceIndex) => (
@@ -894,8 +937,8 @@ const CreateAcademyPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
       </Button>
     </Block>,
 
-    // Dynamically render each question slide
-    ...initialAnswers.map((_, index) => renderQuestionSlide(index)),
+    // Dynamically render each initial question slide
+    ...initialAnswers.map((_, index) => renderInitialQuestionSlide(index)),
 
     // Slide for Academy Details
     renderAcademyDetailsSlide(),
@@ -908,6 +951,9 @@ const CreateAcademyPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
 
     // Slide for Quest Section
     renderQuestSlide(),
+
+    // Dynamically render each educational quiz slide
+    ...initialAnswers.map((_, index) => renderEducationalQuizSlide(index)),
 
     // Review and Submit slide
     renderReviewSlide(),
