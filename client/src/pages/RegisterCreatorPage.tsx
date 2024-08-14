@@ -1,5 +1,3 @@
-// src/pages/RegisterCreatorPage.tsx
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../api/axiosInstance';
@@ -30,13 +28,21 @@ const RegisterCreatorPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
 
   const [rightPanelOpened, setRightPanelOpened] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
-  const [colorPickerOpened, setColorPickerOpened] = useState(false);
   const [isRegistrationSuccessful, setIsRegistrationSuccessful] = useState(false);
+  const [showPassword, setShowPassword] = useState(false); // State to toggle password visibility
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false); // State to toggle confirm password visibility
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
+    });
+  };
+
+  const handleClearField = (field: keyof typeof formData) => {
+    setFormData({
+      ...formData,
+      [field]: '',
     });
   };
 
@@ -88,6 +94,14 @@ const RegisterCreatorPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
     }
   }, [isRegistrationSuccessful, navigate, telegramUserId]);
 
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
+  const toggleConfirmPasswordVisibility = () => {
+    setShowConfirmPassword(!showConfirmPassword);
+  };
+
   return (
     <Page>
       <Navbar darkMode={darkMode} onToggleSidebar={() => setRightPanelOpened(!rightPanelOpened)} />
@@ -126,6 +140,7 @@ const RegisterCreatorPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
+                onClear={() => handleClearField('name')}
                 className="rounded-2xl"
               />
               <ListInput
@@ -138,32 +153,51 @@ const RegisterCreatorPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
+                onClear={() => handleClearField('email')}
                 className="rounded-2xl"
               />
               <ListInput
                 label="Password"
-                type="password"
+                type={showPassword ? 'text' : 'password'} // Toggle between text and password
                 placeholder="Enter your password"
                 outline
-                clearButton
                 required
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
+                onClear={() => handleClearField('password')}
                 className="rounded-2xl"
-              />
+                inputClassName="pr-12" // Space for the icon
+              >
+                <button
+                  type="button"
+                  onClick={togglePasswordVisibility}
+                  className="absolute inset-y-0 right-4 top-[63%] transform -translate-y-1/2 px-3 flex items-center text-gray-500 focus:outline-none"
+                >
+                  <Icon icon={showPassword ? 'mdi:eye-outline' : 'mdi:eye-off-outline'} width="20" height="20" />
+                </button>
+              </ListInput>
               <ListInput
                 label="Confirm Password"
-                type="password"
+                type={showConfirmPassword ? 'text' : 'password'} // Toggle between text and password
                 placeholder="Confirm your password"
                 outline
-                clearButton
                 required
                 name="confirmPassword"
                 value={formData.confirmPassword}
                 onChange={handleChange}
+                onClear={() => handleClearField('confirmPassword')}
                 className="rounded-2xl"
-              />
+                inputClassName="pr-12" // Space for the icon
+              >
+                <button
+                  type="button"
+                  onClick={toggleConfirmPasswordVisibility}
+                  className="absolute inset-y-0 right-4 top-[90%] transform -translate-y-1/2 px-3 flex items-center text-gray-500 focus:outline-none"
+                >
+                  <Icon icon={showConfirmPassword ? 'mdi:eye-outline' : 'mdi:eye-off-outline'} width="20" height="20" />
+                </button>
+              </ListInput>
             </List>
             <Button
               type="submit"
