@@ -2,6 +2,7 @@
 
 const path = require('path');
 const dotenv = require('dotenv');
+const multer = require('multer');
 
 // Determine the appropriate environment file based on NODE_ENV
 const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.env.local';
@@ -24,6 +25,17 @@ const statsRoutes = require('./routes/stats');
 const inboxRoutes = require('./routes/inbox');
 const emailRoutes = require('./routes/email'); // Import the new email routes
 const sseRoutes = require('./routes/sse');
+// Configure multer
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'public/uploads/')
+  },
+  filename: function (req, file, cb) {
+    cb(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname))
+  }
+});
+
+const upload = multer({ storage: storage });
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -46,6 +58,8 @@ app.use('/api/stats', statsRoutes);
 app.use('/api/inbox', inboxRoutes);
 app.use('/api/email', emailRoutes); // Add the new email routes
 app.use('/api/sse', sseRoutes); // Use SSE routes
+// Serve static files
+app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
 
 // Catch 404 and forward to error handler
 app.use((req, res, next) => {

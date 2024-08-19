@@ -32,31 +32,33 @@ model User {
 }
 
 model Academy {
-  id               Int               @id @default(autoincrement())
-  name             String
-  ticker           String
-  categories       Category[]
-  chains           Chain[]
-  twitter          String?
-  telegram         String?
-  discord          String?
-  coingecko        String?
-  academyQuestions AcademyQuestion[] // Academy-specific questions and answers
-  tokenomics       String?
-  teamBackground   String?
-  congratsVideo    String?
-  getStarted       String?
-  raffles          Raffle[]
-  quests           Quest[]
-  logoUrl          String?           // Academy logo URL
-  coverPhotoUrl    String?           // Academy cover photo URL
-  webpageUrl       String?           // Academy webpage URL
-  status           String
-  creatorId        Int
-  creator          User              @relation(fields: [creatorId], references: [id])
-  subscription     Subscription?
-
-  Point            Point[]
+  id             Int       @id @default(autoincrement())
+  name           String
+  ticker         String
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  status         String
+  xp             Int       @default(200)
+  creatorId      Int
+  creator        User      @relation(fields: [creatorId], references: [id])
+  categories     Category[]
+  chains         Chain[]
+  twitter        String?
+  telegram       String?
+  discord        String?
+  coingecko      String?
+  academyQuestions AcademyQuestion[]
+  tokenomics     String?
+  teamBackground String?
+  congratsVideo  String?
+  getStarted     String?
+  raffles        Raffle[]
+  quests         Quest[]
+  logoUrl        String?
+  coverPhotoUrl  String?
+  webpageUrl     String?
+  subscription   Subscription?
+  Point          Point[]
 }
 
 model Subscription {

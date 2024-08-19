@@ -1,11 +1,7 @@
+// client/src/pages/EditAcademyPage.tsx
+
 import React, { useState, useEffect } from 'react';
-import {
-  Page,
-  Block,
-  List,
-  ListInput,
-  Button,
-} from 'konsta/react';
+import { Page, Block, List, ListInput, Button } from 'konsta/react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Navbar from '../components/common/Navbar';
 import Sidebar from '../components/Sidebar';
@@ -71,81 +67,96 @@ const EditAcademyPage: React.FC = () => {
     return <div>Loading...</div>;
   }
 
-  const handleFileChange = (field: string, file: File | null) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      if (e.target?.result) {
-        setField(field, e.target.result);
-      }
-    };
+  const handleFileChange = (field: keyof AcademyState, file: File | null) => {
     if (file) {
-      reader.readAsDataURL(file);
+      setField(field, URL.createObjectURL(file));
     } else {
       setField(field, null);
     }
   };
 
-  const renderInitialQuestionSlide = (questionIndex: number) => (
-    <Block key={`initial-question-${questionIndex}`} strong className="mx-4 my-4 bg-white rounded-2xl shadow-lg p-6 space-y-4">
-      <h2 className="text-lg font-bold mb-4">Initial Question</h2>
-      <List>
-        <ListInput
-          label={`Question ${questionIndex + 1}`}
-          type="textarea"
-          value={initialAnswers[questionIndex]?.question || ''}
-          onChange={(e) => setInitialAnswer(questionIndex, 'question', e.target.value)}
-        />
-        <ListInput
-          label={`Answer ${questionIndex + 1}`}
-          type="textarea"
-          value={initialAnswers[questionIndex]?.answer || ''}
-          onChange={(e) => setInitialAnswer(questionIndex, 'answer', e.target.value)}
-        />
-        <ListInput
-          label={`Quiz Question ${questionIndex + 1}`}
-          type="textarea"
-          value={initialAnswers[questionIndex]?.quizQuestion || ''}
-          onChange={(e) => setInitialAnswer(questionIndex, 'quizQuestion', e.target.value)}
-        />
-        {initialAnswers[questionIndex]?.choices?.map((choice, choiceIndex) => (
-          <div key={choiceIndex} className="flex items-center">
-            <ListInput
-              label={`Choice ${choiceIndex + 1}`}
-              type="textarea"
-              value={choice?.text || ''}
-              onChange={(e) => setInitialAnswer(questionIndex, 'choices', {
-                index: choiceIndex,
-                choice: { ...choice, text: e.target.value },
-              })}
-            />
-            <input
-              type="radio"
-              checked={choice?.isCorrect || false}
-              onChange={() => toggleCorrectAnswer(questionIndex, choiceIndex)}
-              className="ml-2"
-            />
+  const constructImageUrl = (url: string | null) => {
+    if (!url) return null;
+    return `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/${url}`;
+  };
+
+  const autoresize = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    e.target.style.height = 'auto';
+    e.target.style.height = `${e.target.scrollHeight}px`;
+  };
+
+  const renderInitialQuestionSlide = (questionIndex: number) => {
+    const question = initialAnswers[questionIndex];
+    return (
+      <Block key={`initial-question-${questionIndex}`} strong className="mx-4 my-4 bg-white rounded-2xl shadow-lg p-6 space-y-4">
+        <h2 className="text-lg font-bold mb-4">Initial Question</h2>
+        <List>
+          <div className="mb-4">
+            <label className="block text-gray-700">Question {questionIndex + 1}</label>
+            <p className="text-gray-500">{question?.question}</p>
           </div>
-        ))}
-        <ListInput
-          label="Video URL"
-          type="url"
-          value={initialAnswers[questionIndex]?.video || ''}
-          onChange={(e) => setInitialAnswer(questionIndex, 'video', e.target.value)}
-        />
-        {initialAnswers[questionIndex]?.video && (
-          <iframe
-            title={`video-${questionIndex}`}
-            width="100%"
-            height="315"
-            src={`https://www.youtube.com/embed/${initialAnswers[questionIndex].video}`}
-            frameBorder="0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-          ></iframe>
-        )}
-      </List>
-    </Block>
-  );
+          <ListInput
+            label={`Answer ${questionIndex + 1}`}
+            type="textarea"
+            value={question?.answer || ''}
+            onChange={(e) => {
+              setInitialAnswer(questionIndex, 'answer', e.target.value);
+              autoresize(e);
+            }}
+            outline
+          />
+          <ListInput
+            label={`Quiz Question ${questionIndex + 1}`}
+            type="textarea"
+            value={question?.quizQuestion || ''}
+            onChange={(e) => {
+              setInitialAnswer(questionIndex, 'quizQuestion', e.target.value);
+              autoresize(e);
+            }}
+            outline
+          />
+          {question?.choices?.map((choice, choiceIndex) => (
+            <div key={choiceIndex} className="flex items-center">
+              <ListInput
+                label={`Choice ${choiceIndex + 1}`}
+                type="textarea"
+                value={choice?.answer || ''}
+                onChange={(e) => setInitialAnswer(questionIndex, 'choices', {
+                  index: choiceIndex,
+                  choice: { ...choice, answer: e.target.value },
+                })}
+                outline
+              />
+              <input
+                type="radio"
+                checked={choice?.correct || false}
+                onChange={() => toggleCorrectAnswer(questionIndex, choiceIndex)}
+                className="custom-radio ml-2"
+              />
+            </div>
+          ))}
+          <ListInput
+            label="Video URL"
+            type="url"
+            value={question?.video || ''}
+            onChange={(e) => setInitialAnswer(questionIndex, 'video', e.target.value)}
+            outline
+          />
+          {question?.video && (
+            <iframe
+              title={`video-${questionIndex}`}
+              width="100%"
+              height="315"
+              src={`https://www.youtube.com/embed/${question.video}`}
+              frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            ></iframe>
+          )}
+        </List>
+      </Block>
+    );
+  };
 
   const renderRaffleSlide = () => (
     <Block key="raffle-slide" strong className="mx-4 my-4 bg-white rounded-2xl shadow-lg p-6 space-y-4">
@@ -157,37 +168,43 @@ const EditAcademyPage: React.FC = () => {
               label="Amount"
               type="number"
               value={raffle.amount}
-              onChange={(e) => setField(`raffles[${index}].amount`, e.target.value)}
+              onChange={(e) => setField('raffles', { ...raffles, [index]: { ...raffles[index], amount: e.target.value } })}
+              outline
             />
             <ListInput
               label="Reward"
               type="text"
               value={raffle.reward}
-              onChange={(e) => setField(`raffles[${index}].reward`, e.target.value)}
+              onChange={(e) => setField('raffles', { ...raffles, [index]: { ...raffles[index], reward: e.target.value } })}
+              outline
             />
             <ListInput
               label="Currency"
               type="text"
               value={raffle.currency}
-              onChange={(e) => setField(`raffles[${index}].currency`, e.target.value)}
+              onChange={(e) => setField('raffles', { ...raffles, [index]: { ...raffles[index], currency: e.target.value } })}
+              outline
             />
             <ListInput
               label="Chain"
               type="text"
               value={raffle.chain}
-              onChange={(e) => setField(`raffles[${index}].chain`, e.target.value)}
+              onChange={(e) => setField('raffles', { ...raffles, [index]: { ...raffles[index], chain: e.target.value } })}
+              outline
             />
             <ListInput
               label="Dates"
               type="text"
               value={raffle.dates}
-              onChange={(e) => setField(`raffles[${index}].dates`, e.target.value)}
+              onChange={(e) => setField('raffles', { ...raffles, [index]: { ...raffles[index], dates: e.target.value } })}
+              outline
             />
             <ListInput
               label="Total Pool"
               type="number"
               value={raffle.totalPool}
-              onChange={(e) => setField(`raffles[${index}].totalPool`, e.target.value)}
+              onChange={(e) => setField('raffles', { ...raffles, [index]: { ...raffles[index], totalPool: e.target.value } })}
+              outline
             />
           </List>
           <button
@@ -198,7 +215,7 @@ const EditAcademyPage: React.FC = () => {
           </button>
         </div>
       ))}
-      <Button onClick={addRaffle} large className="bg-brand-primary text-white rounded-full mt-2">
+      <Button onClick={addRaffle} large outline className="w-full rounded-full mt-2">
         Add Raffle
       </Button>
     </Block>
@@ -214,19 +231,22 @@ const EditAcademyPage: React.FC = () => {
               label="Quest Name"
               type="text"
               value={quest.name}
-              onChange={(e) => setField(`quests[${index}].name`, e.target.value)}
+              onChange={(e) => setField('quests', { ...quests, [index]: { ...quests[index], name: e.target.value } })}
+              outline
             />
             <ListInput
               label="Quest Link"
               type="url"
               value={quest.link}
-              onChange={(e) => setField(`quests[${index}].link`, e.target.value)}
+              onChange={(e) => setField('quests', { ...quests, [index]: { ...quests[index], link: e.target.value } })}
+              outline
             />
             <ListInput
               label="Platform"
               type="select"
               value={quest.platform}
-              onChange={(e) => setField(`quests[${index}].platform`, e.target.value)}
+              onChange={(e) => setField('quests', { ...quests, [index]: { ...quests[index], platform: e.target.value } })}
+              outline
             >
               <option value="">Select Platform</option>
               <option value="facebook">Facebook</option>
@@ -242,7 +262,7 @@ const EditAcademyPage: React.FC = () => {
           </button>
         </div>
       ))}
-      <Button onClick={addQuest} large className="bg-brand-primary text-white rounded-full mt-2">
+      <Button onClick={addQuest} large outline className="w-full border rounded-full mt-2">
         Add Quest
       </Button>
     </Block>
@@ -257,18 +277,21 @@ const EditAcademyPage: React.FC = () => {
           type="text"
           value={name}
           onChange={(e) => setField('name', e.target.value)}
+          outline
         />
         <ListInput
           label="Ticker"
           type="text"
           value={ticker}
           onChange={(e) => setField('ticker', e.target.value)}
+          outline
         />
         <ListInput
           label="Webpage URL"
           type="url"
           value={webpageUrl}
           onChange={(e) => setField('webpageUrl', e.target.value)}
+          outline
         />
         <div className="relative mb-4">
           <label className="block font-medium mb-2">Upload Logo</label>
@@ -279,7 +302,7 @@ const EditAcademyPage: React.FC = () => {
           />
           {logo && (
             <div className="relative mt-2">
-              <img src={logo} alt="Logo Preview" className="w-32 h-32 object-cover" />
+              <img src={constructImageUrl(logo)} alt="Logo Preview" className="w-32 h-32 object-cover" />
               <button
                 className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-full"
                 onClick={() => setField('logo', null)}
@@ -298,7 +321,7 @@ const EditAcademyPage: React.FC = () => {
           />
           {coverPhoto && (
             <div className="relative mt-2">
-              <img src={coverPhoto} alt="Cover Photo Preview" className="w-full h-48 object-cover" />
+              <img src={constructImageUrl(coverPhoto)} alt="Cover Photo Preview" className="w-full h-48 object-cover" />
               <button
                 className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-full"
                 onClick={() => setField('coverPhoto', null)}
@@ -313,6 +336,7 @@ const EditAcademyPage: React.FC = () => {
           type="select"
           onChange={(e) => setField('categories', [...categories, e.target.value])}
           value=""
+          outline
         >
           <option value="">Select Category</option>
           {categoryList.map((category) => (
@@ -335,6 +359,7 @@ const EditAcademyPage: React.FC = () => {
           type="select"
           onChange={(e) => setField('chains', [...chains, e.target.value])}
           value=""
+          outline
         >
           <option value="">Select Chain</option>
           {chainList.map((chain) => (
@@ -365,24 +390,28 @@ const EditAcademyPage: React.FC = () => {
           type="url"
           value={twitter}
           onChange={(e) => setField('twitter', e.target.value)}
+          outline
         />
         <ListInput
           label="Telegram"
           type="url"
           value={telegram}
           onChange={(e) => setField('telegram', e.target.value)}
+          outline
         />
         <ListInput
           label="Discord"
           type="url"
           value={discord}
           onChange={(e) => setField('discord', e.target.value)}
+          outline
         />
         <ListInput
           label="CoinGecko"
           type="url"
           value={coingecko}
           onChange={(e) => setField('coingecko', e.target.value)}
+          outline
         />
       </List>
     </Block>
@@ -412,7 +441,7 @@ const EditAcademyPage: React.FC = () => {
         }}
         large
         raised
-        className="w-full bg-brand-primary text-white mt-4 rounded-full"
+        className="!w-[86%] bg-brand-primary text-white rounded-full mx-auto my-4"
       >
         Save Academy
       </Button>

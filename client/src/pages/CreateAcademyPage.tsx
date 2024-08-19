@@ -7,16 +7,20 @@ import {
   List,
   ListInput,
   Button,
+  Notification,
 } from 'konsta/react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/common/Navbar';
 import Sidebar from '../components/Sidebar';
 import useCategoryChainStore from '../store/useCategoryChainStore';
 import useAcademyStore from '../store/useAcademyStore';
+import bunnyLogo from '../images/bunny-mascot.png'; // Ensure this path is correct
 
 const CreateAcademyPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
   const [rightPanelOpened, setRightPanelOpened] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
+  const [notificationOpen, setNotificationOpen] = useState(false);
+  const [notificationText, setNotificationText] = useState('');
   const [visibleTooltip, setVisibleTooltip] = useState<number | null>(null);
 
   const {
@@ -33,6 +37,7 @@ const CreateAcademyPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
     coverPhoto,
     initialAnswers,
     currentStep,
+    submitBasicAcademy,
     setField,
     setInitialAnswer,
     toggleCorrectAnswer,
@@ -60,17 +65,18 @@ const CreateAcademyPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
   };
 
   const handleFileChange = (field: string, file: File | null) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      if (e.target?.result) {
-        setField(field, e.target.result);
-      }
-    };
     if (file) {
-      reader.readAsDataURL(file);
+      useAcademyStore.getState().setField(field, file);
     } else {
-      setField(field, null);
+      useAcademyStore.getState().setField(field, null);
     }
+  };
+
+  const handleImagePreview = (file: File | null) => {
+    if (file instanceof File) {
+      return URL.createObjectURL(file);
+    }
+    return null;
   };
 
   const autoresize = (e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
@@ -103,6 +109,63 @@ const CreateAcademyPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
     setField('chains', chains.filter((_, i) => i !== index));
   };
 
+  const handleSubmitBasic = async () => {
+    try {
+      await submitBasicAcademy();
+      navigate('/my-academies', { state: { notificationType: 'basic' } }); // Pass notification type
+    } catch (error) {
+      console.error('Error submitting academy:', error);
+      setNotificationText('Failed to submit academy');
+      setNotificationOpen(true);
+    }
+  };
+  
+  const handleSubmitComplete = async () => {
+    // Check that every question has one correct answer marked
+    for (const answer of initialAnswers) {
+      if (!answer.choices.some(choice => choice.correct)) {
+        alert('Each quiz question must have one correct answer.');
+        return;
+      }
+    }
+
+    try {
+      await submitAcademy();
+      navigate('/my-academies', { state: { notificationType: 'complete' } }); // Pass notification type
+    } catch (error) {
+      console.error('Error submitting academy:', error);
+      setNotificationText('Failed to submit academy');
+      setNotificationOpen(true);
+    }
+  };
+
+  const renderIntroSlide = () => (
+    <Block key="slide-intro" strong className="mx-4 my-4 bg-white rounded-2xl shadow-lg p-6 space-y-4">
+      <h2 className="text-lg font-bold mb-4 text-center">
+        Great, you have created the content part of the academy!
+      </h2>
+      <p className="text-center mb-6">
+        Let's now add a multiple-choice quiz for each lesson to make sure people are learning?
+      </p>
+      <Button
+        onClick={nextStep}
+        className="w-full bg-brand-primary text-white rounded-full mt-4"
+        large
+        raised
+      >
+        Yes, let's add quizzes
+      </Button>
+      <Button
+        onClick={handleSubmitBasic}
+        className="w-full !bg-gray-500 text-white rounded-full"
+        large
+        raised
+      >
+        No, just submit the Academy
+      </Button>
+    </Block>
+  );
+
   const renderInitialQuestionSlide = (questionIndex: number) => {
     const answerLimit = 300;
 
@@ -117,7 +180,7 @@ const CreateAcademyPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
             ?
           </button>
           {visibleTooltip === questionIndex && (
-            <div className="tooltip absolute bg-gray-700 text-white text-xs rounded-2xl p-4 mt-2 z-10">
+            <div className="tooltip absolute bg-gray-700 text-white text-xs rounded-2xl p-4 mt-2 z-20">
               Provide a detailed answer to the initial question presented.
               <button
                 className="absolute top-0 right-0 text-white text-sm mt-1 mr-1"
@@ -128,7 +191,7 @@ const CreateAcademyPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
             </div>
           )}
         </div>
-        <div className="mb-4 rounded-lg shadow-sm">
+        <div className="mb-4 rounded-lg shadow-sm z-10">
           <p className="font-medium mb-2">{`Question ${questionIndex + 1}: ${initialAnswers[questionIndex].question}`}</p>
           <List>
             <div className="relative mb-6">
@@ -175,7 +238,7 @@ const CreateAcademyPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
           ?
         </button>
         {visibleTooltip === 1 && (
-          <div className="tooltip absolute bg-gray-700 text-white text-xs rounded-2xl p-4 mt-2 z-10">
+          <div className="tooltip absolute bg-gray-700 text-white text-xs rounded-2xl p-4 mt-2 z-20">
             Provide detailed information about your academy, including the webpage URL, logo, cover photo, categories, and associated blockchain chains.
             <button
               className="absolute top-0 right-0 text-white text-sm mt-1 mr-1"
@@ -190,7 +253,7 @@ const CreateAcademyPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
         <ListInput
           label="Webpage URL"
           type="textarea"
-          inputClassName="!resize-none"
+          inputClassName="!resize-none z-10"
           outline
           placeholder="Enter Webpage URL"
           value={webpageUrl}
@@ -211,7 +274,7 @@ const CreateAcademyPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
           {logo && (
             <div className="relative mt-2">
               <img
-                src={logo}
+                src={handleImagePreview(logo)}
                 alt="Logo Preview"
                 className="w-32 h-32 object-cover"
               />
@@ -236,7 +299,7 @@ const CreateAcademyPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
           {coverPhoto && (
             <div className="relative mt-2">
               <img
-                src={coverPhoto}
+                src={handleImagePreview(coverPhoto)}
                 alt="Cover Photo Preview"
                 className="w-full h-48 object-cover"
               />
@@ -324,7 +387,7 @@ const CreateAcademyPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
           ?
         </button>
         {visibleTooltip === 2 && (
-          <div className="tooltip absolute bg-gray-700 text-white text-xs rounded-2xl p-4 mt-2 z-10">
+          <div className="tooltip absolute bg-gray-700 text-white text-xs rounded-2xl p-4 mt-2 z-20">
             Enter the social media links for your academy. These links will help users connect with your academy on various platforms like Twitter, Telegram, and Discord.
             <button
               className="absolute top-0 right-0 text-white text-sm mt-1 mr-1"
@@ -339,7 +402,7 @@ const CreateAcademyPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
         <ListInput
           label="Twitter Account"
           type="textarea"
-          inputClassName="!resize-none"
+          inputClassName="!resize-none z-10"
           outline
           placeholder="Enter Twitter Account"
           value={twitter}
@@ -398,6 +461,15 @@ const CreateAcademyPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
 
   const renderEducationalQuizSlide = (questionIndex: number) => {
     const quizQuestionLimit = 100;
+
+    const handleToggleCorrectAnswer = (questionIndex: number, choiceIndex: number) => {
+      const updatedAnswers = [...initialAnswers];
+      // Ensure only one correct answer
+      updatedAnswers[questionIndex].choices.forEach((choice, index) => {
+        choice.correct = index === choiceIndex;
+      });
+      setField('initialAnswers', updatedAnswers);
+    };
 
     return (
       <Block key={`quiz-question-${questionIndex}`} strong className="mx-4 my-4 bg-white rounded-2xl shadow-lg p-6 space-y-4">
@@ -464,11 +536,11 @@ const CreateAcademyPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
                   }}
                 />
                 <input
-                  type="checkbox"
+                  type="radio"
                   checked={choice.correct}
-                  onChange={() => toggleCorrectAnswer(questionIndex, choiceIndex)}
-                  className="custom-radio"
-                  disabled={!choice.answer} 
+                  onChange={() => handleToggleCorrectAnswer(questionIndex, choiceIndex)}
+                  className="custom-radio ml-2"
+                  disabled={!choice.answer}
                 />
               </div>
             ))}
@@ -526,11 +598,11 @@ const CreateAcademyPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
       </div>
       <div className="mb-4">
         <h3 className="font-medium">Logo:</h3>
-        {logo ? <img src={logo} alt="Logo Preview" className="mt-2 w-32 h-32 object-cover" /> : <p>N/A</p>}
+        {logo ? <img src={handleImagePreview(logo)} alt="Logo Preview" className="mt-2 w-32 h-32 object-cover" /> : <p>N/A</p>}
       </div>
       <div className="mb-4">
         <h3 className="font-medium">Cover Photo:</h3>
-        {coverPhoto ? <img src={coverPhoto} alt="Cover Photo Preview" className="mt-2 w-full h-48 object-cover" /> : <p>N/A</p>}
+        {coverPhoto ? <img src={handleImagePreview(coverPhoto)} alt="Cover Photo Preview" className="mt-2 w-full h-48 object-cover" /> : <p>N/A</p>}
       </div>
       <div className="mb-4">
         <h3 className="font-medium">Categories:</h3>
@@ -579,7 +651,7 @@ const CreateAcademyPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
         <Button onClick={prevStep} className="w-1/2 bg-brand-primary text-white rounded-full mr-2" large raised>
           Back
         </Button>
-        <Button onClick={submitAcademy} className="w-1/2 bg-brand-primary text-white rounded-full ml-2" large raised>
+        <Button onClick={handleSubmitComplete} className="w-1/2 bg-brand-primary text-white rounded-full ml-2" large raised>
           Submit Academy
         </Button>
       </div>
@@ -598,7 +670,7 @@ const CreateAcademyPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
           ?
         </button>
         {visibleTooltip === 6 && (
-          <div className="tooltip absolute bg-gray-700 text-white text-xs rounded-2xl p-4 mt-2 z-10">
+          <div className="tooltip absolute bg-gray-700 text-white text-xs rounded-2xl p-4 mt-2 z-20">
             Fill in the protocol name and ticker (optional) for your academy. This is the first step to create a new academy.
             <button
               className="absolute top-0 right-0 text-white text-sm mt-1 mr-1"
@@ -650,6 +722,8 @@ const CreateAcademyPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
     // Slide for Social Links
     renderSocialLinksSlide(),
 
+    renderIntroSlide(),
+
     // Dynamically render each educational quiz slide
     ...initialAnswers.map((_, index) => renderEducationalQuizSlide(index)),
 
@@ -670,6 +744,20 @@ const CreateAcademyPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
 
       {/* Render the current slide */}
       {slides[currentStep]}
+
+      {/* Notification */}
+      <Notification
+        opened={notificationOpen}
+        icon={<img src={bunnyLogo} alt="Bunny Mascot" className="w-10 h-10" />}
+        title="Message from Coinbeats Bunny"
+        text={notificationText}
+        button={
+          <Button onClick={() => setNotificationOpen(false)}>
+            Close
+          </Button>
+        }
+        onClose={() => setNotificationOpen(false)}
+      />
     </Page>
   );
 };

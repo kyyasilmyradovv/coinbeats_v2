@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Academy" ADD COLUMN     "xp" INTEGER NOT NULL DEFAULT 200;

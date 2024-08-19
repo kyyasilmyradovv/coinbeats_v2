@@ -1,3 +1,5 @@
+// client/src/store/useAcademyStore
+
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import axios from '../api/axiosInstance';
@@ -41,8 +43,8 @@ interface AcademyState {
   telegram: string;
   discord: string;
   coingecko: string;
-  logo: string | null;
-  coverPhoto: string | null;
+  logo: File | null;
+  coverPhoto: File | null;
   webpageUrl: string;
   initialAnswers: InitialAnswer[];
   tokenomics: string;
@@ -138,8 +140,9 @@ const useAcademyStore = create<AcademyState>()(
       toggleCorrectAnswer: (questionIndex, choiceIndex) =>
         set((state) => {
           const updatedAnswers = [...state.initialAnswers];
-          const currentCorrect = updatedAnswers[questionIndex].choices[choiceIndex].correct;
-          updatedAnswers[questionIndex].choices[choiceIndex].correct = !currentCorrect;
+          updatedAnswers[questionIndex].choices.forEach((choice, index) => {
+            choice.correct = index === choiceIndex;
+          });
           return { initialAnswers: updatedAnswers };
         }),
 
@@ -176,38 +179,77 @@ const useAcademyStore = create<AcademyState>()(
         }
 
         try {
-          const payload = {
-            name: state.name,
-            ticker: state.ticker,
-            categories: state.categories,
-            chains: state.chains,
-            twitter: state.twitter,
-            telegram: state.telegram,
-            discord: state.discord,
-            coingecko: state.coingecko,
-            webpageUrl: state.webpageUrl,
-            tokenomics: state.tokenomics,
-            teamBackground: state.teamBackground,
-            congratsVideo: state.congratsVideo,
-            getStarted: state.getStarted,
-            initialAnswers: state.initialAnswers,
-            raffles: state.raffles,
-            quests: state.quests,
-            status: 'pending',
-          };
+          const formData = new FormData();
+          formData.append('name', state.name);
+          formData.append('ticker', state.ticker);
+          formData.append('webpageUrl', state.webpageUrl);
+          if (state.logo) formData.append('logo', state.logo);
+          if (state.coverPhoto) formData.append('coverPhoto', state.coverPhoto);
+          formData.append('categories', JSON.stringify(state.categories));
+          formData.append('chains', JSON.stringify(state.chains));
+          formData.append('twitter', state.twitter);
+          formData.append('telegram', state.telegram);
+          formData.append('discord', state.discord);
+          formData.append('coingecko', state.coingecko);
+          formData.append('tokenomics', state.tokenomics);
+          formData.append('teamBackground', state.teamBackground);
+          formData.append('congratsVideo', state.congratsVideo);
+          formData.append('getStarted', state.getStarted);
+          formData.append('initialAnswers', JSON.stringify(state.initialAnswers));
+          formData.append('raffles', JSON.stringify(state.raffles));
+          formData.append('quests', JSON.stringify(state.quests));
 
-          await axios.post('/api/academies', payload, {
+          await axios.post('/api/academies', formData, {
             headers: {
-              'Content-Type': 'application/json',
+              'Content-Type': 'multipart/form-data',
               Authorization: `Bearer ${accessToken}`,
             },
           });
 
-          // Display notification or handle success state
-          alert(`Your academy "${state.name}" is under review.`);
           state.resetAcademyData();
         } catch (error) {
           console.error('Error creating academy:', error);
+        }
+      },
+
+      submitBasicAcademy: async () => {
+        const state = get();
+        const { accessToken } = useAuthStore.getState();
+
+        if (!accessToken) {
+          console.error('Authorization token is missing');
+          throw new Error('Authorization token is missing');
+        }
+
+        try {
+          const formData = new FormData();
+          formData.append('name', state.name);
+          formData.append('ticker', state.ticker);
+          formData.append('webpageUrl', state.webpageUrl);
+          if (state.logo) formData.append('logo', state.logo);
+          if (state.coverPhoto) formData.append('coverPhoto', state.coverPhoto);
+          formData.append('categories', JSON.stringify(state.categories));
+          formData.append('chains', JSON.stringify(state.chains));
+          formData.append('twitter', state.twitter);
+          formData.append('telegram', state.telegram);
+          formData.append('discord', state.discord);
+          formData.append('coingecko', state.coingecko);
+          formData.append('tokenomics', state.tokenomics);
+          formData.append('teamBackground', state.teamBackground);
+          formData.append('congratsVideo', state.congratsVideo);
+          formData.append('getStarted', state.getStarted);
+
+          await axios.post('/api/academies/basic', formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+              Authorization: `Bearer ${accessToken}`,
+            },
+          });
+
+          state.resetAcademyData();
+        } catch (error) {
+          console.error('Error creating basic academy:', error);
+          throw error;
         }
       },
 

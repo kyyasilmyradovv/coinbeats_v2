@@ -23,6 +23,7 @@ import AddRafflesPage from './pages/AddRafflesPage';  // New import
 import AddQuestsPage from './pages/AddQuestsPage';    // New import
 import EditAcademyPage from './pages/EditAcademyPage';
 import AddVideoLessonsPage from './pages/AddVideoLessonsPage';
+import AllocateXpPage from './pages/AllocateXpPage';
 import { BookmarkProvider } from './contexts/BookmarkContext';
 import { useInitData } from '@telegram-apps/sdk-react';
 import useSessionStore from './store/useSessionStore';
@@ -222,6 +223,11 @@ function RootComponent() {
             <Route path="/edit-academy/:id" element={
               <RouteGuard requiredRole="CREATOR">
                 <EditAcademyPage />
+              </RouteGuard>
+            } />
+            <Route path="/allocate-xp/:id" element={
+              <RouteGuard requiredRole="CREATOR">
+                <AllocateXpPage />
               </RouteGuard>
             } />
           </Routes>

@@ -3,53 +3,102 @@
 const { PrismaClient } = require('@prisma/client');
 const createError = require('http-errors');
 const prisma = new PrismaClient();
+const path = require('path');
+const fs = require('fs');
+
+const saveFile = (file) => {
+  const uploadDir = path.join(__dirname, '..', 'public', 'uploads');
+  if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+  }
+
+  const filename = file.fieldname + '-' + Date.now() + path.extname(file.originalname);
+  const filePath = path.join(uploadDir, filename);
+  fs.writeFileSync(filePath, file.buffer);
+
+  // Return the relative path
+  return path.join('uploads', filename);
+};
 
 exports.createAcademy = async (req, res, next) => {
   try {
-    console.log('Received academy creation request:', req.body);
-
     const {
       name,
       ticker,
-      categories = [],
-      chains = [],
+      webpageUrl = '',
+      categories = '[]',
+      chains = '[]',
       twitter = '',
       telegram = '',
       discord = '',
       coingecko = '',
-      initialAnswers = [],
+      initialAnswers = '[]',
       tokenomics = '',
       teamBackground = '',
       congratsVideo = '',
       getStarted = '',
-      raffles = [],
-      quests = [],
-      webpageUrl = '',
+      raffles = '[]',
+      quests = '[]',
     } = req.body;
 
     const { userId } = req.user;
 
+    const logo = req.files['logo'] ? saveFile(req.files['logo'][0]) : null;
+    const coverPhoto = req.files['coverPhoto'] ? saveFile(req.files['coverPhoto'][0]) : null;
+
     if (!name || !ticker) {
-      console.error('Missing name or ticker');
       return next(createError(400, 'Name and ticker are required'));
     }
+
+    // Parse the categories, chains, initialAnswers, raffles, and quests from JSON strings to arrays
+    const parsedCategories = JSON.parse(categories);
+    const parsedChains = JSON.parse(chains);
+    const parsedInitialAnswers = JSON.parse(initialAnswers);
+    const parsedRaffles = JSON.parse(raffles);
+    const parsedQuests = JSON.parse(quests);
+
+    const categoryRecords = await Promise.all(
+      parsedCategories.map(async (categoryName) => {
+        const category = await prisma.category.findUnique({ where: { name: categoryName } });
+        if (!category) {
+          throw new Error(`Category "${categoryName}" not found in database`);
+        }
+        return category;
+      })
+    );
+
+    const chainRecords = await Promise.all(
+      parsedChains.map(async (chainName) => {
+        const chain = await prisma.chain.findUnique({ where: { name: chainName } });
+        if (!chain) {
+          throw new Error(`Chain "${chainName}" not found in database`);
+        }
+        return chain;
+      })
+    );
 
     const academy = await prisma.academy.create({
       data: {
         name,
         ticker,
+        logoUrl: logo,
+        coverPhotoUrl: coverPhoto,
         categories: {
-          connect: categories.map((category) => ({ name: category })),
+          connect: categoryRecords.map((category) => ({ id: category.id })),
         },
         chains: {
-          connect: chains.map((chain) => ({ name: chain })),
+          connect: chainRecords.map((chain) => ({ id: chain.id })),
         },
         twitter,
         telegram,
         discord,
         coingecko,
+        tokenomics,
+        teamBackground,
+        congratsVideo,
+        getStarted,
         academyQuestions: {
-          create: initialAnswers.map((initialAnswer) => ({
+          create: parsedInitialAnswers.map((initialAnswer) => ({
             initialQuestionId: initialAnswer.initialQuestionId,
             question: initialAnswer.question || '',
             answer: initialAnswer.answer || '',
@@ -62,12 +111,8 @@ exports.createAcademy = async (req, res, next) => {
             },
           })),
         },
-        tokenomics,
-        teamBackground,
-        congratsVideo,
-        getStarted,
         raffles: {
-          create: raffles.map((raffle) => ({
+          create: parsedRaffles.map((raffle) => ({
             amount: parseInt(raffle.amount, 10) || 0,
             reward: raffle.reward || '',
             currency: raffle.currency || '',
@@ -77,7 +122,7 @@ exports.createAcademy = async (req, res, next) => {
           })),
         },
         quests: {
-          create: quests.map((quest) => ({
+          create: parsedQuests.map((quest) => ({
             name: quest.name || '',
             link: quest.link || '',
             platform: quest.platform || '',
@@ -96,52 +141,91 @@ exports.createAcademy = async (req, res, next) => {
   }
 };
 
-exports.listMyAcademies = async (req, res, next) => {
+exports.createBasicAcademy = async (req, res, next) => {
   try {
+    const {
+      name,
+      ticker,
+      categories = '[]',
+      chains = '[]',
+      twitter = '',
+      telegram = '',
+      discord = '',
+      coingecko = '',
+      tokenomics = '',
+      teamBackground = '',
+      congratsVideo = '',
+      getStarted = '',
+      webpageUrl = '',
+    } = req.body;
+
     const { userId } = req.user;
 
-    const academies = await prisma.academy.findMany({
-      where: { creatorId: userId },
-    });
+    const logo = req.files['logo'] ? saveFile(req.files['logo'][0]) : null;
+    const coverPhoto = req.files['coverPhoto'] ? saveFile(req.files['coverPhoto'][0]) : null;
 
-    if (!academies.length) {
-      return next(createError(404, 'No academies found for this user'));
+    if (!name) {
+      return next(createError(400, 'Name is required'));
     }
 
-    res.json(academies);
-  } catch (error) {
-    console.error('Error fetching academies:', error);
-    next(createError(500, 'Error fetching academies'));
-  }
-};
+    // Parse the categories and chains from JSON strings to arrays
+    const parsedCategories = JSON.parse(categories);
+    const parsedChains = JSON.parse(chains);
 
-exports.getAcademyDetails = async (req, res, next) => {
-  const { id } = req.params;
-  try {
-    const academy = await prisma.academy.findUnique({
-      where: { id: parseInt(id, 10) },
-      include: {
-        categories: true,
-        chains: true,
-        academyQuestions: {
-          include: {
-            choices: true,
-            initialQuestion: true,
-          },
+    // Debug: Log the parsed categories and chains
+    console.log('Parsed Categories:', parsedCategories);
+    console.log('Parsed Chains:', parsedChains);
+
+    const categoryRecords = await Promise.all(
+      parsedCategories.map(async (categoryName) => {
+        const category = await prisma.category.findUnique({ where: { name: categoryName } });
+        if (!category) {
+          throw new Error(`Category "${categoryName}" not found in database`);
+        }
+        return category;
+      })
+    );
+
+    const chainRecords = await Promise.all(
+      parsedChains.map(async (chainName) => {
+        const chain = await prisma.chain.findUnique({ where: { name: chainName } });
+        if (!chain) {
+          throw new Error(`Chain "${chainName}" not found in database`);
+        }
+        return chain;
+      })
+    );
+
+    const academy = await prisma.academy.create({
+      data: {
+        name,
+        ticker,
+        logoUrl: logo,
+        coverPhotoUrl: coverPhoto,
+        categories: {
+          connect: categoryRecords.map((category) => ({ id: category.id })),
         },
-        raffles: true,
-        quests: true,
+        chains: {
+          connect: chainRecords.map((chain) => ({ id: chain.id })),
+        },
+        twitter,
+        telegram,
+        discord,
+        coingecko,
+        tokenomics,
+        teamBackground,
+        congratsVideo,
+        getStarted,
+        webpageUrl,
+        status: 'pending',
+        creatorId: userId,
       },
     });
 
-    if (!academy) {
-      return next(createError(404, 'Academy not found'));
-    }
-
-    res.json(academy);
+    res.status(201).json({ message: 'Basic academy created successfully', academy });
   } catch (error) {
-    console.error('Error fetching academy details:', error);
-    next(createError(500, 'Error fetching academy details'));
+    console.error('Error creating basic academy:', error);
+    next(createError(500, 'Error creating basic academy'));
   }
 };
 
@@ -164,17 +248,20 @@ exports.updateAcademy = async (req, res, next) => {
     getStarted = '',
     raffles = [],
     quests = [],
-    logoUrl = '',
-    coverPhotoUrl = '',
     webpageUrl = '',
   } = req.body;
 
   try {
+    const logo = req.files['logo'] ? saveFile(req.files['logo'][0]) : null;
+    const coverPhoto = req.files['coverPhoto'] ? saveFile(req.files['coverPhoto'][0]) : null;
+
     const updatedAcademy = await prisma.academy.update({
       where: { id: parseInt(id, 10) },
       data: {
         name,
         ticker,
+        logoUrl: logo || undefined,
+        coverPhotoUrl: coverPhoto || undefined,
         categories: { set: categories.map((category) => ({ name: category })) },
         chains: { set: chains.map((chain) => ({ name: chain })) },
         twitter,
@@ -218,8 +305,6 @@ exports.updateAcademy = async (req, res, next) => {
             platform: quest.platform,
           })),
         },
-        logoUrl,
-        coverPhotoUrl,
         webpageUrl,
       },
     });
@@ -228,6 +313,61 @@ exports.updateAcademy = async (req, res, next) => {
   } catch (error) {
     console.error('Error updating academy:', error);
     next(createError(500, 'Error updating academy'));
+  }
+};
+
+exports.listMyAcademies = async (req, res, next) => {
+  try {
+    const { userId } = req.user;
+
+    const academies = await prisma.academy.findMany({
+      where: { creatorId: userId },
+      select: {
+        id: true,
+        name: true,
+        status: true,
+        createdAt: true, // Add this line
+      },
+    });
+
+    if (!academies.length) {
+      return next(createError(404, 'No academies found for this user'));
+    }
+
+    res.json(academies);
+  } catch (error) {
+    console.error('Error fetching academies:', error);
+    next(createError(500, 'Error fetching academies'));
+  }
+};
+
+exports.getAcademyDetails = async (req, res, next) => {
+  const { id } = req.params;
+  try {
+    const academy = await prisma.academy.findUnique({
+      where: { id: parseInt(id, 10) },
+      include: {
+        categories: true,
+        chains: true,
+        academyQuestions: {
+          include: {
+            choices: true,
+            initialQuestion: true,
+          },
+        },
+        raffles: true,
+        quests: true,
+      },
+    });
+
+    if (!academy) {
+      return next(createError(404, 'Academy not found'));
+    }
+
+    res.json(academy);
+  } catch (error) {
+    console.error('Error fetching academy details:', error);
+    next(createError(500, 'Error fetching academy details'));
   }
 };
 
@@ -359,5 +499,82 @@ exports.updateAcademyWithVideos = async (req, res, next) => {
   } catch (error) {
     console.error('Error updating academy with videos:', error);
     next(createError(500, 'Error updating academy with videos'));
+  }
+};
+
+exports.deleteAcademy = async (req, res, next) => {
+  const { id } = req.params;
+
+  try {
+    const academy = await prisma.academy.findUnique({
+      where: { id: parseInt(id, 10) },
+      include: {
+        categories: true,
+        chains: true,
+        academyQuestions: true,
+        raffles: true,
+        quests: true,
+      },
+    });
+
+    if (!academy) {
+      return next(createError(404, 'Academy not found'));
+    }
+
+    await prisma.academy.update({
+      where: { id: parseInt(id, 10) },
+      data: {
+        categories: { disconnect: true },
+        chains: { disconnect: true },
+        academyQuestions: {
+          deleteMany: {}, // Deleting related academy questions
+        },
+        raffles: {
+          deleteMany: {}, // Deleting related raffles
+        },
+        quests: {
+          deleteMany: {}, // Deleting related quests
+        },
+      },
+    });
+
+    await prisma.academy.delete({ where: { id: parseInt(id, 10) } });
+
+    res.json({ message: 'Academy deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting academy:', error);
+    next(createError(500, 'Failed to delete academy'));
+  }
+};
+
+exports.allocateXp = async (req, res, next) => {
+  const { id } = req.params;
+  const { quizXp, questXp } = req.body;
+
+  try {
+    const academy = await prisma.academy.findUnique({ where: { id: parseInt(id, 10) } });
+
+    if (!academy) {
+      return next(createError(404, 'Academy not found'));
+    }
+
+    for (const questionId in quizXp) {
+      await prisma.academyQuestion.update({
+        where: { id: parseInt(questionId, 10) },
+        data: { xp: quizXp[questionId] },
+      });
+    }
+
+    for (const questId in questXp) {
+      await prisma.quest.update({
+        where: { id: parseInt(questId, 10) },
+        data: { xp: questXp[questId] },
+      });
+    }
+
+    res.json({ message: 'XP allocated successfully' });
+  } catch (error) {
+    console.error('Error allocating XP:', error);
+    next(createError(500, 'Failed to allocate XP'));
   }
 };
