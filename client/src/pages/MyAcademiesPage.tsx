@@ -134,46 +134,52 @@ const MyAcademiesPage: React.FC = () => {
                     Status: {academy.status.charAt(0).toUpperCase() + academy.status.slice(1)}
                   </p>
                 </div>
-                <div className="flex flex-col space-y-4 w-full">
+                <div className="flex flex-col space-y-2 w-full">
                   <Button
                     onClick={() => handleEditAcademy(academy.id)}
                     raised
-                    className="bg-brand-primary text-white rounded-full"
+                    outline
+                    className="rounded-full"
                   >
                     Edit Academy
                   </Button>
                   <Button
                     onClick={() => handleAddVideoLessons(academy.id)}
                     raised
-                    className="bg-brand-primary text-white rounded-full"
+                    outline
+                    className="rounded-full"
                   >
                     Add Video Lessons
                   </Button>
                   <Button
                     onClick={() => handleAddRaffles(academy.id)}
                     raised
-                    className="bg-brand-primary text-white rounded-full"
+                    outline
+                    className="rounded-full"
                   >
                     Add Raffles
                   </Button>
                   <Button
                     onClick={() => handleAddTasks(academy.id)}
                     raised
-                    className="bg-brand-primary text-white rounded-full"
+                    outline
+                    className="rounded-full"
                   >
                     Add Tasks
                   </Button>
                   <Button
                     onClick={() => handleAllocateXp(academy.id)}
                     raised
-                    className="bg-brand-primary text-white rounded-full"
+                    outline
+                    className="rounded-full"
                   >
                     Allocate XP
                   </Button>
                   <Button
                     onClick={(e) => handleDeleteAcademy(academy.id, e)}
                     raised
-                    className="bg-red-600 text-white rounded-full"
+                    outline
+                    className="border-red-600 text-red-600 rounded-full"
                   >
                     Delete Academy
                   </Button>
