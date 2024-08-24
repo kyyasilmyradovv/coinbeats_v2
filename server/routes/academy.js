@@ -2,7 +2,9 @@
 
 const express = require('express');
 const { authenticateToken, authorizeRoles } = require('../middleware/auth');
-const multer = require('multer');
+const asyncHandler = require('express-async-handler');
+const upload = require('../uploadConfig'); // Import the central multer configuration
+
 const {
   createAcademy,
   listMyAcademies,
@@ -15,14 +17,16 @@ const {
   addQuests,
   createBasicAcademy,
   deleteAcademy,
-  allocateXp
+  allocateXp,
+  getAllAcademies,
 } = require('../controllers/academyController');
-const asyncHandler = require('express-async-handler');
-
-const upload = multer(); // In-memory storage
 
 const router = express.Router();
 
+// Public route to fetch all academies
+router.get('/academies', asyncHandler(getAllAcademies));
+
+// Protected routes
 router.post(
   '/',
   authenticateToken,

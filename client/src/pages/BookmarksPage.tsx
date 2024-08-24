@@ -1,65 +1,65 @@
-// src/pages/BooksmarksPage.tsx
+// src/pages/BookmarksPage.tsx
 
-import React, { useMemo, useState, useLayoutEffect } from 'react';
-import { useInitData } from '@telegram-apps/sdk-react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { TonConnectButton } from '@tonconnect/ui-react';
+import React, { useEffect, useState } from 'react';
+import axios from '../api/axiosInstance';
+import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/common/Navbar';
 import Sidebar from '../components/common/Sidebar';
-import {
-  Page,
-  BlockTitle,
-  Button,
-  List,
-  ListInput,
-  Link,
-  Icon,
-  Tabbar,
-  TabbarLink,
-  NavbarBackLink,
-  Chip,
-  Panel,
-  Block,
-  ListItem,
-  Radio,
-  Toggle,
-  Popover,
-  Card,
-} from 'konsta/react';
+import { Page, BlockTitle, Card, Button } from 'konsta/react';
 import { MdBookmarks } from 'react-icons/md';
-import { useBookmarks } from '../contexts/BookmarkContext';
+import useUserStore from '../store/useUserStore';
+import useSessionStore from '../store/useSessionStore';
 
 export default function BookmarksPage({ theme, setTheme, setColorTheme }) {
-  const initData = useInitData();
-  const location = useLocation();
-  const navigate = useNavigate(); // Initialize useNavigate hook
-  const { bookmarks, removeBookmark } = useBookmarks();
-  const [darkMode, setDarkMode] = useState(false);
-  const [rightPanelOpened, setRightPanelOpened] = useState(false);
-  const [colorPickerOpened, setColorPickerOpened] = useState(false);
+  const [bookmarkedAcademies, setBookmarkedAcademies] = useState([]);
+  const { userId } = useUserStore((state) => ({
+    userId: state.userId,
+  }));
 
-  const username = useMemo(() => {
-    return initData?.user?.username || 'Guest';
-  }, [initData]);
+  const [rightPanelOpened, setRightPanelOpened] = useState(false); // Handle sidebar state
+  const [darkMode, setDarkMode] = useState(false); // Handle dark mode state
+  const navigate = useNavigate();
+  // Using telegramUserId from the session store
+  const { telegramUserId } = useSessionStore((state) => ({
+    telegramUserId: state.userId,
+  }));
 
-  const userAvatar = useMemo(() => {
-    return (
-      initData?.user?.photoUrl ||
-      'https://cdn.framework7.io/placeholder/people-100x100-7.jpg'
-    );
-  }, [initData]);
+  useEffect(() => {
+    const fetchBookmarkedAcademies = async () => {
+      try {
+        const response = await axios.get(`/api/users/${userId}/bookmarked-academies`);
+        setBookmarkedAcademies(response.data);
+      } catch (error) {
+        console.error('Error fetching bookmarked academies:', error);
+      }
+    };
 
-  const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
-    document.documentElement.classList.toggle('dark');
+    fetchBookmarkedAcademies();
+  }, [userId]);
+
+  const constructImageUrl = (url) => {
+    return `https://subscribes.lt/${url}`;
   };
 
-  useLayoutEffect(() => {
-    setDarkMode(document.documentElement.classList.contains('dark'));
-  });
+  const handleRemoveBookmark = async (academyId) => {
+    try {
+      await axios.post('/api/users/interaction', {
+        telegramUserId: telegramUserId,
+        action: 'bookmark',
+        academyId: academyId,
+      });
+
+      // Update the local state to reflect the change immediately
+      setBookmarkedAcademies(prevAcademies =>
+        prevAcademies.filter(academy => academy.id !== academyId)
+      );
+    } catch (error) {
+      console.error('Error removing bookmark:', error);
+    }
+  };
 
   const handleMoreClick = (academy) => {
-    navigate(`/product/${academy.id}`, { state: { academy } }); // Navigate to the product page with academy data
+    navigate(`/product/${academy.id}`, { state: { academy } });
   };
 
   return (
@@ -76,158 +76,45 @@ export default function BookmarksPage({ theme, setTheme, setColorTheme }) {
       <div className="text-center flex w-full items-center justify-center absolute top-8">
         <BlockTitle large>Bookmarks</BlockTitle>
       </div>
-
-      <div className="grid grid-cols-2 px-2 pt-6 pb-16">
-        {bookmarks.map((academy) => (
+  
+      <div className="grid grid-cols-2 px-2 pt-14 pb-16">
+        {bookmarkedAcademies.map((academy) => (
           <Card
-          key={academy.id}
-          className="relative flex flex-col items-center text-center !p-3 !rounded-2xl shadow-lg"
-        >
-          <div className="absolute top-0 left-0 p-2">
-            <button
-              className="text-red-600 rounded-full shadow-md focus:outline-none m-1"
-              onClick={() => removeBookmark(academy)}
-            >
-              <MdBookmarks className="h-5 w-5 " />
-            </button>
-          </div>
-          <div className="absolute top-0 right-0 p-1 bg-white bg-opacity-75 rounded-full text-sm font-bold text-gray-800 m-1">
-            {academy.xp} XP
-          </div>
-          <div className="flex items-center text-center w-full justify-center mt-1">
-            <img
-              alt={academy.name}
-              className="h-16 w-16 rounded-full mb-2"
-              src={academy.image}
-            />
-          </div>
-          <div className="text-lg font-bold whitespace-nowrap">
-            {academy.name}
-          </div>
-          <Button
-            rounded
-            large
-            className="mt-2 font-bold shadow-xl min-w-28"
-            onClick={() => handleMoreClick(academy)}
+            key={academy.id}
+            className="relative flex flex-col items-center text-center !p-3 !rounded-2xl shadow-lg"
           >
-            More
-          </Button>
-        </Card>
+            <div className="absolute top-0 left-0 p-2">
+              <button
+                className="text-red-600 rounded-full shadow-md focus:outline-none m-1"
+                onClick={() => handleRemoveBookmark(academy.id)} // Call the remove bookmark function
+              >
+                <MdBookmarks className="h-5 w-5 " />
+              </button>
+            </div>
+            <div className="absolute top-0 right-0 p-1 bg-white bg-opacity-75 rounded-full text-sm font-bold text-gray-800 m-1">
+              {academy.xp} XP
+            </div>
+            <div className="flex items-center text-center w-full justify-center mt-1">
+              <img
+                alt={academy.name}
+                className="h-16 w-16 rounded-full mb-2"
+                src={constructImageUrl(academy.logoUrl)}
+              />
+            </div>
+            <div className="text-lg font-bold whitespace-nowrap">
+              {academy.name}
+            </div>
+            <Button
+              rounded
+              large
+              className="mt-2 font-bold shadow-xl min-w-28"
+              onClick={() => handleMoreClick(academy)}
+            >
+              More
+            </Button>
+          </Card>
         ))}
       </div>
-
-      <Panel
-        side="right"
-        floating
-        opened={rightPanelOpened}
-        onBackdropClick={() => setRightPanelOpened(false)}
-      >
-        <Page>
-          <Navbar
-            title="User Settings"
-            right={
-              <Link navbar onClick={() => setRightPanelOpened(false)}>
-                Close
-              </Link>
-            }
-          />
-          <Block className="space-y-4">
-            <BlockTitle className="mb-1">Connect your TON Wallet</BlockTitle>
-            <TonConnectButton className="mx-auto" />
-            <BlockTitle>Theme</BlockTitle>
-            <List strong inset>
-              <ListItem
-                label
-                title="iOS Theme"
-                media={
-                  <Radio
-                    onChange={() => setTheme('ios')}
-                    component="div"
-                    checked={theme === 'ios'}
-                  />
-                }
-              />
-              <ListItem
-                label
-                title="Material Theme"
-                media={
-                  <Radio
-                    onChange={() => setTheme('material')}
-                    component="div"
-                    checked={theme === 'material'}
-                  />
-                }
-              />
-            </List>
-            <List strong inset>
-              <ListItem
-                title="Dark Mode"
-                label
-                after={
-                  <Toggle
-                    component="div"
-                    onChange={() => toggleDarkMode()}
-                    checked={darkMode}
-                  />
-                }
-              />
-              <ListItem
-                title="Color Theme"
-                link
-                onClick={() => setColorPickerOpened(true)}
-                after={
-                  <div className="w-6 h-6 rounded-full bg-primary home-color-picker" />
-                }
-              />
-            </List>
-            <Popover
-              opened={colorPickerOpened}
-              onBackdropClick={() => setColorPickerOpened(false)}
-              size="w-36"
-              target=".home-color-picker"
-              className="transform translate-x-[-95%] translate-y-[-30%]"
-            >
-              <div className="grid grid-cols-3 py-2">
-                <Link
-                  touchRipple
-                  className="overflow-hidden h-12"
-                  onClick={() => setColorTheme('')}
-                >
-                  <span className="bg-brand-primary w-6 h-6 rounded-full" />
-                </Link>
-                <Link
-                  touchRipple
-                  className="overflow-hidden h-12"
-                  onClick={() => setColorTheme('k-color-brand-red')}
-                >
-                  <span className="bg-brand-red w-6 h-6 rounded-full" />
-                </Link>
-                <Link
-                  touchRipple
-                  className="overflow-hidden h-12"
-                  onClick={() => setColorTheme('k-color-brand-green')}
-                >
-                  <span className="bg-brand-green w-6 h-6 rounded-full" />
-                </Link>
-                <Link
-                  touchRipple
-                  className="overflow-hidden h-12"
-                  onClick={() => setColorTheme('k-color-brand-yellow')}
-                >
-                  <span className="bg-brand-yellow w-6 h-6 rounded-full" />
-                </Link>
-                <Link
-                  touchRipple
-                  className="overflow-hidden h-12"
-                  onClick={() => setColorTheme('k-color-brand-purple')}
-                >
-                  <span className="bg-brand-purple w-6 h-6 rounded-full" />
-                </Link>
-              </div>
-            </Popover>
-          </Block>
-        </Page>
-      </Panel>
     </Page>
   );
 }

@@ -3,23 +3,14 @@
 const { PrismaClient } = require('@prisma/client');
 const createError = require('http-errors');
 const prisma = new PrismaClient();
-const path = require('path');
-const fs = require('fs');
+const { saveFile } = require('../uploadConfig'); // Reuse the saveFile function from the uploadConfig.js
 
-const saveFile = (file) => {
-  const uploadDir = path.join(__dirname, '..', 'public', 'uploads');
-  if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
-  }
-
-  const filename = file.fieldname + '-' + Date.now() + path.extname(file.originalname);
-  const filePath = path.join(uploadDir, filename);
-  fs.writeFileSync(filePath, file.buffer);
-
-  // Return the relative path
-  return path.join('uploads', filename);
+// Helper function to handle file uploads
+const handleFileUpload = (files, fieldName) => {
+  return files && files[fieldName] ? saveFile(files[fieldName][0]) : null;
 };
 
+// Create Academy Controller
 exports.createAcademy = async (req, res, next) => {
   try {
     const {
@@ -43,14 +34,14 @@ exports.createAcademy = async (req, res, next) => {
 
     const { userId } = req.user;
 
-    const logo = req.files['logo'] ? saveFile(req.files['logo'][0]) : null;
-    const coverPhoto = req.files['coverPhoto'] ? saveFile(req.files['coverPhoto'][0]) : null;
+    // Handle file uploads
+    const logoUrl = handleFileUpload(req.files, 'logo');
+    const coverPhotoUrl = handleFileUpload(req.files, 'coverPhoto');
 
     if (!name || !ticker) {
       return next(createError(400, 'Name and ticker are required'));
     }
 
-    // Parse the categories, chains, initialAnswers, raffles, and quests from JSON strings to arrays
     const parsedCategories = JSON.parse(categories);
     const parsedChains = JSON.parse(chains);
     const parsedInitialAnswers = JSON.parse(initialAnswers);
@@ -81,8 +72,8 @@ exports.createAcademy = async (req, res, next) => {
       data: {
         name,
         ticker,
-        logoUrl: logo,
-        coverPhotoUrl: coverPhoto,
+        logoUrl,
+        coverPhotoUrl,
         categories: {
           connect: categoryRecords.map((category) => ({ id: category.id })),
         },
@@ -141,6 +132,7 @@ exports.createAcademy = async (req, res, next) => {
   }
 };
 
+// Create Basic Academy Controller
 exports.createBasicAcademy = async (req, res, next) => {
   try {
     const {
@@ -161,20 +153,16 @@ exports.createBasicAcademy = async (req, res, next) => {
 
     const { userId } = req.user;
 
-    const logo = req.files['logo'] ? saveFile(req.files['logo'][0]) : null;
-    const coverPhoto = req.files['coverPhoto'] ? saveFile(req.files['coverPhoto'][0]) : null;
+    // Handle file uploads
+    const logoUrl = handleFileUpload(req.files, 'logo');
+    const coverPhotoUrl = handleFileUpload(req.files, 'coverPhoto');
 
     if (!name) {
       return next(createError(400, 'Name is required'));
     }
 
-    // Parse the categories and chains from JSON strings to arrays
     const parsedCategories = JSON.parse(categories);
     const parsedChains = JSON.parse(chains);
-
-    // Debug: Log the parsed categories and chains
-    console.log('Parsed Categories:', parsedCategories);
-    console.log('Parsed Chains:', parsedChains);
 
     const categoryRecords = await Promise.all(
       parsedCategories.map(async (categoryName) => {
@@ -200,8 +188,8 @@ exports.createBasicAcademy = async (req, res, next) => {
       data: {
         name,
         ticker,
-        logoUrl: logo,
-        coverPhotoUrl: coverPhoto,
+        logoUrl,
+        coverPhotoUrl,
         categories: {
           connect: categoryRecords.map((category) => ({ id: category.id })),
         },
@@ -229,6 +217,7 @@ exports.createBasicAcademy = async (req, res, next) => {
   }
 };
 
+// Update Academy Controller
 exports.updateAcademy = async (req, res, next) => {
   const { id } = req.params;
   const {
@@ -241,7 +230,6 @@ exports.updateAcademy = async (req, res, next) => {
     discord = '',
     coingecko = '',
     initialAnswers = [],
-    quizQuestions = [],
     tokenomics = '',
     teamBackground = '',
     congratsVideo = '',
@@ -252,43 +240,51 @@ exports.updateAcademy = async (req, res, next) => {
   } = req.body;
 
   try {
-    const logo = req.files['logo'] ? saveFile(req.files['logo'][0]) : null;
-    const coverPhoto = req.files['coverPhoto'] ? saveFile(req.files['coverPhoto'][0]) : null;
+    const parsedCategories = Array.isArray(categories) ? categories : JSON.parse(categories);
+    const parsedChains = Array.isArray(chains) ? chains : JSON.parse(chains);
+    const parsedInitialAnswers = Array.isArray(initialAnswers) ? initialAnswers : JSON.parse(initialAnswers);
+    const parsedRaffles = Array.isArray(raffles) ? raffles : JSON.parse(raffles);
+    const parsedQuests = Array.isArray(quests) ? quests : JSON.parse(quests);
+
+    // Handle file uploads
+    const logoUrl = handleFileUpload(req.files, 'logo');
+    const coverPhotoUrl = handleFileUpload(req.files, 'coverPhoto');
 
     const updatedAcademy = await prisma.academy.update({
       where: { id: parseInt(id, 10) },
       data: {
         name,
         ticker,
-        logoUrl: logo || undefined,
-        coverPhotoUrl: coverPhoto || undefined,
-        categories: { set: categories.map((category) => ({ name: category })) },
-        chains: { set: chains.map((chain) => ({ name: chain })) },
+        logoUrl: logoUrl || undefined, // Use existing if no new file is uploaded
+        coverPhotoUrl: coverPhotoUrl || undefined, // Use existing if no new file is uploaded
+        categories: { set: parsedCategories.map((category) => ({ name: category })) },
+        chains: { set: parsedChains.map((chain) => ({ name: chain })) },
         twitter,
         telegram,
         discord,
         coingecko,
-        academyQuestions: {
-          deleteMany: {}, // Clear old questions and answers
-          create: quizQuestions.map((quizQuestion, index) => ({
-            initialQuestionId: initialAnswers[index].initialQuestionId,
-            answer: initialAnswers[index].answer,
-            quizQuestion: quizQuestion.quizQuestion,
-            choices: {
-              create: quizQuestion.choices.map((choice, choiceIndex) => ({
-                text: choice,
-                isCorrect: quizQuestion.correct.includes(choiceIndex),
-              })),
-            },
-          })),
-        },
         tokenomics,
         teamBackground,
         congratsVideo,
         getStarted,
+        academyQuestions: {
+          deleteMany: {}, // Clear existing questions
+          create: parsedInitialAnswers.map((initialAnswer) => ({
+            initialQuestionId: initialAnswer.initialQuestionId,
+            question: initialAnswer.question,
+            answer: initialAnswer.answer || '',
+            quizQuestion: initialAnswer.quizQuestion || '',
+            choices: {
+              create: initialAnswer.choices.map((choice) => ({
+                text: choice.answer || '',
+                isCorrect: choice.correct || false,
+              })),
+            },
+          })),
+        },
         raffles: {
           deleteMany: {},
-          create: raffles.map((raffle) => ({
+          create: parsedRaffles.map((raffle) => ({
             amount: parseInt(raffle.amount, 10),
             reward: raffle.reward,
             currency: raffle.currency,
@@ -299,7 +295,7 @@ exports.updateAcademy = async (req, res, next) => {
         },
         quests: {
           deleteMany: {},
-          create: quests.map((quest) => ({
+          create: parsedQuests.map((quest) => ({
             name: quest.name,
             link: quest.link,
             platform: quest.platform,
@@ -316,6 +312,9 @@ exports.updateAcademy = async (req, res, next) => {
   }
 };
 
+// Additional Controllers (for fetching, approving, rejecting academies) remain unchanged
+
+
 exports.listMyAcademies = async (req, res, next) => {
   try {
     const { userId } = req.user;
@@ -326,7 +325,7 @@ exports.listMyAcademies = async (req, res, next) => {
         id: true,
         name: true,
         status: true,
-        createdAt: true, // Add this line
+        createdAt: true,
       },
     });
 
@@ -363,6 +362,13 @@ exports.getAcademyDetails = async (req, res, next) => {
     if (!academy) {
       return next(createError(404, 'Academy not found'));
     }
+
+    // Ensure empty fields are returned
+    academy.academyQuestions = academy.academyQuestions || [];
+    academy.raffles = academy.raffles || [];
+    academy.quests = academy.quests || [];
+
+    console.log("Academy details response:", academy); // Log for debugging
 
     res.json(academy);
   } catch (error) {
@@ -511,7 +517,11 @@ exports.deleteAcademy = async (req, res, next) => {
       include: {
         categories: true,
         chains: true,
-        academyQuestions: true,
+        academyQuestions: {
+          include: {
+            choices: true, // Ensure choices are included in the deletion cascade
+          },
+        },
         raffles: true,
         quests: true,
       },
@@ -521,23 +531,42 @@ exports.deleteAcademy = async (req, res, next) => {
       return next(createError(404, 'Academy not found'));
     }
 
-    await prisma.academy.update({
-      where: { id: parseInt(id, 10) },
-      data: {
-        categories: { disconnect: true },
-        chains: { disconnect: true },
-        academyQuestions: {
-          deleteMany: {}, // Deleting related academy questions
-        },
-        raffles: {
-          deleteMany: {}, // Deleting related raffles
-        },
-        quests: {
-          deleteMany: {}, // Deleting related quests
+    // First, delete all related records that have foreign key constraints
+    await prisma.choice.deleteMany({
+      where: {
+        academyQuestionId: {
+          in: academy.academyQuestions.map(q => q.id),
         },
       },
     });
 
+    await prisma.academyQuestion.deleteMany({
+      where: {
+        academyId: parseInt(id, 10),
+      },
+    });
+
+    await prisma.raffle.deleteMany({
+      where: {
+        academyId: parseInt(id, 10),
+      },
+    });
+
+    await prisma.quest.deleteMany({
+      where: {
+        academyId: parseInt(id, 10),
+      },
+    });
+
+    await prisma.academy.update({
+      where: { id: parseInt(id, 10) },
+      data: {
+        categories: { disconnect: academy.categories.map(cat => ({ id: cat.id })) },
+        chains: { disconnect: academy.chains.map(chain => ({ id: chain.id })) },
+      },
+    });
+
+    // Finally, delete the academy itself
     await prisma.academy.delete({ where: { id: parseInt(id, 10) } });
 
     res.json({ message: 'Academy deleted successfully' });
@@ -576,5 +605,24 @@ exports.allocateXp = async (req, res, next) => {
   } catch (error) {
     console.error('Error allocating XP:', error);
     next(createError(500, 'Failed to allocate XP'));
+  }
+};
+
+exports.getAllAcademies = async (req, res, next) => {
+  try {
+    const academies = await prisma.academy.findMany({
+      include: {
+        categories: true,
+        chains: true,
+      },
+      orderBy: [
+        { createdAt: 'desc' }, // Order by creation date for the "New" filter
+      ],
+    });
+
+    res.json(academies);
+  } catch (error) {
+    console.error('Error fetching academies:', error);
+    next(createError(500, 'Error fetching academies'));
   }
 };

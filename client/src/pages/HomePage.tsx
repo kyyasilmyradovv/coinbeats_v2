@@ -1,11 +1,9 @@
 // src/pages/HomePage.tsx
 
 import React, { useMemo, useState, useEffect } from 'react';
-import { useInitData } from '@telegram-apps/sdk-react';
-import { TonConnectButton } from '@tonconnect/ui-react';
+import axios from '../api/axiosInstance'; // Adjust this import based on your setup
 import { useNavigate } from 'react-router-dom';
-import useUserStore from '../store/useUserStore';
-import useCategoryChainStore from '../store/useCategoryChainStore'; // Import the store
+import useCategoryChainStore from '../store/useCategoryChainStore'; 
 import Navbar from '../components/common/Navbar';
 import Sidebar from '../components/common/Sidebar';
 import {
@@ -17,49 +15,9 @@ import {
 } from 'konsta/react';
 import { MdBookmarks } from 'react-icons/md';
 import { useBookmarks } from '../contexts/BookmarkContext';
+import useSessionStore from '../store/useSessionStore'; // Import the session store
+import useUserStore from '~/store/useUserStore';
 import bunny from '../images/bunny-mascot.png';
-import basedAI from '../images/basedAI.jpg';
-import carv from '../images/carv.jpeg';
-import revert from '../images/revert.png';
-import pingpong from '../images/pingpong.jpeg';
-import iyk from '../images/IYK.jpeg';
-import skale from '../images/skale.png';
-import ton from '../images/ton.png';
-import d1 from '../images/d1.jpeg';
-import borpa from '../images/borpa.png';
-import mantle from '../images/mantle.png';
-import aurelius from '../images/aurelius.png';
-import berachain from '../images/berachain.png';
-import sei from '../images/sei.png';
-import frax from '../images/frax.jpg';
-import clip from '../images/clip.png';
-import defiAcademy from '../images/coinbeats-l.svg';
-import voltage from '../images/voltage.jpg';
-import bittensor from '../images/bittensor.jpeg';
-import aarna from '../images/aarna.png';
-
-// Example mock data
-const mockData = [
-  { id: 1, name: 'BasedAI', category: 'AI', chain: 'Ethereum', link: 'https://coinbeats.xyz/academies/getbased/', image: basedAI, sponsored: true, xp: 100 },
-  { id: 2, name: 'Revert Finance', category: 'Finance', chain: 'Binance', link: 'https://coinbeats.xyz/academies/revert-finance/', image: revert, new: true, xp: 100 },
-  { id: 3, name: 'PingPong', category: 'Game', chain: 'Solana', link: 'https://coinbeats.xyz/academies/pingpong/', image: pingpong, topRated: true, xp: 100 },
-  { id: 4, name: 'carv', category: 'NFT', chain: 'Ethereum', link: 'https://coinbeats.xyz/academies/carv/', image: carv, sponsored: true, xp: 100 },
-  { id: 5, name: 'IYK', category: 'Technology', chain: 'Polygon', link: 'https://coinbeats.xyz/academies/iyk/', image: iyk, new: true, xp: 100 },
-  { id: 6, name: 'SKALE Network', category: 'Network', chain: 'Avalanche', link: 'https://coinbeats.xyz/academies/skale-network/', image: skale, topRated: true, xp: 100 },
-  { id: 7, name: 'Ton Blockchain', category: 'AI', chain: 'Ethereum', link: 'https://coinbeats.xyz/academies/ton-blockchain/', image: ton, sponsored: true, xp: 100 },
-  { id: 8, name: 'Districtone', category: 'Finance', chain: 'Binance', link: 'https://coinbeats.xyz/academies/districtone/', image: d1, new: true, xp: 100 },
-  { id: 9, name: 'BorpaToken', category: 'Game', chain: 'Solana', link: 'https://coinbeats.xyz/academies/borpatoken/', image: borpa, topRated: true, xp: 100 },
-  { id: 10, name: 'Mantle', category: 'NFT', chain: 'Ethereum', link: 'https://coinbeats.xyz/academies/mantle/', image: mantle, sponsored: true, xp: 100 },
-  { id: 11, name: 'Aurelius', category: 'Technology', chain: 'Polygon', link: 'https://coinbeats.xyz/academies/aurelius/', image: aurelius, new: true, xp: 100 },
-  { id: 12, name: 'Berachain', category: 'Network', chain: 'Avalanche', link: 'https://coinbeats.xyz/academies/berachain/', image: berachain, topRated: true, xp: 100 },
-  { id: 13, name: 'SEI', category: 'AI', chain: 'Ethereum', link: 'https://coinbeats.xyz/academies/sei/', image: sei, sponsored: true, xp: 100 },
-  { id: 14, name: 'Frax', category: 'Finance', chain: 'Binance', link: 'https://coinbeats.xyz/academies/frax/', image: frax, new: true, xp: 100 },
-  { id: 15, name: 'Clip Finance', category: 'Game', chain: 'Solana', link: 'https://coinbeats.xyz/academies/clipfinance/', image: clip, topRated: true, xp: 100 },
-  { id: 16, name: 'DeFi Academy', category: 'NFT', chain: 'Ethereum', link: 'https://coinbeats.xyz/academies/defi-academy/', image: defiAcademy, sponsored: true, xp: 100 },
-  { id: 17, name: 'Voltage Finance', category: 'Technology', chain: 'Polygon', link: 'https://coinbeats.xyz/academies/voltage-finance/', image: voltage, new: true, xp: 100 },
-  { id: 18, name: 'Bittensor', category: 'Network', chain: 'Avalanche', link: 'https://coinbeats.xyz/academies/bittensor/', image: bittensor, topRated: true, xp: 100 },
-  { id: 19, name: 'aarnâ', category: 'Network', chain: 'Avalanche', link: 'https://coinbeats.xyz/academies/aarna/', image: aarna, topRated: true, xp: 100 },
-];
 
 export default function HomePage({ theme, setTheme, setColorTheme }) {
   const navigate = useNavigate();
@@ -70,6 +28,7 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
   const [rightPanelOpened, setRightPanelOpened] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const [colorPickerOpened, setColorPickerOpened] = useState(false);
+  const [academies, setAcademies] = useState([]);
 
   // Zustand User Store
   const { userId, role, points, setUser } = useUserStore((state) => ({
@@ -77,6 +36,11 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
     role: state.role,
     points: state.points,
     setUser: state.setUser,
+  }));
+
+  // Zustand Session Store - Get telegramUserId from the session store
+  const { telegramUserId } = useSessionStore((state) => ({
+    telegramUserId: state.userId,
   }));
 
   // Zustand CategoryChain Store
@@ -87,19 +51,47 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
   }));
 
   useEffect(() => {
-    // Fetch categories and chains from the Zustand store
+    // Fetch academies from the API
+    const fetchAcademies = async () => {
+      try {
+        const response = await axios.get('/api/academies/academies');
+        setAcademies(response.data);
+      } catch (error) {
+        console.error('Error fetching academies:', error);
+      }
+    };
+
+    // Fetch categories and chains
     fetchCategoriesAndChains();
+    fetchAcademies();
   }, [fetchCategoriesAndChains]);
 
+  const handleBookmark = async (academy) => {
+    try {
+      const response = await axios.post('/api/users/interaction', {
+        telegramUserId: telegramUserId, // Get telegramUserId from the session store
+        action: 'bookmark',
+        academyId: academy.id,
+      });
+      addBookmark(academy); // Adds to local context for immediate UI update
+    } catch (error) {
+      console.error('Error bookmarking academy:', error);
+    }
+  };
+
   const filteredData = useMemo(() => {
-    let data = mockData;
-    if (category) data = data.filter((item) => item.category === category);
-    if (chain) data = data.filter((item) => item.chain === chain);
+    let data = academies;
+    if (category) data = data.filter((item) => item.categories.some(cat => cat.name === category));
+    if (chain) data = data.filter((item) => item.chains.some(ch => ch.name === chain));
     if (activeFilter === 'sponsored') data = data.filter((item) => item.sponsored);
-    if (activeFilter === 'new') data = data.filter((item) => item.new);
-    if (activeFilter === 'topRated') data = data.filter((item) => item.topRated);
+    if (activeFilter === 'new') data = data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    if (activeFilter === 'topRated') data = data.sort((a, b) => b.xp - a.xp);
     return data;
-  }, [category, chain, activeFilter]);
+  }, [category, chain, activeFilter, academies]);
+
+  const constructImageUrl = (url) => {
+    return `https://subscribes.lt/${url}`;
+  };   
 
   const handleMoreClick = (academy) => {
     navigate(`/product/${academy.id}`, { state: { academy } });
@@ -217,7 +209,7 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
                 : 'bg-white dark:bg-gray-900 shadow-lg !text-2xs !whitespace-nowrap'
             }`}
           >
-            Top Viewed
+            Most XP
           </Button>
         </div>
       </div>
@@ -231,7 +223,7 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
             <div className="absolute top-0 left-0 p-2">
               <button
                 className="text-amber-500 rounded-full shadow-md focus:outline-none m-1"
-                onClick={() => addBookmark(academy)}
+                onClick={() => handleBookmark(academy)}
               >
                 <MdBookmarks className="h-5 w-5 " />
               </button>
@@ -243,7 +235,7 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
               <img
                 alt={academy.name}
                 className="h-16 w-16 rounded-full mb-2"
-                src={academy.image}
+                src={constructImageUrl(academy.logoUrl)}
               />
             </div>
             <div className="text-lg font-bold whitespace-nowrap">

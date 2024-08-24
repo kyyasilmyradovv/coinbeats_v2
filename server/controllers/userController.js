@@ -228,40 +228,41 @@ exports.registerCreator = async (req, res, next) => {
 
 exports.userInteraction = async (req, res, next) => {
   try {
-    const { telegramUserId, action, name, email, password } = req.body;
+    const { telegramUserId, action, academyId } = req.body;
 
-    let user = await prisma.user.findUnique({ where: { telegramUserId } });
+    let user = await prisma.user.findUnique({
+      where: { telegramUserId },
+      include: { bookmarkedAcademies: true },
+    });
 
-    if (!user && (action === 'register_creator' || action === 'significant_action')) {
-      user = await prisma.user.create({
+    if (!user) {
+      // If the user doesn't exist and action is bookmark, create a new user with the bookmark.
+      if (action === 'bookmark') {
+        user = await prisma.user.create({
+          data: {
+            telegramUserId,
+            role: 'USER',
+            bookmarkedAcademies: { connect: { id: parseInt(academyId, 10) } }, // Initial bookmark
+          },
+          include: { bookmarkedAcademies: true },
+        });
+      } else {
+        return res.status(400).json({ message: 'Invalid action for non-existent user.' });
+      }
+    } else if (action === 'bookmark') {
+      const alreadyBookmarked = user.bookmarkedAcademies.some(
+        (academy) => academy.id === parseInt(academyId, 10)
+      );
+
+      user = await prisma.user.update({
+        where: { id: user.id },
         data: {
-          telegramUserId,
-          name: name || 'Unknown',
-          email: email || '',
-          password: password ? bcrypt.hashSync(password, SALT_ROUNDS) : null,
-          role: action === 'register_creator' ? 'CREATOR' : 'USER',
+          bookmarkedAcademies: alreadyBookmarked
+            ? { disconnect: { id: parseInt(academyId, 10) } } // Remove bookmark
+            : { connect: { id: parseInt(academyId, 10) } },   // Add bookmark
         },
+        include: { bookmarkedAcademies: true },
       });
-
-      await prisma.sessionLog.updateMany({
-        where: { telegramUserId },
-        data: { userId: user.id },
-      });
-    }
-
-    // Additional logic for specific actions...
-    switch (action) {
-      case 'bookmark':
-        // Handle bookmarking logic
-        break;
-      case 'collect_points':
-        // Handle point collection logic
-        break;
-      case 'social_quest':
-        // Handle social quest logic
-        break;
-      default:
-        break;
     }
 
     res.status(200).json({ user });
@@ -302,3 +303,56 @@ exports.userInteraction = async (req, res, next) => {
     return res.redirect(`${process.env.FRONTEND_URL}/login?status=failure`);
   }
 }; */
+
+exports.toggleBookmark = async (req, res, next) => {
+  const { userId } = req.user;
+  const { academyId } = req.body;
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { bookmarkedAcademies: true },
+    });
+
+    const alreadyBookmarked = user.bookmarkedAcademies.some(
+      (academy) => academy.id === parseInt(academyId, 10)
+    );
+
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        bookmarkedAcademies: alreadyBookmarked
+          ? { disconnect: { id: parseInt(academyId, 10) } }
+          : { connect: { id: parseInt(academyId, 10) } },
+      },
+      include: { bookmarkedAcademies: true },
+    });
+
+    res.json(updatedUser.bookmarkedAcademies);
+  } catch (error) {
+    console.error('Error toggling bookmark:', error);
+    next(createError(500, 'Error toggling bookmark'));
+  }
+};
+
+exports.getBookmarkedAcademies = async (req, res, next) => {
+  const { userId } = req.params;
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: parseInt(userId, 10) },
+      include: {
+        bookmarkedAcademies: true,  // Ensure this is included
+      },
+    });
+
+    if (!user) {
+      return next(createError(404, 'User not found'));
+    }
+
+    res.json(user.bookmarkedAcademies);  // Return the bookmarked academies directly
+  } catch (error) {
+    console.error('Error fetching bookmarked academies:', error);
+    next(createError(500, 'Error fetching bookmarked academies'));
+  }
+};

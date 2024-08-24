@@ -2,15 +2,13 @@
 
 const path = require('path');
 const dotenv = require('dotenv');
-const multer = require('multer');
-
-// Determine the appropriate environment file based on NODE_ENV
-const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.env.local';
-dotenv.config({ path: path.resolve(__dirname, envFile) });
-
 const express = require('express');
 const cors = require('cors');
-const createError = require('http-errors'); // Import http-errors for structured error handling
+const createError = require('http-errors');
+
+// Load environment variables
+const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.env.local';
+dotenv.config({ path: path.resolve(__dirname, envFile) });
 
 // Import routes
 const authRoutes = require('./routes/auth');
@@ -23,20 +21,10 @@ const questionsRoutes = require('./routes/question');
 const subscriptionRoutes = require('./routes/subscriptions');
 const statsRoutes = require('./routes/stats');
 const inboxRoutes = require('./routes/inbox');
-const emailRoutes = require('./routes/email'); // Import the new email routes
+const emailRoutes = require('./routes/email');
 const sseRoutes = require('./routes/sse');
-// Configure multer
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, 'public/uploads/')
-  },
-  filename: function (req, file, cb) {
-    cb(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname))
-  }
-});
 
-const upload = multer({ storage: storage });
-
+// Initialize Express app
 const app = express();
 const PORT = process.env.PORT || 4000;
 
@@ -56,8 +44,9 @@ app.use('/api/questions', questionsRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/inbox', inboxRoutes);
-app.use('/api/email', emailRoutes); // Add the new email routes
-app.use('/api/sse', sseRoutes); // Use SSE routes
+app.use('/api/email', emailRoutes);
+app.use('/api/sse', sseRoutes);
+
 // Serve static files
 app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
 
@@ -70,10 +59,9 @@ app.use((req, res, next) => {
 app.use((err, req, res, next) => {
   console.error('Global Error Handler:', err.message);
   
-  // Prepare error response
   const response = {
     message: err.message,
-    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined, // Only show stack trace in development
+    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
   };
 
   res.status(err.status || 500);

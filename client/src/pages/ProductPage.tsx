@@ -1,5 +1,3 @@
-// src/pages/ProductPage
-
 import React, { useMemo, useState, useLayoutEffect } from 'react';
 import { useInitData } from '@telegram-apps/sdk-react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -61,6 +59,10 @@ export default function ProductPage({ theme, setTheme, setColorTheme }) {
     setDarkMode(document.documentElement.classList.contains('dark'));
   });
 
+  const constructImageUrl = (url) => {
+    return `https://subscribes.lt/${url}`;
+  };
+
   return (
     <Page>
       <Navbar
@@ -91,7 +93,7 @@ export default function ProductPage({ theme, setTheme, setColorTheme }) {
         <img
           alt={academy.name}
           className="h-18 w-18 rounded-full mb-2 mx-auto"
-          src={academy.image}
+          src={constructImageUrl(academy.logoUrl)}
         />
         <h1 className="text-3xl font-bold">{academy.name}</h1>
         <div className="flex justify-center gap-2 mt-4 mx-4">

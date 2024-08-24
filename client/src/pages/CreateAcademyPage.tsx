@@ -14,7 +14,7 @@ import Navbar from '../components/common/Navbar';
 import Sidebar from '../components/Sidebar';
 import useCategoryChainStore from '../store/useCategoryChainStore';
 import useAcademyStore from '../store/useAcademyStore';
-import bunnyLogo from '../images/bunny-mascot.png'; // Ensure this path is correct
+import bunnyLogo from '../images/bunny-mascot.png';
 
 const CreateAcademyPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
   const [rightPanelOpened, setRightPanelOpened] = useState(false);
@@ -38,11 +38,12 @@ const CreateAcademyPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
     initialAnswers,
     currentStep,
     submitBasicAcademy,
+    submitAcademy,
     setField,
     setInitialAnswer,
     toggleCorrectAnswer,
-    submitAcademy,
     fetchQuestions,
+    resetAcademyData,
     nextStep,
     prevStep,
   } = useAcademyStore();
@@ -112,7 +113,9 @@ const CreateAcademyPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
   const handleSubmitBasic = async () => {
     try {
       await submitBasicAcademy();
-      navigate('/my-academies', { state: { notificationType: 'basic' } }); // Pass notification type
+      resetAcademyData();
+      navigate('/my-academies', { state: { notificationType: 'basic' } });
+      console.log("Academy submitted and state reset.");
     } catch (error) {
       console.error('Error submitting academy:', error);
       setNotificationText('Failed to submit academy');
@@ -121,23 +124,17 @@ const CreateAcademyPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
   };
   
   const handleSubmitComplete = async () => {
-    // Check that every question has one correct answer marked
-    for (const answer of initialAnswers) {
-      if (!answer.choices.some(choice => choice.correct)) {
-        alert('Each quiz question must have one correct answer.');
-        return;
-      }
-    }
-
     try {
       await submitAcademy();
-      navigate('/my-academies', { state: { notificationType: 'complete' } }); // Pass notification type
+      resetAcademyData();
+      navigate('/my-academies', { state: { notificationType: 'complete' } });
+      console.log("Academy submitted and state reset.");
     } catch (error) {
       console.error('Error submitting academy:', error);
       setNotificationText('Failed to submit academy');
       setNotificationOpen(true);
     }
-  };
+  };  
 
   const renderIntroSlide = () => (
     <Block key="slide-intro" strong className="mx-4 my-4 bg-white rounded-2xl shadow-lg p-6 space-y-4">
@@ -167,7 +164,7 @@ const CreateAcademyPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
   );
 
   const renderInitialQuestionSlide = (questionIndex: number) => {
-    const answerLimit = 300;
+    const answerLimit = 1000;
 
     return (
       <Block key={`initial-question-${questionIndex}`} strong className="mx-4 my-4 bg-white rounded-2xl shadow-lg p-6 space-y-4">

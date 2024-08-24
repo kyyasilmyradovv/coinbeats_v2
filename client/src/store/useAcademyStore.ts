@@ -1,5 +1,3 @@
-// client/src/store/useAcademyStore
-
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import axios from '../api/axiosInstance';
@@ -85,7 +83,8 @@ interface AcademyState {
   removeRaffle: (index: number) => void;
   addQuest: () => void;
   removeQuest: (index: number) => void;
-  submitAcademy: () => Promise<void>;
+  submitAcademy: (academyId?: number, logoFile?: File | null, coverPhotoFile?: File | null) => Promise<void>;
+  submitBasicAcademy: () => Promise<void>;
   resetAcademyData: () => void;
   fetchQuestions: () => Promise<void>;
   nextStep: () => void;
@@ -148,10 +147,7 @@ const useAcademyStore = create<AcademyState>()(
 
       addRaffle: () =>
         set((state) => ({
-          raffles: [
-            ...state.raffles,
-            { amount: '', reward: '', currency: '', chain: '', dates: '', totalPool: '' },
-          ],
+          raffles: [...state.raffles, { amount: '', reward: '', currency: '', chain: '', dates: '', totalPool: '' }],
         })),
 
       removeRaffle: (index: number) =>
@@ -169,7 +165,7 @@ const useAcademyStore = create<AcademyState>()(
           quests: state.quests.filter((_, i) => i !== index),
         })),
 
-      submitAcademy: async () => {
+      submitAcademy: async (academyId?: number, logoFile?: File | null, coverPhotoFile?: File | null) => {
         const state = get();
         const { accessToken } = useAuthStore.getState();
 
@@ -183,8 +179,11 @@ const useAcademyStore = create<AcademyState>()(
           formData.append('name', state.name);
           formData.append('ticker', state.ticker);
           formData.append('webpageUrl', state.webpageUrl);
-          if (state.logo) formData.append('logo', state.logo);
-          if (state.coverPhoto) formData.append('coverPhoto', state.coverPhoto);
+
+          // Append the logo and cover photo files
+          if (logoFile || state.logo) formData.append('logo', logoFile || state.logo);
+          if (coverPhotoFile || state.coverPhoto) formData.append('coverPhoto', coverPhotoFile || state.coverPhoto);
+
           formData.append('categories', JSON.stringify(state.categories));
           formData.append('chains', JSON.stringify(state.chains));
           formData.append('twitter', state.twitter);
@@ -196,10 +195,13 @@ const useAcademyStore = create<AcademyState>()(
           formData.append('congratsVideo', state.congratsVideo);
           formData.append('getStarted', state.getStarted);
           formData.append('initialAnswers', JSON.stringify(state.initialAnswers));
-          formData.append('raffles', JSON.stringify(state.raffles));
-          formData.append('quests', JSON.stringify(state.quests));
+          formData.append('raffles', JSON.stringify(state.raffles || []));
+          formData.append('quests', JSON.stringify(state.quests || []));
 
-          await axios.post('/api/academies', formData, {
+          const url = academyId ? `/api/academies/${academyId}` : `/api/academies`;
+          const method = academyId ? 'put' : 'post';
+
+          await axios[method](url, formData, {
             headers: {
               'Content-Type': 'multipart/form-data',
               Authorization: `Bearer ${accessToken}`,
@@ -208,7 +210,8 @@ const useAcademyStore = create<AcademyState>()(
 
           state.resetAcademyData();
         } catch (error) {
-          console.error('Error creating academy:', error);
+          console.error('Error creating or updating academy:', error);
+          throw error;
         }
       },
 
@@ -239,6 +242,11 @@ const useAcademyStore = create<AcademyState>()(
           formData.append('congratsVideo', state.congratsVideo);
           formData.append('getStarted', state.getStarted);
 
+          // Add these fields as empty arrays or default values to make them visible on the edit page
+          formData.append('initialAnswers', JSON.stringify(state.initialAnswers || []));
+          formData.append('raffles', JSON.stringify(state.raffles || []));
+          formData.append('quests', JSON.stringify(state.quests || []));
+
           await axios.post('/api/academies/basic', formData, {
             headers: {
               'Content-Type': 'multipart/form-data',
@@ -253,7 +261,7 @@ const useAcademyStore = create<AcademyState>()(
         }
       },
 
-      resetAcademyData: () =>
+      resetAcademyData: () => {
         set({
           name: '',
           ticker: '',
@@ -276,7 +284,12 @@ const useAcademyStore = create<AcademyState>()(
           videoUrls: [],
           visibleQuestionsCount: 1,
           currentStep: 0,
-        }),
+        }, false, 'Reset Academy Data');
+
+        // Debugging: Log out the state after reset
+        const currentState = get();
+        console.log("State after reset:", currentState);
+      },
 
       fetchQuestions: async () => {
         try {
@@ -336,7 +349,7 @@ const useAcademyStore = create<AcademyState>()(
 
       nextStep: () => {
         const state = get();
-        const totalSlides = 1 + state.initialAnswers.length + 4 + state.initialAnswers.length + 1; // Adjust the number of slides as necessary
+        const totalSlides = 1 + state.initialAnswers.length + 4 + state.initialAnswers.length + 1;
         if (state.currentStep < totalSlides - 1) {
           set({ currentStep: state.currentStep + 1 });
         }
@@ -349,29 +362,47 @@ const useAcademyStore = create<AcademyState>()(
         }
       },
 
-      setPrefilledAcademyData: (data) => {
-        const initialAnswers = data.academyQuestions.map((question) => ({
-          initialQuestionId: question.initialQuestionId,
-          question: question.question,
-          answer: question.answer,
-          quizQuestion: question.quizQuestion,
-          choices: question.choices.map((choice) => ({
-            answer: choice.text,
-            correct: choice.isCorrect,
-          })),
-          video: question.video || '',
-        }));
-
-        const videoUrls = initialAnswers.map((answer) => ({
-          initialQuestionId: answer.initialQuestionId,
-          url: answer.video,
-        }));
-
+      setPrefilledAcademyData: async (data) => {
+        // Fetch initial questions if academyQuestions are empty
+        let initialQuestions = [];
+    
+        if (data.academyQuestions.length === 0) {
+            try {
+                const response = await axios.get('/api/questions/initial-questions'); // Fetch initial questions from backend
+                initialQuestions = response.data;
+            } catch (error) {
+                console.error('Error fetching initial questions:', error);
+            }
+        }
+    
+        const initialAnswers = initialQuestions.length > 0 
+          ? initialQuestions.map((question) => ({
+              initialQuestionId: question.id,
+              question: question.question || '',
+              answer: '',
+              quizQuestion: '',
+              choices: Array(4).fill({ answer: '', correct: false }), // Default to 4 empty choices
+              video: '',
+            }))
+          : data.academyQuestions.map((question) => ({
+              initialQuestionId: question.initialQuestionId,
+              question: question.initialQuestion?.question || '',
+              answer: question.answer || '',
+              quizQuestion: question.quizQuestion || '',
+              choices: question.choices.length > 0 
+                ? question.choices.map((choice) => ({
+                    answer: choice.text || '',
+                    correct: choice.isCorrect || false,
+                  }))
+                : Array(4).fill({ answer: '', correct: false }),
+              video: question.video || '',
+            }));
+    
         set({
-          name: data.name,
-          ticker: data.ticker,
-          categories: data.categories.map((cat) => cat.name),
-          chains: data.chains.map((chain) => chain.name),
+          name: data.name || '',
+          ticker: data.ticker || '',
+          categories: data.categories.map((cat) => cat.name) || [],
+          chains: data.chains.map((chain) => chain.name) || [],
           twitter: data.twitter || '',
           telegram: data.telegram || '',
           discord: data.discord || '',
@@ -384,11 +415,12 @@ const useAcademyStore = create<AcademyState>()(
           teamBackground: data.teamBackground || '',
           congratsVideo: data.congratsVideo || '',
           getStarted: data.getStarted || '',
-          raffles: data.raffles || [],
-          quests: data.quests || [],
-          videoUrls,
+          raffles: data.raffles || [],  // Ensure empty if not provided
+          quests: data.quests || [],    // Ensure empty if not provided
         });
-      },
+    
+        console.log("Academy data set in store:", get());
+      },  
     }),
     { name: 'AcademyStore' }
   )

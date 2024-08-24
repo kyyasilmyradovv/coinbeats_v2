@@ -10,7 +10,8 @@ const {
   updateUserRole,
   registerCreator,
   userInteraction,
-  confirmEmail
+  confirmEmail,
+  getBookmarkedAcademies
 } = require('../controllers/userController');
 const asyncHandler = require('express-async-handler');
 
@@ -24,7 +25,8 @@ router.delete('/:userId', authenticateToken, authorizeRoles('ADMIN', 'SUPERADMIN
 router.get('/:telegramUserId', asyncHandler(getUserByTelegramId));
 router.post('/update-role', authenticateToken, authorizeRoles('ADMIN', 'SUPERADMIN'), asyncHandler(updateUserRole));
 router.post('/register-creator', asyncHandler(registerCreator));
-router.post('/user-interaction', asyncHandler(userInteraction));
+router.post('/interaction', asyncHandler(userInteraction));
 router.get('/confirm-email', asyncHandler(confirmEmail));
+router.get('/:userId/bookmarked-academies', asyncHandler(getBookmarkedAcademies));
 
 module.exports = router;

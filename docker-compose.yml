@@ -18,9 +18,14 @@ services:
       - "5000:4000"
     env_file: 
       - .env.production  # Specify which env file to use
+    volumes:
+      - uploads:/app/public/uploads
     networks:
       - app-network
 
 networks:
   app-network:
     external: true
+
+volumes:
+  uploads:
