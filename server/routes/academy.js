@@ -19,6 +19,8 @@ const {
   deleteAcademy,
   allocateXp,
   getAllAcademies,
+  getAcademyQuestions,
+  submitQuizAnswers
 } = require('../controllers/academyController');
 
 const router = express.Router();
@@ -53,6 +55,8 @@ router.put(
 
 router.get('/my', authenticateToken, asyncHandler(listMyAcademies));
 router.get('/:id', authenticateToken, asyncHandler(getAcademyDetails));
+router.get('/:id/questions', asyncHandler(getAcademyQuestions));
+router.post('/:id/submit-quiz', asyncHandler(submitQuizAnswers));
 router.get('/pending', authenticateToken, authorizeRoles('ADMIN', 'SUPERADMIN'), asyncHandler(getPendingAcademies));
 router.post('/:id/approve', authenticateToken, authorizeRoles('ADMIN', 'SUPERADMIN'), asyncHandler(approveAcademy));
 router.post('/:id/reject', authenticateToken, authorizeRoles('ADMIN', 'SUPERADMIN'), asyncHandler(rejectAcademy));
@@ -60,5 +64,6 @@ router.post('/:id/raffles', authenticateToken, authorizeRoles('CREATOR', 'ADMIN'
 router.post('/:id/quests', authenticateToken, authorizeRoles('CREATOR', 'ADMIN', 'SUPERADMIN'), asyncHandler(addQuests));
 router.delete('/:id', authenticateToken, authorizeRoles('CREATOR', 'ADMIN', 'SUPERADMIN'), asyncHandler(deleteAcademy));
 router.put('/:id/allocate-xp', authenticateToken, authorizeRoles('CREATOR', 'ADMIN', 'SUPERADMIN'), asyncHandler(allocateXp));
+
 
 module.exports = router;

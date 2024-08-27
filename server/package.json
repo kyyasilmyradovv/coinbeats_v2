@@ -12,7 +12,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "@prisma/client": "^5.17.0",
+    "@prisma/client": "^5.18.0",
     "@types/bcrypt": "^5.0.2",
     "@types/jsonwebtoken": "^9.0.6",
     "bcrypt": "^5.1.1",
@@ -27,6 +27,6 @@
     "nodemailer": "^6.9.14"
   },
   "devDependencies": {
-    "prisma": "^5.17.0"
+    "prisma": "^5.18.0"
   }
 }

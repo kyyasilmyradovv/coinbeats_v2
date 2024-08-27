@@ -7,6 +7,8 @@ import MainPage from './pages/MainPage';
 import NotFoundPage from './pages/NotFoundPage';
 import ProductPage from './pages/ProductPage';
 import BookmarksPage from './pages/BookmarksPage';
+import GamesPage from './pages/GamesPage'; // Import GamesPage
+import PointsPage from './pages/PointsPage'; // Import PointsPage
 import RegisterCreatorPage from './pages/RegisterCreatorPage';
 import LoginPage from './pages/LoginPage';
 import SessionAnalysisPage from './pages/SessionAnalysisPage';
@@ -19,8 +21,8 @@ import CreateAcademyPage from './pages/CreateAcademyPage';
 import MyAcademiesPage from './pages/MyAcademiesPage';
 import SuperAdminDashboardPage from './pages/SuperAdminDashboardPage';
 import UserDetailPage from './pages/UserDetailPage';
-import AddRafflesPage from './pages/AddRafflesPage';  // New import
-import AddQuestsPage from './pages/AddQuestsPage';    // New import
+import AddRafflesPage from './pages/AddRafflesPage';  
+import AddQuestsPage from './pages/AddQuestsPage';    
 import EditAcademyPage from './pages/EditAcademyPage';
 import AddVideoLessonsPage from './pages/AddVideoLessonsPage';
 import AllocateXpPage from './pages/AllocateXpPage';
@@ -169,6 +171,8 @@ function RootComponent() {
             <Route path="/" element={<MainPage />} />
             <Route path="/product/:id" element={<ProductPage />} />
             <Route path="/saved" element={<BookmarksPage />} />
+            <Route path="/games" element={<GamesPage />} />  {/* Added GamesPage route */}
+            <Route path="/points" element={<PointsPage />} />  {/* Added PointsPage route */}
             <Route path="/register-creator" element={<RegisterCreatorPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/session-analyses" element={<SessionAnalysisPage />} />

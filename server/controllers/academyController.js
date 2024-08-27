@@ -626,3 +626,123 @@ exports.getAllAcademies = async (req, res, next) => {
     next(createError(500, 'Error fetching academies'));
   }
 };
+
+exports.getAcademyQuestions = async (req, res, next) => {
+  const { id } = req.params; // academyId
+
+  try {
+    const questions = await prisma.academyQuestion.findMany({
+      where: { academyId: parseInt(id, 10) },
+      include: {
+        choices: true, // Include the choices associated with the questions
+        initialQuestion: true, // Include the related initial question
+      },
+    });
+
+    if (!questions || questions.length === 0) {
+      return res.status(404).json({ message: 'No questions found for this academy' });
+    }
+
+    res.json(questions);
+  } catch (error) {
+    console.error('Error fetching academy questions:', error);
+    next(createError(500, 'Error fetching academy questions'));
+  }
+};
+
+exports.submitQuizAnswers = async (req, res, next) => {
+  console.log("Request received:", req.body);
+
+  const { academyId, answers } = req.body;
+  const telegramUserId = req.user ? req.user.telegramUserId : req.body.telegramUserId;
+
+  console.log("academyId:", academyId);
+  console.log("telegramUserId:", telegramUserId);
+
+  if (!telegramUserId) {
+      return res.status(400).json({ message: 'Bad Request: Telegram user ID is required.' });
+  }
+
+  try {
+      // Check if the user exists, if not, create a new user
+      let user = await prisma.user.findUnique({
+          where: { telegramUserId },
+      });
+
+      if (!user) {
+          user = await prisma.user.create({
+              data: {
+                  telegramUserId,
+                  role: 'USER',
+              },
+          });
+          console.log(`New user created with Telegram ID ${telegramUserId}`);
+      }
+
+      let totalPoints = 0;
+      const results = [];
+
+      for (const answer of answers) {
+          console.log("Processing answer:", answer);
+
+          const correctChoice = await prisma.choice.findFirst({
+              where: {
+                  academyQuestionId: answer.questionId,  // This must be the correct academyQuestionId
+                  isCorrect: true,
+              },
+          });
+
+          if (!correctChoice) {
+              console.warn(`No correct choice found for question ID ${answer.questionId}`);
+              continue;
+          }
+
+          const isCorrect = correctChoice.id === answer.choiceId;
+          console.log(`Is answer correct for question ID ${answer.questionId}:`, isCorrect);
+
+          const question = await prisma.academyQuestion.findUnique({
+              where: { id: answer.questionId },
+              select: { xp: true },
+          });
+
+          if (!question) {
+              console.warn(`No question found for ID ${answer.questionId}`);
+              continue;
+          }
+
+          const pointsAwarded = isCorrect ? (question.xp || 0) : 0;
+          totalPoints += pointsAwarded;
+
+          await prisma.userResponse.create({
+              data: {
+                  userId: user.id,
+                  choiceId: answer.choiceId,
+                  isCorrect,
+                  pointsAwarded,
+              },
+          });
+
+          results.push({
+              questionId: answer.questionId,
+              correct: isCorrect,
+          });
+      }
+
+      if (totalPoints > 0) {
+          await prisma.point.create({
+              data: {
+                  userId: user.id,
+                  academyId: parseInt(academyId, 10),
+                  value: totalPoints,
+              },
+          });
+      }
+
+      console.log(`Total points awarded: ${totalPoints}`);
+      res.json({ message: `Congratulations! You've earned ${totalPoints} XP.`, results });
+
+  } catch (error) {
+      console.error("Failed to submit quiz answers:", error);
+      next(createError(500, 'Failed to submit quiz answers.'));
+  }
+};

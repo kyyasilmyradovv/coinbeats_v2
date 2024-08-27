@@ -5,6 +5,7 @@ import axios from '../api/axiosInstance';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/common/Navbar';
 import Sidebar from '../components/common/Sidebar';
+import BottomTabBar from '../components/BottomTabBar'; // Import BottomTabBar
 import { Page, BlockTitle, Card, Button } from 'konsta/react';
 import { MdBookmarks } from 'react-icons/md';
 import useUserStore from '../store/useUserStore';
@@ -23,6 +24,8 @@ export default function BookmarksPage({ theme, setTheme, setColorTheme }) {
   const { telegramUserId } = useSessionStore((state) => ({
     telegramUserId: state.userId,
   }));
+
+  const [activeTab, setActiveTab] = useState('tab-2'); // Set active tab to Bookmarks
 
   useEffect(() => {
     const fetchBookmarkedAcademies = async () => {
@@ -115,6 +118,8 @@ export default function BookmarksPage({ theme, setTheme, setColorTheme }) {
           </Card>
         ))}
       </div>
+
+      <BottomTabBar activeTab={activeTab} setActiveTab={setActiveTab} /> {/* Add BottomTabBar */}
     </Page>
   );
 }

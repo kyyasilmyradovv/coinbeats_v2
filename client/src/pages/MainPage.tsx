@@ -1,23 +1,36 @@
 // src/pages/MainPage.tsx
 
 import React, { useState } from 'react';
-import { Tabbar, TabbarLink, Icon } from 'konsta/react';
-import { MdSchool, MdBookmarks, MdVideogameAsset, MdEmojiEvents } from 'react-icons/md';
+import { useNavigate } from 'react-router-dom';
+import BottomTabBar from '../components/BottomTabBar';
 import HomePage from './HomePage';
 import BookmarksPage from './BookmarksPage';
 import GamesPage from './GamesPage';
 import PointsPage from './PointsPage';
-import useUserStore from '../store/useUserStore';
 
 export default function MainPage() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('tab-1');
-  
-  // Access the theme-related state from the store
-  const { theme, setTheme, setColorTheme } = useUserStore((state) => ({
-    theme: state.theme,
-    setTheme: state.setTheme,
-    setColorTheme: state.setColorTheme,
-  }));
+
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    switch (tab) {
+      case 'tab-1':
+        navigate('/');
+        break;
+      case 'tab-2':
+        navigate('/saved');
+        break;
+      case 'tab-3':
+        navigate('/games');
+        break;
+      case 'tab-4':
+        navigate('/points');
+        break;
+      default:
+        navigate('/');
+    }
+  };
 
   return (
     <div>
@@ -26,52 +39,7 @@ export default function MainPage() {
       {activeTab === 'tab-3' && <GamesPage />}
       {activeTab === 'tab-4' && <PointsPage />}
 
-      <Tabbar labels icons className="left-0 bottom-0 fixed bg-[#FADAF9]">
-        <TabbarLink
-          active={activeTab === 'tab-1'}
-          onClick={() => setActiveTab('tab-1')}
-          icon={
-            <Icon
-              ios={<MdSchool className="w-7 h-7" />}
-              material={<MdSchool className="w-6 h-6" />}
-            />
-          }
-          label="Learn"
-        />
-        <TabbarLink
-          active={activeTab === 'tab-2'}
-          onClick={() => setActiveTab('tab-2')}
-          icon={
-            <Icon
-              ios={<MdBookmarks className="w-7 h-7" />}
-              material={<MdBookmarks className="w-6 h-6" />}
-            />
-          }
-          label="Bookmarks"
-        />
-        <TabbarLink
-          active={activeTab === 'tab-3'}
-          onClick={() => setActiveTab('tab-3')}
-          icon={
-            <Icon
-              ios={<MdVideogameAsset className="w-7 h-7" />}
-              material={<MdVideogameAsset className="w-6 h-6" />}
-            />
-          }
-          label="Earn"
-        />
-        <TabbarLink
-          active={activeTab === 'tab-4'}
-          onClick={() => setActiveTab('tab-4')}
-          icon={
-            <Icon
-              ios={<MdEmojiEvents className="w-7 h-7" />}
-              material={<MdEmojiEvents className="w-6 h-6" />}
-            />
-          }
-          label="Points"
-        />
-      </Tabbar>
+      <BottomTabBar activeTab={activeTab} setActiveTab={handleTabChange} />
     </div>
   );
 }

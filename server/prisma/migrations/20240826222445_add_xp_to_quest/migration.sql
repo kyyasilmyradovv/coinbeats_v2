@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE "AcademyQuestion" ADD COLUMN     "xp" INTEGER NOT NULL DEFAULT 0;
+
+-- AlterTable
+ALTER TABLE "Quest" ADD COLUMN     "xp" INTEGER NOT NULL DEFAULT 0;

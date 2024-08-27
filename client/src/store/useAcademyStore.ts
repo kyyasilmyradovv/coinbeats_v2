@@ -1,3 +1,5 @@
+// client/src/store/useAcademyStore.ts
+
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import axios from '../api/axiosInstance';
@@ -87,6 +89,7 @@ interface AcademyState {
   submitBasicAcademy: () => Promise<void>;
   resetAcademyData: () => void;
   fetchQuestions: () => Promise<void>;
+  fetchQuests: (academyId: number) => Promise<void>;
   nextStep: () => void;
   prevStep: () => void;
   setPrefilledAcademyData: (data: any) => void;
@@ -164,6 +167,16 @@ const useAcademyStore = create<AcademyState>()(
         set((state) => ({
           quests: state.quests.filter((_, i) => i !== index),
         })),
+
+  
+        fetchQuests: async (academyId: number) => {
+          try {
+            const response = await axios.get(`/api/academies/${academyId}/quests`);
+            set({ quests: response.data });
+          } catch (error) {
+            console.error('Error fetching quests:', error);
+          }
+        },
 
       submitAcademy: async (academyId?: number, logoFile?: File | null, coverPhotoFile?: File | null) => {
         const state = get();

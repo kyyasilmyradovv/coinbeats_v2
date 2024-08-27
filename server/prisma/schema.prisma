@@ -89,26 +89,13 @@ model InitialQuestion {
   AcademyQuestion AcademyQuestion[]
 }
 
-model AcademyQuestion {
-  id               Int              @id @default(autoincrement())
-  initialQuestionId Int
-  initialQuestion  InitialQuestion @relation(fields: [initialQuestionId], references: [id])
-  academyId        Int
-  academy          Academy          @relation(fields: [academyId], references: [id])
-  question         String           // Academy-specific question
-  answer           String?          // The answer to the initial question
-  quizQuestion     String           // Question to test users based on the academy's content
-  choices          Choice[]         // Multiple choice answers for the quizQuestion
-}
-
 model Choice {
   id                Int              @id @default(autoincrement())
   text              String
-  isCorrect         Boolean          // Correct answer as defined by academy creator
+  isCorrect         Boolean
   academyQuestionId Int
-  academyQuestion   AcademyQuestion  @relation(fields: [academyQuestionId], references: [id])
-
-  UserResponse      UserResponse[]   // Responses associated with this choice
+  academyQuestion   AcademyQuestion  @relation(fields: [academyQuestionId], references: [id], onDelete: Cascade)
+  userResponses     UserResponse[]   // Relationship to UserResponse
 }
 
 model UserResponse {
@@ -116,9 +103,22 @@ model UserResponse {
   userId        Int
   user          User        @relation(fields: [userId], references: [id])
   choiceId      Int
-  choice        Choice      @relation(fields: [choiceId], references: [id])
-  isCorrect     Boolean     // Whether the response is correct
+  choice        Choice      @relation(fields: [choiceId], references: [id], onDelete: Cascade)  // Ensure this cascade is set
+  isCorrect     Boolean
   pointsAwarded Int
+}
+
+model AcademyQuestion {
+  id               Int              @id @default(autoincrement())
+  initialQuestionId Int
+  initialQuestion  InitialQuestion  @relation(fields: [initialQuestionId], references: [id])
+  academyId        Int
+  academy          Academy          @relation(fields: [academyId], references: [id])
+  question         String
+  answer           String?
+  quizQuestion     String
+  choices          Choice[]         // Choices for this question
+  xp               Int              @default(0)
 }
 
 model Raffle {
@@ -140,6 +140,7 @@ model Quest {
   platform   String
   academyId  Int
   academy    Academy  @relation(fields: [academyId], references: [id])
+  xp         Int      @default(0) // Points allocated to this quest
 }
 
 model Point {

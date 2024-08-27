@@ -18,7 +18,7 @@ const Navbar: React.FC = () => {
 
   const username = useMemo(() => initData?.user?.username || 'Guest', [initData]);
   const userAvatar = useMemo(
-    () => initData?.user?.photoUrl || 'https://cdn.framework7.io/placeholder/people-100x100-7.jpg',
+    () => initData?.user?.photo_url || 'https://cdn.framework7.io/placeholder/people-100x100-7.jpg',
     [initData]
   );
 
@@ -35,11 +35,11 @@ const Navbar: React.FC = () => {
       left={canGoBack ? <NavbarBackLink onClick={() => navigate(-1)} /> : null}
       right={
         <Chip
-          className="m-0.5"
+          className="m-0.5 !pr-1"
           media={<img alt="avatar" className="ios:h-7 material:h-6 rounded-full" src={userAvatar} />}
           onClick={toggleSidebar} // Use store's toggleSidebar
         >
-          {username}
+          <p className='truncate max-w-[60px]'>{username}</p>
         </Chip>
       }
       centerTitle={true}

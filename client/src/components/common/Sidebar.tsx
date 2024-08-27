@@ -115,6 +115,11 @@ const Sidebar: React.FC = () => {
     toggleSidebar(); // Close sidebar after toggling dark mode
   };
 
+  const toggleDarkMode = () => {
+    setDarkMode(!darkMode);
+    document.documentElement.classList.toggle('dark');
+  };  
+
   return (
     <Panel
       side="right"

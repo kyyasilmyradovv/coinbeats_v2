@@ -34,4 +34,22 @@
     left: 50%;
     transform: translate(-50%, -50%);
   }
+
+  @keyframes bookmarkZoom {
+    0% {
+      transform: scale(1);
+      opacity: 1;
+    }
+    50% {
+      transform: scale(2);
+      opacity: 1;
+    }
+    100% {
+      transform: scale(4);
+      opacity: 0;
+    }
+  }
+  .animate-bookmark {
+    animation: bookmarkZoom 1.5s forwards;
+  }
   
