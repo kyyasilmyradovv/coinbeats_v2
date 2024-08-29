@@ -49,8 +49,10 @@ model Academy {
   telegram       String?
   discord        String?
   coingecko      String?
+  dexScreener         String?
+  contractAddress     String?
   academyQuestions AcademyQuestion[]
-  tokenomics     String?
+  tokenomics     Json?
   teamBackground String?
   congratsVideo  String?
   getStarted     String?
@@ -83,8 +85,7 @@ model SubscriptionSettings {
 
 model InitialQuestion {
   id          Int       @id @default(autoincrement())
-  question    String    // The question itself
-  description String?   // Optional description or content related to the question
+  question    String
 
   AcademyQuestion AcademyQuestion[]
 }

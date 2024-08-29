@@ -111,6 +111,133 @@ const EditAcademyPage: React.FC = () => {
     const question = initialAnswers[questionIndex];
     if (!question) return null;
 
+    // Check if this is the "Tokenomics details" question
+    if (question.question === 'Tokenomics details') {
+      // Parse the tokenomics data from the answer field
+      const tokenomics = question.answer ? JSON.parse(question.answer) : {};
+
+      return (
+        <Block key={`initial-question-${questionIndex}`} strong className="mx-4 my-4 bg-white rounded-2xl shadow-lg p-6 space-y-4">
+          <h2 className="text-lg font-bold mb-4">Tokenomics Details</h2>
+          <List>
+            <ListInput
+              label="Total Supply"
+              type="text"
+              value={tokenomics.totalSupply || ''}
+              onChange={(e) => setInitialAnswer(questionIndex, 'answer', JSON.stringify({ ...tokenomics, totalSupply: e.target.value }))}
+              outline
+            />
+            <ListInput
+              label="Utility"
+              type="text"
+              value={tokenomics.utility || ''}
+              onChange={(e) => setInitialAnswer(questionIndex, 'answer', JSON.stringify({ ...tokenomics, utility: e.target.value }))}
+              outline
+            />
+            <ListInput
+              label="Logic"
+              type="text"
+              value={tokenomics.logic || ''}
+              onChange={(e) => setInitialAnswer(questionIndex, 'answer', JSON.stringify({ ...tokenomics, logic: e.target.value }))}
+              outline
+            />
+            <ListInput
+              label="CoinGecko"
+              type="text"
+              value={tokenomics.coingecko || ''}
+              onChange={(e) => setInitialAnswer(questionIndex, 'answer', JSON.stringify({ ...tokenomics, coingecko: e.target.value }))}
+              outline
+            />
+            <ListInput
+              label="Dex Screener"
+              type="text"
+              value={tokenomics.dexScreener || ''}
+              onChange={(e) => setInitialAnswer(questionIndex, 'answer', JSON.stringify({ ...tokenomics, dexScreener: e.target.value }))}
+              outline
+            />
+            <ListInput
+              label="Contract Address"
+              type="text"
+              value={tokenomics.contractAddress || ''}
+              onChange={(e) => setInitialAnswer(questionIndex, 'answer', JSON.stringify({ ...tokenomics, contractAddress: e.target.value }))}
+              outline
+            />
+            <ListInput
+              label="Add Chain"
+              type="select"
+              onChange={(e) => setField('chains', [...chains, e.target.value])}
+              value=""
+              outline
+            >
+              <option value="">Select Chain</option>
+              {chainList.map((chain) => (
+                <option key={chain.id} value={chain.name}>
+                  {chain.name}
+                </option>
+              ))}
+            </ListInput>
+            <div className="flex flex-wrap gap-2 mb-4">
+              {chains.map((chain, index) => (
+                <div key={index} className="relative">
+                  <span onClick={() => setField('chains', chains.filter((_, i) => i !== index))} className="bg-green-200 px-2 py-1 rounded-lg">
+                    {chain}
+                  </span>
+                </div>
+              ))}
+            </div>
+          <ListInput
+                    label={`Quiz Question ${questionIndex + 1}`}
+                    type="textarea"
+                    value={question.quizQuestion || ''}
+                    onChange={(e) => {
+                      setInitialAnswer(questionIndex, 'quizQuestion', e.target.value);
+                      autoresize(e);
+                    }}
+                    outline
+                    />
+                {question.choices.map((choice, choiceIndex) => (
+                  <div key={choiceIndex} className="flex items-center">
+                        <ListInput
+                            label={`Choice ${choiceIndex + 1}`}
+                            type="textarea"
+                            value={choice.answer || ''}
+                            onChange={(e) => setInitialAnswer(questionIndex, 'choices', {
+                              index: choiceIndex,
+                              choice: { ...choice, answer: e.target.value },
+                            })}
+                            outline
+                        />
+                        <input
+                            type="radio"
+                            checked={choice.correct || false}
+                            onChange={() => toggleCorrectAnswer(questionIndex, choiceIndex)}
+                            className="custom-radio ml-2"
+                            />
+                    </div>
+                ))}
+                <ListInput
+                    label="Video URL"
+                    type="url"
+                    value={question.video || ''}
+                    onChange={(e) => setInitialAnswer(questionIndex, 'video', e.target.value)}
+                    outline
+                />
+                {question.video && (
+                    <iframe
+                    title={`video-${questionIndex}`}
+                    width="100%"
+                    height="315"
+                    src={`https://www.youtube.com/embed/${question.video}`}
+                        frameBorder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        ></iframe>
+                      )}
+                      </List>
+        </Block>
+      );
+    }
+
     return (
         <Block key={`initial-question-${questionIndex}`} strong className="mx-4 my-4 bg-white rounded-2xl shadow-lg p-6 space-y-4">
             <h2 className="text-lg font-bold mb-4">Initial Question {questionIndex + 1}</h2>
@@ -376,29 +503,6 @@ const EditAcademyPage: React.FC = () => {
             <div key={index} className="relative">
               <span onClick={() => setField('categories', categories.filter((_, i) => i !== index))} className="bg-blue-200 px-2 py-1 rounded-lg">
                 {category}
-              </span>
-            </div>
-          ))}
-        </div>
-        <ListInput
-          label="Add Chain"
-          type="select"
-          onChange={(e) => setField('chains', [...chains, e.target.value])}
-          value=""
-          outline
-        >
-          <option value="">Select Chain</option>
-          {chainList.map((chain) => (
-            <option key={chain.id} value={chain.name}>
-              {chain.name}
-            </option>
-          ))}
-        </ListInput>
-        <div className="flex flex-wrap gap-2 mb-4">
-          {chains.map((chain, index) => (
-            <div key={index} className="relative">
-              <span onClick={() => setField('chains', chains.filter((_, i) => i !== index))} className="bg-green-200 px-2 py-1 rounded-lg">
-                {chain}
               </span>
             </div>
           ))}

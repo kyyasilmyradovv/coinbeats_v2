@@ -17,6 +17,13 @@ interface InitialAnswer {
   quizQuestion: string;
   choices: Choice[];
   video: string;
+  chains?: string[]; // Added for question 4
+  utility?: string;  // Added for question 4
+  totalSupply?: string;  // Added for question 4
+  logic?: string;  // Added for question 4
+  coingecko?: string;  // Added for question 4
+  dexScreener?: string;  // Added for question 4
+  contractAddress?: string;  // Added for question 4
 }
 
 interface Raffle {
@@ -168,15 +175,14 @@ const useAcademyStore = create<AcademyState>()(
           quests: state.quests.filter((_, i) => i !== index),
         })),
 
-  
-        fetchQuests: async (academyId: number) => {
-          try {
-            const response = await axios.get(`/api/academies/${academyId}/quests`);
-            set({ quests: response.data });
-          } catch (error) {
-            console.error('Error fetching quests:', error);
-          }
-        },
+      fetchQuests: async (academyId: number) => {
+        try {
+          const response = await axios.get(`/api/academies/${academyId}/quests`);
+          set({ quests: response.data });
+        } catch (error) {
+          console.error('Error fetching quests:', error);
+        }
+      },
 
       submitAcademy: async (academyId?: number, logoFile?: File | null, coverPhotoFile?: File | null) => {
         const state = get();
@@ -203,13 +209,41 @@ const useAcademyStore = create<AcademyState>()(
           formData.append('telegram', state.telegram);
           formData.append('discord', state.discord);
           formData.append('coingecko', state.coingecko);
+
+          // Process the tokenomics data
+          const tokenomicsData = {
+            chains: state.initialAnswers[3]?.chains || [],
+            utility: state.initialAnswers[3]?.utility || '',
+            totalSupply: state.initialAnswers[3]?.totalSupply || '',
+            logic: state.initialAnswers[3]?.logic || '',
+            coingecko: state.initialAnswers[3]?.coingecko || '',
+            dexScreener: state.initialAnswers[3]?.dexScreener || '',
+            contractAddress: state.initialAnswers[3]?.contractAddress || '',
+          };
+
+          // Update initialAnswers[3] with the tokenomics data
+          const updatedInitialAnswers = state.initialAnswers.map((answer, index) => {
+            if (index === 3) {
+              return {
+                ...answer,
+                answer: JSON.stringify(tokenomicsData),
+              };
+            }
+            return answer;
+          });
+
+          formData.append('initialAnswers', JSON.stringify(updatedInitialAnswers));
           formData.append('tokenomics', state.tokenomics);
           formData.append('teamBackground', state.teamBackground);
           formData.append('congratsVideo', state.congratsVideo);
           formData.append('getStarted', state.getStarted);
-          formData.append('initialAnswers', JSON.stringify(state.initialAnswers));
           formData.append('raffles', JSON.stringify(state.raffles || []));
           formData.append('quests', JSON.stringify(state.quests || []));
+
+          // Include duplicated fields
+          formData.append('coingeckoLink', tokenomicsData.coingecko);
+          formData.append('dexScreenerLink', tokenomicsData.dexScreener);
+          formData.append('contractAddress', tokenomicsData.contractAddress);
 
           const url = academyId ? `/api/academies/${academyId}` : `/api/academies`;
           const method = academyId ? 'put' : 'post';

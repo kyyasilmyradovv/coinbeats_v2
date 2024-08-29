@@ -3,7 +3,7 @@
 const express = require('express');
 const { authenticateToken, authorizeRoles } = require('../middleware/auth');
 const asyncHandler = require('express-async-handler');
-const upload = require('../uploadConfig'); // Import the central multer configuration
+const { upload } = require('../uploadConfig'); // Import the central multer configuration
 
 const {
   createAcademy,

@@ -7,10 +7,16 @@ const storage = multer.diskStorage({
     cb(null, path.join(__dirname, 'public', 'uploads'));
   },
   filename: function (req, file, cb) {
-    cb(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname));
+    const fileName = file.fieldname + '-' + Date.now() + path.extname(file.originalname);
+    cb(null, fileName);
   }
 });
 
 const upload = multer({ storage: storage });
 
-module.exports = upload;
+const saveFile = (file) => {
+  // Return the relative path to be saved in the database
+  return `uploads/${file.filename}`;
+};
+
+module.exports = { upload, saveFile };

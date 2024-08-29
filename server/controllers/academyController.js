@@ -30,6 +30,9 @@ exports.createAcademy = async (req, res, next) => {
       getStarted = '',
       raffles = '[]',
       quests = '[]',
+      coingeckoLink = '',
+      dexScreenerLink = '',
+      contractAddress = ''
     } = req.body;
 
     const { userId } = req.user;
@@ -47,6 +50,17 @@ exports.createAcademy = async (req, res, next) => {
     const parsedInitialAnswers = JSON.parse(initialAnswers);
     const parsedRaffles = JSON.parse(raffles);
     const parsedQuests = JSON.parse(quests);
+
+    // Handle tokenomics data (question 4)
+    const tokenomicsData = {
+      chains: parsedInitialAnswers[3]?.chains || [],
+      utility: parsedInitialAnswers[3]?.utility || '',
+      totalSupply: parsedInitialAnswers[3]?.totalSupply || '',
+      logic: parsedInitialAnswers[3]?.logic || '',
+      coingecko: parsedInitialAnswers[3]?.coingecko || coingeckoLink,
+      dexScreener: parsedInitialAnswers[3]?.dexScreener || dexScreenerLink,
+      contractAddress: parsedInitialAnswers[3]?.contractAddress || contractAddress,
+    };
 
     const categoryRecords = await Promise.all(
       parsedCategories.map(async (categoryName) => {
@@ -83,16 +97,18 @@ exports.createAcademy = async (req, res, next) => {
         twitter,
         telegram,
         discord,
-        coingecko,
-        tokenomics,
+        coingecko: coingeckoLink,  // Save the coingecko link
+        dexScreener: dexScreenerLink,  // Save the dex screener link
+        contractAddress,  // Save the contract address
+        tokenomics: tokenomicsData,  // Save the tokenomics data as a JSON object
         teamBackground,
         congratsVideo,
         getStarted,
         academyQuestions: {
-          create: parsedInitialAnswers.map((initialAnswer) => ({
+          create: parsedInitialAnswers.map((initialAnswer, index) => ({
             initialQuestionId: initialAnswer.initialQuestionId,
             question: initialAnswer.question || '',
-            answer: initialAnswer.answer || '',
+            answer: index === 3 ? JSON.stringify(tokenomicsData) : initialAnswer.answer || '',  // Save tokenomics data as JSON string for question 4
             quizQuestion: initialAnswer.quizQuestion || '',
             choices: {
               create: initialAnswer.choices.map((choice) => ({
@@ -149,6 +165,9 @@ exports.createBasicAcademy = async (req, res, next) => {
       congratsVideo = '',
       getStarted = '',
       webpageUrl = '',
+      coingeckoLink = '',
+      dexScreenerLink = '',
+      contractAddress = ''
     } = req.body;
 
     const { userId } = req.user;
@@ -163,6 +182,13 @@ exports.createBasicAcademy = async (req, res, next) => {
 
     const parsedCategories = JSON.parse(categories);
     const parsedChains = JSON.parse(chains);
+
+    // Handle tokenomics data
+    const tokenomicsData = {
+      coingecko: coingeckoLink,
+      dexScreener: dexScreenerLink,
+      contractAddress,
+    };
 
     const categoryRecords = await Promise.all(
       parsedCategories.map(async (categoryName) => {
@@ -199,8 +225,10 @@ exports.createBasicAcademy = async (req, res, next) => {
         twitter,
         telegram,
         discord,
-        coingecko,
-        tokenomics,
+        coingecko: coingeckoLink,  // Save the coingecko link
+        dexScreener: dexScreenerLink,  // Save the dex screener link
+        contractAddress,  // Save the contract address
+        tokenomics: tokenomicsData,  // Save the tokenomics data as a JSON object
         teamBackground,
         congratsVideo,
         getStarted,
@@ -674,6 +702,7 @@ exports.submitQuizAnswers = async (req, res, next) => {
               data: {
                   telegramUserId,
                   role: 'USER',
+                  name:'',
               },
           });
           console.log(`New user created with Telegram ID ${telegramUserId}`);

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useInitData } from '@telegram-apps/sdk-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Navbar from '../components/common/Navbar';
@@ -27,6 +27,8 @@ export default function ProductPage({ theme, setTheme, setColorTheme }) {
   const [initialAnswers, setInitialAnswers] = useState([]);
   const [quests, setQuests] = useState([]);
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
+  const [earnedPoints, setEarnedPoints] = useState(0);  // New state for earned points
+  const swiperRef = useRef(null); // Reference to Swiper instance
 
   useEffect(() => {
     setDarkMode(document.documentElement.classList.contains('dark'));
@@ -36,12 +38,22 @@ export default function ProductPage({ theme, setTheme, setColorTheme }) {
     if (academy) {
       fetchQuestions();
       fetchQuests();
+      fetchEarnedPoints();  // Fetch the earned points when the academy is loaded
     }
   }, [academy]);
 
   useEffect(() => {
     setCurrentSlideIndex(0);
   }, [activeFilter]);
+
+  const fetchEarnedPoints = async () => {
+    try {
+      const response = await axiosInstance.get(`/api/points/${initData.user.id}/${academy.id}`);
+      setEarnedPoints(response.data.value);  // Assuming the API returns the points in a `value` field
+    } catch (error) {
+      console.error('Error fetching earned points:', error);
+    }
+  };
 
   const handleNavigateToDetail = () => {
     setActiveFilter(null);
@@ -138,25 +150,79 @@ export default function ProductPage({ theme, setTheme, setColorTheme }) {
   const renderInitialQuestionSlide = (questionIndex) => {
     const question = initialAnswers[questionIndex];
     if (!question) return null;
-
+  
+    const handlePrevClick = () => {
+      swiperRef.current.swiper.slidePrev();
+    };
+  
+    const handleNextClick = () => {
+      swiperRef.current.swiper.slideNext();
+    };
+  
+    // Check if this is the special "Tokenomics details" question
+    if (question.question === 'Tokenomics details' && question.answer) {
+      let parsedAnswer;
+      try {
+        parsedAnswer = JSON.parse(question.answer);
+      } catch (error) {
+        console.error('Error parsing answer JSON:', error);
+        parsedAnswer = {}; // Fallback to an empty object in case of error
+      }
+  
+      return (
+        <SwiperSlide key={`initial-question-${questionIndex}`}>
+          <Card className="!my-2 !mx-1 !p-4 !rounded-2xl !bg-gray-50 dark:!bg-gray-800 !border !border-gray-200 dark:!border-gray-700 !shadow-sm">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+              {question.question}
+            </h2>
+            <ul className="list-disc list-inside text-gray-900 dark:text-gray-100">
+              {Object.entries(parsedAnswer).map(([key, value]) => (
+                <li key={key} className="mb-2 break-words">
+                  <strong className="capitalize">{key}:</strong>{' '}
+                  {key === 'chains'
+                    ? value.join(', ') // Remove brackets around array items and join them with a comma
+                    : typeof value === 'string'
+                    ? value
+                    : JSON.stringify(value)}
+                </li>
+              ))}
+            </ul>
+          </Card>
+          <div className="flex justify-between items-center mt-4">
+            <Icon icon="mdi:arrow-left" className="text-gray-600 dark:text-gray-400 w-6 h-6 cursor-pointer" onClick={handlePrevClick} />
+            <span className="text-gray-600 dark:text-gray-400">Swipe</span>
+            <Icon icon="mdi:arrow-right" className="text-gray-600 dark:text-gray-400 w-6 h-6 cursor-pointer" onClick={handleNextClick} />
+          </div>
+        </SwiperSlide>
+      );
+    }
+  
     return (
       <SwiperSlide key={`initial-question-${questionIndex}`}>
         <Card className="!my-2 !mx-1 !p-2 !rounded-2xl !bg-gray-50 dark:!bg-gray-800 !border !border-gray-200 dark:!border-gray-700 !shadow-sm">
           <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">{question.answer}</p>
         </Card>
         <div className="flex justify-between items-center mt-4">
-          <Icon icon="mdi:arrow-left" className="text-gray-600 dark:text-gray-400 w-6 h-6" />
+          <Icon icon="mdi:arrow-left" className="text-gray-600 dark:text-gray-400 w-6 h-6 cursor-pointer" onClick={handlePrevClick} />
           <span className="text-gray-600 dark:text-gray-400">Swipe</span>
-          <Icon icon="mdi:arrow-right" className="text-gray-600 dark:text-gray-400 w-6 h-6" />
+          <Icon icon="mdi:arrow-right" className="text-gray-600 dark:text-gray-400 w-6 h-6 cursor-pointer" onClick={handleNextClick} />
         </div>
       </SwiperSlide>
     );
-  };
+  };  
 
   const renderQuizSlide = (questionIndex) => {
     const question = initialAnswers[questionIndex];
     if (!question) return null;
-  
+
+    const handlePrevClick = () => {
+      swiperRef.current.swiper.slidePrev();
+    };
+
+    const handleNextClick = () => {
+      swiperRef.current.swiper.slideNext();
+    };
+
     return (
       <SwiperSlide key={`quiz-question-${questionIndex}`}>
         <Card className="!mx-1 !my-2 p-2 !rounded-2xl !bg-gray-50 dark:!bg-gray-800 !border !border-gray-200 dark:!border-gray-700 !shadow-sm">
@@ -196,9 +262,9 @@ export default function ProductPage({ theme, setTheme, setColorTheme }) {
           </Button>
         )}
         <div className="flex justify-between items-center mt-4 mb-12">
-          <Icon icon="mdi:arrow-left" className="text-gray-600 dark:text-gray-400 w-6 h-6" />
+          <Icon icon="mdi:arrow-left" className="text-gray-600 dark:text-gray-400 w-6 h-6 cursor-pointer" onClick={handlePrevClick} />
           <span className="text-gray-600 dark:text-gray-400">Swipe</span>
-          <Icon icon="mdi:arrow-right" className="text-gray-600 dark:text-gray-400 w-6 h-6" />
+          <Icon icon="mdi:arrow-right" className="text-gray-600 dark:text-gray-400 w-6 h-6 cursor-pointer" onClick={handleNextClick} />
         </div>
       </SwiperSlide>
     );
@@ -210,6 +276,7 @@ export default function ProductPage({ theme, setTheme, setColorTheme }) {
       <Swiper
         pagination={{ clickable: true }}
         onSlideChange={(swiper) => setCurrentSlideIndex(swiper.activeIndex)}
+        ref={swiperRef}
       >
         {initialAnswers.length > 0 ? (
           initialAnswers.flatMap((_, index) => [
@@ -230,7 +297,7 @@ export default function ProductPage({ theme, setTheme, setColorTheme }) {
   const renderWatchTab = () => (
     <>
       {renderProgressbar()}
-      <Swiper pagination={{ clickable: true }}>
+      <Swiper pagination={{ clickable: true }} ref={swiperRef}>
         {initialAnswers.length > 0 ? (
           initialAnswers.map((question, index) => (
             <React.Fragment key={`watch-tab-${index}`}>
@@ -246,9 +313,9 @@ export default function ProductPage({ theme, setTheme, setColorTheme }) {
                   />
                 </Card>
                 <div className="flex justify-between items-center mt-4">
-                  <Icon icon="mdi:arrow-left" className="text-gray-600 dark:text-gray-400 w-6 h-6" />
+                  <Icon icon="mdi:arrow-left" className="text-gray-600 dark:text-gray-400 w-6 h-6 cursor-pointer" onClick={handlePrevClick} />
                   <span className="text-gray-600 dark:text-gray-400">Swipe</span>
-                  <Icon icon="mdi:arrow-right" className="text-gray-600 dark:text-gray-400 w-6 h-6" />
+                  <Icon icon="mdi:arrow-right" className="text-gray-600 dark:text-gray-400 w-6 h-6 cursor-pointer" onClick={handleNextClick} />
                 </div>
               </SwiperSlide>
               {renderQuizSlide(index)}
@@ -366,7 +433,7 @@ export default function ProductPage({ theme, setTheme, setColorTheme }) {
                     <span className="text-gray-600 dark:text-gray-400 mr-2">
                       Name:
                     </span>
-                    <span className="text-black dark:text-gray-200 font-semibold">
+                    <span className="text-black dark:text-gray-200 font-semibold truncate">
                       {academy.name}
                     </span>
                   </div>
@@ -387,13 +454,23 @@ export default function ProductPage({ theme, setTheme, setColorTheme }) {
                     <span className="text-black dark:text-gray-200 font-semibold">
                       {academy.ticker}
                     </span>
+                    {academy.dexScreener && (
+                      <a
+                        href={academy.dexScreener}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="ml-2 text-blue-500"
+                      >
+                        <Icon icon="mdi:arrow-right-bold" />
+                      </a>
+                    )}
                   </div>
                   <div className="flex items-center mb-2 text-lg text-gray-900 dark:text-gray-200">
                     <img src={categories} className="h-10 w-10 mr-4" alt="academy categories" />
                     <span className="text-gray-600 dark:text-gray-400 mr-2">
                       Categories:
                     </span>
-                    <span className="text-black dark:text-gray-200 font-semibold">
+                    <span className="text-black dark:text-gray-200 font-semibold truncate">
                       {academy.categories.map((c) => c.name).join(', ')}
                     </span>
                   </div>
@@ -402,19 +479,20 @@ export default function ProductPage({ theme, setTheme, setColorTheme }) {
                     <span className="text-gray-600 dark:text-gray-400 mr-2">
                       Chains:
                     </span>
-                    <span className="text-black dark:text-gray-200 font-semibold">
+                    <span className="text-black dark:text-gray-200 font-semibold truncate">
                       {academy.chains.map((c) => c.name).join(', ')}
                     </span>
                   </div>
                 </Card>
 
-                <Card className="flex flex-row rounded-2xl !shadow-lg p-2 !m-0 !bg-gray-50 dark:!bg-gray-800 !border !border-gray-200 dark:!border-gray-700 !mb-4">
+                <Card className="rounded-2xl !shadow-lg p-2 !mx-0 !bg-gray-50 dark:!bg-gray-800 !border !border-gray-200 dark:!border-gray-700 !mb-4">
                   <div className="grid grid-cols-2 gap-4 w-full">
                     {academy.webpageUrl && (
                       <Button
                         clear
                         raised
                         className="flex items-center justify-center gap-2 w-full dark:text-gray-200"
+                        onClick={() => window.open(academy.webpageUrl, '_blank')}
                       >
                         <Icon
                           icon="mdi:web"
@@ -429,6 +507,7 @@ export default function ProductPage({ theme, setTheme, setColorTheme }) {
                         clear
                         raised
                         className="flex items-center justify-center gap-2 w-full dark:text-gray-200"
+                        onClick={() => window.open(academy.twitter, '_blank')}
                       >
                         <Icon
                           icon="mdi:twitter"
@@ -443,6 +522,7 @@ export default function ProductPage({ theme, setTheme, setColorTheme }) {
                         clear
                         raised
                         className="flex items-center justify-center gap-2 dark:text-gray-200"
+                        onClick={() => window.open(academy.telegram, '_blank')}
                       >
                         <Icon
                           icon="mdi:telegram"
@@ -457,6 +537,7 @@ export default function ProductPage({ theme, setTheme, setColorTheme }) {
                         clear
                         raised
                         className="flex items-center justify-center gap-2 dark:text-gray-200"
+                        onClick={() => window.open(academy.discord, '_blank')}
                       >
                         <Icon
                           icon="mdi:discord"
@@ -471,6 +552,7 @@ export default function ProductPage({ theme, setTheme, setColorTheme }) {
                         clear
                         raised
                         className="flex items-center justify-center gap-2 w-full dark:text-gray-200"
+                        onClick={() => window.open(academy.coingecko, '_blank')}
                       >
                         <img src={gecko} className="h-5 w-5" alt="Coingecko logo" />
                         COINGECKO
@@ -479,14 +561,14 @@ export default function ProductPage({ theme, setTheme, setColorTheme }) {
                   </div>
                 </Card>
 
-                <Card className="flex flex-row rounded-2xl !shadow-lg p-2 !m-0 !bg-gray-50 dark:!bg-gray-800 !border !border-gray-200 dark:!border-gray-700 !py-0">
+                <Card className="flex flex-row rounded-2xl !shadow-lg p-2 !mx-0 !bg-gray-50 dark:!bg-gray-800 !border !border-gray-200 dark:!border-gray-700 !mb-12">
                   <div className="flex items-center justify-center text-gray-900 dark:text-gray-200">
                     <img src={collected} className="h-10 w-10 mr-4" alt="collected coins" />
                     <span className="text-lg text-gray-600 dark:text-gray-400 mr-2">
                       Earned Coins:
                     </span>
                     <span className="text-lg text-black dark:text-gray-200 font-semibold">
-                      150/200
+                      {earnedPoints}/{academy.xp}  {/* Dynamically display the earned points */}
                     </span>
                   </div>
                 </Card>

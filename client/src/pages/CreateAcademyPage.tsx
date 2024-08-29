@@ -1,4 +1,4 @@
-// client/src/pages/CreateAcademyPages
+// client/src/pages/CreateAcademyPage.tsx
 
 import React, { useState, useEffect } from 'react';
 import {
@@ -166,6 +166,143 @@ const CreateAcademyPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
   const renderInitialQuestionSlide = (questionIndex: number) => {
     const answerLimit = 1000;
 
+    if (questionIndex === 3) {
+      // Custom render for the tokenomics question slide
+      return (
+        <Block key={`initial-question-${questionIndex}`} strong className="mx-4 my-4 bg-white rounded-2xl shadow-lg p-6 space-y-4">
+          <div className="flex items-center justify-center relative">
+            <h2 className="text-lg font-bold mb-4 text-center">Answer Initial Question</h2>
+            <button
+              className="ml-2 rounded-full bg-gray-700 text-white text-xs font-bold w-5 h-5 flex items-center justify-center mb-4"
+              onClick={() => toggleTooltip(questionIndex)}
+            >
+              ?
+            </button>
+            {visibleTooltip === questionIndex && (
+              <div className="tooltip absolute bg-gray-700 text-white text-xs rounded-2xl p-4 mt-2 z-20">
+                Provide detailed tokenomics information for your academy.
+                <button
+                  className="absolute top-0 right-0 text-white text-sm mt-1 mr-1"
+                  onClick={() => setVisibleTooltip(null)}
+                >
+                  &times;
+                </button>
+              </div>
+            )}
+          </div>
+          <div className="mb-4 rounded-lg shadow-sm z-10">
+          <p className="font-medium mb-2">{`Question 4: ${initialAnswers[3]?.question}`}</p>
+            <List>
+              <ListInput
+                label="Token Chain"
+                type="select"
+                outline
+              onChange={(e) => {
+                const updatedChains = [...chains, e.target.value];
+                setField('chains', updatedChains);
+                setInitialAnswer(3, 'chains', updatedChains);
+              }}
+              placeholder="Select Chain"
+              >
+              <option value="">Select Chain</option>
+                {chainList.map((chain) => (
+                  <option key={chain.id} value={chain.name}>
+                    {chain.name}
+                  </option>
+                ))}
+              </ListInput>
+            <div className="flex flex-wrap gap-2 mb-4">
+              {chains.map((chain, index) => (
+                <div key={index} className="relative">
+                  <span onClick={() => removeChain(index)} className="bg-green-200 px-2 py-1 rounded-lg">
+                    {chain}
+                  </span>
+                </div>
+              ))}
+            </div>
+              <ListInput
+                label="Token Utility"
+                type="textarea"
+                outline
+                placeholder="Enter Token Utility"
+                inputClassName="!resize-none"
+                className="!ml-0 !mr-0"
+                value={initialAnswers[questionIndex].utility || ''}
+                maxLength={answerLimit}
+                onChange={(e) => {
+                  setInitialAnswer(questionIndex, 'utility', e.target.value);
+                  handleCharacterLimit(e, answerLimit);
+                }}
+              />
+              {/* Total Supply Input */}
+              <ListInput
+                label="Total Supply"
+                type="number"
+                outline
+                placeholder="Enter Total Supply"
+                value={initialAnswers[questionIndex].totalSupply || ''}
+                onChange={(e) => setInitialAnswer(questionIndex, 'totalSupply', e.target.value)}
+              />
+              {/* Tokenomics Logic and Issuance Input */}
+              <ListInput
+                label="Tokenomics Logic and Issuance"
+                type="textarea"
+                outline
+                placeholder="Describe Tokenomics Logic and Issuance"
+                inputClassName="!resize-none"
+                className="!ml-0 !mr-0"
+                value={initialAnswers[questionIndex].logic || ''}
+                maxLength={answerLimit}
+                onChange={(e) => {
+                  setInitialAnswer(questionIndex, 'logic', e.target.value);
+                  handleCharacterLimit(e, answerLimit);
+                }}
+              />
+              {/* Coingecko Link */}
+              <ListInput
+                label="CoinGecko Link"
+                type="url"
+                outline
+                placeholder="Enter CoinGecko Link"
+                value={coingecko}
+                onChange={(e) => {
+                  setField('coingecko', e.target.value);
+                  setInitialAnswer(questionIndex, 'coingecko', e.target.value);
+                }}
+              />
+              {/* DexScreener Link */}
+              <ListInput
+                label="DexScreener Link"
+                type="url"
+                outline
+                placeholder="Enter DexScreener Link"
+                value={initialAnswers[questionIndex].dexScreener || ''}
+                onChange={(e) => setInitialAnswer(questionIndex, 'dexScreener', e.target.value)}
+              />
+              {/* Contract Address */}
+              <ListInput
+                label="Contract Address"
+                type="text"
+                outline
+                placeholder="Enter Contract Address"
+                value={initialAnswers[questionIndex].contractAddress || ''}
+                onChange={(e) => setInitialAnswer(questionIndex, 'contractAddress', e.target.value)}
+              />
+            </List>
+          </div>
+          <div className="flex justify-between">
+            <Button onClick={prevStep} className="w-1/2 bg-brand-primary text-white rounded-full mr-2" large raised>
+              Back
+            </Button>
+            <Button onClick={nextStep} className="w-1/2 bg-brand-primary text-white rounded-full ml-2" large raised>
+              Next
+            </Button>
+          </div>
+        </Block>
+      );
+    }
+
+    // Default render for other initial question slides
     return (
       <Block key={`initial-question-${questionIndex}`} strong className="mx-4 my-4 bg-white rounded-2xl shadow-lg p-6 space-y-4">
         <div className="flex items-center justify-center relative">
@@ -236,7 +373,7 @@ const CreateAcademyPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
         </button>
         {visibleTooltip === 1 && (
           <div className="tooltip absolute bg-gray-700 text-white text-xs rounded-2xl p-4 mt-2 z-20">
-            Provide detailed information about your academy, including the webpage URL, logo, cover photo, categories, and associated blockchain chains.
+            Provide detailed information about your academy, including the webpage URL, logo, cover photo, and associated blockchain chains.
             <button
               className="absolute top-0 right-0 text-white text-sm mt-1 mr-1"
               onClick={() => setVisibleTooltip(null)}
@@ -309,58 +446,6 @@ const CreateAcademyPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
             </div>
           )}
         </div>
-        <ListInput
-          label="Add Category"
-          type="select"
-          outline
-          onChange={(e) => {
-            setField('categories', [...categories, e.target.value]);
-          }}
-          value=""
-          placeholder="Select Category"
-        >
-          <option value="">Select Category</option>
-          {categoryList.map((category) => (
-            <option key={category.id} value={category.name}>
-              {category.name}
-            </option>
-          ))}
-        </ListInput>
-        <div className="flex flex-wrap gap-2 mb-4">
-          {categories.map((category, index) => (
-            <div key={index} className="relative">
-              <span onClick={() => removeCategory(index)} className="bg-blue-200 px-2 py-1 rounded-lg">
-                {category}
-              </span>
-            </div>
-          ))}
-        </div>
-        <ListInput
-          label="Add Chain"
-          type="select"
-          outline
-          onChange={(e) => {
-            setField('chains', [...chains, e.target.value]);
-          }}
-          value=""
-          placeholder="Select Chain"
-        >
-          <option value="">Select Chain</option>
-          {chainList.map((chain) => (
-            <option key={chain.id} value={chain.name}>
-              {chain.name}
-            </option>
-          ))}
-        </ListInput>
-        <div className="flex flex-wrap gap-2 mb-4">
-          {chains.map((chain, index) => (
-            <div key={index} className="relative">
-              <span onClick={() => removeChain(index)} className="bg-green-200 px-2 py-1 rounded-lg">
-                {chain}
-              </span>
-            </div>
-          ))}
-        </div>
       </List>
       <div className="flex justify-between">
         <Button onClick={prevStep} className="w-1/2 bg-brand-primary text-white rounded-full mr-2" large raised>
@@ -429,18 +514,6 @@ const CreateAcademyPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
           value={discord}
           onChange={(e) => {
             setField('discord', e.target.value);
-            autoresize(e);
-          }}
-        />
-        <ListInput
-          label="CoinGeko Address"
-          type="textarea"
-          inputClassName="!resize-none"
-          outline
-          placeholder="Enter CoinGeko Address"
-          value={coingecko}
-          onChange={(e) => {
-            setField('coingecko', e.target.value);
             autoresize(e);
           }}
         />
@@ -577,7 +650,7 @@ const CreateAcademyPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
           </div>
         )}
       </div>
-
+  
       {/* Protocol Name and Ticker */}
       <div className="mb-4">
         <h3 className="font-medium">Protocol Name:</h3>
@@ -587,7 +660,7 @@ const CreateAcademyPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
         <h3 className="font-medium">Ticker:</h3>
         <p>{ticker || 'N/A'}</p>
       </div>
-
+  
       {/* Academy Details */}
       <div className="mb-4">
         <h3 className="font-medium">Webpage URL:</h3>
@@ -609,7 +682,30 @@ const CreateAcademyPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
         <h3 className="font-medium">Chains:</h3>
         <p>{chains.length > 0 ? chains.join(', ') : 'N/A'}</p>
       </div>
-
+  
+      {/* Initial Questions and Answers */}
+      <div className="mb-4">
+        <h3 className="font-medium">Initial Questions and Answers:</h3>
+        {initialAnswers.map((question, index) => (
+          <div key={index} className="mb-4">
+            <h4 className="font-medium">{`Question ${index + 1}: ${question.question}`}</h4>
+            {index === 3 ? (
+              <div className="ml-4">
+                <p><strong>Token Chain:</strong> {question.chains?.join(', ') || 'N/A'}</p>
+                <p><strong>Token Utility:</strong> {question.utility || 'N/A'}</p>
+                <p><strong>Total Supply:</strong> {question.totalSupply || 'N/A'}</p>
+                <p><strong>Tokenomics Logic and Issuance:</strong> {question.logic || 'N/A'}</p>
+                <p><strong>CoinGecko Link:</strong> {question.coingecko || 'N/A'}</p>
+                <p><strong>DexScreener Link:</strong> {question.dexScreener || 'N/A'}</p>
+                <p><strong>Contract Address:</strong> {question.contractAddress || 'N/A'}</p>
+              </div>
+            ) : (
+              <p>{question.answer || 'N/A'}</p>
+            )}
+          </div>
+        ))}
+      </div>
+  
       {/* Social Links */}
       <div className="mb-4">
         <h3 className="font-medium">Twitter Account:</h3>
@@ -623,17 +719,13 @@ const CreateAcademyPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
         <h3 className="font-medium">Discord Channel:</h3>
         <p>{discord || 'N/A'}</p>
       </div>
-      <div className="mb-4">
-        <h3 className="font-medium">CoinGeko Address:</h3>
-        <p>{coingecko || 'N/A'}</p>
-      </div>
-
+  
       {/* Educational Quiz Section */}
       <div className="mb-4">
         <h3 className="font-medium">Educational Quiz Section:</h3>
         {initialAnswers.map((question, index) => (
           <div key={index} className="mb-4">
-            <h4 className="font-medium">{`Quiz Question ${index + 1}: ${question.quizQuestion}`}</h4>
+            <h4 className="font-medium">{`Add quiz to lesson ${index + 1}: ${question.quizQuestion}`}</h4>
             <p><strong>Choices:</strong></p>
             <ul className="list-disc ml-5">
               {question.choices.slice(0, 4).map((choice, choiceIndex) => (
@@ -643,7 +735,7 @@ const CreateAcademyPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
           </div>
         ))}
       </div>
-
+  
       <div className="flex justify-between">
         <Button onClick={prevStep} className="w-1/2 bg-brand-primary text-white rounded-full mr-2" large raised>
           Back
@@ -654,9 +746,9 @@ const CreateAcademyPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
       </div>
     </Block>
   );
-
+  
   const slides = [
-    // First slide for Protocol Name and Ticker
+    // First slide for Protocol Name, Ticker, and Category
     <Block key="slide1" strong className="mx-4 my-4 bg-white rounded-2xl shadow-lg p-6 space-y-4">
       <div className="flex items-center justify-center relative">
         <h2 className="text-lg font-bold mb-4 text-center">Create Academy Form</h2>
@@ -668,7 +760,7 @@ const CreateAcademyPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
         </button>
         {visibleTooltip === 6 && (
           <div className="tooltip absolute bg-gray-700 text-white text-xs rounded-2xl p-4 mt-2 z-20">
-            Fill in the protocol name and ticker (optional) for your academy. This is the first step to create a new academy.
+            Fill in the protocol name, ticker (optional), and select category for your academy. This is the first step to create a new academy.
             <button
               className="absolute top-0 right-0 text-white text-sm mt-1 mr-1"
               onClick={() => setVisibleTooltip(null)}
@@ -704,6 +796,32 @@ const CreateAcademyPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
             autoresize(e);
           }}
         />
+        <ListInput
+          label="Add Category"
+          type="select"
+          outline
+          onChange={(e) => {
+            setField('categories', [...categories, e.target.value]);
+          }}
+          value=""
+          placeholder="Select Category"
+        >
+          <option value="">Select Category</option>
+          {categoryList.map((category) => (
+            <option key={category.id} value={category.name}>
+              {category.name}
+            </option>
+          ))}
+        </ListInput>
+        <div className="flex flex-wrap gap-2 mb-4">
+          {categories.map((category, index) => (
+            <div key={index} className="relative">
+              <span onClick={() => removeCategory(index)} className="bg-blue-200 px-2 py-1 rounded-lg">
+                {category}
+              </span>
+            </div>
+          ))}
+        </div>
       </List>
       <Button onClick={nextStep} large raised className="w-full bg-brand-primary text-white mt-4 rounded-full">
         Next
