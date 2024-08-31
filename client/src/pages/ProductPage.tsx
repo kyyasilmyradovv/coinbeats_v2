@@ -41,6 +41,7 @@ export default function ProductPage({ theme, setTheme, setColorTheme }) {
 
   useEffect(() => {
     if (academy) {
+      checkIfUserCompletedAcademy();
       fetchQuestions();
       fetchQuests();
       fetchEarnedPoints();
@@ -50,6 +51,30 @@ export default function ProductPage({ theme, setTheme, setColorTheme }) {
   useEffect(() => {
     setCurrentSlideIndex(0);
   }, [activeFilter]);
+
+  const checkIfUserCompletedAcademy = async () => {
+    try {
+      const response = await axiosInstance.get(`/api/user-responses/${userId}/${academy.id}`);
+      if (response.data && response.data.length > 0) {
+        // User has completed the academy, prefill responses
+        const mappedAnswers = await fetchQuestions();
+        const prefixedAnswers = mappedAnswers.map((question, index) => {
+          const userResponse = response.data.find((r) => r.choice.academyQuestionId === question.academyQuestionId);
+          if (userResponse) {
+            question.selectedChoice = question.choices.findIndex((c) => c.id === userResponse.choiceId);
+            question.isCorrect = userResponse.isCorrect;
+          }
+          return question;
+        });
+        setInitialAnswers(prefixedAnswers);
+        setEarnedPoints(response.data.reduce((sum, r) => sum + r.pointsAwarded, 0));
+      } else {
+        await fetchQuestions();
+      }
+    } catch (error) {
+      console.error('Error checking if user completed the academy:', error);
+    }
+  };
 
   const fetchEarnedPoints = async () => {
     try {
@@ -82,8 +107,10 @@ export default function ProductPage({ theme, setTheme, setColorTheme }) {
       }));
 
       setInitialAnswers(mappedAnswers);
+      return mappedAnswers;
     } catch (error) {
       console.error('Error fetching questions:', error);
+      return [];
     }
   };
 
@@ -160,7 +187,8 @@ export default function ProductPage({ theme, setTheme, setColorTheme }) {
       // After submitting, fetch the earned points again to update the display
       fetchEarnedPoints();
 
-      // Optionally navigate to a success page or show a success message
+      // Navigate to the completion slide
+      setActiveFilter('completion');
     } catch (error) {
       console.error('Error completing academy:', error);
     }

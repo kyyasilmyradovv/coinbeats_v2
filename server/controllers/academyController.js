@@ -818,16 +818,18 @@ exports.getUserResponses = async (req, res, next) => {
     const responses = await prisma.userResponse.findMany({
       where: {
         userId: parseInt(userId, 10),
-        academy: {
-          id: parseInt(academyId, 10)
-        }
+        choice: {
+          academyQuestion: {
+            academyId: parseInt(academyId, 10),
+          },
+        },
       },
       include: {
         choice: true,
       },
     });
 
-    if (!responses) {
+    if (!responses || responses.length === 0) {
       return res.status(404).json({ message: 'No responses found for this user and academy.' });
     }
 
