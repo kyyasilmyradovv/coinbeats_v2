@@ -679,100 +679,64 @@ exports.getAcademyQuestions = async (req, res, next) => {
 };
 
 exports.submitQuizAnswers = async (req, res, next) => {
-  console.log("Request received:", req.body);
+  const { academyId } = req.body;
+  
+  // Log the req.user object and req.body for debugging
+  console.log("req.user:", req.user);
+  console.log("req.body:", req.body);
 
-  const { academyId, answers } = req.body;
-  const telegramUserId = req.user ? req.user.telegramUserId : req.body.telegramUserId;
+  // Fallback to using userId from the request body if req.user is not defined
+  const userId = req.user ? req.user.id : req.body.userId;
 
-  console.log("academyId:", academyId);
-  console.log("telegramUserId:", telegramUserId);
-
-  if (!telegramUserId) {
-      return res.status(400).json({ message: 'Bad Request: Telegram user ID is required.' });
+  if (!userId) {
+    return res.status(400).json({ message: 'User ID is required.' });
   }
 
   try {
-      // Check if the user exists, if not, create a new user
-      let user = await prisma.user.findUnique({
-          where: { telegramUserId },
+    // Find all user responses for the given academy
+    const userResponses = await prisma.userResponse.findMany({
+      where: {
+        userId: userId,
+        choice: {
+          academyQuestion: {
+            academyId: parseInt(academyId, 10),
+          },
+        },
+      },
+    });
+
+    // Sum up the points awarded
+    const totalPoints = userResponses.reduce((sum, response) => sum + response.pointsAwarded, 0);
+
+    // Save the total points to the Points table
+    const existingPoints = await prisma.point.findFirst({
+      where: {
+        userId: userId,
+        academyId: parseInt(academyId, 10),
+      },
+    });
+
+    if (existingPoints) {
+      // If the user already has points for this academy, update the existing record
+      await prisma.point.update({
+        where: { id: existingPoints.id },
+        data: { value: totalPoints },
       });
+    } else {
+      // Otherwise, create a new record
+      await prisma.point.create({
+        data: {
+          userId: userId,
+          academyId: parseInt(academyId, 10),
+          value: totalPoints,
+        },
+      });
+    }
 
-      if (!user) {
-          user = await prisma.user.create({
-              data: {
-                  telegramUserId,
-                  role: 'USER',
-                  name:'',
-              },
-          });
-          console.log(`New user created with Telegram ID ${telegramUserId}`);
-      }
-
-      let totalPoints = 0;
-      const results = [];
-
-      for (const answer of answers) {
-          console.log("Processing answer:", answer);
-
-          const correctChoice = await prisma.choice.findFirst({
-              where: {
-                  academyQuestionId: answer.questionId,  // This must be the correct academyQuestionId
-                  isCorrect: true,
-              },
-          });
-
-          if (!correctChoice) {
-              console.warn(`No correct choice found for question ID ${answer.questionId}`);
-              continue;
-          }
-
-          const isCorrect = correctChoice.id === answer.choiceId;
-          console.log(`Is answer correct for question ID ${answer.questionId}:`, isCorrect);
-
-          const question = await prisma.academyQuestion.findUnique({
-              where: { id: answer.questionId },
-              select: { xp: true },
-          });
-
-          if (!question) {
-              console.warn(`No question found for ID ${answer.questionId}`);
-              continue;
-          }
-
-          const pointsAwarded = isCorrect ? (question.xp || 0) : 0;
-          totalPoints += pointsAwarded;
-
-          await prisma.userResponse.create({
-              data: {
-                  userId: user.id,
-                  choiceId: answer.choiceId,
-                  isCorrect,
-                  pointsAwarded,
-              },
-          });
-
-          results.push({
-              questionId: answer.questionId,
-              correct: isCorrect,
-          });
-      }
-
-      if (totalPoints > 0) {
-          await prisma.point.create({
-              data: {
-                  userId: user.id,
-                  academyId: parseInt(academyId, 10),
-                  value: totalPoints,
-              },
-          });
-      }
-
-      console.log(`Total points awarded: ${totalPoints}`);
-      res.json({ message: `Congratulations! You've earned ${totalPoints} XP.`, results });
-
+    res.json({ message: `Congratulations! You've earned ${totalPoints} XP.` });
   } catch (error) {
-      console.error("Failed to submit quiz answers:", error);
-      next(createError(500, 'Failed to submit quiz answers.'));
+    console.error("Failed to submit quiz answers:", error);
+    next(createError(500, 'Failed to submit quiz answers.'));
   }
 };
 
@@ -785,12 +749,25 @@ exports.checkAnswer = async (req, res, next) => {
   }
 
   try {
-    // Find the user by telegramUserId
-    const user = await prisma.user.findUnique({ where: { telegramUserId } });
+    // Check if the user exists by telegramUserId
+    let user = await prisma.user.findUnique({
+      where: { telegramUserId },
+    });
 
+    // If the user doesn't exist, create a new user
     if (!user) {
-      return res.status(404).json({ message: 'User not found.' });
+      user = await prisma.user.create({
+        data: {
+          telegramUserId,
+          role: 'USER',
+          name: '', // Assuming name is optional and can be empty
+        },
+      });
+      console.log(`New user created with Telegram ID ${telegramUserId}`);
     }
+
+    // Now that we have the user, switch to using user.id
+    const userId = user.id;
 
     // Find the correct choice for the question
     const correctChoice = await prisma.choice.findFirst({
@@ -818,7 +795,7 @@ exports.checkAnswer = async (req, res, next) => {
     // Save the user's response and points
     await prisma.userResponse.create({
       data: {
-        userId: user.id,
+        userId,
         choiceId,
         isCorrect,
         pointsAwarded,
@@ -830,5 +807,33 @@ exports.checkAnswer = async (req, res, next) => {
   } catch (error) {
     console.error('Failed to check the answer:', error);
     next(createError(500, 'Failed to check the answer.'));
+  }
+};
+
+// Fetch previous responses
+exports.getUserResponses = async (req, res, next) => {
+  const { userId, academyId } = req.params;
+
+  try {
+    const responses = await prisma.userResponse.findMany({
+      where: {
+        userId: parseInt(userId, 10),
+        academy: {
+          id: parseInt(academyId, 10)
+        }
+      },
+      include: {
+        choice: true,
+      },
+    });
+
+    if (!responses) {
+      return res.status(404).json({ message: 'No responses found for this user and academy.' });
+    }
+
+    res.json(responses);
+  } catch (error) {
+    console.error('Error fetching user responses:', error);
+    next(createError(500, 'Error fetching user responses'));
   }
 };

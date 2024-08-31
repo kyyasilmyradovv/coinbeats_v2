@@ -4,7 +4,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import Navbar from '../components/common/Navbar';
 import Sidebar from '../components/common/Sidebar';
 import BottomTabBar from '../components/BottomTabBar';
-import { Page, Card, Radio, Button, Block } from 'konsta/react';
+import { Page, Card, Radio, Button } from 'konsta/react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import 'swiper/swiper-bundle.css';
 import axiosInstance from '../api/axiosInstance';
@@ -17,6 +17,7 @@ import chains from '../images/chains.png';
 import name from '../images/name.png';
 import gecko from '../images/coingecko.svg';
 import coinStack from '../images/coin-stack.png';
+import useUserStore from '../store/useUserStore'; // Import the user store
 
 export default function ProductPage({ theme, setTheme, setColorTheme }) {
   const initData = useInitData();
@@ -32,6 +33,7 @@ export default function ProductPage({ theme, setTheme, setColorTheme }) {
   const [currentPoints, setCurrentPoints] = useState(0);
   const [showXPAnimation, setShowXPAnimation] = useState(false);
   const swiperRef = useRef(null);
+  const userId = useUserStore((state) => state.userId); // Get the user ID from the store
 
   useEffect(() => {
     setDarkMode(document.documentElement.classList.contains('dark'));
@@ -51,7 +53,7 @@ export default function ProductPage({ theme, setTheme, setColorTheme }) {
 
   const fetchEarnedPoints = async () => {
     try {
-      const response = await axiosInstance.get(`/api/points/${initData.user.id}/${academy.id}`);
+      const response = await axiosInstance.get(`/api/points/${userId}/${academy.id}`);
       setEarnedPoints(response.data.value);
     } catch (error) {
       console.error('Error fetching earned points:', error);
@@ -145,6 +147,22 @@ export default function ProductPage({ theme, setTheme, setColorTheme }) {
       setActiveFilter('completion');
     } else {
       swiperRef.current.swiper.slideNext();
+    }
+  };
+
+  const handleCompleteAcademy = async () => {
+    try {
+      await axiosInstance.post(`/api/academies/${academy.id}/submit-quiz`, {
+        academyId: academy.id,
+        userId, // Use the database user ID
+      });
+
+      // After submitting, fetch the earned points again to update the display
+      fetchEarnedPoints();
+
+      // Optionally navigate to a success page or show a success message
+    } catch (error) {
+      console.error('Error completing academy:', error);
     }
   };
 
@@ -246,8 +264,7 @@ export default function ProductPage({ theme, setTheme, setColorTheme }) {
         </Card>
       </SwiperSlide>
     );
-};
-  
+  };
 
   const renderQuizSlide = (questionIndex) => {
     const question = initialAnswers[questionIndex];
@@ -280,7 +297,7 @@ export default function ProductPage({ theme, setTheme, setColorTheme }) {
           large
           rounded
           outline
-          onClick={question.isCorrect !== undefined ? handleNextQuestion : () => handleCheckAnswer(questionIndex)}
+          onClick={question.isCorrect !== undefined ? (questionIndex === initialAnswers.length - 1 ? handleCompleteAcademy : handleNextQuestion) : () => handleCheckAnswer(questionIndex)}
           className="mt-4 mb-12"
           style={{
             background: 'linear-gradient(to left, #ff0077, #7700ff)',
