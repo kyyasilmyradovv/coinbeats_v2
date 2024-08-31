@@ -20,7 +20,8 @@ const {
   allocateXp,
   getAllAcademies,
   getAcademyQuestions,
-  submitQuizAnswers
+  submitQuizAnswers,
+  checkAnswer
 } = require('../controllers/academyController');
 
 const router = express.Router();
@@ -57,6 +58,7 @@ router.get('/my', authenticateToken, asyncHandler(listMyAcademies));
 router.get('/:id', authenticateToken, asyncHandler(getAcademyDetails));
 router.get('/:id/questions', asyncHandler(getAcademyQuestions));
 router.post('/:id/submit-quiz', asyncHandler(submitQuizAnswers));
+router.post('/:id/check-answer', asyncHandler(checkAnswer));
 router.get('/pending', authenticateToken, authorizeRoles('ADMIN', 'SUPERADMIN'), asyncHandler(getPendingAcademies));
 router.post('/:id/approve', authenticateToken, authorizeRoles('ADMIN', 'SUPERADMIN'), asyncHandler(approveAcademy));
 router.post('/:id/reject', authenticateToken, authorizeRoles('ADMIN', 'SUPERADMIN'), asyncHandler(rejectAcademy));

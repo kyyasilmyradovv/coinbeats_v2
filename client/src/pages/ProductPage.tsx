@@ -7,7 +7,7 @@ import BottomTabBar from '../components/BottomTabBar';
 import { Page, Card, Radio, Button, Block } from 'konsta/react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import 'swiper/swiper-bundle.css';
-import axiosInstance from '../api/axiosInstance'; 
+import axiosInstance from '../api/axiosInstance';
 import { Icon } from '@iconify/react';
 import collected from '../images/collected-coins.png';
 import coins from '../images/coins-to-earn.png';
@@ -16,6 +16,7 @@ import categories from '../images/categories.png';
 import chains from '../images/chains.png';
 import name from '../images/name.png';
 import gecko from '../images/coingecko.svg';
+import coinStack from '../images/coin-stack.png';
 
 export default function ProductPage({ theme, setTheme, setColorTheme }) {
   const initData = useInitData();
@@ -27,8 +28,10 @@ export default function ProductPage({ theme, setTheme, setColorTheme }) {
   const [initialAnswers, setInitialAnswers] = useState([]);
   const [quests, setQuests] = useState([]);
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
-  const [earnedPoints, setEarnedPoints] = useState(0);  // New state for earned points
-  const swiperRef = useRef(null); // Reference to Swiper instance
+  const [earnedPoints, setEarnedPoints] = useState(0);
+  const [currentPoints, setCurrentPoints] = useState(0);
+  const [showXPAnimation, setShowXPAnimation] = useState(false);
+  const swiperRef = useRef(null);
 
   useEffect(() => {
     setDarkMode(document.documentElement.classList.contains('dark'));
@@ -38,7 +41,7 @@ export default function ProductPage({ theme, setTheme, setColorTheme }) {
     if (academy) {
       fetchQuestions();
       fetchQuests();
-      fetchEarnedPoints();  // Fetch the earned points when the academy is loaded
+      fetchEarnedPoints();
     }
   }, [academy]);
 
@@ -49,7 +52,7 @@ export default function ProductPage({ theme, setTheme, setColorTheme }) {
   const fetchEarnedPoints = async () => {
     try {
       const response = await axiosInstance.get(`/api/points/${initData.user.id}/${academy.id}`);
-      setEarnedPoints(response.data.value);  // Assuming the API returns the points in a `value` field
+      setEarnedPoints(response.data.value);
     } catch (error) {
       console.error('Error fetching earned points:', error);
     }
@@ -65,15 +68,17 @@ export default function ProductPage({ theme, setTheme, setColorTheme }) {
     try {
       const response = await axiosInstance.get(`/api/academies/${academy.id}/questions`);
       const questions = response.data;
-  
+
       const mappedAnswers = questions.map((question) => ({
-        academyQuestionId: question.id, // Use the correct ID from the response
+        academyQuestionId: question.id,
         question: question.question,
         answer: question.answer,
         quizQuestion: question.quizQuestion,
-        choices: question.choices,
+        choices: question.choices.filter(choice => choice.text !== ""), // Filter out empty choices
+        selectedChoice: undefined,
+        isCorrect: undefined,
       }));
-  
+
       setInitialAnswers(mappedAnswers);
     } catch (error) {
       console.error('Error fetching questions:', error);
@@ -99,129 +104,154 @@ export default function ProductPage({ theme, setTheme, setColorTheme }) {
     );
   };
 
-  const handleSubmitAnswers = async () => {
+  const handleCheckAnswer = async (questionIndex) => {
     try {
-      const userAnswers = initialAnswers.map((question) => ({
-        questionId: question.academyQuestionId, // Send academyQuestionId instead of initialQuestionId
-        choiceId: question.choices[question.selectedChoice]?.id,
-      }));
-  
-      const response = await axiosInstance.post(`/api/academies/${academy.id}/submit-quiz`, {
+      const question = initialAnswers[questionIndex];
+      const response = await axiosInstance.post(`/api/academies/${academy.id}/check-answer`, {
         academyId: academy.id,
-        answers: userAnswers,
+        questionId: question.academyQuestionId,
+        choiceId: question.choices[question.selectedChoice]?.id,
         telegramUserId: initData.user.id,
       });
-  
-      const { results, message } = response.data;
-      const updatedAnswers = initialAnswers.map(question => {
-        const result = results.find(r => r.questionId === question.academyQuestionId);
-        return { ...question, isCorrect: result.correct };
-      });
-  
-      setInitialAnswers(updatedAnswers);
-      alert(message);
+
+      const { correct, pointsAwarded } = response.data;
+
+      setInitialAnswers(
+        initialAnswers.map((q, qi) =>
+          qi === questionIndex
+            ? { ...q, isCorrect: correct }
+            : q
+        )
+      );
+
+      if (pointsAwarded > 0) {
+        setEarnedPoints(earnedPoints + pointsAwarded);
+        setCurrentPoints(pointsAwarded);
+        triggerXPAnimation();
+      }
+
+      // Allow navigation to the next slide
+      swiperRef.current.swiper.allowSlideNext = true;
+      swiperRef.current.swiper.update();
+
     } catch (error) {
-      console.error('Error submitting answers:', error);
+      console.error('Error checking answer:', error);
     }
   };
-  
-  const renderProgressbar = () => {
+
+  const handleNextQuestion = () => {
+    if (currentSlideIndex === initialAnswers.length * 2 - 1) {
+      // If it's the last question, show the completion screen
+      setActiveFilter('completion');
+    } else {
+      swiperRef.current.swiper.slideNext();
+    }
+  };
+
+  const triggerXPAnimation = () => {
+    setShowXPAnimation(true);
+    setTimeout(() => {
+      setShowXPAnimation(false);
+      setCurrentPoints(0);
+    }, 3000);
+  };
+
+  const renderProgressbarWithArrows = () => {
     const totalSlides = initialAnswers.length * 2;
     const completedSlides = currentSlideIndex + 1;
 
+    const handlePrevClick = () => {
+      swiperRef.current.swiper.slidePrev();
+    };
+
+    const handleNextClick = () => {
+      handleNextQuestion(); // Move to next question or complete the academy
+    };
+
     return (
-      <Card className="mb-2 !mx-1 !rounded-2xl !bg-gray-50 dark:!bg-gray-800 !border !border-gray-200 dark:!border-gray-700 !shadow-sm">
-        <div className="flex items-center justify-between">
-          <div className="relative w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-            <div
-              className="absolute top-0 left-0 h-full rounded-full"
-              style={{
-                width: `${(completedSlides / totalSlides) * 100}%`,
-                background: 'linear-gradient(to right, #ff0077, #7700ff)',
-              }}
-            />
-          </div>
-          <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">{`${completedSlides}/${totalSlides}`}</span>
+      <div className="flex items-center justify-between mb-2 !mx-1 !rounded-2xl !bg-gray-50 dark:!bg-gray-800 !border !border-gray-200 dark:!border-gray-700 !shadow-sm p-2">
+        <div className="p-2 rounded-xl bg-gray-100 dark:bg-gray-700">
+          <Icon
+            icon="mdi:arrow-left"
+            className="text-gray-600 dark:text-gray-400 w-6 h-6 cursor-pointer"
+            onClick={handlePrevClick}
+          />
         </div>
-      </Card>
+        <div className="relative flex-grow h-2 mx-2 bg-gray-200 rounded-full overflow-hidden">
+          <div
+            className="absolute top-0 left-0 h-full rounded-full"
+            style={{
+              width: `${(completedSlides / totalSlides) * 100}%`,
+              background: 'linear-gradient(to right, #ff0077, #7700ff)',
+            }}
+          />
+        </div>
+        <div className="p-2 rounded-xl bg-gray-100 dark:bg-gray-700">
+          <Icon
+            icon="mdi:arrow-right"
+            className="text-gray-600 dark:text-gray-400 w-6 h-6 cursor-pointer"
+            onClick={handleNextClick}
+          />
+        </div>
+      </div>
     );
   };
 
   const renderInitialQuestionSlide = (questionIndex) => {
     const question = initialAnswers[questionIndex];
     if (!question) return null;
-  
-    const handlePrevClick = () => {
-      swiperRef.current.swiper.slidePrev();
-    };
-  
-    const handleNextClick = () => {
-      swiperRef.current.swiper.slideNext();
-    };
-  
-    // Check if this is the special "Tokenomics details" question
+
     if (question.question === 'Tokenomics details' && question.answer) {
       let parsedAnswer;
       try {
         parsedAnswer = JSON.parse(question.answer);
       } catch (error) {
         console.error('Error parsing answer JSON:', error);
-        parsedAnswer = {}; // Fallback to an empty object in case of error
+        parsedAnswer = {};
       }
-  
+
       return (
         <SwiperSlide key={`initial-question-${questionIndex}`}>
-          <Card className="!my-2 !mx-1 !p-4 !rounded-2xl !bg-gray-50 dark:!bg-gray-800 !border !border-gray-200 dark:!border-gray-700 !shadow-sm">
+          <Card className="!my-2 !mx-1 !p-4 !rounded-2xl !bg-gray-50 dark:!bg-gray-800 !border !border-gray-200 dark:!border-gray-700 !shadow-sm !mb-12">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
               {question.question}
             </h2>
             <ul className="list-disc list-inside text-gray-900 dark:text-gray-100">
               {Object.entries(parsedAnswer).map(([key, value]) => (
-                <li key={key} className="mb-2 break-words">
-                  <strong className="capitalize">{key}:</strong>{' '}
-                  {key === 'chains'
-                    ? value.join(', ') // Remove brackets around array items and join them with a comma
-                    : typeof value === 'string'
-                    ? value
-                    : JSON.stringify(value)}
-                </li>
+                value && (
+                  <li key={key} className="mb-2 break-words">
+                    <strong className="capitalize">{key}:</strong>{' '}
+                    {key === 'coingecko' || key === 'dexScreener' ? (
+                      <a href={value} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">
+                        {value}
+                      </a>
+                    ) : key === 'chains' ? (
+                      value.join(', ')
+                    ) : (
+                      value
+                    )}
+                  </li>
+                )
               ))}
             </ul>
           </Card>
-          <div className="flex justify-between items-center mt-4">
-            <Icon icon="mdi:arrow-left" className="text-gray-600 dark:text-gray-400 w-6 h-6 cursor-pointer" onClick={handlePrevClick} />
-            <span className="text-gray-600 dark:text-gray-400">Swipe</span>
-            <Icon icon="mdi:arrow-right" className="text-gray-600 dark:text-gray-400 w-6 h-6 cursor-pointer" onClick={handleNextClick} />
-          </div>
         </SwiperSlide>
       );
     }
-  
+
     return (
       <SwiperSlide key={`initial-question-${questionIndex}`}>
         <Card className="!my-2 !mx-1 !p-2 !rounded-2xl !bg-gray-50 dark:!bg-gray-800 !border !border-gray-200 dark:!border-gray-700 !shadow-sm">
           <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">{question.answer}</p>
         </Card>
-        <div className="flex justify-between items-center mt-4">
-          <Icon icon="mdi:arrow-left" className="text-gray-600 dark:text-gray-400 w-6 h-6 cursor-pointer" onClick={handlePrevClick} />
-          <span className="text-gray-600 dark:text-gray-400">Swipe</span>
-          <Icon icon="mdi:arrow-right" className="text-gray-600 dark:text-gray-400 w-6 h-6 cursor-pointer" onClick={handleNextClick} />
-        </div>
       </SwiperSlide>
     );
-  };  
+};
+  
 
   const renderQuizSlide = (questionIndex) => {
     const question = initialAnswers[questionIndex];
     if (!question) return null;
-
-    const handlePrevClick = () => {
-      swiperRef.current.swiper.slidePrev();
-    };
-
-    const handleNextClick = () => {
-      swiperRef.current.swiper.slideNext();
-    };
 
     return (
       <SwiperSlide key={`quiz-question-${questionIndex}`}>
@@ -233,49 +263,57 @@ export default function ProductPage({ theme, setTheme, setColorTheme }) {
             <div
               key={choiceIndex}
               className={`cursor-pointer p-4 rounded-lg flex justify-between items-center dark:bg-gray-700 dark:text-gray-200 ${
-                question.selectedChoice === choiceIndex ? 'bg-purple-200 border border-purple-500' : 'bg-white border border-transparent'
+                question.isCorrect === undefined && question.selectedChoice === choiceIndex ? 'bg-purple-200 border border-purple-500' : ''
+              } ${
+                question.isCorrect !== undefined &&
+                (choice.isCorrect ? 'bg-green-200 border border-green-500' : choiceIndex === question.selectedChoice ? 'bg-red-200 border border-red-500' : '')
               } mb-2`}
               onClick={() => handleChoiceClick(questionIndex, choiceIndex)}
+              style={{ pointerEvents: question.isCorrect !== undefined ? 'none' : 'auto' }}
             >
               <span className='mr-4'>{choice.text}</span>
-              <Radio
-                checked={question.selectedChoice === choiceIndex}
-                readOnly
-              />
+              <Radio checked={question.selectedChoice === choiceIndex} readOnly />
             </div>
           ))}
-          {question.isCorrect !== undefined && (
-            <p className={`mt-2 ${question.isCorrect ? 'text-green-600' : 'text-red-600'}`}>
-              {question.isCorrect ? 'Correct!' : 'Incorrect'}
-            </p>
-          )}
         </Card>
-        {questionIndex === initialAnswers.length - 1 && (
-          <Button
-            large
-            rounded
-            outline
-            onClick={handleSubmitAnswers}
-            className="mt-6 mb-12 bg-brand-primary text-white"
-          >
-            Submit Answers
-          </Button>
-        )}
-        <div className="flex justify-between items-center mt-4 mb-12">
-          <Icon icon="mdi:arrow-left" className="text-gray-600 dark:text-gray-400 w-6 h-6 cursor-pointer" onClick={handlePrevClick} />
-          <span className="text-gray-600 dark:text-gray-400">Swipe</span>
-          <Icon icon="mdi:arrow-right" className="text-gray-600 dark:text-gray-400 w-6 h-6 cursor-pointer" onClick={handleNextClick} />
-        </div>
+        <Button
+          large
+          rounded
+          outline
+          onClick={question.isCorrect !== undefined ? handleNextQuestion : () => handleCheckAnswer(questionIndex)}
+          className="mt-4 mb-12"
+          style={{
+            background: 'linear-gradient(to left, #ff0077, #7700ff)',
+            color: '#fff',
+          }}
+          disabled={question.selectedChoice === undefined}
+        >
+          {question.isCorrect !== undefined 
+            ? (questionIndex === initialAnswers.length - 1 ? 'Complete academy' : 'Next question') 
+            : 'Check Answer'}
+        </Button>
       </SwiperSlide>
     );
   };
 
   const renderReadTab = () => (
     <>
-      {renderProgressbar()}
+      {renderProgressbarWithArrows()}
       <Swiper
         pagination={{ clickable: true }}
-        onSlideChange={(swiper) => setCurrentSlideIndex(swiper.activeIndex)}
+        onSlideChange={(swiper) => {
+          const newIndex = swiper.activeIndex;
+          const questionIndex = Math.floor(newIndex / 2);
+          const isQuizSlide = newIndex % 2 !== 0;
+
+          if (isQuizSlide && (initialAnswers[questionIndex].selectedChoice === undefined || initialAnswers[questionIndex].isCorrect === undefined)) {
+            swiper.allowSlideNext = false;
+          } else {
+            swiper.allowSlideNext = true;
+          }
+
+          setCurrentSlideIndex(newIndex);
+        }}
         ref={swiperRef}
       >
         {initialAnswers.length > 0 ? (
@@ -294,64 +332,45 @@ export default function ProductPage({ theme, setTheme, setColorTheme }) {
     </>
   );
 
-  const renderWatchTab = () => (
-    <>
-      {renderProgressbar()}
-      <Swiper pagination={{ clickable: true }} ref={swiperRef}>
-        {initialAnswers.length > 0 ? (
-          initialAnswers.map((question, index) => (
-            <React.Fragment key={`watch-tab-${index}`}>
-              <SwiperSlide key={`video-slide-${index}`}>
-                <Card className="!my-2 !mx-1 p-2 !rounded-2xl !bg-gray-50 dark:!bg-gray-800 !border !border-gray-200 dark:!border-gray-700 !shadow-sm">
-                  <iframe
-                    width="100%"
-                    height="250"
-                    src={`https://www.youtube.com/embed/${question.video}`}
-                    title={`Video ${index + 1}`}
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                  />
-                </Card>
-                <div className="flex justify-between items-center mt-4">
-                  <Icon icon="mdi:arrow-left" className="text-gray-600 dark:text-gray-400 w-6 h-6 cursor-pointer" onClick={handlePrevClick} />
-                  <span className="text-gray-600 dark:text-gray-400">Swipe</span>
-                  <Icon icon="mdi:arrow-right" className="text-gray-600 dark:text-gray-400 w-6 h-6 cursor-pointer" onClick={handleNextClick} />
-                </div>
-              </SwiperSlide>
-              {renderQuizSlide(index)}
-            </React.Fragment>
-          ))
-        ) : (
-          <SwiperSlide>
-            <Card className="m-2 p-2">
-              <p className="text-center">No videos available</p>
-            </Card>
-          </SwiperSlide>
-        )}
-      </Swiper>
-    </>
-  );  
-
-  const renderQuestTab = () => (
-    <Block>
-      {quests.length > 0 ? (
-        quests.map((quest, index) => (
-          <Card
-            key={index}
-            className="m-2 p-2 !rounded-2xl !bg-gray-50 dark:!bg-gray-800 !border !border-gray-200 dark:!border-gray-700 !shadow-sm flex justify-between"
-          >
-            <span className="text-gray-900 dark:text-gray-200">{quest.name}</span>
-          </Card>
-        ))
-      ) : (
-        <Card className="m-2 p-2">
-          <p className="text-center">No quests available</p>
-        </Card>
-      )}
-    </Block>
+  const renderCompletionScreen = () => (
+    <div className="flex flex-col items-center justify-center h-full">
+      <h2 className="text-2xl font-bold mb-4">In total you collected:</h2>
+      <div className="flex items-center justify-center text-4xl font-bold mb-8">
+        {earnedPoints} / {academy.xp} <img src={coinStack} alt="coinstack" className="w-12 h-12 ml-2 mb-2" />
+      </div>
+      <Button
+        large
+        rounded
+        outline
+        disabled
+        className="mb-4"
+        style={{
+          backgroundColor: 'gray',
+          color: '#fff',
+        }}
+      >
+        Earn by doing quests
+      </Button>
+      <Button
+        large
+        rounded
+        outline
+        onClick={() => navigate('/')}
+        style={{
+          background: 'linear-gradient(to left, #ff0077, #7700ff)',
+          color: '#fff',
+        }}
+      >
+        Explore more academies
+      </Button>
+    </div>
   );
 
   const renderContent = () => {
+    if (activeFilter === 'completion') {
+      return renderCompletionScreen();
+    }
+
     switch (activeFilter) {
       case 'read':
         return renderReadTab();
@@ -459,7 +478,7 @@ export default function ProductPage({ theme, setTheme, setColorTheme }) {
                         href={academy.dexScreener}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="ml-2 text-blue-500"
+                        className="text-blue-500 underline"
                       >
                         <Icon icon="mdi:arrow-right-bold" />
                       </a>
@@ -568,7 +587,7 @@ export default function ProductPage({ theme, setTheme, setColorTheme }) {
                       Earned Coins:
                     </span>
                     <span className="text-lg text-black dark:text-gray-200 font-semibold">
-                      {earnedPoints}/{academy.xp}  {/* Dynamically display the earned points */}
+                      {earnedPoints}/{academy.xp}
                     </span>
                   </div>
                 </Card>
@@ -580,6 +599,15 @@ export default function ProductPage({ theme, setTheme, setColorTheme }) {
         </div>
       )}
       <BottomTabBar activeTab="tab-1" setActiveTab={setActiveFilter} />
+
+      {showXPAnimation && (
+        <div className="fixed inset-0 flex flex-col items-center justify-center z-50 animate-bookmark">
+          <img src={coinStack} alt="Coin Stack" className="h-20 w-20" />
+          <div className="text-gray-800 dark:text-white mt-4 text-lg font-semibold">
+            You earned + {currentPoints} XP!
+          </div>
+        </div>
+      )}
     </Page>
   );
 }

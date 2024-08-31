@@ -775,3 +775,60 @@ exports.submitQuizAnswers = async (req, res, next) => {
       next(createError(500, 'Failed to submit quiz answers.'));
   }
 };
+
+exports.checkAnswer = async (req, res, next) => {
+  const { academyId, questionId, choiceId } = req.body;
+  const telegramUserId = req.user ? req.user.telegramUserId : req.body.telegramUserId;
+
+  if (!telegramUserId || !academyId || !questionId || !choiceId) {
+    return res.status(400).json({ message: 'Bad Request: Missing required parameters.' });
+  }
+
+  try {
+    // Find the user by telegramUserId
+    const user = await prisma.user.findUnique({ where: { telegramUserId } });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+
+    // Find the correct choice for the question
+    const correctChoice = await prisma.choice.findFirst({
+      where: {
+        academyQuestionId: questionId,
+        isCorrect: true,
+      },
+    });
+
+    if (!correctChoice) {
+      return res.status(404).json({ message: 'Correct choice not found for the question.' });
+    }
+
+    // Check if the user's choice is correct
+    const isCorrect = correctChoice.id === choiceId;
+
+    // Calculate points (if correct)
+    const question = await prisma.academyQuestion.findUnique({
+      where: { id: questionId },
+      select: { xp: true },
+    });
+
+    const pointsAwarded = isCorrect ? question.xp : 0;
+
+    // Save the user's response and points
+    await prisma.userResponse.create({
+      data: {
+        userId: user.id,
+        choiceId,
+        isCorrect,
+        pointsAwarded,
+      },
+    });
+
+    // Return the result to the client
+    res.json({ correct: isCorrect, pointsAwarded });
+  } catch (error) {
+    console.error('Failed to check the answer:', error);
+    next(createError(500, 'Failed to check the answer.'));
+  }
+};

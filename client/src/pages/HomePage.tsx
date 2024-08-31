@@ -266,7 +266,7 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
                 <img
                   src={NewIcon}
                   alt="New"
-                  className="absolute left-4 -bottom-7 w-16 h-16 -translate-x-8"
+                  className="absolute left-7 -bottom-4 w-10 h-10 -translate-x-8"
                   style={{ zIndex: 10 }}
                 />
               )}

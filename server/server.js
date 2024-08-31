@@ -23,6 +23,7 @@ const statsRoutes = require('./routes/stats');
 const inboxRoutes = require('./routes/inbox');
 const emailRoutes = require('./routes/email');
 const sseRoutes = require('./routes/sse');
+const pointsRoutes = require('./routes/points');
 
 // Initialize Express app
 const app = express();
@@ -46,6 +47,8 @@ app.use('/api/stats', statsRoutes);
 app.use('/api/inbox', inboxRoutes);
 app.use('/api/email', emailRoutes);
 app.use('/api/sse', sseRoutes);
+app.use('/api/points', pointsRoutes);
+
 
 // Serve static files
 app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
