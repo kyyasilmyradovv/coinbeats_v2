@@ -14,8 +14,8 @@ exports.getPointsByUserAndAcademy = async (req, res, next) => {
   try {
     const points = await prisma.point.findMany({
       where: {
-        userId: parseInt(userId),
-        academyId: parseInt(academyId),
+        userId: parseInt(userId, 10),
+        academyId: parseInt(academyId, 10),
       },
     });
 
@@ -37,7 +37,7 @@ exports.getPointsByUserAndAcademy = async (req, res, next) => {
       next(error);
     } else {
       console.error('Error fetching points:', error);
-      next(createError(500, 'Internal Server Error: Error fetching points'));
+    next(createError(500, 'Internal Server Error: Error fetching points'));
     }
   }
 };

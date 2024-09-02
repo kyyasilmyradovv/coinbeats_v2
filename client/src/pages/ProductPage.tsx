@@ -1,10 +1,12 @@
+// client/sec/pages/ProductPage.tsx
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useInitData } from '@telegram-apps/sdk-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Navbar from '../components/common/Navbar';
 import Sidebar from '../components/common/Sidebar';
 import BottomTabBar from '../components/BottomTabBar';
-import { Page, Card, Radio, Button } from 'konsta/react';
+import { Page, Card, Radio, Button, Block } from 'konsta/react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import 'swiper/swiper-bundle.css';
 import axiosInstance from '../api/axiosInstance';
@@ -41,10 +43,10 @@ export default function ProductPage({ theme, setTheme, setColorTheme }) {
 
   useEffect(() => {
     if (academy) {
-      checkIfUserCompletedAcademy();
-      fetchQuestions();
+      fetchEarnedPoints().then(() => {
+        fetchQuestions();
+      });
       fetchQuests();
-      fetchEarnedPoints();
     }
   }, [academy]);
 
@@ -52,34 +54,15 @@ export default function ProductPage({ theme, setTheme, setColorTheme }) {
     setCurrentSlideIndex(0);
   }, [activeFilter]);
 
-  const checkIfUserCompletedAcademy = async () => {
-    try {
-      const response = await axiosInstance.get(`/api/user-responses/${userId}/${academy.id}`);
-      if (response.data && response.data.length > 0) {
-        // User has completed the academy, prefill responses
-        const mappedAnswers = await fetchQuestions();
-        const prefixedAnswers = mappedAnswers.map((question, index) => {
-          const userResponse = response.data.find((r) => r.choice.academyQuestionId === question.academyQuestionId);
-          if (userResponse) {
-            question.selectedChoice = question.choices.findIndex((c) => c.id === userResponse.choiceId);
-            question.isCorrect = userResponse.isCorrect;
-          }
-          return question;
-        });
-        setInitialAnswers(prefixedAnswers);
-        setEarnedPoints(response.data.reduce((sum, r) => sum + r.pointsAwarded, 0));
-      } else {
-        await fetchQuestions();
-      }
-    } catch (error) {
-      console.error('Error checking if user completed the academy:', error);
-    }
-  };
-
   const fetchEarnedPoints = async () => {
     try {
       const response = await axiosInstance.get(`/api/points/${userId}/${academy.id}`);
       setEarnedPoints(response.data.value);
+
+      if (response.data.value > 0) {
+        // If points exist, fetch user responses
+        await fetchUserResponses();
+      }
     } catch (error) {
       console.error('Error fetching earned points:', error);
     }
@@ -91,26 +74,75 @@ export default function ProductPage({ theme, setTheme, setColorTheme }) {
 
   const constructImageUrl = (url) => `https://subscribes.lt/${url}`;
 
+  const fetchUserResponses = async () => {
+    try {
+      const response = await axiosInstance.get(`/api/academies/${userId}/${academy.id}`);
+      const userResponses = response.data;
+
+      // Map responses to questions
+      const mappedQuestions = await fetchQuestions();
+      const questionsWithUserResponses = mappedQuestions.map((question) => {
+        const userResponse = userResponses.find(
+          (r) => r.choice.academyQuestionId === question.academyQuestionId
+        );
+        if (userResponse) {
+          question.selectedChoice = question.choices.findIndex(
+            (c) => c.id === userResponse.choiceId
+          );
+          question.isCorrect = userResponse.isCorrect;
+        }
+        return question;
+      });
+
+      setInitialAnswers(questionsWithUserResponses);
+    } catch (error) {
+      console.error('Error fetching user responses:', error);
+    }
+  };
+
   const fetchQuestions = async () => {
     try {
       const response = await axiosInstance.get(`/api/academies/${academy.id}/questions`);
       const questions = response.data;
 
-      const mappedAnswers = questions.map((question) => ({
-        academyQuestionId: question.id,
-        question: question.question,
-        answer: question.answer,
-        quizQuestion: question.quizQuestion,
-        choices: question.choices.filter(choice => choice.text !== ""), // Filter out empty choices
-        selectedChoice: undefined,
-        isCorrect: undefined,
-      }));
-
-      setInitialAnswers(mappedAnswers);
-      return mappedAnswers;
+      if (earnedPoints > 0) {
+        // User has points, fetch user responses and map them to questions
+        const userResponses = await axiosInstance.get(`/api/academies/${userId}/${academy.id}`);
+        const mappedQuestions = questions.map((question) => {
+          const userResponse = userResponses.data.find(
+            (r) => r.choice.academyQuestionId === question.id
+          );
+          if (userResponse) {
+            question.selectedChoice = question.choices.findIndex(
+              (c) => c.id === userResponse.choiceId
+            );
+            question.isCorrect = userResponse.isCorrect;
+          }
+          return {
+            academyQuestionId: question.id,
+            question: question.question,
+            quizQuestion: question.quizQuestion,
+            choices: question.choices,
+            selectedChoice: question.selectedChoice,
+            isCorrect: question.isCorrect,
+          };
+        });
+        setInitialAnswers(mappedQuestions);
+      } else {
+        // User has no points, show only the initial questions without selected choices
+        const mappedQuestions = questions.map((question) => ({
+          academyQuestionId: question.id,
+          question: question.question,
+          answer: question.answer,
+          quizQuestion: question.quizQuestion,
+          choices: question.choices.filter(choice => choice.text !== ""), // Filter out empty choices
+          selectedChoice: undefined,
+          isCorrect: undefined,
+        }));
+        setInitialAnswers(mappedQuestions);
+      }
     } catch (error) {
       console.error('Error fetching questions:', error);
-      return [];
     }
   };
 
@@ -409,6 +441,58 @@ export default function ProductPage({ theme, setTheme, setColorTheme }) {
         Explore more academies
       </Button>
     </div>
+  );
+
+  const renderWatchTab = () => (
+    <>
+      {renderProgressbarWithArrows()}
+      <Swiper pagination={{ clickable: true }} ref={swiperRef}>
+        {initialAnswers.length > 0 ? (
+          initialAnswers.map((question, index) => (
+            <React.Fragment key={`watch-tab-${index}`}>
+              <SwiperSlide key={`video-slide-${index}`}>
+                <Card className="!my-2 !mx-1 p-2 !rounded-2xl !bg-gray-50 dark:!bg-gray-800 !border !border-gray-200 dark:!border-gray-700 !shadow-sm">
+                  <iframe
+                    width="100%"
+                    height="250"
+                    src={`https://www.youtube.com/embed/${question.video}`}
+                    title={`Video ${index + 1}`}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                </Card>
+              </SwiperSlide>
+              {renderQuizSlide(index)}
+            </React.Fragment>
+          ))
+        ) : (
+          <SwiperSlide>
+            <Card className="m-2 p-2">
+              <p className="text-center">No videos available</p>
+            </Card>
+          </SwiperSlide>
+        )}
+      </Swiper>
+    </>
+  );  
+
+  const renderQuestTab = () => (
+    <Block>
+      {quests.length > 0 ? (
+        quests.map((quest, index) => (
+          <Card
+            key={index}
+            className="m-2 p-2 !rounded-2xl !bg-gray-50 dark:!bg-gray-800 !border !border-gray-200 dark:!border-gray-700 !shadow-sm flex justify-between"
+          >
+            <span className="text-gray-900 dark:text-gray-200">{quest.name}</span>
+          </Card>
+        ))
+      ) : (
+        <Card className="m-2 p-2">
+          <p className="text-center">No quests available</p>
+        </Card>
+      )}
+    </Block>
   );
 
   const renderContent = () => {
