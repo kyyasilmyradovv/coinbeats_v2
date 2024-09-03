@@ -56,17 +56,27 @@ export default function ProductPage({ theme, setTheme, setColorTheme }) {
 
   const fetchEarnedPoints = async () => {
     try {
-      const response = await axiosInstance.get(`/api/points/${userId}/${academy.id}`);
-      setEarnedPoints(response.data.value);
+        const response = await axiosInstance.get(`/api/points/${userId}/${academy.id}`);
+        const points = response.data.value || 0; // Ensure points is always a number
+        setEarnedPoints(points);
 
-      if (response.data.value > 0) {
-        // If points exist, fetch user responses
-        await fetchUserResponses();
-      }
+        // Fetch questions regardless of points
+        const questions = await fetchQuestions();
+
+        if (points > 0) {
+            // If points exist, fetch user responses and apply them
+            await fetchUserResponses(questions);
+        } else {
+            // If no points, display questions without pre-filled responses
+            setInitialAnswers(questions);
+        }
     } catch (error) {
-      console.error('Error fetching earned points:', error);
+        console.error('Error fetching earned points:', error);
+        // Fallback to fetching and displaying questions
+        const questions = await fetchQuestions();
+        setInitialAnswers(questions);
     }
-  };
+};
 
   const handleNavigateToDetail = () => {
     setActiveFilter(null);
@@ -74,63 +84,41 @@ export default function ProductPage({ theme, setTheme, setColorTheme }) {
 
   const constructImageUrl = (url) => `https://subscribes.lt/${url}`;
 
-  const fetchUserResponses = async () => {
+  const fetchUserResponses = async (mappedQuestions) => {
     try {
-      const response = await axiosInstance.get(`/api/academies/${userId}/${academy.id}`);
-      const userResponses = response.data;
+        const response = await axiosInstance.get(`/api/academies/${userId}/${academy.id}`);
+        const userResponses = response.data || []; // Ensure we always have an array
 
-      // Map responses to questions
-      const mappedQuestions = await fetchQuestions();
-      const questionsWithUserResponses = mappedQuestions.map((question) => {
-        const userResponse = userResponses.find(
-          (r) => r.choice.academyQuestionId === question.academyQuestionId
-        );
-        if (userResponse) {
-          question.selectedChoice = question.choices.findIndex(
-            (c) => c.id === userResponse.choiceId
-          );
-          question.isCorrect = userResponse.isCorrect;
-        }
-        return question;
-      });
-
-      setInitialAnswers(questionsWithUserResponses);
-    } catch (error) {
-      console.error('Error fetching user responses:', error);
-    }
-  };
-
-  const fetchQuestions = async () => {
-    try {
-      const response = await axiosInstance.get(`/api/academies/${academy.id}/questions`);
-      const questions = response.data;
-
-      if (earnedPoints > 0) {
-        // User has points, fetch user responses and map them to questions
-        const userResponses = await axiosInstance.get(`/api/academies/${userId}/${academy.id}`);
-        const mappedQuestions = questions.map((question) => {
-          const userResponse = userResponses.data.find(
-            (r) => r.choice.academyQuestionId === question.id
-          );
-          if (userResponse) {
-            question.selectedChoice = question.choices.findIndex(
-              (c) => c.id === userResponse.choiceId
+        // Apply user responses to the questions
+        const questionsWithUserResponses = mappedQuestions.map((question) => {
+            const userResponse = userResponses.find(
+                (r) => r.choice.academyQuestionId === question.academyQuestionId
             );
-            question.isCorrect = userResponse.isCorrect;
-          }
-          return {
-            academyQuestionId: question.id,
-            question: question.question,
-            quizQuestion: question.quizQuestion,
-            choices: question.choices,
-            selectedChoice: question.selectedChoice,
-            isCorrect: question.isCorrect,
-          };
+            if (userResponse) {
+                question.selectedChoice = question.choices.findIndex(
+                    (c) => c.id === userResponse.choiceId
+                );
+                question.isCorrect = userResponse.isCorrect;
+            }
+            return question;
         });
+
+        console.log('Questions with user responses applied:', questionsWithUserResponses);
+        setInitialAnswers(questionsWithUserResponses);
+    } catch (error) {
+        console.error('Error fetching user responses:', error);
+        // If there's an error, we should still display the questions as-is
         setInitialAnswers(mappedQuestions);
-      } else {
-        // User has no points, show only the initial questions without selected choices
-        const mappedQuestions = questions.map((question) => ({
+    }
+};
+
+const fetchQuestions = async () => {
+  try {
+      const response = await axiosInstance.get(`/api/academies/${academy.id}/questions`);
+      const questions = response.data || []; // Ensure we always return an array
+
+      // Map the questions without user responses
+      const mappedQuestions = questions.map((question) => ({
           academyQuestionId: question.id,
           question: question.question,
           answer: question.answer,
@@ -138,22 +126,25 @@ export default function ProductPage({ theme, setTheme, setColorTheme }) {
           choices: question.choices.filter(choice => choice.text !== ""), // Filter out empty choices
           selectedChoice: undefined,
           isCorrect: undefined,
-        }));
-        setInitialAnswers(mappedQuestions);
-      }
-    } catch (error) {
-      console.error('Error fetching questions:', error);
-    }
-  };
+      }));
 
-  const fetchQuests = async () => {
-    try {
+      console.log('Fetched and mapped questions:', mappedQuestions);
+      return mappedQuestions;
+  } catch (error) {
+      console.error('Error fetching questions:', error);
+      return []; // Return an empty array if there's an error
+  }
+};
+
+const fetchQuests = async () => {
+  try {
       const response = await axiosInstance.get(`/api/academies/${academy.id}/quests`);
-      setQuests(response.data);
-    } catch (error) {
+      setQuests(response.data || []); // Ensure quests is always an array
+  } catch (error) {
       console.error('Error fetching quests:', error);
-    }
-  };
+      setQuests([]); // Set quests to an empty array on error
+  }
+};
 
   const handleChoiceClick = (questionIndex, choiceIndex) => {
     setInitialAnswers(
