@@ -851,11 +851,23 @@ exports.checkAnswer = async (req, res, next) => {
           name: '', // Assuming name is optional and can be empty
         },
       });
-      console.log(`New user created with Telegram ID ${telegramUserId}`);
     }
 
-    // Now that we have the user, switch to using user.id
     const userId = user.id;
+
+    // Check if the user has already submitted an answer for this question
+    const existingResponse = await prisma.userResponse.findFirst({
+      where: {
+        userId,
+        choice: {
+          academyQuestionId: questionId,
+        },
+      },
+    });
+
+    if (existingResponse) {
+      return res.status(400).json({ message: 'You have already answered this question.' });
+    }
 
     // Find the correct choice for the question
     const correctChoice = await prisma.choice.findFirst({
@@ -880,7 +892,7 @@ exports.checkAnswer = async (req, res, next) => {
 
     const pointsAwarded = isCorrect ? question.xp : 0;
 
-    // Save the user's response and points
+    // Save the user's response
     await prisma.userResponse.create({
       data: {
         userId,

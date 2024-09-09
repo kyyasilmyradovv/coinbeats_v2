@@ -1,6 +1,6 @@
 // client/src/pages/LoginPage.tsx
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Page, List, ListInput, Button, BlockTitle, Block } from 'konsta/react';
 import { Icon } from '@iconify/react';
@@ -12,10 +12,13 @@ import Sidebar from '../components/common/Sidebar';
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false); // State to toggle password visibility
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
-  const { login } = useAuthStore((state) => ({
+  const { login, initializeAuth, accessToken, userRole } = useAuthStore((state) => ({
     login: state.login,
+    initializeAuth: state.initializeAuth,
+    accessToken: state.accessToken,
+    userRole: state.userRole,
   }));
   
   const { role, hasAcademy, emailConfirmed } = useUserStore((state) => ({
@@ -23,6 +26,26 @@ const LoginPage: React.FC = () => {
     hasAcademy: state.hasAcademy,
     emailConfirmed: state.emailConfirmed,
   }));
+
+  useEffect(() => {
+    // Automatically initialize auth state on component mount
+    initializeAuth();
+  }, [initializeAuth]);
+
+  useEffect(() => {
+    // If accessToken is present, navigate the user based on their role
+    if (accessToken && userRole) {
+      if (userRole === 'CREATOR') {
+        navigate(hasAcademy ? '/creator-dashboard' : '/create-academy');
+      } else if (userRole === 'SUPERADMIN') {
+        navigate('/superadmin-dashboard');
+      } else if (userRole === 'ADMIN') {
+        navigate('/admin-dashboard');
+      } else {
+        navigate('/');
+      }
+    }
+  }, [accessToken, userRole, navigate, hasAcademy]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,6 +57,7 @@ const LoginPage: React.FC = () => {
         return;
       }
 
+      // Redirect based on role
       if (role === 'CREATOR') {
         navigate(hasAcademy ? '/creator-dashboard' : '/create-academy');
       } else if (role === 'SUPERADMIN') {
@@ -80,14 +104,14 @@ const LoginPage: React.FC = () => {
               />
               <ListInput
                 label="Password"
-                type={showPassword ? 'text' : 'password'} // Toggle between text and password
+                type={showPassword ? 'text' : 'password'}
                 placeholder="Enter your password"
                 outline
                 name="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="rounded-2xl"
-                inputClassName="pr-12" // Space for the icon
+                inputClassName="pr-12"
               >
                 <button
                   type="button"

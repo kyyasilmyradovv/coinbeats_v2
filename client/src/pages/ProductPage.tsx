@@ -50,11 +50,13 @@ export default function ProductPage() {
   useEffect(() => {
     if (academy) {
       fetchEarnedPoints().then(() => {
-        fetchQuestions();
+        fetchQuestions().then((questions) => {
+          fetchUserResponses(questions); // Fetch responses after fetching questions
+        });
       });
       fetchQuests();
     }
-  }, [academy]);
+  }, [academy]);  
 
   useEffect(() => {
     setCurrentSlideIndex(0);
@@ -95,7 +97,7 @@ export default function ProductPage() {
       if (isNaN(academy.id)) {
         throw new Error('Invalid academy ID');
       }
-      
+  
       const response = await axiosInstance.get(`/api/academies/${userId}/${academy.id}`);
       const userResponses = response.data || [];
   
@@ -114,13 +116,12 @@ export default function ProductPage() {
       });
   
       console.log('Questions with user responses applied:', questionsWithUserResponses);
-      setInitialAnswers(questionsWithUserResponses);
+      setInitialAnswers(questionsWithUserResponses); // Set state with updated questions
     } catch (error) {
       console.error('Error fetching user responses:', error);
-      // If there's an error, we should still display the questions as-is
-      setInitialAnswers(mappedQuestions);
+      setInitialAnswers(mappedQuestions); // Set state with questions even if user responses are missing
     }
-  };  
+  };   
 
 const fetchQuestions = async () => {
   try {
@@ -170,37 +171,56 @@ const fetchQuests = async () => {
   const handleCheckAnswer = async (questionIndex) => {
     try {
       const question = initialAnswers[questionIndex];
+      const selectedChoiceId = question.choices[question.selectedChoice]?.id;
+      
+      // Check if the user has selected a choice
+      if (!selectedChoiceId) {
+        console.error('No choice selected.');
+        return;
+      }
+  
+      // Post the selected choice to check if it is correct
       const response = await axiosInstance.post(`/api/academies/${academy.id}/check-answer`, {
         academyId: academy.id,
         questionId: question.academyQuestionId,
-        choiceId: question.choices[question.selectedChoice]?.id,
+        choiceId: selectedChoiceId,
         telegramUserId: initData.user.id,
       });
-
+  
       const { correct, pointsAwarded } = response.data;
-
+  
+      // Update the state to mark the correct/incorrect answers and disable further interaction
       setInitialAnswers(
         initialAnswers.map((q, qi) =>
           qi === questionIndex
-            ? { ...q, isCorrect: correct }
+            ? {
+                ...q,
+                isCorrect: correct,
+                choices: q.choices.map((choice, ci) => ({
+                  ...choice,
+                  isCorrect: choice.isCorrect || (ci === q.selectedChoice && correct), // Mark correct choice
+                  isWrong: ci === q.selectedChoice && !correct, // Mark incorrect choice
+                })),
+              }
             : q
         )
       );
-
+  
+      // Award points and trigger XP animation
       if (pointsAwarded > 0) {
         setEarnedPoints(earnedPoints + pointsAwarded);
         setCurrentPoints(pointsAwarded);
         triggerXPAnimation();
       }
-
+  
       // Allow navigation to the next slide
       swiperRef.current.swiper.allowSlideNext = true;
       swiperRef.current.swiper.update();
-
+  
     } catch (error) {
       console.error('Error checking answer:', error);
     }
-  };
+  };  
 
   const handleNextQuestion = () => {
     if (currentSlideIndex === initialAnswers.length * 2 - 1) {
