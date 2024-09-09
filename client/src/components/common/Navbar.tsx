@@ -7,14 +7,16 @@ import { Chip, NavbarBackLink, Navbar as KonstaNavbar } from 'konsta/react';
 import logoLight from '../../images/coinbeats-light.svg';
 import logoDark from '../../images/coinbeats-dark.svg';
 import useUserStore from '../../store/useUserStore';
+import useSessionStore from '../../store/useSessionStore';
 
 const Navbar: React.FC = () => {
   const initData = useInitData();
   const navigate = useNavigate();
-  const { darkMode, toggleSidebar } = useUserStore((state) => ({
-    darkMode: state.darkMode,
+  const {  toggleSidebar } = useUserStore((state) => ({
     toggleSidebar: state.toggleSidebar,
   }));
+
+  const { darkMode } = useSessionStore((state) => ({ darkMode: state.darkMode }));
 
   const username = useMemo(() => initData?.user?.username || 'Guest', [initData]);
   const userAvatar = useMemo(

@@ -5,6 +5,7 @@ import GraduationHat from '../images/graduation-hat.png';
 import Bookmark from '../images/bookmark.png';
 import GamePad from '../images/game-pad.png';
 import Trophy from '../images/trophy.png';
+import useSessionStore from '../store/useSessionStore';
 
 export default function BottomTabBar({ activeTab, setActiveTab }) {
   const navigate = useNavigate();
@@ -29,7 +30,7 @@ export default function BottomTabBar({ activeTab, setActiveTab }) {
     }
   };
 
-  const darkMode = document.documentElement.classList.contains('dark');
+  const { darkMode } = useSessionStore((state) => ({ darkMode: state.darkMode }));
 
   return (
     <Tabbar labels icons className={`left-0 bottom-0 fixed ${darkMode ? 'bg-gray-900' : 'bg-white'} shadow-md !py-1`}>

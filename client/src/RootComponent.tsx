@@ -7,8 +7,8 @@ import MainPage from './pages/MainPage';
 import NotFoundPage from './pages/NotFoundPage';
 import ProductPage from './pages/ProductPage';
 import BookmarksPage from './pages/BookmarksPage';
-import GamesPage from './pages/GamesPage'; // Import GamesPage
-import PointsPage from './pages/PointsPage'; // Import PointsPage
+import GamesPage from './pages/GamesPage';
+import PointsPage from './pages/PointsPage';
 import RegisterCreatorPage from './pages/RegisterCreatorPage';
 import LoginPage from './pages/LoginPage';
 import SessionAnalysisPage from './pages/SessionAnalysisPage';
@@ -21,8 +21,8 @@ import CreateAcademyPage from './pages/CreateAcademyPage';
 import MyAcademiesPage from './pages/MyAcademiesPage';
 import SuperAdminDashboardPage from './pages/SuperAdminDashboardPage';
 import UserDetailPage from './pages/UserDetailPage';
-import AddRafflesPage from './pages/AddRafflesPage';  
-import AddQuestsPage from './pages/AddQuestsPage';    
+import AddRafflesPage from './pages/AddRafflesPage';
+import AddQuestsPage from './pages/AddQuestsPage';
 import EditAcademyPage from './pages/EditAcademyPage';
 import AddVideoLessonsPage from './pages/AddVideoLessonsPage';
 import AllocateXpPage from './pages/AllocateXpPage';
@@ -30,25 +30,21 @@ import { BookmarkProvider } from './contexts/BookmarkContext';
 import { useInitData } from '@telegram-apps/sdk-react';
 import useSessionStore from './store/useSessionStore';
 import useUserStore from './store/useUserStore';
-import './index.css';
 import axios from './api/axiosInstance';
 import RouteGuard from './components/RouteGuard';
 
 function RootComponent() {
   const initData = useInitData();
-  const {
-    theme,
-    setTheme,
-    colorTheme,
-    darkMode,
-    setDarkMode,
-  } = useUserStore((state) => ({
+  const { theme, darkMode, colorTheme, initializePreferences } = useSessionStore((state) => ({
     theme: state.theme,
-    setTheme: state.setTheme,
-    colorTheme: state.colorTheme,
     darkMode: state.darkMode,
-    setDarkMode: state.setDarkMode,
+    colorTheme: state.colorTheme,
+    initializePreferences: state.initializePreferences,
   }));
+
+  useEffect(() => {
+    initializePreferences();
+  }, [initializePreferences]);
 
   const startSession = useSessionStore((state) => state.startSession);
   const endSession = useSessionStore((state) => state.endSession);
@@ -65,10 +61,10 @@ function RootComponent() {
       if (initData) {
         const telegramUserId = initData.user.id;
         const username = initData.user.username || 'Guest';
-    
+
         try {
           const response = await axios.get(`/api/users/${telegramUserId}`);
-    
+
           if (response.status === 200 && response.data) {
             const { id, email, role, totalPoints, academies, emailConfirmed } = response.data;
             const hasAcademy = academies && academies.length > 0;
@@ -146,21 +142,14 @@ function RootComponent() {
     }
   }, [theme]);
 
+  // Ensure dark mode class is synchronized with state
   useLayoutEffect(() => {
-    // Apply dark mode and color theme
     if (darkMode) {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
     }
-    if (colorTheme) {
-      const htmlEl = document.documentElement;
-      htmlEl.classList.forEach((c) => {
-        if (c.includes('k-color')) htmlEl.classList.remove(c);
-      });
-      htmlEl.classList.add(colorTheme);
-    }
-  }, [darkMode, colorTheme]);
+  }, [darkMode]);
 
   return (
     <KonstaProvider theme={theme}>
@@ -171,8 +160,8 @@ function RootComponent() {
             <Route path="/" element={<MainPage />} />
             <Route path="/product/:id" element={<ProductPage />} />
             <Route path="/saved" element={<BookmarksPage />} />
-            <Route path="/games" element={<GamesPage />} />  {/* Added GamesPage route */}
-            <Route path="/points" element={<PointsPage />} />  {/* Added PointsPage route */}
+            <Route path="/games" element={<GamesPage />} />  
+            <Route path="/points" element={<PointsPage />} />  
             <Route path="/register-creator" element={<RegisterCreatorPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/session-analyses" element={<SessionAnalysisPage />} />

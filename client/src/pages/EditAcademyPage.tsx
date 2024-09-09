@@ -87,6 +87,14 @@ const EditAcademyPage: React.FC = () => {
     return `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/${url}`;
   };
 
+  const detectURL = (text: string) => {
+    const urlPattern = /(\b(https?|www):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/gi;
+    return text.replace(urlPattern, (url) => {
+      const href = url.startsWith('www') ? `http://${url}` : url;
+      return `<a href="${href}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+    });
+  };  
+
   const handleSubmit = async () => {
     try {
       if (id) {

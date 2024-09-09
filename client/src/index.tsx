@@ -2,13 +2,20 @@
 
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import { BrowserRouter as Router } from 'react-router-dom'; // Import Router here
+import { BrowserRouter as Router } from 'react-router-dom'; 
 import App from './App';
 import * as serviceWorker from './serviceWorker';
 
+// Get the darkMode preference from localStorage and apply the 'dark' class before rendering
+const darkMode = localStorage.getItem('darkMode') === 'true';
+if (darkMode) {
+  document.documentElement.classList.add('dark');
+} else {
+  document.documentElement.classList.remove('dark');
+}
+
 const root = createRoot(document.getElementById('root')!);
 
-// Wrap App with Router to provide routing context
 root.render(
   <React.StrictMode>
     <Router>
@@ -17,7 +24,4 @@ root.render(
   </React.StrictMode>
 );
 
-// If you want your app to work offline and load faster, you can change
-// unregister() to register() below. Note this comes with some pitfalls.
-// Learn more about service workers: https://bit.ly/CRA-PWA
 serviceWorker.unregister();

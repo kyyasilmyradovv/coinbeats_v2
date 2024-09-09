@@ -53,3 +53,24 @@
     animation: bookmarkZoom 1.5s forwards;
   }
   
+  @keyframes bounce {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-5px); /* Adjust bounce height here */
+    }
+  }
+  
+  .bounce-arrow {
+    position: absolute;
+    transform: translateX(-50%);
+    animation: bounce 1s ease-in-out infinite;
+    z-index: 999; /* Ensure the arrow appears on top */
+  }  
+  
+  .fade-out {
+    opacity: 0;
+    transition: opacity 0.5s ease-out;
+  }
+  

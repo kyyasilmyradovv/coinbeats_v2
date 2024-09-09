@@ -16,9 +16,8 @@ import useCategoryChainStore from '../store/useCategoryChainStore';
 import useAcademyStore from '../store/useAcademyStore';
 import bunnyLogo from '../images/bunny-mascot.png';
 
-const CreateAcademyPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
+const CreateAcademyPage: React.FC = () => {
   const [rightPanelOpened, setRightPanelOpened] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [notificationText, setNotificationText] = useState('');
   const [visibleTooltip, setVisibleTooltip] = useState<number | null>(null);
@@ -529,6 +528,28 @@ const CreateAcademyPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
     </Block>
   );
 
+  // This function checks if a correct answer is selected for the current question
+  const validateCorrectAnswerSelected = (questionIndex: number) => {
+    const choices = initialAnswers[questionIndex].choices;
+    return choices.some((choice) => choice.correct);
+  };
+
+  // Custom nextStep function to validate before proceeding
+  const handleNextStep = (questionIndex: number) => {
+    // If the current question is a quiz question, ensure one choice is marked as correct
+    if (questionIndex < initialAnswers.length) {
+      if (!validateCorrectAnswerSelected(questionIndex)) {
+        // Show notification if no choice is selected as correct
+        setNotificationText('To go to the next question, you have to mark one choice as correct.');
+        setNotificationOpen(true);
+        return;
+      }
+    }
+
+    // If validation passes, proceed to the next step
+    nextStep();
+  };
+
   const renderEducationalQuizSlide = (questionIndex: number) => {
     const quizQuestionLimit = 100;
 
@@ -620,7 +641,12 @@ const CreateAcademyPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
           <Button onClick={prevStep} className="w-1/2 bg-brand-primary text-white rounded-full mr-2" large raised>
             Back
           </Button>
-          <Button onClick={nextStep} className="w-1/2 bg-brand-primary text-white rounded-full ml-2" large raised>
+          <Button 
+            onClick={() => handleNextStep(questionIndex)}  // Use custom handler for "Next" button
+            className="w-1/2 bg-brand-primary text-white rounded-full ml-2" 
+            large 
+            raised
+          >
             Next
           </Button>
         </div>
@@ -848,19 +874,25 @@ const CreateAcademyPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
 
   return (
     <Page>
-      <Navbar darkMode={darkMode} onToggleSidebar={toggleSidebar} />
-      <Sidebar
-        opened={rightPanelOpened}
-        onClose={() => setVisibleTooltip(false)}
-        theme={theme}
-        setTheme={setTheme}
-        setColorTheme={setColorTheme}
-      />
+      <Navbar />
+      <Sidebar />
 
       {/* Render the current slide */}
       {slides[currentStep]}
 
       {/* Notification */}
+      <Notification
+        opened={notificationOpen}
+        icon={<img src={bunnyLogo} alt="Bunny Mascot" className="w-10 h-10" />}
+        title="Message from Coinbeats Bunny"
+        text={notificationText}
+        button={
+          <Button onClick={() => setNotificationOpen(false)}>
+            Close
+          </Button>
+        }
+        onClose={() => setNotificationOpen(false)}
+      />
       <Notification
         opened={notificationOpen}
         icon={<img src={bunnyLogo} alt="Bunny Mascot" className="w-10 h-10" />}

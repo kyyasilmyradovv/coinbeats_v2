@@ -1,3 +1,5 @@
+// client/src/pages/AddVideoLessonsPage.tsx
+
 import React, { useEffect, useState } from 'react';
 import { Page, Block, List, ListInput, Button, Notification } from 'konsta/react';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -18,6 +20,7 @@ const AddVideoLessonsPage: React.FC = () => {
     videoUrls,
     setVideoUrl,
     fetchQuestions,
+    fetchVideoUrls, // Fetch video URLs on page load
     submitVideoLessons,
   } = useAcademyStore();
 
@@ -28,9 +31,11 @@ const AddVideoLessonsPage: React.FC = () => {
   } = useCategoryChainStore();
 
   useEffect(() => {
+    console.log("Academy ID from URL params:", id);
     fetchQuestions();
+    fetchVideoUrls(parseInt(id || '0', 10)); // Fetch video URLs when the page loads
     fetchCategoriesAndChains();
-  }, [fetchQuestions, fetchCategoriesAndChains]);
+  }, [fetchQuestions, fetchVideoUrls, fetchCategoriesAndChains, id]);  
 
   const toggleSidebar = () => {
     setRightPanelOpened(!rightPanelOpened);
@@ -44,6 +49,7 @@ const AddVideoLessonsPage: React.FC = () => {
     try {
       await submitVideoLessons(parseInt(id || '0', 10));
       setNotificationOpen(true);
+      navigate('/my-academies');
     } catch (error) {
       console.error('Failed to submit video lessons:', error);
     }
@@ -55,7 +61,7 @@ const AddVideoLessonsPage: React.FC = () => {
   };
 
   const renderVideoLessonSlide = (questionIndex: number) => (
-    <Block key={`video-question-${questionIndex}`} strong className="mx-4 my-4 bg-white rounded-2xl shadow-lg p-6 space-y-4">
+    <Block key={`video-question-${questionIndex}`} strong className="mx-4 my-4 bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-6 space-y-4">
       <h2 className="text-lg font-bold mb-4 text-center">Add Video Lesson</h2>
       <p className="font-medium mb-2">{`Question ${questionIndex + 1}: ${initialAnswers[questionIndex].question}`}</p>
       <List>
@@ -93,7 +99,7 @@ const AddVideoLessonsPage: React.FC = () => {
         onClose={() => setRightPanelOpened(false)}
       />
 
-      <Block strong className="m-4 p-4 bg-white rounded-xl shadow-md">
+      <Block>
         {initialAnswers.map((_, index) => renderVideoLessonSlide(index))}
         <Button onClick={handleSubmit} large raised className="w-full bg-brand-primary text-white mt-4 rounded-full">
           Submit Video Lessons

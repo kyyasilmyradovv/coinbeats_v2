@@ -1,3 +1,5 @@
+// client/tailwind.config.js
+
 const konstaConfig = require('konsta/config');
 
 /** @type {import('tailwindcss').Config} */

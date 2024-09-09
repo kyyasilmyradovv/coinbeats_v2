@@ -9,7 +9,7 @@ function generateAccessToken(user) {
   return jwt.sign(
     { userId: user.id, role: user.role }, 
     JWT_SECRET, 
-    { expiresIn: '1h' } // Adjust expiration as needed
+    { expiresIn: '365d' } // Set to 1 year or longer, effectively indefinite
   );
 }
 
@@ -17,7 +17,7 @@ function generateRefreshToken(user) {
   return jwt.sign(
     { userId: user.id }, 
     JWT_REFRESH_SECRET, 
-    { expiresIn: '7d' } // Adjust expiration as needed
+    { expiresIn: '365d' } // Set refresh token to a long expiration time as well
   );
 }
 

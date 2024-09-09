@@ -96,6 +96,7 @@ interface AcademyState {
   submitBasicAcademy: () => Promise<void>;
   resetAcademyData: () => void;
   fetchQuestions: () => Promise<void>;
+  fetchVideoUrls: (academyId: number) => Promise<void>;
   fetchQuests: (academyId: number) => Promise<void>;
   nextStep: () => void;
   prevStep: () => void;
@@ -340,12 +341,8 @@ const useAcademyStore = create<AcademyState>()(
 
       fetchQuestions: async () => {
         try {
-          const questionsResponse = await axios.get('/api/questions/initial-questions');
-          const questions = questionsResponse.data;
-
-          if (!Array.isArray(questions)) {
-            throw new Error('Unexpected response format');
-          }
+          const response = await axios.get('/api/questions/initial-questions');
+          const questions = response.data;
 
           set(() => ({
             initialAnswers: questions.map((question) => ({
@@ -362,37 +359,49 @@ const useAcademyStore = create<AcademyState>()(
         }
       },
 
-      setVideoUrl: (index: number, url: string) =>
+      setVideoUrl: (index, url) =>
         set((state) => {
           const updatedVideoUrls = [...state.videoUrls];
           updatedVideoUrls[index] = { initialQuestionId: state.initialAnswers[index].initialQuestionId, url };
           return { videoUrls: updatedVideoUrls };
         }),
 
-      submitVideoLessons: async (academyId: number) => {
-        const state = get();
-        const { accessToken } = useAuthStore.getState();
+        fetchVideoUrls: async (academyId: number) => {
+          console.log("Fetching video URLs for Academy ID:", academyId); // Log the Academy ID being used
+        
+          try {
+            const response = await axios.get(`/api/academies/${academyId}/videos`);
+            console.log("Video URLs response from backend:", response.data); // Log the response data
+            set({ videoUrls: response.data.videoUrls || [] });
+          } catch (error) {
+            console.error('Error fetching video URLs:', error); // Log any errors that occur
+          }
+        },        
 
-        if (!accessToken) {
-          throw new Error('Authorization token is missing');
-        }
-
-        try {
-          await axios.put(
-            `/api/academies/${academyId}/videos`,
-            { videoUrls: state.videoUrls },
-            {
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${accessToken}`,
-              },
-            }
-          );
-        } catch (error) {
-          console.error('Error submitting video lessons:', error);
-          throw error;
-        }
-      },
+        submitVideoLessons: async (academyId: number) => {
+          const state = get();
+          const { accessToken } = useAuthStore.getState();
+  
+          if (!accessToken) {
+            throw new Error('Authorization token is missing');
+          }
+  
+          try {
+            await axios.put(
+              `/api/academies/${academyId}/videos`,
+              { videoUrls: state.videoUrls },
+              {
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${accessToken}`,
+                },
+              }
+            );
+          } catch (error) {
+            console.error('Error submitting video lessons:', error);
+            throw error;
+          }
+        },
 
       nextStep: () => {
         const state = get();

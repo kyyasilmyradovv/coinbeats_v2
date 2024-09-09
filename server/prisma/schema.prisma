@@ -118,7 +118,8 @@ model AcademyQuestion {
   question         String
   answer           String?
   quizQuestion     String
-  choices          Choice[]         // Choices for this question
+  choices          Choice[]
+  video            String?
   xp               Int              @default(0)
 }
 

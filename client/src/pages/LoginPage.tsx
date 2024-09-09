@@ -2,14 +2,14 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Page, List, ListInput, Button, BlockTitle, Block, KonstaProvider } from 'konsta/react';
+import { Page, List, ListInput, Button, BlockTitle, Block } from 'konsta/react';
 import { Icon } from '@iconify/react';
 import useAuthStore from '../store/useAuthStore'; 
 import useUserStore from '../store/useUserStore';
 import Navbar from '../components/common/Navbar';
 import Sidebar from '../components/common/Sidebar';
 
-const LoginPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
+const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false); // State to toggle password visibility
@@ -17,8 +17,6 @@ const LoginPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
   const { login } = useAuthStore((state) => ({
     login: state.login,
   }));
-  const [rightPanelOpened, setRightPanelOpened] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
   
   const { role, hasAcademy, emailConfirmed } = useUserStore((state) => ({
     role: state.role,
@@ -56,16 +54,9 @@ const LoginPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
   };
 
   return (
-    <KonstaProvider theme={theme}>
       <Page>
-        <Navbar darkMode={darkMode} onToggleSidebar={() => setRightPanelOpened(!rightPanelOpened)} />
-        <Sidebar
-          opened={rightPanelOpened}
-          onClose={() => setRightPanelOpened(false)}
-          theme={theme}
-          setTheme={setTheme}
-          setColorTheme={setColorTheme}
-        />
+        <Navbar />
+        <Sidebar />
 
         <div className="text-center flex w-full items-center justify-center top-8 mb-10">
           <BlockTitle large>Login</BlockTitle>
@@ -113,7 +104,6 @@ const LoginPage: React.FC = ({ theme, setTheme, setColorTheme }) => {
           </form>
         </Block>
       </Page>
-    </KonstaProvider>
   );
 };
 

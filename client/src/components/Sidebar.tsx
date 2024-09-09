@@ -15,31 +15,30 @@ import {
 import { TonConnectButton } from '@tonconnect/ui-react';
 import { useNavigate } from 'react-router-dom';
 import useUserStore from '../store/useUserStore';
+import useSessionStore from '../store/useSessionStore';
 
 const Sidebar: React.FC = () => {
   const navigate = useNavigate();
-
-  // Zustand store states
   const {
     role,
-    theme,
-    darkMode,
     sidebarOpened,
     toggleSidebar,
-    setTheme,
-    setColorTheme,
-    setDarkMode,
     setUser,
   } = useUserStore((state) => ({
     role: state.role,
-    theme: state.theme,
-    darkMode: state.darkMode,
     sidebarOpened: state.sidebarOpened,
     toggleSidebar: state.toggleSidebar,
+    setUser: state.setUser,
+  }));
+
+  const {
+    theme, darkMode, setTheme, setColorTheme, setDarkMode,
+  } = useSessionStore((state) => ({
+    theme: state.theme,
+    darkMode: state.darkMode,
     setTheme: state.setTheme,
     setColorTheme: state.setColorTheme,
     setDarkMode: state.setDarkMode,
-    setUser: state.setUser,
   }));
 
   const [colorPickerOpened, setColorPickerOpened] = useState(false);
@@ -59,10 +58,10 @@ const Sidebar: React.FC = () => {
     toggleSidebar(); // Close sidebar after navigating
   };
 
-  const toggleDarkMode = () => {
+  const handleDarkModeToggle = () => {
     setDarkMode(!darkMode);
-    document.documentElement.classList.toggle('dark');
-  };
+    toggleSidebar();
+  }; 
 
   const renderRoleBasedLinks = () => {
     switch (role) {
@@ -257,7 +256,7 @@ const Sidebar: React.FC = () => {
               after={
                 <Toggle
                   component="div"
-                  onChange={() => toggleDarkMode()}
+                  onChange={() => handleDarkModeToggle()}
                   checked={darkMode}
                 />
               }

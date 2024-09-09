@@ -26,9 +26,6 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
   const [category, setCategory] = useState('');
   const [chain, setChain] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
-  const [rightPanelOpened, setRightPanelOpened] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
-  const [colorPickerOpened, setColorPickerOpened] = useState(false);
   const [academies, setAcademies] = useState([]);
   const [bookmarkMessage, setBookmarkMessage] = useState(''); // State for bookmark message
   const [showBookmarkAnimation, setShowBookmarkAnimation] = useState(false); // State to control bookmark animation
@@ -112,14 +109,8 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
 
   return (
     <Page>
-      <Navbar darkMode={darkMode} onToggleSidebar={() => setRightPanelOpened(!rightPanelOpened)} />
-      <Sidebar
-        opened={rightPanelOpened}
-        onClose={() => setRightPanelOpened(false)}
-        theme={theme}
-        setTheme={setTheme}
-        setColorTheme={setColorTheme}
-      />
+      <Navbar />
+      <Sidebar />
 
       <div className="flex justify-center items-center flex-col mb-6 mt-6">
         <div className="bg-white dark:bg-zinc-900 rounded-full shadow-lg p-2 flex flex-row items-center px-6">

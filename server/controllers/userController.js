@@ -179,14 +179,51 @@ exports.registerCreator = async (req, res, next) => {
       return next(createError(409, 'Email is already used by another creator'));
     }
 
-    // Check if a user with the given telegramUserId already exists
+    // Check if a user with the given telegramUserId exists
     let user = await prisma.user.findUnique({ where: { telegramUserId } });
 
-    if (user) {
-      console.log('User already exists with Telegram ID:', telegramUserId);
-      return res.status(400).json({ message: 'User already exists' });
+    if (user && user.role === 'CREATOR') {
+      console.log('User already exists with Telegram ID and is a creator:', telegramUserId);
+      return res.status(400).json({ message: 'User with this Telegram ID is already a creator' });
     }
 
+    if (user && user.role === 'USER') {
+      // Hash the new password before updating
+      const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+      console.log('Password hashed successfully');
+
+      // Generate email confirmation token and send confirmation email
+      const emailConfirmationToken = crypto.randomBytes(32).toString('hex');
+      console.log('Email confirmation token generated:', emailConfirmationToken);
+
+      // Upgrade existing user role to CREATOR, update email, password, and confirmation token
+      user = await prisma.user.update({
+        where: { telegramUserId },
+        data: {
+          role: 'CREATOR',
+          email,
+          password: hashedPassword,
+          emailConfirmationToken,
+        },
+      });
+      console.log('User role upgraded to CREATOR with updated email and password:', telegramUserId);
+
+      const confirmationUrl = `${process.env.BACKEND_URL}/api/email/confirm-email?token=${emailConfirmationToken}`;
+      console.log('Confirmation URL:', confirmationUrl);
+
+      const message = `
+        <h1>Confirm your email</h1>
+        <p>Please confirm your email by clicking on the following link:</p>
+        <a href="${confirmationUrl}">Confirm Email</a>
+      `;
+
+      await sendEmail(email, 'Email Confirmation', 'Please confirm your email', message);
+      console.log('Confirmation email sent upon role upgrade');
+
+      return res.status(200).json({ message: 'User role upgraded to CREATOR. Please confirm your email.' });
+    }
+
+    // If no user exists, create a new user
     const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
     console.log('Password hashed successfully');
 
@@ -206,18 +243,17 @@ exports.registerCreator = async (req, res, next) => {
     });
     console.log('User registered successfully:', user.id);
 
-    // Update the confirmation URL to use the new email confirmation route
     const confirmationUrl = `${process.env.BACKEND_URL}/api/email/confirm-email?token=${emailConfirmationToken}`;
     console.log('Confirmation URL:', confirmationUrl);
 
     const message = `
-  <h1>Confirm your email</h1>
-  <p>Please confirm your email by clicking on the following link:</p>
-  <a href="${confirmationUrl}">Confirm Email</a>
-`;
+      <h1>Confirm your email</h1>
+      <p>Please confirm your email by clicking on the following link:</p>
+      <a href="${confirmationUrl}">Confirm Email</a>
+    `;
 
     await sendEmail(email, 'Email Confirmation', 'Please confirm your email', message);
-    console.log('Confirmation email sent');
+    console.log('Confirmation email sent upon user creation');
 
     return res.status(201).json({ message: 'User registered as a CREATOR. Please confirm your email.' });
   } catch (error) {

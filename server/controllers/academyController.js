@@ -10,6 +10,57 @@ const handleFileUpload = (files, fieldName) => {
   return files && files[fieldName] ? saveFile(files[fieldName][0]) : null;
 };
 
+// Helper function to allocate XP
+const allocateXp = async (academyId, totalXp) => {
+  // Fetch all the questions and quests for the academy
+  const questions = await prisma.academyQuestion.findMany({
+    where: { academyId },
+  });
+  
+  const quests = await prisma.quest.findMany({
+    where: { academyId },
+  });
+
+  const totalElements = questions.length + quests.length;
+  
+  // If there are no questions or quests, exit
+  if (totalElements === 0) {
+    throw new Error('No questions or quests to allocate XP.');
+  }
+
+  // Calculate the base XP per element and the remainder
+  const baseXp = Math.floor(totalXp / totalElements);
+  let remainderXp = totalXp % totalElements;
+
+  // Allocate XP to questions
+  for (let i = 0; i < questions.length; i++) {
+    let xpToAssign = baseXp;
+    if (remainderXp > 0) {
+      xpToAssign += 1;  // Assign 1 extra XP from the remainder
+      remainderXp -= 1;
+    }
+
+    await prisma.academyQuestion.update({
+      where: { id: questions[i].id },
+      data: { xp: xpToAssign },
+    });
+  }
+
+  // Allocate XP to quests
+  for (let i = 0; i < quests.length; i++) {
+    let xpToAssign = baseXp;
+    if (remainderXp > 0) {
+      xpToAssign += 1;  // Assign 1 extra XP from the remainder
+      remainderXp -= 1;
+    }
+
+    await prisma.quest.update({
+      where: { id: quests[i].id },
+      data: { xp: xpToAssign },
+    });
+  }
+};
+
 // Create Academy Controller
 exports.createAcademy = async (req, res, next) => {
   try {
@@ -97,10 +148,10 @@ exports.createAcademy = async (req, res, next) => {
         twitter,
         telegram,
         discord,
-        coingecko: coingeckoLink,  // Save the coingecko link
-        dexScreener: dexScreenerLink,  // Save the dex screener link
-        contractAddress,  // Save the contract address
-        tokenomics: tokenomicsData,  // Save the tokenomics data as a JSON object
+        coingecko: coingeckoLink,
+        dexScreener: dexScreenerLink,
+        contractAddress,
+        tokenomics: tokenomicsData,
         teamBackground,
         congratsVideo,
         getStarted,
@@ -140,6 +191,9 @@ exports.createAcademy = async (req, res, next) => {
         creatorId: userId,
       },
     });
+
+    // Allocate XP to Academy Questions and Quests
+    await allocateXp(academy.id, 200);  // Total XP to allocate is 200
 
     res.status(201).json({ message: 'Academy created successfully', academy });
   } catch (error) {
@@ -521,7 +575,7 @@ exports.updateAcademyWithVideos = async (req, res, next) => {
       where: { id: parseInt(id, 10) },
       data: {
         academyQuestions: {
-          updateMany: videoUrls.map((videoUrl, index) => ({
+          updateMany: videoUrls.map((videoUrl) => ({
             where: { initialQuestionId: videoUrl.initialQuestionId },
             data: { video: videoUrl.url },
           })),
@@ -533,6 +587,40 @@ exports.updateAcademyWithVideos = async (req, res, next) => {
   } catch (error) {
     console.error('Error updating academy with videos:', error);
     next(createError(500, 'Error updating academy with videos'));
+  }
+};
+
+exports.getVideoUrls = async (req, res, next) => {
+  const { id } = req.params; // Academy ID
+  
+  // Log the raw academyId to verify it's being received correctly
+  console.log("Raw academyId from request params:", id);
+  
+  // Ensure that the ID is properly parsed
+  const academyId = parseInt(id, 10);
+  console.log("Parsed academyId:", academyId);
+
+  if (isNaN(academyId)) {
+    return res.status(400).json({ error: 'Invalid academyId' });
+  }
+
+  try {
+    const questions = await prisma.academyQuestion.findMany({
+      where: { academyId: academyId },
+      select: {
+        initialQuestionId: true,
+        video: true,
+      },
+    });
+
+    if (!questions || questions.length === 0) {
+      return res.status(404).json({ message: 'No video URLs found for this academy' });
+    }
+
+    res.json({ videoUrls: questions });
+  } catch (error) {
+    console.error('Error fetching video URLs:', error);
+    next(createError(500, 'Error fetching video URLs'));
   }
 };
 
@@ -810,17 +898,24 @@ exports.checkAnswer = async (req, res, next) => {
   }
 };
 
-// Fetch previous responses
-exports.getUserResponses = async (req, res, next) => {
-  const { userId, academyId } = req.params;
-
+exports.getUserResponses = async (req, res) => {
   try {
-    const responses = await prisma.userResponse.findMany({
+    const userId = parseInt(req.params.userId, 10);
+    const academyId = parseInt(req.params.academyId, 10);
+
+    // Ensure academyId is a valid number
+    if (isNaN(academyId)) {
+      console.error('Invalid academyId:', academyId);
+      return res.status(400).json({ error: 'Invalid academyId' });
+    }
+
+    // Fetch user responses using Prisma
+    const userResponses = await prisma.userResponse.findMany({
       where: {
-        userId: parseInt(userId, 10),
+        userId: userId,
         choice: {
           academyQuestion: {
-            academyId: parseInt(academyId, 10),
+            academyId: academyId,
           },
         },
       },
@@ -829,13 +924,9 @@ exports.getUserResponses = async (req, res, next) => {
       },
     });
 
-    if (!responses || responses.length === 0) {
-      return res.status(404).json({ message: 'No responses found for this user and academy.' });
-    }
-
-    res.json(responses);
+    return res.json(userResponses);
   } catch (error) {
     console.error('Error fetching user responses:', error);
-    next(createError(500, 'Error fetching user responses'));
+    return res.status(500).json({ error: 'Error fetching user responses' });
   }
 };

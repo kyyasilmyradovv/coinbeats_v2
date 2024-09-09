@@ -20,13 +20,13 @@ import name from '../images/name.png';
 import gecko from '../images/coingecko.svg';
 import coinStack from '../images/coin-stack.png';
 import useUserStore from '../store/useUserStore'; // Import the user store
+import AcademyCompletionSlide from '../components/AcademyCompletionSlide';
 
-export default function ProductPage({ theme, setTheme, setColorTheme }) {
+export default function ProductPage() {
   const initData = useInitData();
   const location = useLocation();
   const navigate = useNavigate();
   const { academy } = location.state || {};
-  const [darkMode, setDarkMode] = useState(false);
   const [activeFilter, setActiveFilter] = useState(null);
   const [initialAnswers, setInitialAnswers] = useState([]);
   const [quests, setQuests] = useState([]);
@@ -35,10 +35,16 @@ export default function ProductPage({ theme, setTheme, setColorTheme }) {
   const [currentPoints, setCurrentPoints] = useState(0);
   const [showXPAnimation, setShowXPAnimation] = useState(false);
   const swiperRef = useRef(null);
-  const userId = useUserStore((state) => state.userId); // Get the user ID from the store
+  const userId = useUserStore((state) => state.userId);
+  const [showArrow, setShowArrow] = useState(true);
 
   useEffect(() => {
-    setDarkMode(document.documentElement.classList.contains('dark'));
+    // Hide the arrow after 3 seconds
+    const timer = setTimeout(() => {
+      setShowArrow(false);
+    }, 3000);
+
+    return () => clearTimeout(timer); // Cleanup the timeout if component unmounts
   }, []);
 
   useEffect(() => {
@@ -86,31 +92,35 @@ export default function ProductPage({ theme, setTheme, setColorTheme }) {
 
   const fetchUserResponses = async (mappedQuestions) => {
     try {
-        const response = await axiosInstance.get(`/api/academies/${userId}/${academy.id}`);
-        const userResponses = response.data || []; // Ensure we always have an array
-
-        // Apply user responses to the questions
-        const questionsWithUserResponses = mappedQuestions.map((question) => {
-            const userResponse = userResponses.find(
-                (r) => r.choice.academyQuestionId === question.academyQuestionId
-            );
-            if (userResponse) {
-                question.selectedChoice = question.choices.findIndex(
-                    (c) => c.id === userResponse.choiceId
-                );
-                question.isCorrect = userResponse.isCorrect;
-            }
-            return question;
-        });
-
-        console.log('Questions with user responses applied:', questionsWithUserResponses);
-        setInitialAnswers(questionsWithUserResponses);
+      if (isNaN(academy.id)) {
+        throw new Error('Invalid academy ID');
+      }
+      
+      const response = await axiosInstance.get(`/api/academies/${userId}/${academy.id}`);
+      const userResponses = response.data || [];
+  
+      // Apply user responses to the questions
+      const questionsWithUserResponses = mappedQuestions.map((question) => {
+        const userResponse = userResponses.find(
+          (r) => r.choice.academyQuestionId === question.academyQuestionId
+        );
+        if (userResponse) {
+          question.selectedChoice = question.choices.findIndex(
+            (c) => c.id === userResponse.choiceId
+          );
+          question.isCorrect = userResponse.isCorrect;
+        }
+        return question;
+      });
+  
+      console.log('Questions with user responses applied:', questionsWithUserResponses);
+      setInitialAnswers(questionsWithUserResponses);
     } catch (error) {
-        console.error('Error fetching user responses:', error);
-        // If there's an error, we should still display the questions as-is
-        setInitialAnswers(mappedQuestions);
+      console.error('Error fetching user responses:', error);
+      // If there's an error, we should still display the questions as-is
+      setInitialAnswers(mappedQuestions);
     }
-};
+  };  
 
 const fetchQuestions = async () => {
   try {
@@ -123,6 +133,7 @@ const fetchQuestions = async () => {
           question: question.question,
           answer: question.answer,
           quizQuestion: question.quizQuestion,
+          video: question.video,
           choices: question.choices.filter(choice => choice.text !== ""), // Filter out empty choices
           selectedChoice: undefined,
           isCorrect: undefined,
@@ -269,16 +280,16 @@ const fetchQuests = async () => {
   const renderInitialQuestionSlide = (questionIndex) => {
     const question = initialAnswers[questionIndex];
     if (!question) return null;
-
+  
     if (question.question === 'Tokenomics details' && question.answer) {
-      let parsedAnswer;
+      let parsedAnswer = {};
+  
       try {
         parsedAnswer = JSON.parse(question.answer);
       } catch (error) {
         console.error('Error parsing answer JSON:', error);
-        parsedAnswer = {};
       }
-
+  
       return (
         <SwiperSlide key={`initial-question-${questionIndex}`}>
           <Card className="!my-2 !mx-1 !p-4 !rounded-2xl !bg-gray-50 dark:!bg-gray-800 !border !border-gray-200 dark:!border-gray-700 !shadow-sm !mb-12">
@@ -286,36 +297,108 @@ const fetchQuests = async () => {
               {question.question}
             </h2>
             <ul className="list-disc list-inside text-gray-900 dark:text-gray-100">
-              {Object.entries(parsedAnswer).map(([key, value]) => (
-                value && (
+              {/* Total Supply */}
+              <li>
+                <strong>Total Supply:</strong> {parsedAnswer.totalSupply || 'N/A'}
+              </li>
+  
+              {/* Contract Address */}
+              <li>
+                <strong>Contract Address:</strong>{' '}
+                {parsedAnswer.contractAddress ? (
+                  <a
+                    href={parsedAnswer.contractAddress}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-500 underline"
+                  >
+                    {parsedAnswer.contractAddress}
+                  </a>
+                ) : (
+                  'N/A'
+                )}
+              </li>
+  
+              {/* Other fields with clickable links */}
+              {Object.entries(parsedAnswer).map(([key, value]) => {
+                if (key === 'totalSupply' || key === 'contractAddress') return null;
+                return (
                   <li key={key} className="mb-2 break-words">
                     <strong className="capitalize">{key}:</strong>{' '}
-                    {key === 'coingecko' || key === 'dexScreener' ? (
-                      <a href={value} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">
+                    {typeof value === 'string' && isValidUrl(value) ? (
+                      <a
+                        href={value}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-500 underline"
+                      >
                         {value}
                       </a>
-                    ) : key === 'chains' ? (
-                      value.join(', ')
+                    ) : Array.isArray(value) ? (
+                      value.join(', ') // Handle arrays
                     ) : (
                       value
                     )}
                   </li>
-                )
-              ))}
+                );
+              })}
             </ul>
           </Card>
         </SwiperSlide>
       );
     }
-
+  
+    // Handle general text answers
+    const formattedAnswer = convertToClickableLinks(question.answer || '');
+  
     return (
       <SwiperSlide key={`initial-question-${questionIndex}`}>
-        <Card className="!my-2 !mx-1 !p-2 !rounded-2xl !bg-gray-50 dark:!bg-gray-800 !border !border-gray-200 dark:!border-gray-700 !shadow-sm">
-          <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">{question.answer}</p>
+        <Card className="!my-2 !mx-1 !p-4 !rounded-2xl !bg-gray-50 dark:!bg-gray-800 !border !border-gray-200 dark:!border-gray-700 !shadow-sm !mb-12">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+            {question.question}
+          </h2>
+          <p className="text-gray-900 dark:text-gray-100">
+            {formattedAnswer}
+          </p>
         </Card>
       </SwiperSlide>
     );
   };
+  
+  // Helper function to detect valid URLs
+  const isValidUrl = (string) => {
+    try {
+      new URL(string);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  };
+  
+  // Utility function to detect URLs and return them as clickable links in JSX
+  const convertToClickableLinks = (text) => {
+    if (typeof text !== 'string') return text; // Check if the input is a string
+  
+    // Regex to detect links
+    const urlPattern = /(https?:\/\/[^\s]+|www\.[^\s]+)/g;
+    const parts = text.split(urlPattern);
+  
+    return parts.map((part, index) =>
+      urlPattern.test(part) ? (
+        <a
+          key={index}
+          href={part.startsWith('http') ? part : `http://${part}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-500 underline"
+        >
+          {part}
+        </a>
+      ) : (
+        part
+      )
+    );
+  };  
 
   const renderQuizSlide = (questionIndex) => {
     const question = initialAnswers[questionIndex];
@@ -400,62 +483,39 @@ const fetchQuests = async () => {
     </>
   );
 
-  const renderCompletionScreen = () => (
-    <div className="flex flex-col items-center justify-center h-full">
-      <h2 className="text-2xl font-bold mb-4">In total you collected:</h2>
-      <div className="flex items-center justify-center text-4xl font-bold mb-8">
-        {earnedPoints} / {academy.xp} <img src={coinStack} alt="coinstack" className="w-12 h-12 ml-2 mb-2" />
-      </div>
-      <Button
-        large
-        rounded
-        outline
-        disabled
-        className="mb-4"
-        style={{
-          backgroundColor: 'gray',
-          color: '#fff',
-        }}
-      >
-        Earn by doing quests
-      </Button>
-      <Button
-        large
-        rounded
-        outline
-        onClick={() => navigate('/')}
-        style={{
-          background: 'linear-gradient(to left, #ff0077, #7700ff)',
-          color: '#fff',
-        }}
-      >
-        Explore more academies
-      </Button>
-    </div>
-  );
-
   const renderWatchTab = () => (
     <>
       {renderProgressbarWithArrows()}
       <Swiper pagination={{ clickable: true }} ref={swiperRef}>
         {initialAnswers.length > 0 ? (
-          initialAnswers.map((question, index) => (
-            <React.Fragment key={`watch-tab-${index}`}>
-              <SwiperSlide key={`video-slide-${index}`}>
-                <Card className="!my-2 !mx-1 p-2 !rounded-2xl !bg-gray-50 dark:!bg-gray-800 !border !border-gray-200 dark:!border-gray-700 !shadow-sm">
+          initialAnswers.map((question, index) => {
+            const videoUrl = question.video;
+            let embedUrl = "";
+  
+            if (videoUrl) {
+              const urlParams = new URLSearchParams(new URL(videoUrl).search);
+              const videoId = urlParams.get("v");
+              embedUrl = `https://www.youtube.com/embed/${videoId}`;
+            }
+  
+            return (
+              <React.Fragment key={`watch-tab-${index}`}>
+                <SwiperSlide key={`video-slide-${index}`}>
+                  <Card className="!my-2 !mx-1 p-2 !rounded-2xl !bg-gray-50 dark:!bg-gray-800 !border !border-gray-200 dark:!border-gray-700 !shadow-sm">
                   <iframe
-                    width="100%"
-                    height="250"
-                    src={`https://www.youtube.com/embed/${question.video}`}
-                    title={`Video ${index + 1}`}
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
+                      width="100%"
+                      height="250"
+                      src={embedUrl}
+                      title={`Video ${index + 1}`}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
                   />
-                </Card>
-              </SwiperSlide>
-              {renderQuizSlide(index)}
-            </React.Fragment>
-          ))
+                  </Card>
+                </SwiperSlide>
+                {renderQuizSlide(index)}
+              </React.Fragment>
+            );
+          })
         ) : (
           <SwiperSlide>
             <Card className="m-2 p-2">
@@ -465,7 +525,7 @@ const fetchQuests = async () => {
         )}
       </Swiper>
     </>
-  );  
+  );   
 
   const renderQuestTab = () => (
     <Block>
@@ -488,9 +548,14 @@ const fetchQuests = async () => {
 
   const renderContent = () => {
     if (activeFilter === 'completion') {
-      return renderCompletionScreen();
+      return (
+        <AcademyCompletionSlide
+          earnedPoints={earnedPoints}
+          totalPoints={academy.xp} // Pass the total academy points as a prop
+          academyName={academy.name}        />
+      );
     }
-
+  
     switch (activeFilter) {
       case 'read':
         return renderReadTab();
@@ -505,8 +570,8 @@ const fetchQuests = async () => {
 
   return (
     <Page className="bg-white dark:bg-gray-900">
-      <Navbar theme={theme} setTheme={setTheme} setColorTheme={setColorTheme} />
-      <Sidebar theme={theme} setTheme={setTheme} setColorTheme={setColorTheme} />
+      <Navbar />
+      <Sidebar />
 
       {academy && (
         <div className="px-4 pt-2">
@@ -524,18 +589,25 @@ const fetchQuests = async () => {
               {academy.name}
             </h1>
             <div className="flex justify-center gap-2 mt-4 mx-4">
-              <Button
-                outline
-                rounded
-                onClick={() => setActiveFilter('read')}
-                className={`${
-                  activeFilter === 'read'
-                    ? 'bg-gray-100 dark:bg-gray-700 k-color-brand-purple shadow-lg'
-                    : 'bg-white dark:bg-gray-800 shadow-lg'
-                }`}
-              >
-                Read
-              </Button>
+                <div className="relative flex-grow">
+                  {showArrow && (
+                    <div className={`absolute ${!showArrow ? 'fade-out' : ''}`}>
+                      <Icon icon="mdi:arrow-down-bold" className="bounce-arrow w-10 h-10 bottom-0 left-9" color="#DE47F0" />
+                    </div>
+                  )}
+                </div>
+                <Button
+                  outline
+                  rounded
+                  onClick={() => setActiveFilter('read')}
+                  className={`${
+                    activeFilter === 'read'
+                      ? 'bg-gray-100 dark:bg-gray-700 k-color-brand-purple shadow-lg'
+                      : 'bg-white dark:bg-gray-800 shadow-lg'
+                  }`}
+                >
+                  Read
+                </Button>
               <Button
                 outline
                 rounded
@@ -544,7 +616,8 @@ const fetchQuests = async () => {
                   activeFilter === 'watch'
                     ? 'bg-gray-100 dark:bg-gray-700 k-color-brand-purple shadow-lg'
                     : 'bg-white dark:bg-gray-800 shadow-lg'
-                }`}
+                } ${!initialAnswers.some(question => question.video) ? 'bg-black text-gray-500 border-gray-500 cursor-not-allowed' : ''}`}
+                disabled={!initialAnswers.some(question => question.video)}
               >
                 Watch
               </Button>
@@ -556,7 +629,8 @@ const fetchQuests = async () => {
                   activeFilter === 'quests'
                     ? 'bg-gray-100 dark:bg-gray-700 k-color-brand-purple shadow-lg'
                     : 'bg-white dark:bg-gray-800 shadow-lg'
-                }`}
+                } ${quests.length === 0 ? 'bg-black text-gray-500 border-gray-500 cursor-not-allowed' : ''}`}
+                disabled={quests.length === 0}
               >
                 Quests
               </Button>
@@ -721,13 +795,16 @@ const fetchQuests = async () => {
       <BottomTabBar activeTab="tab-1" setActiveTab={setActiveFilter} />
 
       {showXPAnimation && (
-        <div className="fixed inset-0 flex flex-col items-center justify-center z-50 animate-bookmark">
-          <img src={coinStack} alt="Coin Stack" className="h-20 w-20" />
-          <div className="text-gray-800 dark:text-white mt-4 text-lg font-semibold">
-            You earned + {currentPoints} XP!
-          </div>
+      <div
+        className="fixed inset-0 flex flex-col items-center justify-center z-50 animate-bookmark"
+        style={{ pointerEvents: 'none' }}
+      >
+        <img src={coinStack} alt="Coin Stack" className="h-16 w-16" />
+        <div className="text-gray-800 dark:text-white mt-4 text-md font-semibold">
+          +{currentPoints}
         </div>
-      )}
+      </div>
+    )}
     </Page>
   );
 }

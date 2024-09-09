@@ -17,24 +17,25 @@ import {
 import { TonConnectButton } from '@tonconnect/ui-react';
 import { useNavigate } from 'react-router-dom';
 import useUserStore from '../../store/useUserStore';
+import useSessionStore from '../../store/useSessionStore';
 
 const Sidebar: React.FC = () => {
   const navigate = useNavigate();
   const {
     role,
-    theme,
-    darkMode,
     sidebarOpened,
     toggleSidebar,
-    setTheme,
-    setColorTheme,
-    setDarkMode,
   } = useUserStore((state) => ({
     role: state.role,
-    theme: state.theme,
-    darkMode: state.darkMode,
     sidebarOpened: state.sidebarOpened,
     toggleSidebar: state.toggleSidebar,
+  }));
+
+  const {
+    theme, darkMode, setTheme, setColorTheme, setDarkMode,
+  } = useSessionStore((state) => ({
+    theme: state.theme,
+    darkMode: state.darkMode,
     setTheme: state.setTheme,
     setColorTheme: state.setColorTheme,
     setDarkMode: state.setDarkMode,
@@ -42,13 +43,18 @@ const Sidebar: React.FC = () => {
 
   const [colorPickerOpened, setColorPickerOpened] = useState(false);
 
+  const handleDarkModeToggle = () => {
+    setDarkMode(!darkMode);
+    toggleSidebar();
+  }; 
+
   useLayoutEffect(() => {
     setDarkMode(document.documentElement.classList.contains('dark'));
   }, [setDarkMode]);
 
   const handleNavigation = (path: string) => {
     navigate(path);
-    toggleSidebar(); // Close sidebar after navigating
+    toggleSidebar();
   };
 
   const renderRoleBasedButtons = () => {
@@ -110,16 +116,6 @@ const Sidebar: React.FC = () => {
     return buttons;
   };
 
-  const toggleDarkModeHandler = () => {
-    toggleDarkMode();
-    toggleSidebar(); // Close sidebar after toggling dark mode
-  };
-
-  const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
-    document.documentElement.classList.toggle('dark');
-  };  
-
   return (
     <Panel
       side="right"
@@ -173,7 +169,7 @@ const Sidebar: React.FC = () => {
               after={
                 <Toggle
                   component="div"
-                  onChange={toggleDarkModeHandler}
+                  onChange={handleDarkModeToggle}
                   checked={darkMode}
                 />
               }

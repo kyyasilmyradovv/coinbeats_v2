@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import axios from '../api/axiosInstance'; // Use consistent axios instance
+import axios from '../api/axiosInstance'; 
 import { jwtDecode } from 'jwt-decode';
 import { devtools } from 'zustand/middleware';
 
@@ -90,7 +90,9 @@ const useAuthStore = create<AuthState>()(
             console.log('Initialized auth state from localStorage.');
           } catch (error) {
             console.error('Error decoding token:', error);
-            // Handle error, possibly by logging out or redirecting
+            set({ accessToken: null, refreshToken: null, userRole: null });
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('refreshToken');
           }
         }
       },
