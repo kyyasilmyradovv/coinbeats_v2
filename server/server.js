@@ -24,6 +24,7 @@ const inboxRoutes = require('./routes/inbox');
 const emailRoutes = require('./routes/email');
 const sseRoutes = require('./routes/sse');
 const pointsRoutes = require('./routes/points');
+const verificationTaskRoutes = require('./routes/verificationTask');
 
 // Initialize Express app
 const app = express();
@@ -48,6 +49,7 @@ app.use('/api/inbox', inboxRoutes);
 app.use('/api/email', emailRoutes);
 app.use('/api/sse', sseRoutes);
 app.use('/api/points', pointsRoutes);
+app.use('/api/verification', verificationTaskRoutes);
 
 
 // Serve static files

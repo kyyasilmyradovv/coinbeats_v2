@@ -1,233 +1,267 @@
 // src/RootComponent.tsx
 
-import React, { useLayoutEffect, useEffect } from 'react';
-import { Route, Routes, useLocation } from 'react-router-dom';
-import { App as KonstaApp, KonstaProvider } from 'konsta/react';
-import MainPage from './pages/MainPage';
-import NotFoundPage from './pages/NotFoundPage';
-import ProductPage from './pages/ProductPage';
-import BookmarksPage from './pages/BookmarksPage';
-import GamesPage from './pages/GamesPage';
-import PointsPage from './pages/PointsPage';
-import RegisterCreatorPage from './pages/RegisterCreatorPage';
-import LoginPage from './pages/LoginPage';
-import SessionAnalysisPage from './pages/SessionAnalysisPage';
-import CreatorDashboardPage from './pages/CreatorDashboardPage';
-import UserManagementPage from './pages/UserManagementPage';
-import InboxPage from './pages/InboxPage';
-import AcademyStatisticsPage from './pages/AcademyStatisticsPage';
-import UserProfilePage from './pages/UserProfilePage';
-import CreateAcademyPage from './pages/CreateAcademyPage';
-import MyAcademiesPage from './pages/MyAcademiesPage';
-import SuperAdminDashboardPage from './pages/SuperAdminDashboardPage';
-import UserDetailPage from './pages/UserDetailPage';
-import AddRafflesPage from './pages/AddRafflesPage';
-import AddQuestsPage from './pages/AddQuestsPage';
-import EditAcademyPage from './pages/EditAcademyPage';
-import AddVideoLessonsPage from './pages/AddVideoLessonsPage';
-import AllocateXpPage from './pages/AllocateXpPage';
-import { BookmarkProvider } from './contexts/BookmarkContext';
-import { useInitData } from '@telegram-apps/sdk-react';
-import useSessionStore from './store/useSessionStore';
-import useUserStore from './store/useUserStore';
-import axios from './api/axiosInstance';
-import RouteGuard from './components/RouteGuard';
+import React, { useLayoutEffect, useEffect } from 'react'
+import { Route, Routes, useLocation } from 'react-router-dom'
+import { App as KonstaApp, KonstaProvider } from 'konsta/react'
+import MainPage from './pages/MainPage'
+import NotFoundPage from './pages/NotFoundPage'
+import ProductPage from './pages/ProductPage'
+import BookmarksPage from './pages/BookmarksPage'
+import GamesPage from './pages/GamesPage'
+import PointsPage from './pages/PointsPage'
+import RegisterCreatorPage from './pages/RegisterCreatorPage'
+import LoginPage from './pages/LoginPage'
+import SessionAnalysisPage from './pages/SessionAnalysisPage'
+import CreatorDashboardPage from './pages/CreatorDashboardPage'
+import UserManagementPage from './pages/UserManagementPage'
+import InboxPage from './pages/InboxPage'
+import AcademyStatisticsPage from './pages/AcademyStatisticsPage'
+import UserProfilePage from './pages/UserProfilePage'
+import CreateAcademyPage from './pages/CreateAcademyPage'
+import MyAcademiesPage from './pages/MyAcademiesPage'
+import SuperAdminDashboardPage from './pages/SuperAdminDashboardPage'
+import UserDetailPage from './pages/UserDetailPage'
+import AddRafflesPage from './pages/AddRafflesPage'
+import AddQuestsPage from './pages/AddQuestsPage'
+import EditAcademyPage from './pages/EditAcademyPage'
+import AddVideoLessonsPage from './pages/AddVideoLessonsPage'
+import AllocateXpPage from './pages/AllocateXpPage'
+import { BookmarkProvider } from './contexts/BookmarkContext'
+import { useInitData } from '@telegram-apps/sdk-react'
+import useSessionStore from './store/useSessionStore'
+import useUserStore from './store/useUserStore'
+import axios from './api/axiosInstance'
+import RouteGuard from './components/RouteGuard'
 
 function RootComponent() {
-  const initData = useInitData();
-  const { theme, darkMode, colorTheme, initializePreferences } = useSessionStore((state) => ({
-    theme: state.theme,
-    darkMode: state.darkMode,
-    colorTheme: state.colorTheme,
-    initializePreferences: state.initializePreferences,
-  }));
+    const initData = useInitData()
+    const { theme, darkMode, colorTheme, initializePreferences } = useSessionStore((state) => ({
+        theme: state.theme,
+        darkMode: state.darkMode,
+        colorTheme: state.colorTheme,
+        initializePreferences: state.initializePreferences
+    }))
 
-  useEffect(() => {
-    initializePreferences();
-  }, [initializePreferences]);
+    useEffect(() => {
+        initializePreferences()
+    }, [initializePreferences])
 
-  const startSession = useSessionStore((state) => state.startSession);
-  const endSession = useSessionStore((state) => state.endSession);
-  const setCurrentRoute = useSessionStore((state) => state.setCurrentRoute);
-  const addRouteDuration = useSessionStore((state) => state.addRouteDuration);
-  const { setUser } = useUserStore((state) => ({
-    setUser: state.setUser,
-  }));
+    const startSession = useSessionStore((state) => state.startSession)
+    const endSession = useSessionStore((state) => state.endSession)
+    const setCurrentRoute = useSessionStore((state) => state.setCurrentRoute)
+    const addRouteDuration = useSessionStore((state) => state.addRouteDuration)
+    const { setUser } = useUserStore((state) => ({
+        setUser: state.setUser
+    }))
 
-  const location = useLocation();
+    const location = useLocation()
 
-  useEffect(() => {
-    const initializeUserSession = async () => {
-      if (initData) {
-        const telegramUserId = initData.user.id;
-        const username = initData.user.username || 'Guest';
+    useEffect(() => {
+        const initializeUserSession = async () => {
+            if (initData) {
+                const telegramUserId = initData.user.id
+                const username = initData.user.username || 'Guest'
 
-        try {
-          const response = await axios.get(`/api/users/${telegramUserId}`);
+                try {
+                    const response = await axios.get(`/api/users/${telegramUserId}`)
 
-          if (response.status === 200 && response.data) {
-            const { id, email, role, totalPoints, academies, emailConfirmed } = response.data;
-            const hasAcademy = academies && academies.length > 0;
-            setUser(id, username, email, emailConfirmed, role, totalPoints || 100, null, hasAcademy);
-          } else {
-            setUser(null, username, '', false, 'USER', 100, null, false);
-          }
-        } catch (error) {
-          if (error.response && error.response.status === 404) {
-            setUser(null, username, '', false, 'USER', 100, null, false);
-          } else {
-            console.error('Error fetching user:', error);
-          }
+                    if (response.status === 200 && response.data) {
+                        const { id, email, role, totalPoints, points, academies, emailConfirmed } = response.data
+                        const hasAcademy = academies && academies.length > 0
+                        console.log(points)
+                        setUser(id, username, email, emailConfirmed, role, totalPoints, points || 100, null, hasAcademy)
+                    } else {
+                        setUser(null, username, '', false, 'USER', 100, {}, null, false)
+                    }
+                } catch (error) {
+                    if (error.response && error.response.status === 404) {
+                        setUser(null, username, '', false, 'USER', 100, {}, null, false)
+                    } else {
+                        console.error('Error fetching user:', error)
+                    }
+                }
+
+                const sessionStartTime = Date.now()
+                startSession({
+                    sessionStartTime,
+                    userId: telegramUserId,
+                    username: username,
+                    roles: ['USER'] // Default role
+                })
+
+                let routeStartTime = sessionStartTime
+                let currentRoute = location.pathname
+
+                const updateRouteDuration = () => {
+                    const now = Date.now()
+                    const duration = now - routeStartTime
+                    addRouteDuration(currentRoute, duration)
+                    setCurrentRoute(currentRoute)
+                    routeStartTime = now
+                }
+
+                const handleRouteChange = () => {
+                    updateRouteDuration()
+                    currentRoute = location.pathname
+                }
+
+                updateRouteDuration()
+
+                return () => {
+                    updateRouteDuration()
+                }
+            }
         }
 
-        const sessionStartTime = Date.now();
-        startSession({
-          sessionStartTime,
-          userId: telegramUserId,
-          username: username,
-          roles: ['USER'], // Default role
-        });
+        initializeUserSession()
 
-        let routeStartTime = sessionStartTime;
-        let currentRoute = location.pathname;
+        const handleSessionEnd = () => {
+            const sessionEndTime = Date.now()
+            const duration = Math.floor((sessionEndTime - (startSession.sessionStartTime || 0)) / 1000)
 
-        const updateRouteDuration = () => {
-          const now = Date.now();
-          const duration = now - routeStartTime;
-          addRouteDuration(currentRoute, duration);
-          setCurrentRoute(currentRoute);
-          routeStartTime = now;
-        };
+            const finalRouteDuration = Date.now() - (startSession.sessionStartTime || 0)
+            addRouteDuration(location.pathname, finalRouteDuration)
 
-        const handleRouteChange = () => {
-          updateRouteDuration();
-          currentRoute = location.pathname;
-        };
+            endSession()
+        }
 
-        updateRouteDuration();
+        window.addEventListener('beforeunload', handleSessionEnd)
 
         return () => {
-          updateRouteDuration();
-        };
-      }
-    };
+            window.removeEventListener('beforeunload', handleSessionEnd)
+        }
+    }, [initData, startSession, setCurrentRoute, endSession, setUser, addRouteDuration, location])
 
-    initializeUserSession();
+    const inIFrame = window.parent !== window
+    useLayoutEffect(() => {
+        if (window.location.href.includes('safe-areas')) {
+            const html = document.documentElement
+            if (html) {
+                html.style.setProperty('--k-safe-area-top', theme === 'ios' ? '44px' : '24px')
+                html.style.setProperty('--k-safe-area-bottom', '34px')
+            }
+        }
+    }, [theme])
 
-    const handleSessionEnd = () => {
-      const sessionEndTime = Date.now();
-      const duration = Math.floor((sessionEndTime - (startSession.sessionStartTime || 0)) / 1000);
+    // Ensure dark mode class is synchronized with state
+    useLayoutEffect(() => {
+        if (darkMode) {
+            document.documentElement.classList.add('dark')
+        } else {
+            document.documentElement.classList.remove('dark')
+        }
+    }, [darkMode])
 
-      const finalRouteDuration = Date.now() - (startSession.sessionStartTime || 0);
-      addRouteDuration(location.pathname, finalRouteDuration);
-
-      endSession();
-    };
-
-    window.addEventListener('beforeunload', handleSessionEnd);
-
-    return () => {
-      window.removeEventListener('beforeunload', handleSessionEnd);
-    };
-  }, [initData, startSession, setCurrentRoute, endSession, setUser, addRouteDuration, location]);
-
-  const inIFrame = window.parent !== window;
-  useLayoutEffect(() => {
-    if (window.location.href.includes('safe-areas')) {
-      const html = document.documentElement;
-      if (html) {
-        html.style.setProperty('--k-safe-area-top', theme === 'ios' ? '44px' : '24px');
-        html.style.setProperty('--k-safe-area-bottom', '34px');
-      }
-    }
-  }, [theme]);
-
-  // Ensure dark mode class is synchronized with state
-  useLayoutEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [darkMode]);
-
-  return (
-    <KonstaProvider theme={theme}>
-      <KonstaApp theme={theme} safeAreas={!inIFrame}>
-        <BookmarkProvider>
-          <Routes>
-            <Route path="*" element={<NotFoundPage />} />
-            <Route path="/" element={<MainPage />} />
-            <Route path="/product/:id" element={<ProductPage />} />
-            <Route path="/saved" element={<BookmarksPage />} />
-            <Route path="/games" element={<GamesPage />} />  
-            <Route path="/points" element={<PointsPage />} />  
-            <Route path="/register-creator" element={<RegisterCreatorPage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/session-analyses" element={<SessionAnalysisPage />} />
-            <Route path="/creator-dashboard" element={
-              <RouteGuard requiredRole="CREATOR">
-                <CreatorDashboardPage />
-              </RouteGuard>
-            } />
-            <Route path="/superadmin-dashboard" element={
-              <RouteGuard requiredRole="SUPERADMIN">
-                <SuperAdminDashboardPage />
-              </RouteGuard>
-            } />
-            <Route path="/user-management" element={
-              <RouteGuard requiredRole="SUPERADMIN">
-                <UserManagementPage />
-              </RouteGuard>
-            } />
-            <Route path="/user/:userId" element={
-              <RouteGuard requiredRole="SUPERADMIN">
-                <UserDetailPage />
-              </RouteGuard>
-            } />
-            <Route path="/inbox" element={<InboxPage />} />
-            <Route path="/academy-statistics" element={<AcademyStatisticsPage />} />
-            <Route path="/user-profile" element={<UserProfilePage />} />
-            <Route path="/create-academy" element={
-              <RouteGuard requiredRole="CREATOR">
-                <CreateAcademyPage />
-              </RouteGuard>
-            } />
-            <Route path="/my-academies" element={
-              <RouteGuard requiredRole="CREATOR">
-                <MyAcademiesPage />
-              </RouteGuard>
-            } />
-            <Route path="/add-video-lessons/:id" element={
-              <RouteGuard requiredRole="CREATOR">
-                <AddVideoLessonsPage />
-              </RouteGuard>
-            } />
-            <Route path="/add-raffles/:id" element={
-              <RouteGuard requiredRole="CREATOR">
-                <AddRafflesPage />
-              </RouteGuard>
-            } />
-            <Route path="/add-tasks/:id" element={
-              <RouteGuard requiredRole="CREATOR">
-                <AddQuestsPage />
-              </RouteGuard>
-            } />
-            <Route path="/edit-academy/:id" element={
-              <RouteGuard requiredRole="CREATOR">
-                <EditAcademyPage />
-              </RouteGuard>
-            } />
-            <Route path="/allocate-xp/:id" element={
-              <RouteGuard requiredRole="CREATOR">
-                <AllocateXpPage />
-              </RouteGuard>
-            } />
-          </Routes>
-        </BookmarkProvider>
-      </KonstaApp>
-    </KonstaProvider>
-  );
+    return (
+        <KonstaProvider theme={theme}>
+            <KonstaApp theme={theme} safeAreas={!inIFrame}>
+                <BookmarkProvider>
+                    <Routes>
+                        <Route path="*" element={<NotFoundPage />} />
+                        <Route path="/" element={<MainPage />} />
+                        <Route path="/product/:id" element={<ProductPage />} />
+                        <Route path="/saved" element={<BookmarksPage />} />
+                        <Route path="/games" element={<GamesPage />} />
+                        <Route path="/points" element={<PointsPage />} />
+                        <Route path="/register-creator" element={<RegisterCreatorPage />} />
+                        <Route path="/login" element={<LoginPage />} />
+                        <Route path="/session-analyses" element={<SessionAnalysisPage />} />
+                        <Route
+                            path="/creator-dashboard"
+                            element={
+                                <RouteGuard requiredRole="CREATOR">
+                                    <CreatorDashboardPage />
+                                </RouteGuard>
+                            }
+                        />
+                        <Route
+                            path="/superadmin-dashboard"
+                            element={
+                                <RouteGuard requiredRole="SUPERADMIN">
+                                    <SuperAdminDashboardPage />
+                                </RouteGuard>
+                            }
+                        />
+                        <Route
+                            path="/user-management"
+                            element={
+                                <RouteGuard requiredRole="SUPERADMIN">
+                                    <UserManagementPage />
+                                </RouteGuard>
+                            }
+                        />
+                        <Route
+                            path="/user/:userId"
+                            element={
+                                <RouteGuard requiredRole="SUPERADMIN">
+                                    <UserDetailPage />
+                                </RouteGuard>
+                            }
+                        />
+                        <Route path="/inbox" element={<InboxPage />} />
+                        <Route path="/academy-statistics" element={<AcademyStatisticsPage />} />
+                        <Route path="/user-profile" element={<UserProfilePage />} />
+                        <Route
+                            path="/create-academy"
+                            element={
+                                <RouteGuard requiredRole="CREATOR">
+                                    <CreateAcademyPage />
+                                </RouteGuard>
+                            }
+                        />
+                        <Route
+                            path="/my-academies"
+                            element={
+                                <RouteGuard requiredRole="CREATOR">
+                                    <MyAcademiesPage />
+                                </RouteGuard>
+                            }
+                        />
+                        <Route
+                            path="/add-video-lessons/:id"
+                            element={
+                                <RouteGuard requiredRole="CREATOR">
+                                    <AddVideoLessonsPage />
+                                </RouteGuard>
+                            }
+                        />
+                        <Route
+                            path="/add-raffles/:id"
+                            element={
+                                <RouteGuard requiredRole="CREATOR">
+                                    <AddRafflesPage />
+                                </RouteGuard>
+                            }
+                        />
+                        <Route
+                            path="/add-tasks/:id"
+                            element={
+                                <RouteGuard requiredRole="CREATOR">
+                                    <AddQuestsPage />
+                                </RouteGuard>
+                            }
+                        />
+                        <Route
+                            path="/edit-academy/:id"
+                            element={
+                                <RouteGuard requiredRole="CREATOR">
+                                    <EditAcademyPage />
+                                </RouteGuard>
+                            }
+                        />
+                        <Route
+                            path="/allocate-xp/:id"
+                            element={
+                                <RouteGuard requiredRole="CREATOR">
+                                    <AllocateXpPage />
+                                </RouteGuard>
+                            }
+                        />
+                    </Routes>
+                </BookmarkProvider>
+            </KonstaApp>
+        </KonstaProvider>
+    )
 }
 
-export default RootComponent;
+export default RootComponent

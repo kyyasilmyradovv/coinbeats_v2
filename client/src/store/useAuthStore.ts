@@ -52,8 +52,7 @@ const useAuthStore = create<AuthState>()(
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
       },
-
-      // Refresh token logic
+      
       refreshAccessToken: async () => {
         try {
           console.log('Attempting to refresh access token...');
@@ -62,14 +61,21 @@ const useAuthStore = create<AuthState>()(
 
           const response = await axios.post('/api/auth/refresh', { refreshToken });
           const { accessToken } = response.data;
+
+          if (!accessToken) throw new Error('No access token returned from refresh.');
+
           set({ accessToken });
           localStorage.setItem('accessToken', accessToken);
 
           console.log('Access token refreshed:', accessToken);
-
         } catch (error) {
-          console.error('Token refresh failed:', error);
-          throw new Error('Token refresh failed');
+          console.error('Token refresh failed, logging out user:', error);
+          set({ accessToken: null, refreshToken: null, userRole: null });
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('refreshToken');
+
+          // Optionally, you can redirect the user to the login page here
+          window.location.href = '/login'; // This ensures the user is forced to log in again
         }
       },
 

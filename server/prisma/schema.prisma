@@ -30,6 +30,8 @@ model User {
   emailConfirmed        Boolean         @default(false)
   emailConfirmationToken String?         @unique
   bookmarkedAcademies   Academy[]       @relation("BookmarkedAcademies")
+
+  UserVerification UserVerification[]
 }
 
 model Academy {
@@ -65,6 +67,8 @@ model Academy {
   Point          Point[]
   
   bookmarkedBy   User[]    @relation("BookmarkedAcademies")
+
+  UserVerification UserVerification[]
 }
 
 model Subscription {
@@ -146,13 +150,16 @@ model Quest {
 }
 
 model Point {
-  id        Int      @id @default(autoincrement())
-  value     Int
-  userId    Int
-  user      User     @relation(fields: [userId], references: [id])
-  academyId Int
-  academy   Academy  @relation(fields: [academyId], references: [id])
+  id                 Int              @id @default(autoincrement())
+  value              Int
+  userId             Int
+  user               User             @relation(fields: [userId], references: [id])
+  academyId          Int?             // Make academyId optional
+  academy            Academy?         @relation(fields: [academyId], references: [id])
+  verificationTaskId Int?             // Make verificationTaskId optional
+  verificationTask   VerificationTask? @relation(fields: [verificationTaskId], references: [id])
 }
+
 
 model SessionLog {
   id             Int      @id @default(autoincrement())
@@ -176,6 +183,30 @@ model Chain {
   id          Int       @id @default(autoincrement())
   name        String    @unique
   academies   Academy[]
+}
+
+model VerificationTask {
+  id               Int       @id @default(autoincrement())
+  platform         String    // e.g., 'twitter', 'discord'
+  description      String    // What the task is about
+  points           Int       // Points awarded for completing the task
+  createdAt        DateTime  @default(now())
+  userVerification UserVerification[] // Verification details for each user
+
+  Point Point[]
+}
+
+model UserVerification {
+  id              Int     @id @default(autoincrement())
+  userId          Int     // User who completed the task
+  verificationTaskId Int  // Task that was completed
+  academyId       Int?    // Null if it's a platform task, not academy-related
+  verified        Boolean @default(false) // Whether the task is verified
+  createdAt       DateTime @default(now())
+  pointsAwarded   Int     @default(0) // Points awarded upon verification
+  user            User    @relation(fields: [userId], references: [id])
+  verificationTask VerificationTask @relation(fields: [verificationTaskId], references: [id])
+  academy         Academy? @relation(fields: [academyId], references: [id])
 }
 
 enum Role {

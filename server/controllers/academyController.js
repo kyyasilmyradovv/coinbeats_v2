@@ -16,13 +16,13 @@ const allocateXp = async (academyId, totalXp) => {
   const questions = await prisma.academyQuestion.findMany({
     where: { academyId },
   });
-  
+
   const quests = await prisma.quest.findMany({
     where: { academyId },
   });
 
   const totalElements = questions.length + quests.length;
-  
+
   // If there are no questions or quests, exit
   if (totalElements === 0) {
     throw new Error('No questions or quests to allocate XP.');
@@ -36,7 +36,7 @@ const allocateXp = async (academyId, totalXp) => {
   for (let i = 0; i < questions.length; i++) {
     let xpToAssign = baseXp;
     if (remainderXp > 0) {
-      xpToAssign += 1;  // Assign 1 extra XP from the remainder
+      xpToAssign += 1; // Assign 1 extra XP from the remainder
       remainderXp -= 1;
     }
 
@@ -50,7 +50,7 @@ const allocateXp = async (academyId, totalXp) => {
   for (let i = 0; i < quests.length; i++) {
     let xpToAssign = baseXp;
     if (remainderXp > 0) {
-      xpToAssign += 1;  // Assign 1 extra XP from the remainder
+      xpToAssign += 1; // Assign 1 extra XP from the remainder
       remainderXp -= 1;
     }
 
@@ -83,7 +83,7 @@ exports.createAcademy = async (req, res, next) => {
       quests = '[]',
       coingeckoLink = '',
       dexScreenerLink = '',
-      contractAddress = ''
+      contractAddress = '',
     } = req.body;
 
     const { userId } = req.user;
@@ -110,12 +110,15 @@ exports.createAcademy = async (req, res, next) => {
       logic: parsedInitialAnswers[3]?.logic || '',
       coingecko: parsedInitialAnswers[3]?.coingecko || coingeckoLink,
       dexScreener: parsedInitialAnswers[3]?.dexScreener || dexScreenerLink,
-      contractAddress: parsedInitialAnswers[3]?.contractAddress || contractAddress,
+      contractAddress:
+        parsedInitialAnswers[3]?.contractAddress || contractAddress,
     };
 
     const categoryRecords = await Promise.all(
       parsedCategories.map(async (categoryName) => {
-        const category = await prisma.category.findUnique({ where: { name: categoryName } });
+        const category = await prisma.category.findUnique({
+          where: { name: categoryName },
+        });
         if (!category) {
           throw new Error(`Category "${categoryName}" not found in database`);
         }
@@ -125,7 +128,9 @@ exports.createAcademy = async (req, res, next) => {
 
     const chainRecords = await Promise.all(
       parsedChains.map(async (chainName) => {
-        const chain = await prisma.chain.findUnique({ where: { name: chainName } });
+        const chain = await prisma.chain.findUnique({
+          where: { name: chainName },
+        });
         if (!chain) {
           throw new Error(`Chain "${chainName}" not found in database`);
         }
@@ -159,7 +164,10 @@ exports.createAcademy = async (req, res, next) => {
           create: parsedInitialAnswers.map((initialAnswer, index) => ({
             initialQuestionId: initialAnswer.initialQuestionId,
             question: initialAnswer.question || '',
-            answer: index === 3 ? JSON.stringify(tokenomicsData) : initialAnswer.answer || '',  // Save tokenomics data as JSON string for question 4
+            answer:
+              index === 3
+                ? JSON.stringify(tokenomicsData)
+                : initialAnswer.answer || '', // Save tokenomics data as JSON string for question 4
             quizQuestion: initialAnswer.quizQuestion || '',
             choices: {
               create: initialAnswer.choices.map((choice) => ({
@@ -193,7 +201,7 @@ exports.createAcademy = async (req, res, next) => {
     });
 
     // Allocate XP to Academy Questions and Quests
-    await allocateXp(academy.id, 200);  // Total XP to allocate is 200
+    await allocateXp(academy.id, 200); // Total XP to allocate is 200
 
     res.status(201).json({ message: 'Academy created successfully', academy });
   } catch (error) {
@@ -221,7 +229,7 @@ exports.createBasicAcademy = async (req, res, next) => {
       webpageUrl = '',
       coingeckoLink = '',
       dexScreenerLink = '',
-      contractAddress = ''
+      contractAddress = '',
     } = req.body;
 
     const { userId } = req.user;
@@ -246,7 +254,9 @@ exports.createBasicAcademy = async (req, res, next) => {
 
     const categoryRecords = await Promise.all(
       parsedCategories.map(async (categoryName) => {
-        const category = await prisma.category.findUnique({ where: { name: categoryName } });
+        const category = await prisma.category.findUnique({
+          where: { name: categoryName },
+        });
         if (!category) {
           throw new Error(`Category "${categoryName}" not found in database`);
         }
@@ -256,7 +266,9 @@ exports.createBasicAcademy = async (req, res, next) => {
 
     const chainRecords = await Promise.all(
       parsedChains.map(async (chainName) => {
-        const chain = await prisma.chain.findUnique({ where: { name: chainName } });
+        const chain = await prisma.chain.findUnique({
+          where: { name: chainName },
+        });
         if (!chain) {
           throw new Error(`Chain "${chainName}" not found in database`);
         }
@@ -279,10 +291,10 @@ exports.createBasicAcademy = async (req, res, next) => {
         twitter,
         telegram,
         discord,
-        coingecko: coingeckoLink,  // Save the coingecko link
-        dexScreener: dexScreenerLink,  // Save the dex screener link
-        contractAddress,  // Save the contract address
-        tokenomics: tokenomicsData,  // Save the tokenomics data as a JSON object
+        coingecko: coingeckoLink, // Save the coingecko link
+        dexScreener: dexScreenerLink, // Save the dex screener link
+        contractAddress, // Save the contract address
+        tokenomics: tokenomicsData, // Save the tokenomics data as a JSON object
         teamBackground,
         congratsVideo,
         getStarted,
@@ -292,7 +304,9 @@ exports.createBasicAcademy = async (req, res, next) => {
       },
     });
 
-    res.status(201).json({ message: 'Basic academy created successfully', academy });
+    res
+      .status(201)
+      .json({ message: 'Basic academy created successfully', academy });
   } catch (error) {
     console.error('Error creating basic academy:', error);
     next(createError(500, 'Error creating basic academy'));
@@ -322,10 +336,16 @@ exports.updateAcademy = async (req, res, next) => {
   } = req.body;
 
   try {
-    const parsedCategories = Array.isArray(categories) ? categories : JSON.parse(categories);
+    const parsedCategories = Array.isArray(categories)
+      ? categories
+      : JSON.parse(categories);
     const parsedChains = Array.isArray(chains) ? chains : JSON.parse(chains);
-    const parsedInitialAnswers = Array.isArray(initialAnswers) ? initialAnswers : JSON.parse(initialAnswers);
-    const parsedRaffles = Array.isArray(raffles) ? raffles : JSON.parse(raffles);
+    const parsedInitialAnswers = Array.isArray(initialAnswers)
+      ? initialAnswers
+      : JSON.parse(initialAnswers);
+    const parsedRaffles = Array.isArray(raffles)
+      ? raffles
+      : JSON.parse(raffles);
     const parsedQuests = Array.isArray(quests) ? quests : JSON.parse(quests);
 
     // Handle file uploads
@@ -339,7 +359,9 @@ exports.updateAcademy = async (req, res, next) => {
         ticker,
         logoUrl: logoUrl || undefined, // Use existing if no new file is uploaded
         coverPhotoUrl: coverPhotoUrl || undefined, // Use existing if no new file is uploaded
-        categories: { set: parsedCategories.map((category) => ({ name: category })) },
+        categories: {
+          set: parsedCategories.map((category) => ({ name: category })),
+        },
         chains: { set: parsedChains.map((chain) => ({ name: chain })) },
         twitter,
         telegram,
@@ -387,7 +409,10 @@ exports.updateAcademy = async (req, res, next) => {
       },
     });
 
-    res.json({ message: 'Academy updated successfully', academy: updatedAcademy });
+    res.json({
+      message: 'Academy updated successfully',
+      academy: updatedAcademy,
+    });
   } catch (error) {
     console.error('Error updating academy:', error);
     next(createError(500, 'Error updating academy'));
@@ -395,7 +420,6 @@ exports.updateAcademy = async (req, res, next) => {
 };
 
 // Additional Controllers (for fetching, approving, rejecting academies) remain unchanged
-
 
 exports.listMyAcademies = async (req, res, next) => {
   try {
@@ -408,6 +432,8 @@ exports.listMyAcademies = async (req, res, next) => {
         name: true,
         status: true,
         createdAt: true,
+        logoUrl: true,
+        coverPhotoUrl: true,
       },
     });
 
@@ -450,7 +476,7 @@ exports.getAcademyDetails = async (req, res, next) => {
     academy.raffles = academy.raffles || [];
     academy.quests = academy.quests || [];
 
-    console.log("Academy details response:", academy); // Log for debugging
+    console.log('Academy details response:', academy); // Log for debugging
 
     res.json(academy);
   } catch (error) {
@@ -486,7 +512,10 @@ exports.approveAcademy = async (req, res, next) => {
       data: { status: 'approved' },
     });
 
-    res.json({ message: 'Academy approved successfully', academy: updatedAcademy });
+    res.json({
+      message: 'Academy approved successfully',
+      academy: updatedAcademy,
+    });
   } catch (error) {
     console.error('Error approving academy:', error);
     next(createError(500, 'Internal server error'));
@@ -506,7 +535,10 @@ exports.rejectAcademy = async (req, res, next) => {
       },
     });
 
-    res.json({ message: 'Academy rejected successfully', academy: updatedAcademy });
+    res.json({
+      message: 'Academy rejected successfully',
+      academy: updatedAcademy,
+    });
   } catch (error) {
     console.error('Error rejecting academy:', error);
     next(createError(500, 'Internal server error'));
@@ -583,7 +615,10 @@ exports.updateAcademyWithVideos = async (req, res, next) => {
       },
     });
 
-    res.json({ message: 'Video lessons added successfully', academy: updatedAcademy });
+    res.json({
+      message: 'Video lessons added successfully',
+      academy: updatedAcademy,
+    });
   } catch (error) {
     console.error('Error updating academy with videos:', error);
     next(createError(500, 'Error updating academy with videos'));
@@ -592,13 +627,13 @@ exports.updateAcademyWithVideos = async (req, res, next) => {
 
 exports.getVideoUrls = async (req, res, next) => {
   const { id } = req.params; // Academy ID
-  
+
   // Log the raw academyId to verify it's being received correctly
-  console.log("Raw academyId from request params:", id);
-  
+  console.log('Raw academyId from request params:', id);
+
   // Ensure that the ID is properly parsed
   const academyId = parseInt(id, 10);
-  console.log("Parsed academyId:", academyId);
+  console.log('Parsed academyId:', academyId);
 
   if (isNaN(academyId)) {
     return res.status(400).json({ error: 'Invalid academyId' });
@@ -614,7 +649,9 @@ exports.getVideoUrls = async (req, res, next) => {
     });
 
     if (!questions || questions.length === 0) {
-      return res.status(404).json({ message: 'No video URLs found for this academy' });
+      return res
+        .status(404)
+        .json({ message: 'No video URLs found for this academy' });
     }
 
     res.json({ videoUrls: questions });
@@ -651,7 +688,7 @@ exports.deleteAcademy = async (req, res, next) => {
     await prisma.choice.deleteMany({
       where: {
         academyQuestionId: {
-          in: academy.academyQuestions.map(q => q.id),
+          in: academy.academyQuestions.map((q) => q.id),
         },
       },
     });
@@ -677,8 +714,12 @@ exports.deleteAcademy = async (req, res, next) => {
     await prisma.academy.update({
       where: { id: parseInt(id, 10) },
       data: {
-        categories: { disconnect: academy.categories.map(cat => ({ id: cat.id })) },
-        chains: { disconnect: academy.chains.map(chain => ({ id: chain.id })) },
+        categories: {
+          disconnect: academy.categories.map((cat) => ({ id: cat.id })),
+        },
+        chains: {
+          disconnect: academy.chains.map((chain) => ({ id: chain.id })),
+        },
       },
     });
 
@@ -697,7 +738,9 @@ exports.allocateXp = async (req, res, next) => {
   const { quizXp, questXp } = req.body;
 
   try {
-    const academy = await prisma.academy.findUnique({ where: { id: parseInt(id, 10) } });
+    const academy = await prisma.academy.findUnique({
+      where: { id: parseInt(id, 10) },
+    });
 
     if (!academy) {
       return next(createError(404, 'Academy not found'));
@@ -756,7 +799,9 @@ exports.getAcademyQuestions = async (req, res, next) => {
     });
 
     if (!questions || questions.length === 0) {
-      return res.status(404).json({ message: 'No questions found for this academy' });
+      return res
+        .status(404)
+        .json({ message: 'No questions found for this academy' });
     }
 
     res.json(questions);
@@ -768,10 +813,10 @@ exports.getAcademyQuestions = async (req, res, next) => {
 
 exports.submitQuizAnswers = async (req, res, next) => {
   const { academyId } = req.body;
-  
+
   // Log the req.user object and req.body for debugging
-  console.log("req.user:", req.user);
-  console.log("req.body:", req.body);
+  console.log('req.user:', req.user);
+  console.log('req.body:', req.body);
 
   // Fallback to using userId from the request body if req.user is not defined
   const userId = req.user ? req.user.id : req.body.userId;
@@ -794,7 +839,10 @@ exports.submitQuizAnswers = async (req, res, next) => {
     });
 
     // Sum up the points awarded
-    const totalPoints = userResponses.reduce((sum, response) => sum + response.pointsAwarded, 0);
+    const totalPoints = userResponses.reduce(
+      (sum, response) => sum + response.pointsAwarded,
+      0
+    );
 
     // Save the total points to the Points table
     const existingPoints = await prisma.point.findFirst({
@@ -823,17 +871,21 @@ exports.submitQuizAnswers = async (req, res, next) => {
 
     res.json({ message: `Congratulations! You've earned ${totalPoints} XP.` });
   } catch (error) {
-    console.error("Failed to submit quiz answers:", error);
+    console.error('Failed to submit quiz answers:', error);
     next(createError(500, 'Failed to submit quiz answers.'));
   }
 };
 
 exports.checkAnswer = async (req, res, next) => {
   const { academyId, questionId, choiceId } = req.body;
-  const telegramUserId = req.user ? req.user.telegramUserId : req.body.telegramUserId;
+  const telegramUserId = req.user
+    ? req.user.telegramUserId
+    : req.body.telegramUserId;
 
   if (!telegramUserId || !academyId || !questionId || !choiceId) {
-    return res.status(400).json({ message: 'Bad Request: Missing required parameters.' });
+    return res
+      .status(400)
+      .json({ message: 'Bad Request: Missing required parameters.' });
   }
 
   try {
@@ -866,7 +918,9 @@ exports.checkAnswer = async (req, res, next) => {
     });
 
     if (existingResponse) {
-      return res.status(400).json({ message: 'You have already answered this question.' });
+      return res
+        .status(400)
+        .json({ message: 'You have already answered this question.' });
     }
 
     // Find the correct choice for the question
@@ -878,7 +932,9 @@ exports.checkAnswer = async (req, res, next) => {
     });
 
     if (!correctChoice) {
-      return res.status(404).json({ message: 'Correct choice not found for the question.' });
+      return res
+        .status(404)
+        .json({ message: 'Correct choice not found for the question.' });
     }
 
     // Check if the user's choice is correct
