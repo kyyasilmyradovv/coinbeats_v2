@@ -27,14 +27,14 @@ export default function ProductPage() {
     const location = useLocation()
     const navigate = useNavigate()
     const { academy } = location.state || {}
-    const [activeFilter, setActiveFilter] = useState(null)
-    const [initialAnswers, setInitialAnswers] = useState([])
-    const [quests, setQuests] = useState([])
+    const [activeFilter, setActiveFilter] = useState<string | null>(null)
+    const [initialAnswers, setInitialAnswers] = useState<any[]>([])
+    const [quests, setQuests] = useState<any[]>([])
     const [currentSlideIndex, setCurrentSlideIndex] = useState(0)
     const [earnedPoints, setEarnedPoints] = useState(0)
     const [currentPoints, setCurrentPoints] = useState(0)
     const [showXPAnimation, setShowXPAnimation] = useState(false)
-    const swiperRef = useRef(null)
+    const swiperRef = useRef<any>(null)
     const userId = useUserStore((state) => state.userId)
     const [showArrow, setShowArrow] = useState(true)
     const [userHasResponses, setUserHasResponses] = useState(false)
@@ -42,11 +42,11 @@ export default function ProductPage() {
 
     // Timer related state variables
     const [timer, setTimer] = useState(45)
-    const timerIntervalRef = useRef(null)
+    const timerIntervalRef = useRef<NodeJS.Timeout | null>(null)
     const [quizStarted, setQuizStarted] = useState(false)
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
     const [errorMessage, setErrorMessage] = useState('')
-    const [allowNext, setAllowNext] = useState(false) // New state to control navigation
+    const [maxAllowedSlide, setMaxAllowedSlide] = useState(1) // Initialize to first quiz slide
 
     // Define handlePrevClick and handleNextClick before using them
     const handlePrevClick = () => {
@@ -64,7 +64,9 @@ export default function ProductPage() {
             const currentQuestion = initialAnswers[questionIndex]
             if (currentQuestion.isCorrect !== undefined) {
                 // Allow moving to the next question
-                setAllowNext(false) // Reset for the next question
+                if (currentSlideIndex + 2 <= initialAnswers.length * 2 - 1) {
+                    setMaxAllowedSlide((prev) => Math.min(prev + 2, initialAnswers.length * 2 - 1))
+                }
                 if (swiperRef.current && swiperRef.current.swiper) {
                     swiperRef.current.swiper.slideNext()
                     setErrorMessage('') // Reset error message
@@ -99,6 +101,7 @@ export default function ProductPage() {
 
     useEffect(() => {
         setCurrentSlideIndex(0)
+        setMaxAllowedSlide(1) // Reset maxAllowedSlide when filter changes
     }, [activeFilter])
 
     useEffect(() => {
@@ -129,6 +132,9 @@ export default function ProductPage() {
             if (userResponses && userResponses.length > 0) {
                 setUserHasResponses(true)
                 setShowIntro(false) // Skip intro if there are existing responses
+                // Update maxAllowedSlide based on answered questions
+                const answeredSlides = userResponses.length * 2 - 1
+                setMaxAllowedSlide(answeredSlides)
             } else {
                 setUserHasResponses(false)
                 setShowIntro(true) // Show intro if no responses
@@ -146,14 +152,14 @@ export default function ProductPage() {
             const response = await axiosInstance.get(`/api/academies/${academy.id}/questions`)
             const questions = response.data || []
 
-            const mappedQuestions = questions.map((question) => ({
+            const mappedQuestions = questions.map((question: any) => ({
                 academyQuestionId: question.id,
                 question: question.question,
                 answer: question.answer,
                 quizQuestion: question.quizQuestion,
                 video: question.video,
                 xp: question.xp,
-                choices: question.choices.filter((choice) => choice.text !== ''),
+                choices: question.choices.filter((choice: any) => choice.text !== ''),
                 selectedChoice: undefined,
                 isCorrect: undefined,
                 timerStarted: false // Track if timer started for the question
@@ -167,7 +173,7 @@ export default function ProductPage() {
         }
     }
 
-    const fetchUserResponses = async (mappedQuestions) => {
+    const fetchUserResponses = async (mappedQuestions: any[]) => {
         try {
             if (isNaN(academy.id)) {
                 throw new Error('Invalid academy ID')
@@ -178,9 +184,9 @@ export default function ProductPage() {
 
             // Apply user responses to the questions
             const questionsWithUserResponses = mappedQuestions.map((question) => {
-                const userResponse = userResponses.find((r) => r.choice.academyQuestionId === question.academyQuestionId)
+                const userResponse = userResponses.find((r: any) => r.choice.academyQuestionId === question.academyQuestionId)
                 if (userResponse) {
-                    question.selectedChoice = question.choices.findIndex((c) => c.id === userResponse.choiceId)
+                    question.selectedChoice = question.choices.findIndex((c: any) => c.id === userResponse.choiceId)
                     question.isCorrect = userResponse.isCorrect
                 }
                 return question
@@ -215,13 +221,13 @@ export default function ProductPage() {
         setActiveFilter(null)
     }
 
-    const constructImageUrl = (url) => `https://subscribes.lt/${url}`
+    const constructImageUrl = (url: string) => `https://subscribes.lt/${url}`
 
-    const handleChoiceClick = (questionIndex, choiceIndex) => {
+    const handleChoiceClick = (questionIndex: number, choiceIndex: number) => {
         setInitialAnswers(initialAnswers.map((q, qi) => (qi === questionIndex ? { ...q, selectedChoice: choiceIndex } : q)))
     }
 
-    const handleCheckAnswer = async (questionIndex) => {
+    const handleCheckAnswer = async (questionIndex: number) => {
         const question = initialAnswers[questionIndex]
         const selectedChoiceId = question.choices[question.selectedChoice]?.id
 
@@ -283,7 +289,7 @@ export default function ProductPage() {
                         ? {
                               ...q,
                               isCorrect: correct,
-                              choices: q.choices.map((choice, ci) => ({
+                              choices: q.choices.map((choice: any, ci: number) => ({
                                   ...choice,
                                   isCorrect: choice.isCorrect || (ci === q.selectedChoice && correct),
                                   isWrong: ci === q.selectedChoice && !correct
@@ -294,7 +300,8 @@ export default function ProductPage() {
             )
 
             // Allow navigation to the next slide
-            setAllowNext(true)
+            setMaxAllowedSlide((prev) => Math.min(prev + 2, initialAnswers.length * 2 - 1))
+            setErrorMessage('')
         } catch (error) {
             console.error('Error checking answer:', error.response ? error.response.data : error.message)
         }
@@ -336,7 +343,7 @@ export default function ProductPage() {
         }, 3000)
     }
 
-    const handleSlideChange = (swiper) => {
+    const handleSlideChange = (swiper: any) => {
         const newIndex = swiper.activeIndex
         setCurrentSlideIndex(newIndex)
         setCurrentQuestionIndex(Math.floor(newIndex / 2))
@@ -354,6 +361,16 @@ export default function ProductPage() {
                 clearInterval(timerIntervalRef.current)
             }
             startTimer()
+        }
+
+        // Check if the user is trying to navigate beyond the allowed slide
+        if (newIndex > maxAllowedSlide) {
+            setErrorMessage('Please complete the current question before proceeding.')
+            if (swiperRef.current && swiperRef.current.swiper) {
+                swiperRef.current.swiper.slideTo(maxAllowedSlide, 300)
+            }
+        } else {
+            setErrorMessage('')
         }
     }
 
@@ -471,7 +488,8 @@ export default function ProductPage() {
                     pagination={{ clickable: true }}
                     onSlideChange={handleSlideChange}
                     ref={swiperRef}
-                    allowTouchMove={false} // Disable free swiping
+                    allowTouchMove={true} // Enable swiping
+                    initialSlide={0}
                 >
                     {initialAnswers.length > 0 ? (
                         initialAnswers.flatMap((_, index) => [renderInitialQuestionSlide(index), renderQuizSlide(index)])
@@ -543,7 +561,9 @@ export default function ProductPage() {
         timerIntervalRef.current = setInterval(() => {
             setTimer((prevTimer) => {
                 if (prevTimer <= 1) {
-                    clearInterval(timerIntervalRef.current)
+                    if (timerIntervalRef.current) {
+                        clearInterval(timerIntervalRef.current)
+                    }
                     return 0
                 }
                 return prevTimer - 1
@@ -551,7 +571,7 @@ export default function ProductPage() {
         }, 1000)
     }
 
-    const renderInitialQuestionSlide = (questionIndex) => {
+    const renderInitialQuestionSlide = (questionIndex: number) => {
         const question = initialAnswers[questionIndex]
         if (!question) return null
 
@@ -617,7 +637,7 @@ export default function ProductPage() {
         )
     }
 
-    const isValidUrl = (string) => {
+    const isValidUrl = (string: string) => {
         try {
             new URL(string)
             return true
@@ -626,7 +646,7 @@ export default function ProductPage() {
         }
     }
 
-    const convertToClickableLinks = (text) => {
+    const convertToClickableLinks = (text: string) => {
         if (typeof text !== 'string') return text
 
         const urlPattern = /(https?:\/\/[^\s]+|www\.[^\s]+)/g
@@ -649,7 +669,7 @@ export default function ProductPage() {
         )
     }
 
-    const renderQuizSlide = (questionIndex) => {
+    const renderQuizSlide = (questionIndex: number) => {
         const question = initialAnswers[questionIndex]
         if (!question) return null
 
@@ -659,7 +679,7 @@ export default function ProductPage() {
                     <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">{question.quizQuestion}</p>
                 </Card>
                 <Card className="!my-4 !mx-1 p-2 !rounded-2xl !bg-gray-50 dark:!bg-gray-800 !border !border-gray-200 dark:!border-gray-700 !shadow-sm">
-                    {question.choices.map((choice, choiceIndex) => (
+                    {question.choices.map((choice: any, choiceIndex: number) => (
                         <div
                             key={choiceIndex}
                             className={`cursor-pointer p-4 rounded-lg flex justify-between items-center dark:bg-gray-700 dark:text-gray-200 ${
@@ -708,7 +728,13 @@ export default function ProductPage() {
     const renderWatchTab = () => (
         <>
             {renderProgressbarWithArrows()}
-            <Swiper pagination={{ clickable: true }} ref={swiperRef}>
+            <Swiper
+                pagination={{ clickable: true }}
+                onSlideChange={handleSlideChange}
+                ref={swiperRef}
+                allowTouchMove={true} // Enable swiping
+                initialSlide={0}
+            >
                 {initialAnswers.length > 0 ? (
                     initialAnswers.map((question, index) => {
                         const videoUrl = question.video
@@ -921,14 +947,14 @@ export default function ProductPage() {
                                         <img src={categories} className="h-10 w-10 mr-4" alt="academy categories" />
                                         <span className="text-gray-600 dark:text-gray-400 mr-2">Categories:</span>
                                         <span className="text-black dark:text-gray-200 font-semibold truncate">
-                                            {academy.categories.map((c) => c.name).join(', ')}
+                                            {academy.categories.map((c: any) => c.name).join(', ')}
                                         </span>
                                     </div>
                                     <div className="flex items-center mb-2 text-lg text-gray-900 dark:text-gray-200">
                                         <img src={chains} className="h-10 w-10 mr-4" alt="academy chains" />
                                         <span className="text-gray-600 dark:text-gray-400 mr-2">Chains:</span>
                                         <span className="text-black dark:text-gray-200 font-semibold truncate">
-                                            {academy.chains.map((c) => c.name).join(', ')}
+                                            {academy.chains.map((c: any) => c.name).join(', ')}
                                         </span>
                                     </div>
                                 </Card>
