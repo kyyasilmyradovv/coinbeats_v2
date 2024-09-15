@@ -45,6 +45,8 @@ export default function ProductPage() {
     const timerIntervalRef = useRef(null)
     const [quizStarted, setQuizStarted] = useState(false)
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
+    const [errorMessage, setErrorMessage] = useState('')
+    const [allowNext, setAllowNext] = useState(false) // New state to control navigation
 
     useEffect(() => {
         // Hide the arrow after 3 seconds
@@ -81,7 +83,7 @@ export default function ProductPage() {
             const points = pointsResponse.data.value || 0
             setEarnedPoints(points)
         } catch (error) {
-            console.error('Error fetching earned points:', error)
+            console.error('Error fetching earned points:', error.response ? error.response.data : error.message)
             setEarnedPoints(0)
         }
 
@@ -99,7 +101,7 @@ export default function ProductPage() {
                 setShowIntro(true) // Show intro if no responses
             }
         } catch (error) {
-            console.error('Error fetching user responses:', error)
+            console.error('Error fetching user responses:', error.response ? error.response.data : error.message)
             setUserHasResponses(false)
             setShowIntro(true)
             setInitialAnswers(questions)
@@ -127,7 +129,7 @@ export default function ProductPage() {
             console.log('Fetched and mapped questions:', mappedQuestions)
             return mappedQuestions
         } catch (error) {
-            console.error('Error fetching questions:', error)
+            console.error('Error fetching questions:', error.response ? error.response.data : error.message)
             return []
         }
     }
@@ -155,7 +157,7 @@ export default function ProductPage() {
             setInitialAnswers(questionsWithUserResponses)
             return userResponses
         } catch (error) {
-            console.error('Error fetching user responses:', error)
+            console.error('Error fetching user responses:', error.response ? error.response.data : error.message)
             // Set initialAnswers to mappedQuestions without user responses
             setInitialAnswers(mappedQuestions)
             return null
@@ -167,7 +169,7 @@ export default function ProductPage() {
             const response = await axiosInstance.get(`/api/academies/${academy.id}/quests`)
             setQuests(response.data || [])
         } catch (error) {
-            console.error('Error fetching quests:', error)
+            console.error('Error fetching quests:', error.response ? error.response.data : error.message)
             setQuests([])
         }
     }
@@ -187,15 +189,17 @@ export default function ProductPage() {
     }
 
     const handleCheckAnswer = async (questionIndex) => {
+        const question = initialAnswers[questionIndex]
+        const selectedChoiceId = question.choices[question.selectedChoice]?.id
+
+        if (selectedChoiceId === undefined) {
+            setErrorMessage('You must make a selection!')
+            return
+        }
+
+        setErrorMessage('') // Clear error message
+
         try {
-            const question = initialAnswers[questionIndex]
-            const selectedChoiceId = question.choices[question.selectedChoice]?.id
-
-            if (!selectedChoiceId) {
-                console.error('No choice selected.')
-                return
-            }
-
             if (timerIntervalRef.current) {
                 clearInterval(timerIntervalRef.current)
             }
@@ -219,7 +223,7 @@ export default function ProductPage() {
                     pointsAwarded = totalXP
                 } else if (timer > 0) {
                     const remainingPoints = totalXP - basePoints
-                    const elapsedSeconds = 30 - timer // Corrected calculation
+                    const elapsedSeconds = 30 - timer
                     const pointsDeducted = Math.floor((remainingPoints / 30) * elapsedSeconds)
                     pointsAwarded = totalXP - pointsDeducted
                 } else {
@@ -229,11 +233,8 @@ export default function ProductPage() {
                 setEarnedPoints((prev) => prev + pointsAwarded)
                 setCurrentPoints(pointsAwarded)
                 triggerXPAnimation()
-            } else {
-                pointsAwarded = 0 // Ensure pointsAwarded is zero when incorrect
             }
 
-            // Save the user response with pointsAwarded regardless of correctness
             await axiosInstance.post(`/api/academies/${academy.id}/save-response`, {
                 academyId: academy.id,
                 questionId: question.academyQuestionId,
@@ -259,10 +260,10 @@ export default function ProductPage() {
                 )
             )
 
-            swiperRef.current.swiper.allowSlideNext = true
-            swiperRef.current.swiper.update()
+            // Allow navigation to the next slide
+            setAllowNext(true)
         } catch (error) {
-            console.error('Error checking answer:', error)
+            console.error('Error checking answer:', error.response ? error.response.data : error.message)
         }
     }
 
@@ -271,7 +272,12 @@ export default function ProductPage() {
         if (currentSlideIndex >= totalSlides - 1) {
             setActiveFilter('completion')
         } else {
-            swiperRef.current.swiper.slideNext()
+            if (swiperRef.current && swiperRef.current.swiper) {
+                swiperRef.current.swiper.slideNext()
+                setErrorMessage('') // Reset error message when moving to next question
+            } else {
+                console.error('Swiper reference is not available.')
+            }
         }
     }
 
@@ -285,7 +291,7 @@ export default function ProductPage() {
             fetchEarnedPoints()
             setActiveFilter('completion')
         } catch (error) {
-            console.error('Error completing academy:', error)
+            console.error('Error completing academy:', error.response ? error.response.data : error.message)
         }
     }
 
@@ -297,22 +303,71 @@ export default function ProductPage() {
         }, 3000)
     }
 
-    const renderProgressbarWithArrows = () => {
-        const totalSlides = initialAnswers.length * 2 // intro slide is separate
-        const completedSlides = currentSlideIndex
+    const handleSlideChange = (swiper) => {
+        const newIndex = swiper.activeIndex
+        setCurrentSlideIndex(newIndex)
+        setCurrentQuestionIndex(Math.floor(newIndex / 2))
 
-        const handlePrevClick = () => {
+        const questionIndex = Math.floor(newIndex / 2)
+        const question = initialAnswers[questionIndex]
+
+        if (question && !question.timerStarted) {
+            startTimer()
+            setInitialAnswers((prevAnswers) => prevAnswers.map((q, qi) => (qi === questionIndex ? { ...q, timerStarted: true } : q)))
+        } else if (question && question.isCorrect === undefined) {
+            // If the question is not answered, reset the timer
+            setTimer(45)
+            if (timerIntervalRef.current) {
+                clearInterval(timerIntervalRef.current)
+            }
+            startTimer()
+        }
+    }
+
+    const handlePrevClick = () => {
+        if (currentSlideIndex > 0 && swiperRef.current && swiperRef.current.swiper) {
             swiperRef.current.swiper.slidePrev()
+            setErrorMessage('') // Reset error message when moving back
         }
+    }
 
-        const handleNextClick = () => {
-            handleNextQuestion()
+    const handleNextClick = () => {
+        const isQuizSlide = currentSlideIndex % 2 === 1 // Odd indices are quiz slides
+        const questionIndex = Math.floor(currentSlideIndex / 2)
+
+        if (isQuizSlide) {
+            const currentQuestion = initialAnswers[questionIndex]
+            if (currentQuestion.isCorrect !== undefined) {
+                // Allow moving to the next question
+                setAllowNext(false) // Reset for the next question
+                if (swiperRef.current && swiperRef.current.swiper) {
+                    swiperRef.current.swiper.slideNext()
+                    setErrorMessage('') // Reset error message
+                }
+            } else {
+                setErrorMessage('You must check your answer before proceeding.')
+            }
+        } else {
+            // Allow moving to the quiz slide of the current question
+            if (swiperRef.current && swiperRef.current.swiper) {
+                swiperRef.current.swiper.slideNext()
+                setErrorMessage('') // Reset error message
+            }
         }
+    }
+
+    const renderProgressbarWithArrows = () => {
+        const totalSlides = initialAnswers.length * 2 // Each question has 2 slides
+        const completedSlides = currentSlideIndex
 
         return (
             <div className="flex items-center justify-between mb-2 !mx-1 !rounded-2xl !bg-gray-50 dark:!bg-gray-800 !border !border-gray-200 dark:!border-gray-700 !shadow-sm p-2">
                 <div className="p-2 rounded-xl bg-gray-100 dark:bg-gray-700">
-                    <Icon icon="mdi:arrow-left" className="text-gray-600 dark:text-gray-400 w-6 h-6 cursor-pointer" onClick={handlePrevClick} />
+                    <Icon
+                        icon="mdi:arrow-left"
+                        className={`text-gray-600 dark:text-gray-400 w-6 h-6 cursor-pointer ${currentSlideIndex === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        onClick={handlePrevClick} // Now properly defined
+                    />
                 </div>
                 <div className="relative flex-grow h-2 mx-2 bg-gray-200 rounded-full overflow-hidden">
                     <div
@@ -324,7 +379,13 @@ export default function ProductPage() {
                     />
                 </div>
                 <div className="p-2 rounded-xl bg-gray-100 dark:bg-gray-700">
-                    <Icon icon="mdi:arrow-right" className="text-gray-600 dark:text-gray-400 w-6 h-6 cursor-pointer" onClick={handleNextClick} />
+                    <Icon
+                        icon="mdi:arrow-right"
+                        className={`text-gray-600 dark:text-gray-400 w-6 h-6 cursor-pointer ${
+                            currentSlideIndex >= totalSlides - 1 ? 'opacity-50 cursor-not-allowed' : ''
+                        }`}
+                        onClick={handleNextClick} // Now properly defined
+                    />
                 </div>
             </div>
         )
@@ -407,31 +468,9 @@ export default function ProductPage() {
                 {renderProgressbarWithArrows()}
                 <Swiper
                     pagination={{ clickable: true }}
-                    onSlideChange={(swiper) => {
-                        const newIndex = swiper.activeIndex
-                        setCurrentSlideIndex(newIndex)
-
-                        const questionIndex = Math.floor(newIndex / 2)
-                        setCurrentQuestionIndex(questionIndex)
-
-                        const question = initialAnswers[questionIndex]
-
-                        if (question && question.isCorrect === undefined) {
-                            // Start the timer if not started
-                            if (!question.timerStarted) {
-                                startTimer()
-                                // Update the question to mark timerStarted
-                                setInitialAnswers((prevAnswers) => prevAnswers.map((q, qi) => (qi === questionIndex ? { ...q, timerStarted: true } : q)))
-                            }
-                        } else {
-                            // Question is already answered; stop the timer
-                            if (timerIntervalRef.current) {
-                                clearInterval(timerIntervalRef.current)
-                            }
-                            setTimer(0)
-                        }
-                    }}
+                    onSlideChange={handleSlideChange}
                     ref={swiperRef}
+                    allowTouchMove={false} // Disable free swiping
                 >
                     {initialAnswers.length > 0 ? (
                         initialAnswers.flatMap((_, index) => [renderInitialQuestionSlide(index), renderQuizSlide(index)])
@@ -443,6 +482,7 @@ export default function ProductPage() {
                         </SwiperSlide>
                     )}
                 </Swiper>
+                {errorMessage && <p className="text-red-600 text-center mt-2">{errorMessage}</p>}
             </>
         )
     }
@@ -480,12 +520,17 @@ export default function ProductPage() {
     const handleStartQuiz = () => {
         setShowIntro(false)
         setQuizStarted(true)
-        swiperRef.current.swiper.slideTo(0, 0) // Slide to first question without animation
 
-        // Start the timer for the first question
+        // Start the timer for the first question before sliding
         if (initialAnswers.length > 0 && !initialAnswers[0].timerStarted) {
             startTimer()
             setInitialAnswers((prevAnswers) => prevAnswers.map((q, qi) => (qi === 0 ? { ...q, timerStarted: true } : q)))
+        }
+
+        if (swiperRef.current && swiperRef.current.swiper) {
+            swiperRef.current.swiper.slideTo(0, 0) // Slide to the first question without animation
+        } else {
+            console.error('Swiper reference is not available.')
         }
     }
 
@@ -619,12 +664,13 @@ export default function ProductPage() {
                             className={`cursor-pointer p-4 rounded-lg flex justify-between items-center dark:bg-gray-700 dark:text-gray-200 ${
                                 question.isCorrect === undefined && question.selectedChoice === choiceIndex ? 'bg-purple-200 border border-purple-500' : ''
                             } ${
-                                question.isCorrect !== undefined &&
-                                (choice.isCorrect
-                                    ? 'bg-green-200 border border-green-500'
-                                    : choiceIndex === question.selectedChoice
-                                      ? 'bg-red-200 border border-red-500'
-                                      : '')
+                                question.isCorrect !== undefined
+                                    ? choice.isCorrect
+                                        ? 'bg-green-200 border border-green-500'
+                                        : choiceIndex === question.selectedChoice
+                                          ? 'bg-red-200 border border-red-500'
+                                          : ''
+                                    : ''
                             } mb-2`}
                             onClick={() => handleChoiceClick(questionIndex, choiceIndex)}
                             style={{ pointerEvents: question.isCorrect !== undefined ? 'none' : 'auto' }}
@@ -634,23 +680,23 @@ export default function ProductPage() {
                         </div>
                     ))}
                 </Card>
+                {errorMessage && <p className="text-red-600 text-center mb-4">{errorMessage}</p>}
                 <Button
                     large
                     rounded
                     outline
-                    onClick={
-                        question.isCorrect !== undefined
-                            ? questionIndex === initialAnswers.length - 1
-                                ? handleCompleteAcademy
-                                : handleNextQuestion
-                            : () => handleCheckAnswer(questionIndex)
-                    }
+                    onClick={() => {
+                        if (question.isCorrect !== undefined) {
+                            handleNextQuestion()
+                        } else {
+                            handleCheckAnswer(questionIndex)
+                        }
+                    }}
                     className="mt-4 mb-12"
                     style={{
                         background: 'linear-gradient(to left, #ff0077, #7700ff)',
                         color: '#fff'
                     }}
-                    disabled={question.selectedChoice === undefined}
                 >
                     {question.isCorrect !== undefined ? (questionIndex === initialAnswers.length - 1 ? 'Complete academy' : 'Next question') : 'Check Answer'}
                 </Button>
@@ -668,23 +714,31 @@ export default function ProductPage() {
                         let embedUrl = ''
 
                         if (videoUrl) {
-                            const urlParams = new URLSearchParams(new URL(videoUrl).search)
-                            const videoId = urlParams.get('v')
-                            embedUrl = `https://www.youtube.com/embed/${videoId}`
+                            try {
+                                const urlParams = new URLSearchParams(new URL(videoUrl).search)
+                                const videoId = urlParams.get('v')
+                                embedUrl = `https://www.youtube.com/embed/${videoId}`
+                            } catch (error) {
+                                console.error('Invalid video URL:', videoUrl)
+                            }
                         }
 
                         return (
                             <React.Fragment key={`watch-tab-${index}`}>
                                 <SwiperSlide key={`video-slide-${index}`}>
                                     <Card className="!my-2 !mx-1 p-2 !rounded-2xl !bg-gray-50 dark:!bg-gray-800 !border !border-gray-200 dark:!border-gray-700 !shadow-sm">
-                                        <iframe
-                                            width="100%"
-                                            height="250"
-                                            src={embedUrl}
-                                            title={`Video ${index + 1}`}
-                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                            allowFullScreen
-                                        />
+                                        {embedUrl ? (
+                                            <iframe
+                                                width="100%"
+                                                height="250"
+                                                src={embedUrl}
+                                                title={`Video ${index + 1}`}
+                                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                allowFullScreen
+                                            />
+                                        ) : (
+                                            <p className="text-center">Invalid video URL</p>
+                                        )}
                                     </Card>
                                 </SwiperSlide>
                                 {renderQuizSlide(index)}
