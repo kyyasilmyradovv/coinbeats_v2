@@ -19,7 +19,7 @@ import chains from '../images/chains.png'
 import name from '../images/name.png'
 import gecko from '../images/coingecko.svg'
 import coinStack from '../images/coin-stack.png'
-import useUserStore from '../store/useUserStore' // Import the user store
+import useUserStore from '../store/useUserStore'
 import AcademyCompletionSlide from '../components/AcademyCompletionSlide'
 
 export default function ProductPage() {
@@ -37,23 +37,27 @@ export default function ProductPage() {
     const swiperRef = useRef(null)
     const userId = useUserStore((state) => state.userId)
     const [showArrow, setShowArrow] = useState(true)
+    const [userHasResponses, setUserHasResponses] = useState(false)
+    const [showIntro, setShowIntro] = useState(false)
+
+    // Timer related state variables
+    const [timer, setTimer] = useState(45)
+    const timerIntervalRef = useRef(null)
+    const [quizStarted, setQuizStarted] = useState(false)
+    const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
 
     useEffect(() => {
         // Hide the arrow after 3 seconds
-        const timer = setTimeout(() => {
+        const arrowTimer = setTimeout(() => {
             setShowArrow(false)
         }, 3000)
 
-        return () => clearTimeout(timer) // Cleanup the timeout if component unmounts
+        return () => clearTimeout(arrowTimer)
     }, [])
 
     useEffect(() => {
         if (academy) {
-            fetchEarnedPoints().then(() => {
-                fetchQuestions().then((questions) => {
-                    fetchUserResponses(questions) // Fetch responses after fetching questions
-                })
-            })
+            fetchEarnedPoints()
             fetchQuests()
         }
     }, [academy])
@@ -62,35 +66,71 @@ export default function ProductPage() {
         setCurrentSlideIndex(0)
     }, [activeFilter])
 
+    useEffect(() => {
+        return () => {
+            if (timerIntervalRef.current) {
+                clearInterval(timerIntervalRef.current)
+            }
+        }
+    }, [])
+
     const fetchEarnedPoints = async () => {
         try {
-            const response = await axiosInstance.get(`/api/points/${userId}/${academy.id}`)
-            const points = response.data.value || 0 // Ensure points is always a number
+            // Fetch points
+            const pointsResponse = await axiosInstance.get(`/api/points/${userId}/${academy.id}`)
+            const points = pointsResponse.data.value || 0
             setEarnedPoints(points)
-
-            // Fetch questions regardless of points
-            const questions = await fetchQuestions()
-
-            if (points > 0) {
-                // If points exist, fetch user responses and apply them
-                await fetchUserResponses(questions)
-            } else {
-                // If no points, display questions without pre-filled responses
-                setInitialAnswers(questions)
-            }
         } catch (error) {
             console.error('Error fetching earned points:', error)
-            // Fallback to fetching and displaying questions
-            const questions = await fetchQuestions()
+            setEarnedPoints(0)
+        }
+
+        // Fetch questions
+        const questions = await fetchQuestions()
+
+        try {
+            // Fetch user responses
+            const userResponses = await fetchUserResponses(questions)
+            if (userResponses && userResponses.length > 0) {
+                setUserHasResponses(true)
+                setShowIntro(false) // Skip intro if there are existing responses
+            } else {
+                setUserHasResponses(false)
+                setShowIntro(true) // Show intro if no responses
+            }
+        } catch (error) {
+            console.error('Error fetching user responses:', error)
+            setUserHasResponses(false)
+            setShowIntro(true)
             setInitialAnswers(questions)
         }
     }
 
-    const handleNavigateToDetail = () => {
-        setActiveFilter(null)
-    }
+    const fetchQuestions = async () => {
+        try {
+            const response = await axiosInstance.get(`/api/academies/${academy.id}/questions`)
+            const questions = response.data || []
 
-    const constructImageUrl = (url) => `https://subscribes.lt/${url}`
+            const mappedQuestions = questions.map((question) => ({
+                academyQuestionId: question.id,
+                question: question.question,
+                answer: question.answer,
+                quizQuestion: question.quizQuestion,
+                video: question.video,
+                xp: question.xp,
+                choices: question.choices.filter((choice) => choice.text !== ''),
+                selectedChoice: undefined,
+                isCorrect: undefined,
+                timerStarted: false // Track if timer started for the question
+            }))
+
+            console.log('Fetched and mapped questions:', mappedQuestions)
+            return mappedQuestions
+        } catch (error) {
+            console.error('Error fetching questions:', error)
+            return []
+        }
+    }
 
     const fetchUserResponses = async (mappedQuestions) => {
         try {
@@ -112,47 +152,35 @@ export default function ProductPage() {
             })
 
             console.log('Questions with user responses applied:', questionsWithUserResponses)
-            setInitialAnswers(questionsWithUserResponses) // Set state with updated questions
+            setInitialAnswers(questionsWithUserResponses)
+            return userResponses
         } catch (error) {
             console.error('Error fetching user responses:', error)
-            setInitialAnswers(mappedQuestions) // Set state with questions even if user responses are missing
-        }
-    }
-
-    const fetchQuestions = async () => {
-        try {
-            const response = await axiosInstance.get(`/api/academies/${academy.id}/questions`)
-            const questions = response.data || [] // Ensure we always return an array
-
-            // Map the questions without user responses
-            const mappedQuestions = questions.map((question) => ({
-                academyQuestionId: question.id,
-                question: question.question,
-                answer: question.answer,
-                quizQuestion: question.quizQuestion,
-                video: question.video,
-                choices: question.choices.filter((choice) => choice.text !== ''), // Filter out empty choices
-                selectedChoice: undefined,
-                isCorrect: undefined
-            }))
-
-            console.log('Fetched and mapped questions:', mappedQuestions)
-            return mappedQuestions
-        } catch (error) {
-            console.error('Error fetching questions:', error)
-            return [] // Return an empty array if there's an error
+            // Set initialAnswers to mappedQuestions without user responses
+            setInitialAnswers(mappedQuestions)
+            return null
         }
     }
 
     const fetchQuests = async () => {
         try {
             const response = await axiosInstance.get(`/api/academies/${academy.id}/quests`)
-            setQuests(response.data || []) // Ensure quests is always an array
+            setQuests(response.data || [])
         } catch (error) {
             console.error('Error fetching quests:', error)
-            setQuests([]) // Set quests to an empty array on error
+            setQuests([])
         }
     }
+
+    const handleNavigateToDetail = () => {
+        setActiveFilter(null)
+    }
+
+    const handleBackToProduct = () => {
+        setActiveFilter(null)
+    }
+
+    const constructImageUrl = (url) => `https://subscribes.lt/${url}`
 
     const handleChoiceClick = (questionIndex, choiceIndex) => {
         setInitialAnswers(initialAnswers.map((q, qi) => (qi === questionIndex ? { ...q, selectedChoice: choiceIndex } : q)))
@@ -163,13 +191,15 @@ export default function ProductPage() {
             const question = initialAnswers[questionIndex]
             const selectedChoiceId = question.choices[question.selectedChoice]?.id
 
-            // Check if the user has selected a choice
             if (!selectedChoiceId) {
                 console.error('No choice selected.')
                 return
             }
 
-            // Post the selected choice to check if it is correct
+            if (timerIntervalRef.current) {
+                clearInterval(timerIntervalRef.current)
+            }
+
             const response = await axiosInstance.post(`/api/academies/${academy.id}/check-answer`, {
                 academyId: academy.id,
                 questionId: question.academyQuestionId,
@@ -177,9 +207,42 @@ export default function ProductPage() {
                 telegramUserId: initData.user.id
             })
 
-            const { correct, pointsAwarded } = response.data
+            const { correct, maxPoints } = response.data
 
-            // Update the state to mark the correct/incorrect answers and disable further interaction
+            let pointsAwarded = 0
+
+            if (correct) {
+                const totalXP = maxPoints
+                const basePoints = Math.floor(totalXP * 0.25)
+
+                if (timer > 30) {
+                    pointsAwarded = totalXP
+                } else if (timer > 0) {
+                    const remainingPoints = totalXP - basePoints
+                    const elapsedSeconds = 30 - timer // Corrected calculation
+                    const pointsDeducted = Math.floor((remainingPoints / 30) * elapsedSeconds)
+                    pointsAwarded = totalXP - pointsDeducted
+                } else {
+                    pointsAwarded = basePoints
+                }
+
+                setEarnedPoints((prev) => prev + pointsAwarded)
+                setCurrentPoints(pointsAwarded)
+                triggerXPAnimation()
+            } else {
+                pointsAwarded = 0 // Ensure pointsAwarded is zero when incorrect
+            }
+
+            // Save the user response with pointsAwarded regardless of correctness
+            await axiosInstance.post(`/api/academies/${academy.id}/save-response`, {
+                academyId: academy.id,
+                questionId: question.academyQuestionId,
+                choiceId: selectedChoiceId,
+                telegramUserId: initData.user.id,
+                isCorrect: correct,
+                pointsAwarded: pointsAwarded
+            })
+
             setInitialAnswers(
                 initialAnswers.map((q, qi) =>
                     qi === questionIndex
@@ -188,22 +251,14 @@ export default function ProductPage() {
                               isCorrect: correct,
                               choices: q.choices.map((choice, ci) => ({
                                   ...choice,
-                                  isCorrect: choice.isCorrect || (ci === q.selectedChoice && correct), // Mark correct choice
-                                  isWrong: ci === q.selectedChoice && !correct // Mark incorrect choice
+                                  isCorrect: choice.isCorrect || (ci === q.selectedChoice && correct),
+                                  isWrong: ci === q.selectedChoice && !correct
                               }))
                           }
                         : q
                 )
             )
 
-            // Award points and trigger XP animation
-            if (pointsAwarded > 0) {
-                setEarnedPoints(earnedPoints + pointsAwarded)
-                setCurrentPoints(pointsAwarded)
-                triggerXPAnimation()
-            }
-
-            // Allow navigation to the next slide
             swiperRef.current.swiper.allowSlideNext = true
             swiperRef.current.swiper.update()
         } catch (error) {
@@ -212,8 +267,8 @@ export default function ProductPage() {
     }
 
     const handleNextQuestion = () => {
-        if (currentSlideIndex === initialAnswers.length * 2 - 1) {
-            // If it's the last question, show the completion screen
+        const totalSlides = initialAnswers.length * 2
+        if (currentSlideIndex >= totalSlides - 1) {
             setActiveFilter('completion')
         } else {
             swiperRef.current.swiper.slideNext()
@@ -224,13 +279,10 @@ export default function ProductPage() {
         try {
             await axiosInstance.post(`/api/academies/${academy.id}/submit-quiz`, {
                 academyId: academy.id,
-                userId // Use the database user ID
+                userId
             })
 
-            // After submitting, fetch the earned points again to update the display
             fetchEarnedPoints()
-
-            // Navigate to the completion slide
             setActiveFilter('completion')
         } catch (error) {
             console.error('Error completing academy:', error)
@@ -246,15 +298,15 @@ export default function ProductPage() {
     }
 
     const renderProgressbarWithArrows = () => {
-        const totalSlides = initialAnswers.length * 2
-        const completedSlides = currentSlideIndex + 1
+        const totalSlides = initialAnswers.length * 2 // intro slide is separate
+        const completedSlides = currentSlideIndex
 
         const handlePrevClick = () => {
             swiperRef.current.swiper.slidePrev()
         }
 
         const handleNextClick = () => {
-            handleNextQuestion() // Move to next question or complete the academy
+            handleNextQuestion()
         }
 
         return (
@@ -278,6 +330,181 @@ export default function ProductPage() {
         )
     }
 
+    const renderTimerBar = () => {
+        if (showIntro) {
+            // Do not display timer on intro slide
+            return null
+        }
+
+        const currentQuestion = initialAnswers[currentQuestionIndex]
+
+        // Do not display timer if question is already answered
+        if (currentQuestion && currentQuestion.isCorrect !== undefined) {
+            return null
+        }
+
+        if (timer === 0) {
+            return (
+                <div className="text-center mb-2">
+                    <div className="text-red-600 font-bold">Time is up!</div>
+                    <div className="text-gray-500 text-sm">You now only get 25% if you answer right.</div>
+                </div>
+            )
+        }
+
+        const totalXP = currentQuestion?.xp || 0
+        let displayedPoints = totalXP
+
+        if (timer > 30) {
+            displayedPoints = totalXP
+        } else if (timer > 0) {
+            const basePoints = Math.floor(totalXP * 0.25)
+            const remainingPoints = totalXP - basePoints
+            const elapsedSeconds = 30 - timer // Corrected calculation
+            const pointsDeducted = Math.floor((remainingPoints / 30) * elapsedSeconds)
+            displayedPoints = totalXP - pointsDeducted
+        } else {
+            displayedPoints = Math.floor(totalXP * 0.25)
+        }
+
+        const timePercentage = (timer / 45) * 100
+
+        const getBarColor = () => {
+            if (timer > 30) {
+                return '#00FF00'
+            } else {
+                const progress = (30 - timer) / 30
+                const hue = 120 - progress * 120
+                return `hsl(${hue}, 100%, 50%)`
+            }
+        }
+
+        return (
+            <div className="flex items-center justify-between mb-2">
+                <div className="text-gray-900 dark:text-gray-300 text-md font-semibold flex w-8 h-8 items-center justify-center text-center">
+                    +{displayedPoints} <img src={coinStack} alt="coin stack" className="w-4 h-4 mr-1 mb-[4px]" />
+                </div>
+                <div className="relative flex-grow h-2 mx-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div
+                        className="absolute top-0 right-0 h-full rounded-full"
+                        style={{
+                            width: `${timePercentage}%`,
+                            background: getBarColor()
+                        }}
+                    />
+                </div>
+                <div className="text-gray-900 dark:text-gray-300 dark:bg-slate-800 text-md font-semibold border-2 border-gray-600 rounded-full flex w-8 h-8 items-center justify-center text-center pt-[2px]">
+                    {timer}
+                </div>
+            </div>
+        )
+    }
+
+    const renderReadTab = () => {
+        return (
+            <>
+                {quizStarted && timer >= 0 && renderTimerBar()}
+                {renderProgressbarWithArrows()}
+                <Swiper
+                    pagination={{ clickable: true }}
+                    onSlideChange={(swiper) => {
+                        const newIndex = swiper.activeIndex
+                        setCurrentSlideIndex(newIndex)
+
+                        const questionIndex = Math.floor(newIndex / 2)
+                        setCurrentQuestionIndex(questionIndex)
+
+                        const question = initialAnswers[questionIndex]
+
+                        if (question && question.isCorrect === undefined) {
+                            // Start the timer if not started
+                            if (!question.timerStarted) {
+                                startTimer()
+                                // Update the question to mark timerStarted
+                                setInitialAnswers((prevAnswers) => prevAnswers.map((q, qi) => (qi === questionIndex ? { ...q, timerStarted: true } : q)))
+                            }
+                        } else {
+                            // Question is already answered; stop the timer
+                            if (timerIntervalRef.current) {
+                                clearInterval(timerIntervalRef.current)
+                            }
+                            setTimer(0)
+                        }
+                    }}
+                    ref={swiperRef}
+                >
+                    {initialAnswers.length > 0 ? (
+                        initialAnswers.flatMap((_, index) => [renderInitialQuestionSlide(index), renderQuizSlide(index)])
+                    ) : (
+                        <SwiperSlide>
+                            <Card className="m-2 p-2">
+                                <p className="text-center">No reading materials available</p>
+                            </Card>
+                        </SwiperSlide>
+                    )}
+                </Swiper>
+            </>
+        )
+    }
+
+    const renderIntroSlide = () => (
+        <div className="p-1 mt-4">
+            <Card className="!m-0 !p-2 text-center !rounded-2xl !bg-gray-50 dark:!bg-gray-800 !border !border-gray-200 dark:!border-gray-700 !shadow-sm">
+                <p>
+                    You have <span className="text-white text-lg font-bold">15</span> ⏳ seconds to read the content and answer, after that the points are
+                    starting to gradually decrease the next 30 seconds! If the bar runs out of time, then you will be rewarded only 25% of the total possible
+                    points. <br />
+                    <br />
+                    <span className="text-lg font-semibold">Are you ready?</span>
+                </p>
+                <div className="flex justify-center mt-4 gap-4">
+                    <Button outline rounded onClick={() => handleBackToProduct()} className="!text-xs">
+                        No, go back
+                    </Button>
+                    <Button
+                        outline
+                        rounded
+                        onClick={handleStartQuiz}
+                        style={{
+                            background: 'linear-gradient(to left, #ff0077, #7700ff)',
+                            color: '#fff'
+                        }}
+                    >
+                        START
+                    </Button>
+                </div>
+            </Card>
+        </div>
+    )
+
+    const handleStartQuiz = () => {
+        setShowIntro(false)
+        setQuizStarted(true)
+        swiperRef.current.swiper.slideTo(0, 0) // Slide to first question without animation
+
+        // Start the timer for the first question
+        if (initialAnswers.length > 0 && !initialAnswers[0].timerStarted) {
+            startTimer()
+            setInitialAnswers((prevAnswers) => prevAnswers.map((q, qi) => (qi === 0 ? { ...q, timerStarted: true } : q)))
+        }
+    }
+
+    const startTimer = () => {
+        setTimer(45)
+        if (timerIntervalRef.current) {
+            clearInterval(timerIntervalRef.current)
+        }
+        timerIntervalRef.current = setInterval(() => {
+            setTimer((prevTimer) => {
+                if (prevTimer <= 1) {
+                    clearInterval(timerIntervalRef.current)
+                    return 0
+                }
+                return prevTimer - 1
+            })
+        }, 1000)
+    }
+
     const renderInitialQuestionSlide = (questionIndex) => {
         const question = initialAnswers[questionIndex]
         if (!question) return null
@@ -296,12 +523,9 @@ export default function ProductPage() {
                     <Card className="!my-2 !mx-1 !p-4 !rounded-2xl !bg-gray-50 dark:!bg-gray-800 !border !border-gray-200 dark:!border-gray-700 !shadow-sm !mb-12">
                         <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">{question.question}</h2>
                         <ul className="list-disc list-inside text-gray-900 dark:text-gray-100">
-                            {/* Total Supply */}
                             <li>
                                 <strong>Total Supply:</strong> {parsedAnswer.totalSupply || 'N/A'}
                             </li>
-
-                            {/* Contract Address */}
                             <li>
                                 <strong>Contract Address:</strong>{' '}
                                 {parsedAnswer.contractAddress ? (
@@ -312,8 +536,6 @@ export default function ProductPage() {
                                     'N/A'
                                 )}
                             </li>
-
-                            {/* Other fields with clickable links */}
                             {Object.entries(parsedAnswer).map(([key, value]) => {
                                 if (key === 'totalSupply' || key === 'contractAddress') return null
                                 return (
@@ -324,7 +546,7 @@ export default function ProductPage() {
                                                 {value}
                                             </a>
                                         ) : Array.isArray(value) ? (
-                                            value.join(', ') // Handle arrays
+                                            value.join(', ')
                                         ) : (
                                             value
                                         )}
@@ -337,7 +559,6 @@ export default function ProductPage() {
             )
         }
 
-        // Handle general text answers
         const formattedAnswer = convertToClickableLinks(question.answer || '')
 
         return (
@@ -350,7 +571,6 @@ export default function ProductPage() {
         )
     }
 
-    // Helper function to detect valid URLs
     const isValidUrl = (string) => {
         try {
             new URL(string)
@@ -360,11 +580,9 @@ export default function ProductPage() {
         }
     }
 
-    // Utility function to detect URLs and return them as clickable links in JSX
     const convertToClickableLinks = (text) => {
-        if (typeof text !== 'string') return text // Check if the input is a string
+        if (typeof text !== 'string') return text
 
-        // Regex to detect links
         const urlPattern = /(https?:\/\/[^\s]+|www\.[^\s]+)/g
         const parts = text.split(urlPattern)
 
@@ -440,39 +658,6 @@ export default function ProductPage() {
         )
     }
 
-    const renderReadTab = () => (
-        <>
-            {renderProgressbarWithArrows()}
-            <Swiper
-                pagination={{ clickable: true }}
-                onSlideChange={(swiper) => {
-                    const newIndex = swiper.activeIndex
-                    const questionIndex = Math.floor(newIndex / 2)
-                    const isQuizSlide = newIndex % 2 !== 0
-
-                    if (isQuizSlide && (initialAnswers[questionIndex].selectedChoice === undefined || initialAnswers[questionIndex].isCorrect === undefined)) {
-                        swiper.allowSlideNext = false
-                    } else {
-                        swiper.allowSlideNext = true
-                    }
-
-                    setCurrentSlideIndex(newIndex)
-                }}
-                ref={swiperRef}
-            >
-                {initialAnswers.length > 0 ? (
-                    initialAnswers.flatMap((_, index) => [renderInitialQuestionSlide(index), renderQuizSlide(index)])
-                ) : (
-                    <SwiperSlide>
-                        <Card className="m-2 p-2">
-                            <p className="text-center">No reading materials available</p>
-                        </Card>
-                    </SwiperSlide>
-                )}
-            </Swiper>
-        </>
-    )
-
     const renderWatchTab = () => (
         <>
             {renderProgressbarWithArrows()}
@@ -538,13 +723,7 @@ export default function ProductPage() {
 
     const renderContent = () => {
         if (activeFilter === 'completion') {
-            return (
-                <AcademyCompletionSlide
-                    earnedPoints={earnedPoints}
-                    totalPoints={academy.xp} // Pass the total academy points as a prop
-                    academyName={academy.name}
-                />
-            )
+            return <AcademyCompletionSlide earnedPoints={earnedPoints} totalPoints={academy.xp} academyName={academy.name} />
         }
 
         switch (activeFilter) {
@@ -559,6 +738,25 @@ export default function ProductPage() {
         }
     }
 
+    const [headerExpanded, setHeaderExpanded] = useState(true)
+
+    useEffect(() => {
+        if (activeFilter) {
+            setHeaderExpanded(false)
+        } else {
+            setHeaderExpanded(true)
+        }
+    }, [activeFilter])
+
+    // Set introSlideDismissed and quizStarted based on user responses
+    useEffect(() => {
+        if (userHasResponses) {
+            setShowIntro(false)
+            setQuizStarted(true)
+            // Optionally, start timer for the first unanswered question if any
+        }
+    }, [userHasResponses])
+
     return (
         <Page className="bg-white dark:bg-gray-900">
             <Navbar />
@@ -566,17 +764,32 @@ export default function ProductPage() {
 
             {academy && (
                 <div className="px-4 pt-2">
-                    <div className="text-center">
-                        <img
-                            alt={academy.name}
-                            className="h-18 w-18 rounded-full mb-2 mx-auto cursor-pointer"
-                            src={constructImageUrl(academy.logoUrl)}
-                            onClick={handleNavigateToDetail}
-                        />
-                        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-200 cursor-pointer" onClick={handleNavigateToDetail}>
-                            {academy.name}
-                        </h1>
-                        <div className="flex justify-center gap-2 mt-4 mx-4">
+                    <div
+                        className={`relative w-full ${headerExpanded ? 'h-48' : 'h-28'} bg-cover bg-center rounded-b-2xl transition-all duration-500`}
+                        style={{
+                            backgroundImage: `url(${constructImageUrl(academy.coverPhotoUrl)})`
+                        }}
+                    >
+                        <div className="absolute inset-0 bg-black opacity-50 rounded-b-2xl"></div>
+                        <div
+                            className={`relative text-center pt-4 flex items-center ${
+                                headerExpanded ? 'flex-col' : 'flex-row px-4'
+                            } justify-center transition-all duration-500`}
+                        >
+                            <img
+                                alt={academy.name}
+                                className={`rounded-full z-10 relative ${headerExpanded ? 'h-20 w-20 mb-2' : 'h-10 w-10 mr-4'} transition-all duration-500`}
+                                src={constructImageUrl(academy.logoUrl)}
+                                onClick={handleNavigateToDetail}
+                            />
+                            <h1
+                                className={`text-white z-10 relative cursor-pointer ${headerExpanded ? 'text-3xl' : 'text-xl'} transition-all duration-500`}
+                                onClick={handleNavigateToDetail}
+                            >
+                                {academy.name}
+                            </h1>
+                        </div>
+                        <div className="flex justify-center gap-2 mt-4 mx-4 relative z-10">
                             <div className="relative flex-grow">
                                 {showArrow && (
                                     <div className={`absolute ${!showArrow ? 'fade-out' : ''}`}>
@@ -628,7 +841,7 @@ export default function ProductPage() {
                     <div className="p-4">
                         {activeFilter === null && (
                             <>
-                                <Card className="flex flex-row rounded-2xl !shadow-lg p-2 !mx-0 !bg-gray-50 dark:!bg-gray-800 !border !border-gray-200 dark:!border-gray-700 !py-0">
+                                <Card className="flex flex-col rounded-2xl !shadow-lg p-2 !mx-0 !bg-gray-50 dark:!bg-gray-800 !border !border-gray-200 dark:!border-gray-700 !py-0">
                                     <div className="flex items-center mb-2 text-lg text-gray-900 dark:text-gray-200">
                                         <img src={name} className="h-10 w-10 mr-4" alt="academy name" />
                                         <span className="text-gray-600 dark:text-gray-400 mr-2">Name:</span>
@@ -737,10 +950,11 @@ export default function ProductPage() {
                             </>
                         )}
 
-                        <div className="mt-4">{renderContent()}</div>
+                        {activeFilter === null ? <></> : showIntro ? renderIntroSlide() : renderContent()}
                     </div>
                 </div>
             )}
+
             <BottomTabBar activeTab="tab-1" setActiveTab={setActiveFilter} />
 
             {showXPAnimation && (

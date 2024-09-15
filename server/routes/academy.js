@@ -25,6 +25,7 @@ const {
   getUserResponses,
   updateAcademyWithVideos,
   getVideoUrls,
+  saveUserResponse,
 } = require('../controllers/academyController');
 
 const router = express.Router();
@@ -37,7 +38,10 @@ router.post(
   '/',
   authenticateToken,
   authorizeRoles('CREATOR', 'ADMIN', 'SUPERADMIN'),
-  upload.fields([{ name: 'logo', maxCount: 1 }, { name: 'coverPhoto', maxCount: 1 }]),
+  upload.fields([
+    { name: 'logo', maxCount: 1 },
+    { name: 'coverPhoto', maxCount: 1 },
+  ]),
   asyncHandler(createAcademy)
 );
 
@@ -45,7 +49,10 @@ router.post(
   '/basic',
   authenticateToken,
   authorizeRoles('CREATOR', 'ADMIN', 'SUPERADMIN'),
-  upload.fields([{ name: 'logo', maxCount: 1 }, { name: 'coverPhoto', maxCount: 1 }]),
+  upload.fields([
+    { name: 'logo', maxCount: 1 },
+    { name: 'coverPhoto', maxCount: 1 },
+  ]),
   asyncHandler(createBasicAcademy)
 );
 
@@ -53,7 +60,10 @@ router.put(
   '/:id',
   authenticateToken,
   authorizeRoles('CREATOR', 'ADMIN', 'SUPERADMIN'),
-  upload.fields([{ name: 'logo', maxCount: 1 }, { name: 'coverPhoto', maxCount: 1 }]),
+  upload.fields([
+    { name: 'logo', maxCount: 1 },
+    { name: 'coverPhoto', maxCount: 1 },
+  ]),
   asyncHandler(updateAcademy)
 );
 
@@ -64,14 +74,54 @@ router.get('/:userId/:academyId', asyncHandler(getUserResponses));
 router.get('/:id/videos', authenticateToken, asyncHandler(getVideoUrls));
 router.post('/:id/submit-quiz', asyncHandler(submitQuizAnswers));
 router.post('/:id/check-answer', asyncHandler(checkAnswer));
-router.get('/pending', authenticateToken, authorizeRoles('ADMIN', 'SUPERADMIN'), asyncHandler(getPendingAcademies));
-router.post('/:id/approve', authenticateToken, authorizeRoles('ADMIN', 'SUPERADMIN'), asyncHandler(approveAcademy));
-router.post('/:id/reject', authenticateToken, authorizeRoles('ADMIN', 'SUPERADMIN'), asyncHandler(rejectAcademy));
-router.post('/:id/raffles', authenticateToken, authorizeRoles('CREATOR', 'ADMIN', 'SUPERADMIN'), asyncHandler(addRaffles));
-router.post('/:id/quests', authenticateToken, authorizeRoles('CREATOR', 'ADMIN', 'SUPERADMIN'), asyncHandler(addQuests));
-router.delete('/:id', authenticateToken, authorizeRoles('CREATOR', 'ADMIN', 'SUPERADMIN'), asyncHandler(deleteAcademy));
-router.put('/:id/allocate-xp', authenticateToken, authorizeRoles('CREATOR', 'ADMIN', 'SUPERADMIN'), asyncHandler(allocateXp));
-router.put('/:id/videos', authenticateToken, authorizeRoles('CREATOR', 'ADMIN', 'SUPERADMIN'), asyncHandler(updateAcademyWithVideos));
-
+router.get(
+  '/pending',
+  authenticateToken,
+  authorizeRoles('ADMIN', 'SUPERADMIN'),
+  asyncHandler(getPendingAcademies)
+);
+router.post(
+  '/:id/approve',
+  authenticateToken,
+  authorizeRoles('ADMIN', 'SUPERADMIN'),
+  asyncHandler(approveAcademy)
+);
+router.post(
+  '/:id/reject',
+  authenticateToken,
+  authorizeRoles('ADMIN', 'SUPERADMIN'),
+  asyncHandler(rejectAcademy)
+);
+router.post(
+  '/:id/raffles',
+  authenticateToken,
+  authorizeRoles('CREATOR', 'ADMIN', 'SUPERADMIN'),
+  asyncHandler(addRaffles)
+);
+router.post(
+  '/:id/quests',
+  authenticateToken,
+  authorizeRoles('CREATOR', 'ADMIN', 'SUPERADMIN'),
+  asyncHandler(addQuests)
+);
+router.delete(
+  '/:id',
+  authenticateToken,
+  authorizeRoles('CREATOR', 'ADMIN', 'SUPERADMIN'),
+  asyncHandler(deleteAcademy)
+);
+router.put(
+  '/:id/allocate-xp',
+  authenticateToken,
+  authorizeRoles('CREATOR', 'ADMIN', 'SUPERADMIN'),
+  asyncHandler(allocateXp)
+);
+router.put(
+  '/:id/videos',
+  authenticateToken,
+  authorizeRoles('CREATOR', 'ADMIN', 'SUPERADMIN'),
+  asyncHandler(updateAcademyWithVideos)
+);
+router.post('/:id/save-response', asyncHandler(saveUserResponse));
 
 module.exports = router;

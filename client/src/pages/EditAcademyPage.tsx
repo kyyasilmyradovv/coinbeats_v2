@@ -1,15 +1,14 @@
 // client/src/pages/EditAcademyPage.tsx
 
 import React, { useState, useEffect } from 'react'
-import { Page, Block, List, ListInput, Button } from 'konsta/react'
+import { Page, Block, List, ListInput, Button, Card } from 'konsta/react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Navbar from '../components/common/Navbar'
 import Sidebar from '../components/Sidebar'
+import Spinner from '../components/Spinner'
 import axios from '../api/axiosInstance'
 import useCategoryChainStore from '../store/useCategoryChainStore'
 import useAcademyStore from '../store/useAcademyStore'
-import Spinner from '../components/Spinner'
-import Notification from '../components/Notification'
 
 const EditAcademyPage: React.FC = () => {
     const { id } = useParams<{ id: string }>()
@@ -32,6 +31,7 @@ const EditAcademyPage: React.FC = () => {
         initialAnswers,
         raffles,
         quests,
+        updateAcademy,
         setField,
         setInitialAnswer,
         toggleCorrectAnswer,
@@ -51,6 +51,7 @@ const EditAcademyPage: React.FC = () => {
     useEffect(() => {
         const fetchAcademyData = async () => {
             try {
+                setLoading(true)
                 const response = await axios.get(`/api/academies/${id}`)
                 setPrefilledAcademyData(response.data)
             } catch (error) {
@@ -69,7 +70,11 @@ const EditAcademyPage: React.FC = () => {
     }, [id, setPrefilledAcademyData, resetAcademyData])
 
     if (loading) {
-        return <Spinner /> // Display the Spinner instead of plain text
+        return (
+            <div className="flex justify-center items-center h-screen">
+                <Spinner />
+            </div>
+        )
     }
 
     const handleFileChange = (field: 'logo' | 'coverPhoto', file: File | null) => {
@@ -80,9 +85,8 @@ const EditAcademyPage: React.FC = () => {
         }
     }
 
-    const constructImageUrl = (url: string | null) => {
-        if (!url) return null
-        return `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/${url}`
+    const constructImageUrl = (url: string) => {
+        return `https://subscribes.lt/${url}`
     }
 
     const detectURL = (text: string) => {
@@ -96,7 +100,7 @@ const EditAcademyPage: React.FC = () => {
     const handleSubmit = async () => {
         try {
             if (id) {
-                await submitAcademy(parseInt(id, 10), logoFile, coverPhotoFile) // Pass files to the submitAcademy function
+                await updateAcademy(parseInt(id, 10), logoFile, coverPhotoFile) // Use the new updateAcademy function
             } else {
                 console.error('No academy ID found for updating.')
             }
@@ -123,7 +127,10 @@ const EditAcademyPage: React.FC = () => {
             const tokenomics = question.answer ? JSON.parse(question.answer) : {}
 
             return (
-                <Block key={`initial-question-${questionIndex}`} strong className="mx-4 my-4 bg-white rounded-2xl shadow-lg p-6 space-y-4">
+                <Card
+                    key={`initial-question-${questionIndex}`}
+                    className="!mb-2 !p-0 !rounded-2xl shadow-lg !mx-4 relative border border-gray-300 dark:border-gray-600"
+                >
                     <h2 className="text-lg font-bold mb-4">Tokenomics Details</h2>
                     <List>
                         <ListInput
@@ -132,6 +139,10 @@ const EditAcademyPage: React.FC = () => {
                             value={tokenomics.totalSupply || ''}
                             onChange={(e) => setInitialAnswer(questionIndex, 'answer', JSON.stringify({ ...tokenomics, totalSupply: e.target.value }))}
                             outline
+                            colors={{
+                                bgIos: 'bg-black', // iOS theme background color inside the input
+                                bgMaterial: 'bg-black' // Material theme background color inside the input
+                            }}
                         />
                         <ListInput
                             label="Utility"
@@ -186,7 +197,7 @@ const EditAcademyPage: React.FC = () => {
                                                 chains.filter((_, i) => i !== index)
                                             )
                                         }
-                                        className="bg-green-200 px-2 py-1 rounded-lg"
+                                        className="bg-green-200 dark:bg-green-600 px-2 py-1 rounded-lg"
                                     >
                                         {chain}
                                     </span>
@@ -244,12 +255,15 @@ const EditAcademyPage: React.FC = () => {
                             ></iframe>
                         )}
                     </List>
-                </Block>
+                </Card>
             )
         }
 
         return (
-            <Block key={`initial-question-${questionIndex}`} strong className="mx-4 my-4 bg-white rounded-2xl shadow-lg p-6 space-y-4">
+            <Card
+                key={`initial-question-${questionIndex}`}
+                className="!mb-2 !p-0 !rounded-2xl shadow-lg !mx-4 relative border border-gray-300 dark:border-gray-600"
+            >
                 <h2 className="text-lg font-bold mb-4">Initial Question {questionIndex + 1}</h2>
                 <List>
                     <div className="mb-4">
@@ -317,12 +331,12 @@ const EditAcademyPage: React.FC = () => {
                         ></iframe>
                     )}
                 </List>
-            </Block>
+            </Card>
         )
     }
 
     const renderRaffleSlide = () => (
-        <Block key="raffle-slide" strong className="mx-4 my-4 bg-white rounded-2xl shadow-lg p-6 space-y-4">
+        <Card key="raffle-slide" className="!mb-2 !p-0 !rounded-2xl shadow-lg !mx-4 relative border border-gray-300 dark:border-gray-600">
             <h2 className="text-lg font-bold mb-4">Raffles</h2>
             {Array.isArray(raffles) && raffles.length > 0 ? (
                 raffles.map((raffle, index) => (
@@ -382,11 +396,11 @@ const EditAcademyPage: React.FC = () => {
             <Button onClick={addRaffle} large outline className="w-full rounded-full mt-2">
                 Add Raffle
             </Button>
-        </Block>
+        </Card>
     )
 
     const renderQuestSlide = () => (
-        <Block key="quest-slide" strong className="mx-4 my-4 bg-white rounded-2xl shadow-lg p-6 space-y-4">
+        <Card key="quest-slide" className="!mb-2 !p-0 !rounded-2xl shadow-lg !mx-4 relative border border-gray-300 dark:border-gray-600">
             <h2 className="text-lg font-bold mb-4">Quests</h2>
             {Array.isArray(quests) && quests.length > 0 ? (
                 quests.map((quest, index) => (
@@ -427,11 +441,11 @@ const EditAcademyPage: React.FC = () => {
             <Button onClick={addQuest} large outline className="w-full border rounded-full mt-2">
                 Add Quest
             </Button>
-        </Block>
+        </Card>
     )
 
     const renderAcademyDetailsSlide = () => (
-        <Block key="academy-details-slide" strong className="mx-4 my-4 bg-white rounded-2xl shadow-lg p-6 space-y-4">
+        <Card key="academy-details-slide" className="!mb-2 !p-0 !rounded-2xl shadow-lg !mx-4 relative border border-gray-300 dark:border-gray-600">
             <h2 className="text-lg font-bold mb-4">Academy Details</h2>
             <List>
                 <ListInput label="Protocol Name" type="text" value={name} onChange={(e) => setField('name', e.target.value)} outline />
@@ -442,10 +456,10 @@ const EditAcademyPage: React.FC = () => {
                     <input type="file" accept="image/*" onChange={(e) => handleFileChange('logo', e.target.files ? e.target.files[0] : null)} />
                     {logo && (
                         <div className="relative mt-2">
-                            <img src={constructImageUrl(logo)} alt="Logo Preview" className="w-32 h-32 object-cover" />
-                            <button className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-full" onClick={() => setField('logo', null)}>
+                            <img src={constructImageUrl(logo)} alt="Logo Preview" className="w-32 h-32 object-cover rounded-full" />
+                            <Button className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-full !w-7 !m-1" onClick={() => setField('logo', null)}>
                                 &times;
-                            </button>
+                            </Button>
                         </div>
                     )}
                 </div>
@@ -453,11 +467,14 @@ const EditAcademyPage: React.FC = () => {
                     <label className="block font-medium mb-2">Upload Cover Photo</label>
                     <input type="file" accept="image/*" onChange={(e) => handleFileChange('coverPhoto', e.target.files ? e.target.files[0] : null)} />
                     {coverPhoto && (
-                        <div className="relative mt-2">
-                            <img src={constructImageUrl(coverPhoto)} alt="Cover Photo Preview" className="w-full h-48 object-cover" />
-                            <button className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-full" onClick={() => setField('coverPhoto', null)}>
+                        <div className="relative mt-2 !rounded-2xl">
+                            <img src={constructImageUrl(coverPhoto)} alt="Cover Photo Preview" className="w-full h-48 object-cover rounded-2xl" />
+                            <Button
+                                className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-full !w-7 !m-1"
+                                onClick={() => setField('coverPhoto', null)}
+                            >
                                 &times;
-                            </button>
+                            </Button>
                         </div>
                     )}
                 </div>
@@ -479,7 +496,7 @@ const EditAcademyPage: React.FC = () => {
                                         categories.filter((_, i) => i !== index)
                                     )
                                 }
-                                className="bg-blue-200 px-2 py-1 rounded-lg"
+                                className="bg-blue-200 dark:bg-blue-600 px-2 py-1 rounded-lg"
                             >
                                 {category}
                             </span>
@@ -487,11 +504,11 @@ const EditAcademyPage: React.FC = () => {
                     ))}
                 </div>
             </List>
-        </Block>
+        </Card>
     )
 
     const renderSocialLinksSlide = () => (
-        <Block key="social-links-slide" strong className="mx-4 my-4 bg-white rounded-2xl shadow-lg p-6 space-y-4">
+        <Card key="social-links-slide" className="!mb-2 !p-0 !rounded-2xl shadow-lg !mx-4 relative border border-gray-300 dark:border-gray-600">
             <h2 className="text-lg font-bold mb-4">Social Links</h2>
             <List>
                 <ListInput label="Twitter" type="url" value={twitter} onChange={(e) => setField('twitter', e.target.value)} outline />
@@ -499,7 +516,7 @@ const EditAcademyPage: React.FC = () => {
                 <ListInput label="Discord" type="url" value={discord} onChange={(e) => setField('discord', e.target.value)} outline />
                 <ListInput label="CoinGecko" type="url" value={coingecko} onChange={(e) => setField('coingecko', e.target.value)} outline />
             </List>
-        </Block>
+        </Card>
     )
 
     // Render all initial question slides
@@ -513,8 +530,8 @@ const EditAcademyPage: React.FC = () => {
 
     return (
         <Page>
-            <Navbar darkMode={false} onToggleSidebar={() => {}} />
-            <Sidebar opened={false} onClose={() => {}} theme="ios" setTheme={() => {}} setColorTheme={() => {}} />
+            <Navbar />
+            <Sidebar />
             {slides.map((slide, index) => (
                 <div key={index}>{slide}</div>
             ))}

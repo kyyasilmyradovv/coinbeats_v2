@@ -5,8 +5,8 @@ import { Icon } from '@iconify/react'
 import axios from '../api/axiosInstance'
 import Navbar from '../components/common/Navbar'
 import Sidebar from '../components/Sidebar'
-import Spinner from '../components/Spinner' // Import the Spinner component
-import bunnyLogo from '../images/bunny-mascot.png' // Import your mascot image
+import Spinner from '../components/Spinner'
+import bunnyLogo from '../images/bunny-mascot.png'
 
 interface Academy {
     id: number
@@ -62,18 +62,27 @@ const MyAcademiesPage: React.FC = () => {
         }
     }, [location.state])
 
+    // Open popover and set selected academy ID
     const openPopover = (id: number, event: React.MouseEvent<HTMLButtonElement>) => {
-        setSelectedAcademyId(id)
+        console.log('Opening popover for academy with ID:', id)
+        setSelectedAcademyId(id) // Ensure the correct academy ID is selected
         setPopoverTarget(event.currentTarget)
         setPopoverOpen(true)
     }
 
+    // Handle action click and ensure the right academy is used
     const handleActionClick = (action: () => void) => {
-        action()
-        setPopoverOpen(false) // Close the popover after the action is clicked
+        if (selectedAcademyId !== null) {
+            console.log('Executing action for academy with ID:', selectedAcademyId)
+            action() // Execute the action associated with the selected academy
+            setPopoverOpen(false)
+        } else {
+            console.log('No academy selected, unable to execute action')
+        }
     }
 
     const handleDeleteAcademy = (id: number, event: React.MouseEvent<HTMLButtonElement>) => {
+        console.log('Preparing to delete academy with ID:', id)
         setSelectedAcademyId(id)
         setConfirmDeleteOpen(true)
     }
@@ -81,6 +90,7 @@ const MyAcademiesPage: React.FC = () => {
     const confirmDeleteAcademy = async () => {
         if (selectedAcademyId !== null) {
             try {
+                console.log('Deleting academy with ID:', selectedAcademyId)
                 await axios.delete(`/api/academies/${selectedAcademyId}`)
                 setAcademies(academies.filter((academy) => academy.id !== selectedAcademyId))
                 setNotificationText('Academy deleted successfully.')
@@ -103,7 +113,7 @@ const MyAcademiesPage: React.FC = () => {
             case 'rejected':
                 return 'text-red-600'
             default:
-                return 'text-yellow-600' // Assuming statuses that are neither approved nor rejected are in review
+                return 'text-yellow-600'
         }
     }
 
@@ -121,30 +131,40 @@ const MyAcademiesPage: React.FC = () => {
                     <Spinner />
                 ) : academies.length > 0 ? (
                     academies.map((academy) => (
-                        <Block>
+                        <Block key={academy.id}>
                             <Card
-                                key={academy.id}
-                                className="!mb-2 !p-0 rounded-2xl shadow-lg !mx-2 relative border border-gray-300 dark:border-gray-600"
+                                className="!mb-2 !p-0 !rounded-2xl shadow-lg !mx-2 relative border border-gray-300 dark:border-gray-600"
                                 style={{
                                     backgroundImage: `url(${constructImageUrl(academy.coverPhotoUrl)})`,
                                     backgroundSize: 'cover',
                                     backgroundPosition: 'center'
                                 }}
                             >
-                                <div className="flex justify-between items-center p-4">
-                                    <div>
-                                        <h3 className="font-bold text-xl mb-2">{academy.name}</h3>
-                                        <p className="text-sm">Created on: {new Date(academy.createdAt).toLocaleDateString()}</p>
-                                        {/* Color-coded status */}
-                                        <p className={`text-sm mt-1 ${getStatusClass(academy.status)}`}>
-                                            Status: {academy.status.charAt(0).toUpperCase() + academy.status.slice(1)}
-                                        </p>
+                                {/* Background overlay for image */}
+                                <div className="absolute inset-0 bg-white dark:bg-black opacity-50 rounded-xl z-0"></div>
+
+                                {/* Content goes here, with a higher z-index to be above the overlay */}
+                                <div className="relative z-10 p-4">
+                                    <div className="flex justify-between items-center">
+                                        <div>
+                                            <h3 className="font-bold text-xl mb-2">{academy.name}</h3>
+                                            <p className="text-sm">Created on: {new Date(academy.createdAt).toLocaleDateString()}</p>
+                                            <p className={`text-sm mt-1 ${getStatusClass(academy.status)}`}>
+                                                Status: {academy.status.charAt(0).toUpperCase() + academy.status.slice(1)}
+                                            </p>
+                                        </div>
+                                        <img alt={academy.name} className="h-16 w-16 rounded-full" src={constructImageUrl(academy.logoUrl)} />
                                     </div>
-                                    <img alt={academy.name} className="h-16 w-16 rounded-full" src={constructImageUrl(academy.logoUrl)} />
                                 </div>
 
-                                <div className="flex justify-center w-full">
-                                    <Button className="rounded-full items-center justify-center" raised onClick={(e) => openPopover(academy.id, e)}>
+                                {/* Button section, also above the overlay */}
+                                <div className="flex justify-center w-full relative z-10">
+                                    <Button
+                                        key={`academy-${academy.id}`} // Unique key to ensure each button is unique
+                                        className="rounded-full items-center justify-center"
+                                        raised
+                                        onClick={(e) => openPopover(academy.id, e)} // Ensure correct academy is passed
+                                    >
                                         Academy Actions <Icon icon="mdi:menu-down" className="w-9 h-9 mb-1" />
                                     </Button>
                                 </div>
@@ -158,26 +178,26 @@ const MyAcademiesPage: React.FC = () => {
                                 >
                                     <div className="text-center">
                                         <List>
-                                            <ListButton onClick={() => handleActionClick(() => navigate(`/edit-academy/${academy.id}`))}>
+                                            <ListButton onClick={() => handleActionClick(() => navigate(`/edit-academy/${selectedAcademyId}`))}>
                                                 <span className="text-primary text-lg">Edit Academy</span>
                                             </ListButton>
-                                            <ListButton onClick={() => handleActionClick(() => navigate(`/add-video-lessons/${academy.id}`))}>
+                                            <ListButton onClick={() => handleActionClick(() => navigate(`/add-video-lessons/${selectedAcademyId}`))}>
                                                 <span className="text-primary text-lg">Add Video Lessons</span>
                                             </ListButton>
-                                            <ListButton onClick={() => handleActionClick(() => navigate(`/add-raffles/${academy.id}`))}>
+                                            <ListButton onClick={() => handleActionClick(() => navigate(`/add-raffles/${selectedAcademyId}`))}>
                                                 <span className="text-primary text-lg">Add Raffles</span>
                                             </ListButton>
-                                            <ListButton onClick={() => handleActionClick(() => navigate(`/add-tasks/${academy.id}`))}>
+                                            <ListButton onClick={() => handleActionClick(() => navigate(`/add-tasks/${selectedAcademyId}`))}>
                                                 <span className="text-primary text-lg">Add Tasks</span>
                                             </ListButton>
-                                            <ListButton onClick={() => handleActionClick(() => navigate(`/allocate-xp/${academy.id}`))}>
+                                            <ListButton onClick={() => handleActionClick(() => navigate(`/allocate-xp/${selectedAcademyId}`))}>
                                                 <span className="text-primary text-lg">Allocate XP</span>
                                             </ListButton>
                                             <ListButton
                                                 className="!text-red-600"
                                                 onClick={(e) => {
                                                     setPopoverOpen(false)
-                                                    handleDeleteAcademy(academy.id, e)
+                                                    handleDeleteAcademy(selectedAcademyId!, e)
                                                 }}
                                             >
                                                 <span className="text-red-500 text-lg">Delete Academy</span>
@@ -193,7 +213,6 @@ const MyAcademiesPage: React.FC = () => {
                 )}
             </div>
 
-            {/* Notification */}
             <Notification
                 className="fixed top-0 left-0 z-50 border"
                 opened={notificationOpen}
@@ -204,7 +223,6 @@ const MyAcademiesPage: React.FC = () => {
                 onClose={() => setNotificationOpen(false)}
             />
 
-            {/* Popover for delete confirmation */}
             <Popover
                 opened={confirmDeleteOpen}
                 target={popoverTarget}

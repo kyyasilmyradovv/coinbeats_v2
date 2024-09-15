@@ -9,6 +9,7 @@ services:
       - app-network
     depends_on:
       - backend
+    restart: always
 
   backend:
     build:
@@ -16,10 +17,11 @@ services:
       dockerfile: Dockerfile
     ports:
       - "5000:4000"
-    env_file: 
-      - .env.production  # Specify which env file to use
+    env_file:
+      - .env.production # Specify which env file to use
     volumes:
       - uploads:/app/public/uploads
+    restart: always
     networks:
       - app-network
 

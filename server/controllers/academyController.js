@@ -313,101 +313,198 @@ exports.createBasicAcademy = async (req, res, next) => {
   }
 };
 
-// Update Academy Controller
+// Utility function to remove undefined fields
+const removeUndefinedFields = (obj) => {
+  return Object.fromEntries(
+    Object.entries(obj).filter(([_, v]) => v !== undefined)
+  );
+};
+
 exports.updateAcademy = async (req, res, next) => {
   const { id } = req.params;
+
   const {
     name,
     ticker,
-    categories = [],
-    chains = [],
+    categories = '[]',
+    chains = '[]',
     twitter = '',
     telegram = '',
     discord = '',
     coingecko = '',
-    initialAnswers = [],
-    tokenomics = '',
+    initialAnswers = '[]',
+    tokenomics = '{}',
     teamBackground = '',
     congratsVideo = '',
     getStarted = '',
-    raffles = [],
-    quests = [],
+    raffles = '[]',
+    quests = '[]',
     webpageUrl = '',
+    coingeckoLink = '',
+    dexScreenerLink = '',
+    contractAddress = '',
   } = req.body;
 
   try {
-    const parsedCategories = Array.isArray(categories)
-      ? categories
-      : JSON.parse(categories);
-    const parsedChains = Array.isArray(chains) ? chains : JSON.parse(chains);
-    const parsedInitialAnswers = Array.isArray(initialAnswers)
-      ? initialAnswers
-      : JSON.parse(initialAnswers);
-    const parsedRaffles = Array.isArray(raffles)
-      ? raffles
-      : JSON.parse(raffles);
-    const parsedQuests = Array.isArray(quests) ? quests : JSON.parse(quests);
+    const parsedCategories = JSON.parse(categories);
+    const parsedChains = JSON.parse(chains);
+    const parsedInitialAnswers = JSON.parse(initialAnswers);
+    const parsedRaffles = JSON.parse(raffles);
+    const parsedQuests = JSON.parse(quests);
+    const parsedTokenomics = JSON.parse(tokenomics);
 
-    // Handle file uploads
-    const logoUrl = handleFileUpload(req.files, 'logo');
-    const coverPhotoUrl = handleFileUpload(req.files, 'coverPhoto');
+    // Process tokenomics data
+    const tokenomicsData = {
+      ...parsedTokenomics,
+      coingecko: parsedTokenomics.coingecko || coingeckoLink,
+      dexScreener: parsedTokenomics.dexScreener || dexScreenerLink,
+      contractAddress: parsedTokenomics.contractAddress || contractAddress,
+    };
 
+    // Prepare data for update
+    const dataToUpdate = {};
+
+    if (name !== undefined) dataToUpdate.name = name;
+    if (ticker !== undefined) dataToUpdate.ticker = ticker;
+    if (req.files && req.files.logo) {
+      dataToUpdate.logoUrl = handleFileUpload(req.files, 'logo');
+    }
+    if (req.files && req.files.coverPhoto) {
+      dataToUpdate.coverPhotoUrl = handleFileUpload(req.files, 'coverPhoto');
+    }
+    if (parsedCategories.length) {
+      const categoryRecords = await Promise.all(
+        parsedCategories.map(async (categoryName) => {
+          const category = await prisma.category.findUnique({
+            where: { name: categoryName },
+          });
+          if (!category) {
+            throw new Error(`Category "${categoryName}" not found in database`);
+          }
+          return category;
+        })
+      );
+      dataToUpdate.categories = {
+        set: categoryRecords.map((category) => ({ id: category.id })),
+      };
+    }
+    if (parsedChains.length) {
+      const chainRecords = await Promise.all(
+        parsedChains.map(async (chainName) => {
+          const chain = await prisma.chain.findUnique({
+            where: { name: chainName },
+          });
+          if (!chain) {
+            throw new Error(`Chain "${chainName}" not found in database`);
+          }
+          return chain;
+        })
+      );
+      dataToUpdate.chains = {
+        set: chainRecords.map((chain) => ({ id: chain.id })),
+      };
+    }
+    if (twitter !== undefined) dataToUpdate.twitter = twitter;
+    if (telegram !== undefined) dataToUpdate.telegram = telegram;
+    if (discord !== undefined) dataToUpdate.discord = discord;
+    if (coingecko !== undefined) dataToUpdate.coingecko = coingecko;
+    if (webpageUrl !== undefined) dataToUpdate.webpageUrl = webpageUrl;
+    if (teamBackground !== undefined)
+      dataToUpdate.teamBackground = teamBackground;
+    if (congratsVideo !== undefined) dataToUpdate.congratsVideo = congratsVideo;
+    if (getStarted !== undefined) dataToUpdate.getStarted = getStarted;
+    if (Object.keys(tokenomicsData).length)
+      dataToUpdate.tokenomics = tokenomicsData;
+
+    // Update the academy basic data
     const updatedAcademy = await prisma.academy.update({
       where: { id: parseInt(id, 10) },
-      data: {
-        name,
-        ticker,
-        logoUrl: logoUrl || undefined, // Use existing if no new file is uploaded
-        coverPhotoUrl: coverPhotoUrl || undefined, // Use existing if no new file is uploaded
-        categories: {
-          set: parsedCategories.map((category) => ({ name: category })),
-        },
-        chains: { set: parsedChains.map((chain) => ({ name: chain })) },
-        twitter,
-        telegram,
-        discord,
-        coingecko,
-        tokenomics,
-        teamBackground,
-        congratsVideo,
-        getStarted,
-        academyQuestions: {
-          deleteMany: {}, // Clear existing questions
-          create: parsedInitialAnswers.map((initialAnswer) => ({
-            initialQuestionId: initialAnswer.initialQuestionId,
+      data: dataToUpdate,
+    });
+
+    // Update Academy Questions and Choices
+    for (const initialAnswer of parsedInitialAnswers) {
+      if (initialAnswer.id) {
+        initialAnswer.id = parseInt(initialAnswer.id, 10);
+        if (isNaN(initialAnswer.id)) {
+          throw new Error(`Invalid academyQuestion ID: ${initialAnswer.id}`);
+        }
+
+        // Log the ID
+        console.log(`Updating AcademyQuestion with ID: ${initialAnswer.id}`);
+
+        // Update existing academyQuestion
+        await prisma.academyQuestion.update({
+          where: { id: initialAnswer.id },
+          data: removeUndefinedFields({
             question: initialAnswer.question,
             answer: initialAnswer.answer || '',
             quizQuestion: initialAnswer.quizQuestion || '',
-            choices: {
-              create: initialAnswer.choices.map((choice) => ({
+            // XP is intentionally not included
+          }),
+        });
+
+        // Update Choices
+        for (const choice of initialAnswer.choices) {
+          if (choice.id) {
+            choice.id = parseInt(choice.id, 10);
+            if (isNaN(choice.id)) {
+              throw new Error(`Invalid choice ID: ${choice.id}`);
+            }
+
+            // Log the choice ID
+            console.log(`Updating Choice with ID: ${choice.id}`);
+
+            // Update existing choice
+            await prisma.choice.update({
+              where: { id: choice.id },
+              data: {
                 text: choice.answer || '',
                 isCorrect: choice.correct || false,
-              })),
-            },
-          })),
-        },
-        raffles: {
-          deleteMany: {},
-          create: parsedRaffles.map((raffle) => ({
-            amount: parseInt(raffle.amount, 10),
-            reward: raffle.reward,
-            currency: raffle.currency,
-            chain: raffle.chain,
-            dates: raffle.dates,
-            totalPool: parseInt(raffle.totalPool, 10),
-          })),
-        },
-        quests: {
-          deleteMany: {},
-          create: parsedQuests.map((quest) => ({
-            name: quest.name,
-            link: quest.link,
-            platform: quest.platform,
-          })),
-        },
-        webpageUrl,
-      },
-    });
+              },
+            });
+          } else {
+            // Skip creating new choices
+            console.log(
+              `Skipping new Choice without ID for AcademyQuestion ID: ${initialAnswer.id}`
+            );
+          }
+        }
+      } else {
+        // Skip updating if no ID is present
+        console.log(`Skipping AcademyQuestion without ID`);
+      }
+    }
+
+    // Update Quests
+    for (const questData of parsedQuests) {
+      if (questData.id) {
+        questData.id = parseInt(questData.id, 10);
+        if (isNaN(questData.id)) {
+          throw new Error(`Invalid quest ID: ${questData.id}`);
+        }
+
+        // Log the quest ID
+        console.log(`Updating Quest with ID: ${questData.id}`);
+
+        // Update existing quest
+        await prisma.quest.update({
+          where: { id: questData.id },
+          data: {
+            name: questData.name || '',
+            link: questData.link || '',
+            platform: questData.platform || '',
+            // Do not update XP to preserve existing value
+          },
+        });
+      } else {
+        // Skip updating if no ID is present
+        console.log(`Skipping Quest without ID`);
+      }
+    }
+
+    // Skip Raffles update since it involves deleting and creating
+    console.log(`Skipping Raffles update in updateAcademy`);
 
     res.json({
       message: 'Academy updated successfully',
@@ -418,8 +515,6 @@ exports.updateAcademy = async (req, res, next) => {
     next(createError(500, 'Error updating academy'));
   }
 };
-
-// Additional Controllers (for fetching, approving, rejecting academies) remain unchanged
 
 exports.listMyAcademies = async (req, res, next) => {
   try {
@@ -900,7 +995,7 @@ exports.checkAnswer = async (req, res, next) => {
         data: {
           telegramUserId,
           role: 'USER',
-          name: '', // Assuming name is optional and can be empty
+          name: '',
         },
       });
     }
@@ -940,15 +1035,69 @@ exports.checkAnswer = async (req, res, next) => {
     // Check if the user's choice is correct
     const isCorrect = correctChoice.id === choiceId;
 
-    // Calculate points (if correct)
+    // Get the maximum points for the question
     const question = await prisma.academyQuestion.findUnique({
       where: { id: questionId },
       select: { xp: true },
     });
 
-    const pointsAwarded = isCorrect ? question.xp : 0;
+    // Return the result to the client without saving points
+    res.json({ correct: isCorrect, maxPoints: question.xp });
+  } catch (error) {
+    console.error('Failed to check the answer:', error);
+    next(createError(500, 'Failed to check the answer.'));
+  }
+};
 
-    // Save the user's response
+exports.saveUserResponse = async (req, res, next) => {
+  const { academyId, questionId, choiceId, isCorrect, pointsAwarded } =
+    req.body;
+  const telegramUserId = req.user
+    ? req.user.telegramUserId
+    : req.body.telegramUserId;
+
+  if (!telegramUserId || !academyId || !questionId || !choiceId) {
+    return res
+      .status(400)
+      .json({ message: 'Bad Request: Missing required parameters.' });
+  }
+
+  try {
+    // Check if the user exists by telegramUserId
+    let user = await prisma.user.findUnique({
+      where: { telegramUserId },
+    });
+
+    // If the user doesn't exist, create a new user
+    if (!user) {
+      user = await prisma.user.create({
+        data: {
+          telegramUserId,
+          role: 'USER',
+          name: '',
+        },
+      });
+    }
+
+    const userId = user.id;
+
+    // Check if the user has already submitted an answer for this question
+    const existingResponse = await prisma.userResponse.findFirst({
+      where: {
+        userId,
+        choice: {
+          academyQuestionId: questionId,
+        },
+      },
+    });
+
+    if (existingResponse) {
+      return res
+        .status(400)
+        .json({ message: 'You have already answered this question.' });
+    }
+
+    // Save the user's response with points
     await prisma.userResponse.create({
       data: {
         userId,
@@ -958,11 +1107,10 @@ exports.checkAnswer = async (req, res, next) => {
       },
     });
 
-    // Return the result to the client
-    res.json({ correct: isCorrect, pointsAwarded });
+    res.json({ message: 'User response saved successfully.' });
   } catch (error) {
-    console.error('Failed to check the answer:', error);
-    next(createError(500, 'Failed to check the answer.'));
+    console.error('Failed to save user response:', error);
+    next(createError(500, 'Failed to save user response.'));
   }
 };
 

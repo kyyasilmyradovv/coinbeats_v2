@@ -1,3 +1,5 @@
+// client/src/components/Spinner.tsx
+
 import React from 'react'
 import './Spinner.css' // We will define the styles in Spinner.css
 
