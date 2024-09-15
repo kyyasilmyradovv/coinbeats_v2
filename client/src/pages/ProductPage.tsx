@@ -48,6 +48,39 @@ export default function ProductPage() {
     const [errorMessage, setErrorMessage] = useState('')
     const [allowNext, setAllowNext] = useState(false) // New state to control navigation
 
+    // Define handlePrevClick and handleNextClick before using them
+    const handlePrevClick = () => {
+        if (currentSlideIndex > 0 && swiperRef.current && swiperRef.current.swiper) {
+            swiperRef.current.swiper.slidePrev()
+            setErrorMessage('') // Reset error message when moving back
+        }
+    }
+
+    const handleNextClick = () => {
+        const isQuizSlide = currentSlideIndex % 2 === 1 // Odd indices are quiz slides
+        const questionIndex = Math.floor(currentSlideIndex / 2)
+
+        if (isQuizSlide) {
+            const currentQuestion = initialAnswers[questionIndex]
+            if (currentQuestion.isCorrect !== undefined) {
+                // Allow moving to the next question
+                setAllowNext(false) // Reset for the next question
+                if (swiperRef.current && swiperRef.current.swiper) {
+                    swiperRef.current.swiper.slideNext()
+                    setErrorMessage('') // Reset error message
+                }
+            } else {
+                setErrorMessage('You must check your answer before proceeding.')
+            }
+        } else {
+            // Allow moving to the quiz slide of the current question
+            if (swiperRef.current && swiperRef.current.swiper) {
+                swiperRef.current.swiper.slideNext()
+                setErrorMessage('') // Reset error message
+            }
+        }
+    }
+
     useEffect(() => {
         // Hide the arrow after 3 seconds
         const arrowTimer = setTimeout(() => {
@@ -270,7 +303,7 @@ export default function ProductPage() {
     const handleNextQuestion = () => {
         const totalSlides = initialAnswers.length * 2
         if (currentSlideIndex >= totalSlides - 1) {
-            setActiveFilter('completion')
+            handleCompleteAcademy() // Invoke the API call function
         } else {
             if (swiperRef.current && swiperRef.current.swiper) {
                 swiperRef.current.swiper.slideNext()
@@ -321,38 +354,6 @@ export default function ProductPage() {
                 clearInterval(timerIntervalRef.current)
             }
             startTimer()
-        }
-    }
-
-    const handlePrevClick = () => {
-        if (currentSlideIndex > 0 && swiperRef.current && swiperRef.current.swiper) {
-            swiperRef.current.swiper.slidePrev()
-            setErrorMessage('') // Reset error message when moving back
-        }
-    }
-
-    const handleNextClick = () => {
-        const isQuizSlide = currentSlideIndex % 2 === 1 // Odd indices are quiz slides
-        const questionIndex = Math.floor(currentSlideIndex / 2)
-
-        if (isQuizSlide) {
-            const currentQuestion = initialAnswers[questionIndex]
-            if (currentQuestion.isCorrect !== undefined) {
-                // Allow moving to the next question
-                setAllowNext(false) // Reset for the next question
-                if (swiperRef.current && swiperRef.current.swiper) {
-                    swiperRef.current.swiper.slideNext()
-                    setErrorMessage('') // Reset error message
-                }
-            } else {
-                setErrorMessage('You must check your answer before proceeding.')
-            }
-        } else {
-            // Allow moving to the quiz slide of the current question
-            if (swiperRef.current && swiperRef.current.swiper) {
-                swiperRef.current.swiper.slideNext()
-                setErrorMessage('') // Reset error message
-            }
         }
     }
 
@@ -447,7 +448,7 @@ export default function ProductPage() {
                 </div>
                 <div className="relative flex-grow h-2 mx-2 bg-gray-200 rounded-full overflow-hidden">
                     <div
-                        className="absolute top-0 right-0 h-full rounded-full"
+                        className="absolute top-0 left-0 h-full rounded-full"
                         style={{
                             width: `${timePercentage}%`,
                             background: getBarColor()
@@ -475,7 +476,7 @@ export default function ProductPage() {
                     {initialAnswers.length > 0 ? (
                         initialAnswers.flatMap((_, index) => [renderInitialQuestionSlide(index), renderQuizSlide(index)])
                     ) : (
-                        <SwiperSlide>
+                        <SwiperSlide key="no-reading-materials">
                             <Card className="m-2 p-2">
                                 <p className="text-center">No reading materials available</p>
                             </Card>
@@ -498,7 +499,7 @@ export default function ProductPage() {
                     <span className="text-lg font-semibold">Are you ready?</span>
                 </p>
                 <div className="flex justify-center mt-4 gap-4">
-                    <Button outline rounded onClick={() => handleBackToProduct()} className="!text-xs">
+                    <Button outline rounded onClick={handleBackToProduct} className="!text-xs">
                         No, go back
                     </Button>
                     <Button
@@ -746,7 +747,7 @@ export default function ProductPage() {
                         )
                     })
                 ) : (
-                    <SwiperSlide>
+                    <SwiperSlide key="no-videos">
                         <Card className="m-2 p-2">
                             <p className="text-center">No videos available</p>
                         </Card>
@@ -768,7 +769,7 @@ export default function ProductPage() {
                     </Card>
                 ))
             ) : (
-                <Card className="m-2 p-2">
+                <Card key="no-quests" className="m-2 p-2">
                     <p className="text-center">No quests available</p>
                 </Card>
             )}
