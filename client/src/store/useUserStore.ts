@@ -12,7 +12,7 @@ interface UserState {
     emailConfirmed: boolean
     role: UserRole
     totalPoints: number
-    points: Object
+    points: any[]
     bookmarks: Array<any> // Add bookmarks
     authenticated: boolean
     token: string | null
@@ -26,7 +26,7 @@ interface UserState {
         emailConfirmed: boolean,
         role: UserRole,
         totalPoints: number,
-        points: Object,
+        points: any[],
         bookmarks: Array<any>, // Add bookmarks parameter
         token: string | null,
         hasAcademy: boolean
@@ -41,7 +41,7 @@ interface UserState {
         emailConfirmed: boolean
         role: UserRole
         totalPoints: number
-        points: Object
+        points: any[]
         bookmarks: Array<any> // Add bookmarks
         token: string
         hasAcademy: boolean
@@ -61,7 +61,7 @@ const useUserStore = create<UserState>()(
         emailConfirmed: false,
         role: 'USER',
         totalPoints: 100,
-        points: {},
+        points: [],
         bookmarks: [], // Initialize bookmarks as empty
         authenticated: false,
         token: null,
@@ -107,7 +107,7 @@ const useUserStore = create<UserState>()(
                 emailConfirmed: false,
                 role: 'USER',
                 totalPoints: 100,
-                points: {},
+                points: [],
                 bookmarks: [], // Clear bookmarks on logout
                 authenticated: false,
                 token: null,

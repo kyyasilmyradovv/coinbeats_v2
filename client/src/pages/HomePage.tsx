@@ -106,15 +106,15 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
     }
 
     const isBookmarked = (academyId) => {
-        return bookmarks?.some((bookmark) => bookmark.id === academyId) // Check if the academy is bookmarked
+        return Array.isArray(bookmarks) ? bookmarks.some((bookmark) => bookmark.id === academyId) : false
     }
 
     const hasCompletedAcademy = (academyId) => {
-        return points?.some((point) => point.academyId === academyId) // Defensive check for points array
+        return Array.isArray(points) ? points.some((point) => point.academyId === academyId) : false
     }
 
     const getCompletedAcademyPoints = (academyId) => {
-        return points?.find((point) => point.academyId === academyId) // Defensive check for points array
+        return Array.isArray(points) ? points.find((point) => point.academyId === academyId) : null
     }
 
     const filteredData = useMemo(() => {

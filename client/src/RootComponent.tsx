@@ -1,6 +1,6 @@
 // src/RootComponent.tsx
 
-import React, { useLayoutEffect, useEffect } from 'react'
+import React, { useLayoutEffect, useEffect, useState } from 'react'
 import { Route, Routes, useLocation } from 'react-router-dom'
 import { App as KonstaApp, KonstaProvider } from 'konsta/react'
 import MainPage from './pages/MainPage'
@@ -32,13 +32,15 @@ import useSessionStore from './store/useSessionStore'
 import useUserStore from './store/useUserStore'
 import axios from './api/axiosInstance'
 import RouteGuard from './components/RouteGuard'
+import Spinner from './components/Spinner'
 
 function RootComponent() {
+    const [isLoading, setIsLoading] = useState(true)
     const initData = useInitData()
-    const { theme, darkMode, colorTheme, initializePreferences } = useSessionStore((state) => ({
+
+    const { theme, darkMode, initializePreferences } = useSessionStore((state) => ({
         theme: state.theme,
         darkMode: state.darkMode,
-        colorTheme: state.colorTheme,
         initializePreferences: state.initializePreferences
     }))
 
@@ -50,66 +52,109 @@ function RootComponent() {
     const endSession = useSessionStore((state) => state.endSession)
     const setCurrentRoute = useSessionStore((state) => state.setCurrentRoute)
     const addRouteDuration = useSessionStore((state) => state.addRouteDuration)
+
     const { setUser } = useUserStore((state) => ({
         setUser: state.setUser
     }))
 
     const location = useLocation()
 
+    // Ensure all hooks are called before any conditional returns
+    const inIFrame = window.parent !== window
+
+    useLayoutEffect(() => {
+        if (window.location.href.includes('safe-areas')) {
+            const html = document.documentElement
+            if (html) {
+                html.style.setProperty('--k-safe-area-top', theme === 'ios' ? '44px' : '24px')
+                html.style.setProperty('--k-safe-area-bottom', '34px')
+            }
+        }
+    }, [theme])
+
+    // Ensure dark mode class is synchronized with state
+    useLayoutEffect(() => {
+        if (darkMode) {
+            document.documentElement.classList.add('dark')
+        } else {
+            document.documentElement.classList.remove('dark')
+        }
+    }, [darkMode])
+
     useEffect(() => {
+        let routeStartTime = Date.now()
+        let currentRoute = location.pathname
+
+        const updateRouteDuration = () => {
+            const now = Date.now()
+            const duration = now - routeStartTime
+            addRouteDuration(currentRoute, duration)
+            setCurrentRoute(currentRoute)
+            routeStartTime = now
+        }
+
         const initializeUserSession = async () => {
-            if (initData) {
-                const telegramUserId = initData.user.id
-                const username = initData.user.username || 'Guest'
+            try {
+                if (initData && initData.user) {
+                    const telegramUserId = initData.user.id
+                    const username = initData.user.username || 'Guest'
 
-                try {
-                    const response = await axios.get(`/api/users/${telegramUserId}`)
+                    try {
+                        const response = await axios.get(`/api/users/${telegramUserId}`)
 
-                    if (response.status === 200 && response.data) {
-                        const { id, email, role, totalPoints, points, academies, emailConfirmed } = response.data
-                        const hasAcademy = academies && academies.length > 0
-                        console.log(points)
-                        setUser(id, username, email, emailConfirmed, role, totalPoints, points || 100, null, hasAcademy)
-                    } else {
-                        setUser(null, username, '', false, 'USER', 100, {}, null, false)
+                        if (response.status === 200 && response.data) {
+                            const { id, email, role, totalPoints, points, bookmarks, academies, emailConfirmed } = response.data
+                            const hasAcademy = academies && academies.length > 0
+
+                            setUser(
+                                id,
+                                username,
+                                email,
+                                emailConfirmed,
+                                role,
+                                totalPoints,
+                                points || [],
+                                bookmarks || [],
+                                null, // Assuming token is handled elsewhere
+                                hasAcademy
+                            )
+                        } else {
+                            // User not found, set default values
+                            setUser(null, username, '', false, 'USER', 100, [], [], null, false)
+                        }
+                    } catch (error) {
+                        if (error.response && error.response.status === 404) {
+                            // User not found, set default values
+                            setUser(null, username, '', false, 'USER', 100, [], [], null, false)
+                        } else {
+                            console.error('Error fetching user:', error)
+                            // Set default values in case of error
+                            setUser(null, username, '', false, 'USER', 100, [], [], null, false)
+                        }
                     }
-                } catch (error) {
-                    if (error.response && error.response.status === 404) {
-                        setUser(null, username, '', false, 'USER', 100, {}, null, false)
-                    } else {
-                        console.error('Error fetching user:', error)
-                    }
-                }
 
-                const sessionStartTime = Date.now()
-                startSession({
-                    sessionStartTime,
-                    userId: telegramUserId,
-                    username: username,
-                    roles: ['USER'] // Default role
-                })
+                    const sessionStartTime = Date.now()
+                    startSession({
+                        sessionStartTime,
+                        userId: telegramUserId,
+                        username: username,
+                        roles: ['USER'] // Default role
+                    })
 
-                let routeStartTime = sessionStartTime
-                let currentRoute = location.pathname
-
-                const updateRouteDuration = () => {
-                    const now = Date.now()
-                    const duration = now - routeStartTime
-                    addRouteDuration(currentRoute, duration)
-                    setCurrentRoute(currentRoute)
-                    routeStartTime = now
-                }
-
-                const handleRouteChange = () => {
-                    updateRouteDuration()
+                    routeStartTime = sessionStartTime
                     currentRoute = location.pathname
-                }
 
-                updateRouteDuration()
-
-                return () => {
                     updateRouteDuration()
+                } else {
+                    // initData not available, set default user
+                    setUser(null, 'Guest', '', false, 'USER', 100, [], [], null, false)
                 }
+            } catch (e) {
+                console.error('Error initializing user session:', e)
+                // Set default user in case of error
+                setUser(null, 'Guest', '', false, 'USER', 100, [], [], null, false)
+            } finally {
+                setIsLoading(false)
             }
         }
 
@@ -129,28 +174,17 @@ function RootComponent() {
 
         return () => {
             window.removeEventListener('beforeunload', handleSessionEnd)
+            updateRouteDuration()
         }
     }, [initData, startSession, setCurrentRoute, endSession, setUser, addRouteDuration, location])
 
-    const inIFrame = window.parent !== window
-    useLayoutEffect(() => {
-        if (window.location.href.includes('safe-areas')) {
-            const html = document.documentElement
-            if (html) {
-                html.style.setProperty('--k-safe-area-top', theme === 'ios' ? '44px' : '24px')
-                html.style.setProperty('--k-safe-area-bottom', '34px')
-            }
-        }
-    }, [theme])
-
-    // Ensure dark mode class is synchronized with state
-    useLayoutEffect(() => {
-        if (darkMode) {
-            document.documentElement.classList.add('dark')
-        } else {
-            document.documentElement.classList.remove('dark')
-        }
-    }, [darkMode])
+    if (isLoading) {
+        return (
+            <div className="flex justify-center items-center h-screen">
+                <Spinner />
+            </div>
+        )
+    }
 
     return (
         <KonstaProvider theme={theme}>
