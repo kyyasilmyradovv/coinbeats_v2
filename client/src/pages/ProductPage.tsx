@@ -96,6 +96,7 @@ export default function ProductPage() {
         if (academy) {
             fetchEarnedPoints()
             fetchQuests()
+            fetchQuestions() // Fetch questions when academy is available
         }
     }, [academy])
 
@@ -154,6 +155,7 @@ export default function ProductPage() {
 
             const mappedQuestions = questions.map((question: any) => ({
                 academyQuestionId: question.id,
+                initialQuestionId: question.initialQuestionId,
                 question: question.question,
                 answer: question.answer,
                 quizQuestion: question.quizQuestion,
@@ -165,8 +167,11 @@ export default function ProductPage() {
                 timerStarted: false // Track if timer started for the question
             }))
 
-            console.log('Fetched and mapped questions:', mappedQuestions)
-            return mappedQuestions
+            // Sort the questions based on initialQuestionId
+            const sortedQuestions = mappedQuestions.sort((a, b) => a.initialQuestionId - b.initialQuestionId)
+
+            console.log('Fetched and mapped questions:', sortedQuestions)
+            return sortedQuestions
         } catch (error) {
             console.error('Error fetching questions:', error.response ? error.response.data : error.message)
             return []
@@ -175,10 +180,6 @@ export default function ProductPage() {
 
     const fetchUserResponses = async (mappedQuestions: any[]) => {
         try {
-            if (isNaN(academy.id)) {
-                throw new Error('Invalid academy ID')
-            }
-
             const response = await axiosInstance.get(`/api/academies/${userId}/${academy.id}`)
             const userResponses = response.data || []
 
@@ -192,14 +193,18 @@ export default function ProductPage() {
                 return question
             })
 
-            console.log('Questions with user responses applied:', questionsWithUserResponses)
-            setInitialAnswers(questionsWithUserResponses)
-            return userResponses
+            // Sort the questions based on initialQuestionId
+            const sortedQuestions = questionsWithUserResponses.sort((a, b) => a.initialQuestionId - b.initialQuestionId)
+
+            console.log('Questions with user responses applied:', sortedQuestions)
+            setInitialAnswers(sortedQuestions)
+
+            return userResponses // Return the user responses
         } catch (error) {
             console.error('Error fetching user responses:', error.response ? error.response.data : error.message)
             // Set initialAnswers to mappedQuestions without user responses
             setInitialAnswers(mappedQuestions)
-            return null
+            return null // Return null to indicate failure
         }
     }
 

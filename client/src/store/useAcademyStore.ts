@@ -343,15 +343,19 @@ const useAcademyStore = create<AcademyState>()(
                         const initialAnswersWithIds = state.initialAnswers.map((answer) => ({
                             ...answer,
                             id: answer.id ? Number(answer.id) : undefined,
+                            initialQuestionId: answer.initialQuestionId, // Preserve initialQuestionId
                             choices: answer.choices.map((choice) => ({
                                 ...choice,
                                 id: choice.id ? Number(choice.id) : undefined
                             }))
                         }))
 
-                        console.log('InitialAnswers being sent to backend:', initialAnswersWithIds)
+                        // Sort initialAnswers by `initialQuestionId` before sending
+                        const sortedInitialAnswers = initialAnswersWithIds.sort((a, b) => a.initialQuestionId - b.initialQuestionId)
 
-                        formData.append('initialAnswers', JSON.stringify(initialAnswersWithIds))
+                        console.log('InitialAnswers being sent to backend:', sortedInitialAnswers)
+
+                        formData.append('initialAnswers', JSON.stringify(sortedInitialAnswers))
                     }
 
                     // Handle raffles and quests
@@ -377,7 +381,8 @@ const useAcademyStore = create<AcademyState>()(
                         console.log('No changes detected, skipping update.')
                     }
 
-                    state.resetAcademyData()
+                    // No need to reset the data here, as we have updated initialAcademyData
+                    // state.resetAcademyData()
                 } catch (error) {
                     console.error('Error updating academy:', error)
                     throw error
@@ -557,7 +562,6 @@ const useAcademyStore = create<AcademyState>()(
                     }
                 }
 
-                // In setPrefilledAcademyData
                 const initialAnswers = data.academyQuestions.map((question) => ({
                     id: question.id, // Include the academyQuestion ID
                     initialQuestionId: question.initialQuestionId,
@@ -571,6 +575,9 @@ const useAcademyStore = create<AcademyState>()(
                     })),
                     video: question.video || ''
                 }))
+
+                // Sort initialAnswers by initialQuestionId
+                const sortedInitialAnswers = initialAnswers.sort((a, b) => a.initialQuestionId - b.initialQuestionId)
 
                 // Include IDs in quests
                 const quests = data.quests.map((quest) => ({
