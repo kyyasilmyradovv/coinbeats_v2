@@ -1,4 +1,4 @@
-// client/sec/pages/ProductPage.tsx
+// client/src/pages/ProductPage.tsx
 
 import React, { useState, useEffect, useRef } from 'react'
 import { useInitData } from '@telegram-apps/sdk-react'
@@ -21,6 +21,7 @@ import gecko from '../images/coingecko.svg'
 import coinStack from '../images/coin-stack.png'
 import useUserStore from '../store/useUserStore'
 import AcademyCompletionSlide from '../components/AcademyCompletionSlide'
+import Linkify from 'react-linkify'
 
 export default function ProductPage() {
     const initData = useInitData()
@@ -350,22 +351,21 @@ export default function ProductPage() {
 
     const handleSlideChange = (swiper: any) => {
         const newIndex = swiper.activeIndex
+        const prevIndex = currentSlideIndex
         setCurrentSlideIndex(newIndex)
-        setCurrentQuestionIndex(Math.floor(newIndex / 2))
 
-        const questionIndex = Math.floor(newIndex / 2)
-        const question = initialAnswers[questionIndex]
+        const prevQuestionIndex = currentQuestionIndex
+        const newQuestionIndex = Math.floor(newIndex / 2)
+        setCurrentQuestionIndex(newQuestionIndex)
 
-        if (question && !question.timerStarted) {
-            startTimer()
-            setInitialAnswers((prevAnswers) => prevAnswers.map((q, qi) => (qi === questionIndex ? { ...q, timerStarted: true } : q)))
-        } else if (question && question.isCorrect === undefined) {
-            // If the question is not answered, reset the timer
-            setTimer(45)
-            if (timerIntervalRef.current) {
-                clearInterval(timerIntervalRef.current)
+        const question = initialAnswers[newQuestionIndex]
+
+        if (newQuestionIndex !== prevQuestionIndex) {
+            // Moved to a new question
+            if (question && !question.timerStarted) {
+                startTimer()
+                setInitialAnswers((prevAnswers) => prevAnswers.map((q, qi) => (qi === newQuestionIndex ? { ...q, timerStarted: true } : q)))
             }
-            startTimer()
         }
 
         // Check if the user is trying to navigate beyond the allowed slide
@@ -576,7 +576,14 @@ export default function ProductPage() {
         }, 1000)
     }
 
-    const renderInitialQuestionSlide = (questionIndex: number) => {
+    // Define a custom decorator function with Tailwind classes for styling links
+    const linkDecorator = (href, text, key) => (
+        <a href={href} key={key} className="text-blue-500 underline" target="_blank" rel="noopener noreferrer">
+            {text}
+        </a>
+    )
+
+    const renderInitialQuestionSlide = (questionIndex) => {
         const question = initialAnswers[questionIndex]
         if (!question) return null
 
@@ -598,29 +605,14 @@ export default function ProductPage() {
                                 <strong>Total Supply:</strong> {parsedAnswer.totalSupply || 'N/A'}
                             </li>
                             <li>
-                                <strong>Contract Address:</strong>{' '}
-                                {parsedAnswer.contractAddress ? (
-                                    <a href={parsedAnswer.contractAddress} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">
-                                        {parsedAnswer.contractAddress}
-                                    </a>
-                                ) : (
-                                    'N/A'
-                                )}
+                                <strong>Contract Address:</strong> <Linkify componentDecorator={linkDecorator}>{parsedAnswer.contractAddress || 'N/A'}</Linkify>
                             </li>
                             {Object.entries(parsedAnswer).map(([key, value]) => {
                                 if (key === 'totalSupply' || key === 'contractAddress') return null
                                 return (
                                     <li key={key} className="mb-2 break-words">
                                         <strong className="capitalize">{key}:</strong>{' '}
-                                        {typeof value === 'string' && isValidUrl(value) ? (
-                                            <a href={value} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">
-                                                {value}
-                                            </a>
-                                        ) : Array.isArray(value) ? (
-                                            value.join(', ')
-                                        ) : (
-                                            value
-                                        )}
+                                        <Linkify componentDecorator={linkDecorator}>{Array.isArray(value) ? value.join(', ') : value}</Linkify>
                                     </li>
                                 )
                             })}
@@ -630,47 +622,16 @@ export default function ProductPage() {
             )
         }
 
-        const formattedAnswer = convertToClickableLinks(question.answer || '')
-
+        // Use Linkify to wrap the answer text in the default case
         return (
             <SwiperSlide key={`initial-question-${questionIndex}`}>
                 <Card className="!my-2 !mx-1 !p-4 !rounded-2xl !bg-gray-50 dark:!bg-gray-800 !border !border-gray-200 dark:!border-gray-700 !shadow-sm !mb-12">
                     <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">{question.question}</h2>
-                    <p className="text-gray-900 dark:text-gray-100">{formattedAnswer}</p>
+                    <p className="text-gray-900 dark:text-gray-100">
+                        <Linkify componentDecorator={linkDecorator}>{question.answer || ''}</Linkify>
+                    </p>
                 </Card>
             </SwiperSlide>
-        )
-    }
-
-    const isValidUrl = (string: string) => {
-        try {
-            new URL(string)
-            return true
-        } catch (_) {
-            return false
-        }
-    }
-
-    const convertToClickableLinks = (text: string) => {
-        if (typeof text !== 'string') return text
-
-        const urlPattern = /(https?:\/\/[^\s]+|www\.[^\s]+)/g
-        const parts = text.split(urlPattern)
-
-        return parts.map((part, index) =>
-            urlPattern.test(part) ? (
-                <a
-                    key={index}
-                    href={part.startsWith('http') ? part : `http://${part}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-500 underline"
-                >
-                    {part}
-                </a>
-            ) : (
-                part
-            )
         )
     }
 
