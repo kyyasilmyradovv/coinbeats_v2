@@ -7,7 +7,8 @@ const cors = require('cors');
 const createError = require('http-errors');
 
 // Load environment variables
-const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.env.local';
+const envFile =
+  process.env.NODE_ENV === 'production' ? '.env.production' : '.env.local';
 dotenv.config({ path: path.resolve(__dirname, envFile) });
 
 // Import routes
@@ -25,6 +26,7 @@ const emailRoutes = require('./routes/email');
 const sseRoutes = require('./routes/sse');
 const pointsRoutes = require('./routes/points');
 const verificationTaskRoutes = require('./routes/verificationTask');
+const academyTypeRoutes = require('./routes/academyType');
 
 // Initialize Express app
 const app = express();
@@ -50,7 +52,7 @@ app.use('/api/email', emailRoutes);
 app.use('/api/sse', sseRoutes);
 app.use('/api/points', pointsRoutes);
 app.use('/api/verification', verificationTaskRoutes);
-
+app.use('/api/academy-types', academyTypeRoutes);
 
 // Serve static files
 app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
@@ -63,7 +65,7 @@ app.use((req, res, next) => {
 // Error handler middleware
 app.use((err, req, res, next) => {
   console.error('Global Error Handler:', err.message);
-  
+
   const response = {
     message: err.message,
     stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,

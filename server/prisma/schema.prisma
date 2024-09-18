@@ -1,212 +1,211 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-generator client {
-  provider      = "prisma-client-js"
-  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
-}
-
 model User {
-  id                    Int             @id @default(autoincrement())
-  telegramUserId        Int             @unique
-  name                  String
-  email                 String?         @unique
-  password              String?
-  role                  Role            @default(USER)
-  createdAt             DateTime        @default(now())
-  updatedAt             DateTime        @updatedAt
-  academies             Academy[]
-  points                Point[]
-  sessionLogs           SessionLog[]
-  userResponses         UserResponse[]  // Track responses
-  emailConfirmed        Boolean         @default(false)
-  emailConfirmationToken String?         @unique
-  bookmarkedAcademies   Academy[]       @relation("BookmarkedAcademies")
-
-  UserVerification UserVerification[]
+  id                     Int                @id @default(autoincrement())
+  name                   String
+  email                  String?            @unique
+  password               String?
+  role                   Role               @default(USER)
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+  telegramUserId         Int                @unique
+  emailConfirmationToken String?            @unique
+  emailConfirmed         Boolean            @default(false)
+  academies              Academy[]
+  points                 Point[]
+  sessionLogs            SessionLog[]
+  userResponses          UserResponse[]
+  UserVerification       UserVerification[]
+  bookmarkedAcademies    Academy[]          @relation("BookmarkedAcademies")
 }
 
 model Academy {
-  id             Int       @id @default(autoincrement())
-  name           String
-  ticker         String
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-  status         String
-  xp             Int       @default(200)
-  sponsored      Boolean   @default(false)
-  creatorId      Int
-  creator        User      @relation(fields: [creatorId], references: [id])
-  categories     Category[]
-  chains         Chain[]
-  twitter        String?
-  telegram       String?
-  discord        String?
-  coingecko      String?
-  dexScreener         String?
-  contractAddress     String?
+  id               Int                @id @default(autoincrement())
+  name             String
+  creatorId        Int
+  coingecko        String?
+  congratsVideo    String?
+  discord          String?
+  getStarted       String?
+  status           String
+  teamBackground   String?
+  telegram         String?
+  ticker           String
+  twitter          String?
+  webpageUrl       String?
+  coverPhotoUrl    String?
+  logoUrl          String?
+  xp               Int                @default(200)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  sponsored        Boolean            @default(false)
+  contractAddress  String?
+  tokenomics       Json?
+  dexScreener      String?
+  creator          User               @relation(fields: [creatorId], references: [id])
   academyQuestions AcademyQuestion[]
-  tokenomics     Json?
-  teamBackground String?
-  congratsVideo  String?
-  getStarted     String?
-  raffles        Raffle[]
-  quests         Quest[]
-  logoUrl        String?
-  coverPhotoUrl  String?
-  webpageUrl     String?
-  subscription   Subscription?
-  Point          Point[]
-  
-  bookmarkedBy   User[]    @relation("BookmarkedAcademies")
-
+  Point            Point[]
+  quests           Quest[]
+  raffles          Raffle[]
+  subscription     Subscription?
   UserVerification UserVerification[]
+  categories       Category[]         @relation("AcademyToCategory")
+  chains           Chain[]            @relation("AcademyToChain")
+  bookmarkedBy     User[]             @relation("BookmarkedAcademies")
 }
 
 model Subscription {
-  id           Int       @id @default(autoincrement())
-  academyId    Int       @unique
-  academy      Academy   @relation(fields: [academyId], references: [id])
-  startDate    DateTime
-  endDate      DateTime?
-  active       Boolean   @default(false)
-  monthlyFee   Float
+  id         Int       @id @default(autoincrement())
+  academyId  Int       @unique
+  startDate  DateTime
+  endDate    DateTime?
+  active     Boolean   @default(false)
+  monthlyFee Float
+  academy    Academy   @relation(fields: [academyId], references: [id])
 }
 
 model SubscriptionSettings {
-  id          Int      @id @default(autoincrement())
-  enabled     Boolean  @default(false)
-  monthlyFee  Float    @default(0.0)
+  id         Int     @id @default(autoincrement())
+  enabled    Boolean @default(false)
+  monthlyFee Float   @default(0.0)
+}
+
+model AcademyType {
+  id               Int               @id @default(autoincrement())
+  name             String            @unique
+  description      String?
+  createdAt        DateTime          @default(now()) @db.Timestamp(6)
+  updatedAt        DateTime          @default(now()) @updatedAt @db.Timestamp(6)
+  initialQuestions InitialQuestion[] @relation("AcademyTypeQuestions")
 }
 
 model InitialQuestion {
-  id          Int       @id @default(autoincrement())
-  question    String
-
-  AcademyQuestion AcademyQuestion[]
+  id               Int               @id @default(autoincrement())
+  question         String
+  academyTypeId    Int
+  academyQuestions AcademyQuestion[]
+  academyType      AcademyType       @relation("AcademyTypeQuestions", fields: [academyTypeId], references: [id], onDelete: Cascade)
 }
 
 model Choice {
-  id                Int              @id @default(autoincrement())
+  id                Int             @id @default(autoincrement())
   text              String
   isCorrect         Boolean
   academyQuestionId Int
-  academyQuestion   AcademyQuestion  @relation(fields: [academyQuestionId], references: [id], onDelete: Cascade)
-  userResponses     UserResponse[]   // Relationship to UserResponse
+  academyQuestion   AcademyQuestion @relation(fields: [academyQuestionId], references: [id], onDelete: Cascade)
+  userResponses     UserResponse[]
 }
 
 model UserResponse {
-  id            Int         @id @default(autoincrement())
+  id            Int     @id @default(autoincrement())
   userId        Int
-  user          User        @relation(fields: [userId], references: [id])
   choiceId      Int
-  choice        Choice      @relation(fields: [choiceId], references: [id], onDelete: Cascade)  // Ensure this cascade is set
   isCorrect     Boolean
   pointsAwarded Int
+  choice        Choice  @relation(fields: [choiceId], references: [id], onDelete: Cascade)
+  user          User    @relation(fields: [userId], references: [id])
 }
 
 model AcademyQuestion {
-  id               Int              @id @default(autoincrement())
+  id                Int             @id @default(autoincrement())
+  question          String
+  academyId         Int
+  answer            String?
   initialQuestionId Int
-  initialQuestion  InitialQuestion  @relation(fields: [initialQuestionId], references: [id])
-  academyId        Int
-  academy          Academy          @relation(fields: [academyId], references: [id])
-  question         String
-  answer           String?
-  quizQuestion     String
-  choices          Choice[]
-  video            String?
-  xp               Int              @default(0)
+  quizQuestion      String
+  xp                Int             @default(0)
+  video             String?
+  academy           Academy         @relation(fields: [academyId], references: [id])
+  initialQuestion   InitialQuestion @relation(fields: [initialQuestionId], references: [id])
+  choices           Choice[]
 }
 
 model Raffle {
-  id         Int      @id @default(autoincrement())
-  amount     Int
-  reward     String
-  currency   String
-  chain      String
-  dates      String
-  totalPool  Int
-  academyId  Int
-  academy    Academy  @relation(fields: [academyId], references: [id])
+  id        Int     @id @default(autoincrement())
+  amount    Int
+  reward    String
+  currency  String
+  chain     String
+  dates     String
+  totalPool Int
+  academyId Int
+  academy   Academy @relation(fields: [academyId], references: [id])
 }
 
 model Quest {
-  id         Int      @id @default(autoincrement())
-  name       String
-  link       String
-  platform   String
-  academyId  Int
-  academy    Academy  @relation(fields: [academyId], references: [id])
-  xp         Int      @default(0) // Points allocated to this quest
+  id        Int     @id @default(autoincrement())
+  name      String
+  link      String
+  platform  String
+  academyId Int
+  xp        Int     @default(0)
+  academy   Academy @relation(fields: [academyId], references: [id])
 }
 
 model Point {
-  id                 Int              @id @default(autoincrement())
+  id                 Int               @id @default(autoincrement())
   value              Int
   userId             Int
-  user               User             @relation(fields: [userId], references: [id])
-  academyId          Int?             // Make academyId optional
-  academy            Academy?         @relation(fields: [academyId], references: [id])
-  verificationTaskId Int?             // Make verificationTaskId optional
+  academyId          Int?
+  verificationTaskId Int?
+  academy            Academy?          @relation(fields: [academyId], references: [id])
+  user               User              @relation(fields: [userId], references: [id])
   verificationTask   VerificationTask? @relation(fields: [verificationTaskId], references: [id])
 }
-
 
 model SessionLog {
   id             Int      @id @default(autoincrement())
   userId         Int?
-  user           User?    @relation(fields: [userId], references: [id])
-  telegramUserId Int
   sessionStart   DateTime
   sessionEnd     DateTime
   duration       Int
   routeDurations Json
   createdAt      DateTime @default(now())
+  telegramUserId Int
+  user           User?    @relation(fields: [userId], references: [id])
 }
 
 model Category {
-  id          Int       @id @default(autoincrement())
-  name        String    @unique
-  academies   Academy[]
+  id        Int       @id @default(autoincrement())
+  name      String    @unique
+  academies Academy[] @relation("AcademyToCategory")
 }
 
 model Chain {
-  id          Int       @id @default(autoincrement())
-  name        String    @unique
-  academies   Academy[]
+  id        Int       @id @default(autoincrement())
+  name      String    @unique
+  academies Academy[] @relation("AcademyToChain")
 }
 
 model VerificationTask {
-  id               Int       @id @default(autoincrement())
-  platform         String    // e.g., 'twitter', 'discord'
-  description      String    // What the task is about
-  points           Int       // Points awarded for completing the task
-  createdAt        DateTime  @default(now())
-  userVerification UserVerification[] // Verification details for each user
-
-  Point Point[]
+  id               Int                @id @default(autoincrement())
+  platform         String
+  description      String
+  points           Int
+  createdAt        DateTime           @default(now())
+  Point            Point[]
+  userVerification UserVerification[]
 }
 
 model UserVerification {
-  id              Int     @id @default(autoincrement())
-  userId          Int     // User who completed the task
-  verificationTaskId Int  // Task that was completed
-  academyId       Int?    // Null if it's a platform task, not academy-related
-  verified        Boolean @default(false) // Whether the task is verified
-  createdAt       DateTime @default(now())
-  pointsAwarded   Int     @default(0) // Points awarded upon verification
-  user            User    @relation(fields: [userId], references: [id])
-  verificationTask VerificationTask @relation(fields: [verificationTaskId], references: [id])
-  academy         Academy? @relation(fields: [academyId], references: [id])
+  id                 Int              @id @default(autoincrement())
+  userId             Int
+  verificationTaskId Int
+  academyId          Int?
+  verified           Boolean          @default(false)
+  createdAt          DateTime         @default(now())
+  pointsAwarded      Int              @default(0)
+  academy            Academy?         @relation(fields: [academyId], references: [id])
+  user               User             @relation(fields: [userId], references: [id])
+  verificationTask   VerificationTask @relation(fields: [verificationTaskId], references: [id])
 }
 
 enum Role {

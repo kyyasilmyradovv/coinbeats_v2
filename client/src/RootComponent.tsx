@@ -20,6 +20,7 @@ import UserProfilePage from './pages/UserProfilePage'
 import CreateAcademyPage from './pages/CreateAcademyPage'
 import MyAcademiesPage from './pages/MyAcademiesPage'
 import SuperAdminDashboardPage from './pages/SuperAdminDashboardPage'
+import AcademyTypePage from './pages/AcademyTypePage'
 import UserDetailPage from './pages/UserDetailPage'
 import AddRafflesPage from './pages/AddRafflesPage'
 import AddQuestsPage from './pages/AddQuestsPage'
@@ -234,6 +235,14 @@ function RootComponent() {
                         />
                         <Route path="/inbox" element={<InboxPage />} />
                         <Route path="/academy-statistics" element={<AcademyStatisticsPage />} />
+                        <Route
+                            path="/academy-types"
+                            element={
+                                <RouteGuard requiredRole="SUPERADMIN">
+                                    <AcademyTypePage />
+                                </RouteGuard>
+                            }
+                        />
                         <Route path="/user-profile" element={<UserProfilePage />} />
                         <Route
                             path="/create-academy"
