@@ -326,32 +326,34 @@ exports.updateAcademy = async (req, res, next) => {
   const {
     name,
     ticker,
-    categories = '[]',
-    chains = '[]',
-    twitter = '',
-    telegram = '',
-    discord = '',
-    coingecko = '',
-    initialAnswers = '[]',
-    tokenomics = '{}',
-    teamBackground = '',
-    congratsVideo = '',
-    getStarted = '',
-    raffles = '[]',
-    quests = '[]',
-    webpageUrl = '',
-    coingeckoLink = '',
-    dexScreenerLink = '',
-    contractAddress = '',
+    categories,
+    chains,
+    twitter,
+    telegram,
+    discord,
+    coingecko,
+    initialAnswers,
+    tokenomics,
+    teamBackground,
+    congratsVideo,
+    getStarted,
+    raffles,
+    quests,
+    webpageUrl,
+    coingeckoLink,
+    dexScreenerLink,
+    contractAddress,
   } = req.body;
 
   try {
-    const parsedCategories = JSON.parse(categories);
-    const parsedChains = JSON.parse(chains);
-    const parsedInitialAnswers = JSON.parse(initialAnswers);
-    const parsedRaffles = JSON.parse(raffles);
-    const parsedQuests = JSON.parse(quests);
-    const parsedTokenomics = JSON.parse(tokenomics);
+    const parsedCategories = categories ? JSON.parse(categories) : undefined;
+    const parsedChains = chains ? JSON.parse(chains) : undefined;
+    const parsedInitialAnswers = initialAnswers
+      ? JSON.parse(initialAnswers)
+      : undefined;
+    const parsedRaffles = raffles ? JSON.parse(raffles) : undefined;
+    const parsedQuests = quests ? JSON.parse(quests) : undefined;
+    const parsedTokenomics = tokenomics ? JSON.parse(tokenomics) : {};
 
     // Process tokenomics data
     const tokenomicsData = {
@@ -372,7 +374,7 @@ exports.updateAcademy = async (req, res, next) => {
     if (req.files && req.files.coverPhoto) {
       dataToUpdate.coverPhotoUrl = handleFileUpload(req.files, 'coverPhoto');
     }
-    if (parsedCategories.length) {
+    if (parsedCategories && parsedCategories.length) {
       const categoryRecords = await Promise.all(
         parsedCategories.map(async (categoryName) => {
           const category = await prisma.category.findUnique({
@@ -388,7 +390,7 @@ exports.updateAcademy = async (req, res, next) => {
         set: categoryRecords.map((category) => ({ id: category.id })),
       };
     }
-    if (parsedChains.length) {
+    if (parsedChains && parsedChains.length) {
       const chainRecords = await Promise.all(
         parsedChains.map(async (chainName) => {
           const chain = await prisma.chain.findUnique({
@@ -422,89 +424,7 @@ exports.updateAcademy = async (req, res, next) => {
       data: dataToUpdate,
     });
 
-    // Update Academy Questions and Choices
-    for (const initialAnswer of parsedInitialAnswers) {
-      if (initialAnswer.id) {
-        initialAnswer.id = parseInt(initialAnswer.id, 10);
-        if (isNaN(initialAnswer.id)) {
-          throw new Error(`Invalid academyQuestion ID: ${initialAnswer.id}`);
-        }
-
-        // Log the ID
-        console.log(`Updating AcademyQuestion with ID: ${initialAnswer.id}`);
-
-        // Update existing academyQuestion
-        await prisma.academyQuestion.update({
-          where: { id: initialAnswer.id },
-          data: removeUndefinedFields({
-            question: initialAnswer.question,
-            answer: initialAnswer.answer || '',
-            quizQuestion: initialAnswer.quizQuestion || '',
-            // XP is intentionally not included
-          }),
-        });
-
-        // Update Choices
-        for (const choice of initialAnswer.choices) {
-          if (choice.id) {
-            choice.id = parseInt(choice.id, 10);
-            if (isNaN(choice.id)) {
-              throw new Error(`Invalid choice ID: ${choice.id}`);
-            }
-
-            // Log the choice ID
-            console.log(`Updating Choice with ID: ${choice.id}`);
-
-            // Update existing choice
-            await prisma.choice.update({
-              where: { id: choice.id },
-              data: {
-                text: choice.answer || '',
-                isCorrect: choice.correct || false,
-              },
-            });
-          } else {
-            // Skip creating new choices
-            console.log(
-              `Skipping new Choice without ID for AcademyQuestion ID: ${initialAnswer.id}`
-            );
-          }
-        }
-      } else {
-        // Skip updating if no ID is present
-        console.log(`Skipping AcademyQuestion without ID`);
-      }
-    }
-
-    // Update Quests
-    for (const questData of parsedQuests) {
-      if (questData.id) {
-        questData.id = parseInt(questData.id, 10);
-        if (isNaN(questData.id)) {
-          throw new Error(`Invalid quest ID: ${questData.id}`);
-        }
-
-        // Log the quest ID
-        console.log(`Updating Quest with ID: ${questData.id}`);
-
-        // Update existing quest
-        await prisma.quest.update({
-          where: { id: questData.id },
-          data: {
-            name: questData.name || '',
-            link: questData.link || '',
-            platform: questData.platform || '',
-            // Do not update XP to preserve existing value
-          },
-        });
-      } else {
-        // Skip updating if no ID is present
-        console.log(`Skipping Quest without ID`);
-      }
-    }
-
-    // Skip Raffles update since it involves deleting and creating
-    console.log(`Skipping Raffles update in updateAcademy`);
+    // Further logic to update academy questions, quests, etc. if necessary
 
     res.json({
       message: 'Academy updated successfully',
@@ -726,15 +646,16 @@ exports.getVideoUrls = async (req, res, next) => {
   // Log the raw academyId to verify it's being received correctly
   console.log('Raw academyId from request params:', id);
 
-  // Ensure that the ID is properly parsed
+  // Ensure that the ID is properly parsed and is a number
   const academyId = parseInt(id, 10);
   console.log('Parsed academyId:', academyId);
 
-  if (isNaN(academyId)) {
+  if (isNaN(academyId) || academyId <= 0) {
     return res.status(400).json({ error: 'Invalid academyId' });
   }
 
   try {
+    // Fetch the video URLs from the database
     const questions = await prisma.academyQuestion.findMany({
       where: { academyId: academyId },
       select: {
@@ -742,6 +663,9 @@ exports.getVideoUrls = async (req, res, next) => {
         video: true,
       },
     });
+
+    // Log the fetched questions to verify the query result
+    console.log('Fetched video URLs:', questions);
 
     if (!questions || questions.length === 0) {
       return res

@@ -133,13 +133,20 @@ const useAcademyStore = create<AcademyState>()(
             videoUrls: [],
             initialAcademyData: {}, // Initialize as an empty object
 
-            setField: (field, value) => set((state) => ({ ...state, [field]: value }), false, `setField: ${field}`),
+            setField: (field, value) =>
+                set(
+                    (state) => {
+                        const updatedValue = value !== undefined ? value : state[field]
+                        return { ...state, [field]: updatedValue }
+                    },
+                    false,
+                    `setField: ${field}`
+                ),
 
             setInitialAnswer: (index, field, value) =>
                 set((state) => {
                     const updatedAnswers = [...state.initialAnswers]
 
-                    // Handle the choices specifically, ensuring empty values are respected
                     if (field === 'choices') {
                         const newChoices = [...updatedAnswers[index].choices]
                         newChoices[value.index] = {
@@ -149,8 +156,7 @@ const useAcademyStore = create<AcademyState>()(
                         }
                         updatedAnswers[index].choices = newChoices
                     } else {
-                        // Ensure that we properly handle empty strings
-                        updatedAnswers[index][field] = value || ''
+                        updatedAnswers[index][field] = value !== undefined ? value : updatedAnswers[index][field]
                     }
                     return { initialAnswers: updatedAnswers }
                 }),
@@ -271,7 +277,7 @@ const useAcademyStore = create<AcademyState>()(
                 }
             },
 
-            updateAcademy: async (academyId: number, logoFile?: File | null, coverPhotoFile?: File | null) => {
+            updateAcademy: async (academyId, logoFile, coverPhotoFile) => {
                 const state = get()
                 const { accessToken } = useAuthStore.getState()
 
@@ -282,22 +288,25 @@ const useAcademyStore = create<AcademyState>()(
 
                 try {
                     const formData = new FormData()
+                    const initialState = state.initialAcademyData || {} // Initial data to compare changes
 
-                    // Initial state to compare changes
-                    const initialState = state.initialAcademyData || {}
-
-                    // Helper function to append data if changed
-                    const appendIfChanged = (key, value) => {
-                        if (JSON.stringify(initialState[key]) !== JSON.stringify(value) && value !== undefined) {
+                    // Helper function to append data if it has changed or is intentionally set to empty
+                    const appendIfChangedOrCleared = (key, value) => {
+                        if (value !== undefined && initialState[key] !== value) {
                             formData.append(key, value)
                         }
                     }
 
-                    appendIfChanged('name', state.name)
-                    appendIfChanged('ticker', state.ticker)
-                    appendIfChanged('webpageUrl', state.webpageUrl)
+                    // Append fields that have changed or are intentionally cleared
+                    appendIfChangedOrCleared('name', state.name)
+                    appendIfChangedOrCleared('ticker', state.ticker)
+                    appendIfChangedOrCleared('webpageUrl', state.webpageUrl)
+                    appendIfChangedOrCleared('twitter', state.twitter)
+                    appendIfChangedOrCleared('telegram', state.telegram)
+                    appendIfChangedOrCleared('discord', state.discord)
+                    appendIfChangedOrCleared('coingecko', state.coingecko)
 
-                    // Handle logo and cover photo
+                    // Handle logo and cover photo updates
                     if (logoFile || state.logo !== initialState.logo) {
                         formData.append('logo', logoFile || state.logo)
                     }
@@ -305,20 +314,7 @@ const useAcademyStore = create<AcademyState>()(
                         formData.append('coverPhoto', coverPhotoFile || state.coverPhoto)
                     }
 
-                    // For arrays, compare stringified versions
-                    if (JSON.stringify(initialState.categories) !== JSON.stringify(state.categories)) {
-                        formData.append('categories', JSON.stringify(state.categories))
-                    }
-                    if (JSON.stringify(initialState.chains) !== JSON.stringify(state.chains)) {
-                        formData.append('chains', JSON.stringify(state.chains))
-                    }
-
-                    appendIfChanged('twitter', state.twitter)
-                    appendIfChanged('telegram', state.telegram)
-                    appendIfChanged('discord', state.discord)
-                    appendIfChanged('coingecko', state.coingecko)
-
-                    // Process tokenomics data
+                    // Compare and handle tokenomics data updates
                     const tokenomicsData = {
                         chains: state.initialAnswers[3]?.chains || [],
                         utility: state.initialAnswers[3]?.utility || '',
@@ -329,33 +325,22 @@ const useAcademyStore = create<AcademyState>()(
                         contractAddress: state.initialAnswers[3]?.contractAddress || ''
                     }
 
-                    // Stringify tokenomics data
-                    const tokenomicsString = JSON.stringify(tokenomicsData)
-
-                    // Compare tokenomics
-                    if (JSON.stringify(initialState.tokenomics) !== tokenomicsString) {
-                        formData.append('tokenomics', tokenomicsString)
+                    if (JSON.stringify(initialState.tokenomics) !== JSON.stringify(tokenomicsData)) {
+                        formData.append('tokenomics', JSON.stringify(tokenomicsData))
                     }
 
-                    // Handle initialAnswers
+                    // Handle initialAnswers (including video URLs)
                     if (JSON.stringify(initialState.initialAnswers) !== JSON.stringify(state.initialAnswers)) {
-                        // Ensure IDs are integers and log them
-                        const initialAnswersWithIds = state.initialAnswers.map((answer) => ({
+                        const updatedInitialAnswers = state.initialAnswers.map((answer) => ({
                             ...answer,
                             id: answer.id ? Number(answer.id) : undefined,
-                            initialQuestionId: answer.initialQuestionId, // Preserve initialQuestionId
                             choices: answer.choices.map((choice) => ({
                                 ...choice,
                                 id: choice.id ? Number(choice.id) : undefined
                             }))
                         }))
 
-                        // Sort initialAnswers by `initialQuestionId` before sending
-                        const sortedInitialAnswers = initialAnswersWithIds.sort((a, b) => a.initialQuestionId - b.initialQuestionId)
-
-                        console.log('InitialAnswers being sent to backend:', sortedInitialAnswers)
-
-                        formData.append('initialAnswers', JSON.stringify(sortedInitialAnswers))
+                        formData.append('initialAnswers', JSON.stringify(updatedInitialAnswers))
                     }
 
                     // Handle raffles and quests
@@ -366,23 +351,16 @@ const useAcademyStore = create<AcademyState>()(
                         formData.append('quests', JSON.stringify(state.quests))
                     }
 
-                    // Send the PUT request if there are changes
-                    if (Array.from(formData.keys()).length > 0) {
-                        await axios.put(`/api/academies/${academyId}`, formData, {
-                            headers: {
-                                'Content-Type': 'multipart/form-data',
-                                Authorization: `Bearer ${accessToken}`
-                            }
-                        })
+                    // Perform the PUT request to update the academy
+                    await axios.put(`/api/academies/${academyId}`, formData, {
+                        headers: {
+                            'Content-Type': 'multipart/form-data',
+                            Authorization: `Bearer ${accessToken}`
+                        }
+                    })
 
-                        // Update initialAcademyData after successful update
-                        set({ initialAcademyData: JSON.parse(JSON.stringify(state)) })
-                    } else {
-                        console.log('No changes detected, skipping update.')
-                    }
-
-                    // No need to reset the data here, as we have updated initialAcademyData
-                    // state.resetAcademyData()
+                    // Update the initial state to reflect the latest changes
+                    set({ initialAcademyData: JSON.parse(JSON.stringify(state)) })
                 } catch (error) {
                     console.error('Error updating academy:', error)
                     throw error
@@ -503,9 +481,21 @@ const useAcademyStore = create<AcademyState>()(
                 try {
                     const response = await axios.get(`/api/academies/${academyId}/videos`)
                     console.log('Video URLs response from backend:', response.data) // Log the response data
-                    set({ videoUrls: response.data.videoUrls || [] })
+
+                    // Map the video URLs to ensure there are no null values
+                    const videoUrls = response.data.videoUrls.map((item) => ({
+                        initialQuestionId: item.initialQuestionId,
+                        url: item.video || '' // Replace null with an empty string
+                    }))
+
+                    set({ videoUrls })
                 } catch (error) {
                     console.error('Error fetching video URLs:', error) // Log any errors that occur
+
+                    // Additional logging for debugging
+                    if (error.response) {
+                        console.error('Backend response:', error.response.data)
+                    }
                 }
             },
 
@@ -518,9 +508,15 @@ const useAcademyStore = create<AcademyState>()(
                 }
 
                 try {
+                    // Extract video URLs from the current initialAnswers state
+                    const videoUrls = state.initialAnswers.map((answer) => ({
+                        initialQuestionId: answer.initialQuestionId,
+                        url: answer.video || '' // Use the video field from initialAnswers
+                    }))
+
                     await axios.put(
                         `/api/academies/${academyId}/videos`,
-                        { videoUrls: state.videoUrls },
+                        { videoUrls }, // Send the extracted video URLs
                         {
                             headers: {
                                 'Content-Type': 'application/json',

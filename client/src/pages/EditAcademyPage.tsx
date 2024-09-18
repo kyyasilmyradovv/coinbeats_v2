@@ -89,23 +89,14 @@ const EditAcademyPage: React.FC = () => {
         return `https://subscribes.lt/${url}`
     }
 
-    const detectURL = (text: string) => {
-        const urlPattern = /(\b(https?|www):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/gi
-        return text.replace(urlPattern, (url) => {
-            const href = url.startsWith('www') ? `http://${url}` : url
-            return `<a href="${href}" target="_blank" rel="noopener noreferrer">${url}</a>`
-        })
-    }
-
     const handleSubmit = async () => {
         try {
             if (id) {
-                await updateAcademy(parseInt(id, 10), logoFile, coverPhotoFile) // Use the new updateAcademy function
+                await updateAcademy(parseInt(id, 10), logoFile, coverPhotoFile)
             } else {
                 console.error('No academy ID found for updating.')
             }
-            resetAcademyData()
-            console.log('Academy updated and store reset.')
+            console.log('Academy updated successfully.')
             navigate('/my-academies')
         } catch (error) {
             console.error('Error updating academy:', error)
