@@ -8,7 +8,7 @@ exports.getInitialQuestions = async (req, res, next) => {
   try {
     const questions = await prisma.initialQuestion.findMany({
       include: {
-        AcademyQuestion: {
+        academyQuestions: {
           include: {
             choices: true,
           },

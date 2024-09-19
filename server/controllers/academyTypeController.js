@@ -130,3 +130,33 @@ exports.deleteInitialQuestion = async (req, res, next) => {
     );
   }
 };
+
+exports.updateInitialQuestion = async (req, res, next) => {
+  console.log('updateInitialQuestion hit');
+  const { questionId } = req.params;
+  const { question } = req.body;
+
+  if (!question || typeof question !== 'string') {
+    return next(createError(400, 'Invalid question data'));
+  }
+
+  try {
+    const updatedQuestion = await prisma.initialQuestion.update({
+      where: { id: parseInt(questionId, 10) },
+      data: { question },
+    });
+    console.log('Initial Question updated:', updatedQuestion);
+    res.status(200).json(updatedQuestion);
+  } catch (error) {
+    console.error('Error updating initial question:', error);
+
+    if (error.code === 'P2025') {
+      // Record not found
+      return next(createError(404, 'Initial Question not found'));
+    }
+
+    next(
+      createError(500, 'Internal Server Error: Error updating initial question')
+    );
+  }
+};

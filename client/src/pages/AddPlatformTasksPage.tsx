@@ -1,7 +1,6 @@
-// client/src/pages/AddQuestsPage.tsx
+// client/src/pages/AddPlatformTasksPage.tsx
 
 import React, { useState, useEffect } from 'react'
-import { useParams } from 'react-router-dom'
 import { Page, List, ListInput, ListItem, Button, BlockTitle, Block, Card, Notification, Toggle, Popover, Preloader } from 'konsta/react'
 import { Icon } from '@iconify/react'
 import axios from '../api/axiosInstance'
@@ -23,8 +22,7 @@ interface VerificationTask {
     shortCircuitTimer: number | null
 }
 
-const AddQuestsPage: React.FC = () => {
-    const { id: academyId } = useParams<{ id: string }>()
+const AddPlatformTasksPage: React.FC = () => {
     const [formData, setFormData] = useState({
         name: '',
         description: '',
@@ -43,7 +41,6 @@ const AddQuestsPage: React.FC = () => {
     const [loading, setLoading] = useState<boolean>(true)
     const [editingTask, setEditingTask] = useState<VerificationTask | null>(null)
     const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
-    const [popoverOpen, setPopoverOpen] = useState(false)
     const [popoverTarget, setPopoverTarget] = useState<HTMLElement | null>(null)
     const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null)
 
@@ -51,7 +48,7 @@ const AddQuestsPage: React.FC = () => {
     useEffect(() => {
         const fetchTasks = async () => {
             try {
-                const response = await axios.get(`/api/verification-tasks/academy/${academyId}`)
+                const response = await axios.get('/api/verification-tasks/platform')
                 setTasks(response.data)
             } catch (error) {
                 console.error('Error fetching tasks:', error)
@@ -61,7 +58,7 @@ const AddQuestsPage: React.FC = () => {
         }
 
         fetchTasks()
-    }, [academyId])
+    }, [])
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value, type } = e.target as HTMLInputElement
@@ -102,10 +99,9 @@ const AddQuestsPage: React.FC = () => {
                 setTasks((prevTasks) => prevTasks.map((task) => (task.id === editingTask.id ? { ...task, ...formData } : task)))
             } else {
                 // Create new task
-                const response = await axios.post('/api/verification-tasks/academy', {
+                const response = await axios.post('/api/verification-tasks/platform', {
                     ...formData,
-                    academyId: academyId ? parseInt(academyId, 10) : 0,
-                    taskType: 'ACADEMY_SPECIFIC',
+                    taskType: 'PLATFORM_SPECIFIC',
                     xp: formData.xp ? parseInt(formData.xp.toString(), 10) : 0,
                     repeatInterval: formData.repeatInterval ? parseInt(formData.repeatInterval.toString(), 10) : null,
                     shortCircuitTimer: formData.shortCircuitTimer ? parseInt(formData.shortCircuitTimer.toString(), 10) : null
@@ -169,7 +165,7 @@ const AddQuestsPage: React.FC = () => {
             <Sidebar />
 
             <div className="text-center flex w-full items-center justify-center absolute top-8 !mb-18">
-                <BlockTitle large>{editingTask ? 'Edit Task' : 'Add Task to Academy'}</BlockTitle>
+                <BlockTitle large>{editingTask ? 'Edit Task' : 'Add Platform Task'}</BlockTitle>
             </div>
 
             <div className="mt-18">
@@ -222,6 +218,10 @@ const AddQuestsPage: React.FC = () => {
                             >
                                 <option value="QUEST_TAB">Quest Tab</option>
                                 <option value="END_OF_ACADEMY">End of Academy</option>
+                                <option value="GAMES_PAGE">Games Page</option>
+                                <option value="HOME_PAGE">Home Page</option>
+                                <option value="POINTS_PAGE">Points Page</option>
+                                <option value="OTHER">Other</option>
                             </ListInput>
                             <ListInput outline label="Platform" type="select" name="platform" value={formData.platform} onChange={handleChange}>
                                 <option value="NONE">None</option>
@@ -301,7 +301,7 @@ const AddQuestsPage: React.FC = () => {
                 </Block>
 
                 <BlockTitle large className="text-center">
-                    Existing Tasks
+                    Existing Platform Tasks
                 </BlockTitle>
 
                 {loading ? (
@@ -339,7 +339,7 @@ const AddQuestsPage: React.FC = () => {
                         </Block>
                     ))
                 ) : (
-                    <p className="mx-4 text-center">No tasks found. Start by creating a task.</p>
+                    <p className="mx-4 text-center mt-10">No platform tasks found. Start by creating a task.</p>
                 )}
             </div>
 
@@ -377,4 +377,4 @@ const AddQuestsPage: React.FC = () => {
     )
 }
 
-export default AddQuestsPage
+export default AddPlatformTasksPage

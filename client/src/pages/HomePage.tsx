@@ -6,8 +6,9 @@ import { useNavigate } from 'react-router-dom'
 import useCategoryChainStore from '../store/useCategoryChainStore'
 import Navbar from '../components/common/Navbar'
 import Sidebar from '../components/common/Sidebar'
-import { Page, List, ListInput, Card, Button } from 'konsta/react'
+import { Page, List, ListInput, Card, Button, Dialog } from 'konsta/react'
 import { MdBookmarks } from 'react-icons/md'
+import { Icon } from '@iconify/react'
 import useSessionStore from '../store/useSessionStore'
 import useUserStore from '~/store/useUserStore'
 import treasure from '../images/treasure1.png'
@@ -22,6 +23,32 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
     const [academies, setAcademies] = useState([])
     const [bookmarkMessage, setBookmarkMessage] = useState('') // State for bookmark message
     const [showBookmarkAnimation, setShowBookmarkAnimation] = useState(false) // State to control bookmark animation
+    const [tasks, setTasks] = useState([])
+    const [referralModalOpen, setReferralModalOpen] = useState(false)
+    const [referralLink, setReferralLink] = useState('')
+
+    const handleAction = (task) => {
+        if (task.verificationMethod === 'INVITE_TELEGRAM_FRIEND') {
+            // Get the user's referral code
+            axios
+                .get('/api/users/me')
+                .then((response) => {
+                    const referralCode = response.data.referralCode
+                    if (!referralCode) {
+                        alert('Referral code not available.')
+                        return
+                    }
+                    const referralLink = `${window.location.origin}?referralCode=${referralCode}`
+                    // Display the link and a button to share it
+                    setReferralLink(referralLink)
+                    setReferralModalOpen(true)
+                })
+                .catch((error) => {
+                    console.error('Error fetching user data:', error)
+                })
+        }
+        // ... handle other methods
+    }
 
     // Zustand User Store
     const { bookmarks, setBookmarks, userId, role, totalPoints, points, setUser } = useUserStore((state) => ({
@@ -45,6 +72,19 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
         chains: state.chains,
         fetchCategoriesAndChains: state.fetchCategoriesAndChains
     }))
+
+    useEffect(() => {
+        const fetchHomepageTasks = async () => {
+            try {
+                const response = await axios.get('/api/verification-tasks/homepage')
+                setTasks(response.data)
+            } catch (error) {
+                console.error('Error fetching homepage tasks:', error)
+            }
+        }
+
+        fetchHomepageTasks()
+    }, [])
 
     // Fetch academies and categories/chains on component mount
     useEffect(() => {
@@ -135,18 +175,63 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
         navigate(`/product/${academy.id}`, { state: { academy } })
     }
 
+    const copyReferralLink = () => {
+        navigator.clipboard
+            .writeText(referralLink)
+            .then(() => {
+                alert('Referral link copied to clipboard!')
+            })
+            .catch((error) => {
+                console.error('Error copying referral link:', error)
+            })
+    }
+
     return (
         <Page>
             <Navbar />
             <Sidebar />
 
-            <div className="flex justify-center items-center flex-col mb-6 mt-6">
-                <div className="bg-white dark:bg-zinc-900 rounded-full shadow-lg p-2 flex flex-row items-center px-6">
-                    <img src={treasure} className="h-10 w-10 mr-4" alt="bunny mascot" />
-                    <div className="text-lg text-gray-500 dark:text-gray-400 font-semibold mr-4">Your Coins:</div>
-                    <div className="text-xl font-bold text-black dark:text-white">{totalPoints}</div>
+            <div className="flex flex-row justify-center items-center flex-wrap mb-6 mt-6">
+                <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-2 flex flex-row items-center px-6 m-2">
+                    {/* "Your Coins" card */}
+                    <img src={treasure} className="h-8 w-8 mr-4" alt="bunny mascot" />
+                    <div className="text-xs text-gray-500 dark:text-gray-400 font-semibold mr-4">Your Coins:</div>
+                    <div className="text-md font-bold text-black dark:text-white">{totalPoints}</div>
                 </div>
+
+                {tasks.length > 0 && (
+                    <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-2 flex flex-row items-center px-6 m-2">
+                        {/* Task card */}
+                        <img src={`/images/platform-logos/${tasks[0].platform.toLowerCase()}.png`} className="h-10 w-10 mr-4" alt={tasks[0].platform} />
+                        <div className="text-xs text-gray-500 dark:text-gray-400 font-semibold mr-4">{tasks[0].name}</div>
+                        <Button
+                            outline
+                            rounded
+                            onClick={() => handleAction(tasks[0])}
+                            className="text-[12px] !w-16"
+                            style={{
+                                background: 'linear-gradient(to left, #ff0077, #7700ff)',
+                                color: '#fff'
+                            }}
+                        >
+                            Invite
+                        </Button>
+                    </div>
+                )}
             </div>
+
+            <Dialog opened={referralModalOpen} onBackdropClick={() => setReferralModalOpen(false)} title="Invite a Friend">
+                <div className="p-4">
+                    <p>Share this link with your friends:</p>
+                    <input type="text" value={referralLink} readOnly className="w-full p-2 border border-gray-300 rounded mt-2" />
+                    <Button onClick={copyReferralLink} className="mt-2">
+                        Copy Link
+                    </Button>
+                    <Button onClick={() => window.open(`https://t.me/share/url?url=${encodeURIComponent(referralLink)}`, '_blank')} className="mt-2">
+                        Share via Telegram
+                    </Button>
+                </div>
+            </Dialog>
 
             <div className="flex justify-between bg-white dark:bg-zinc-900 rounded-2xl m-4 shadow-lg">
                 <List className="w-full !my-0">

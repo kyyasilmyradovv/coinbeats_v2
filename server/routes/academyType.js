@@ -9,12 +9,13 @@ const {
   deleteAcademyType,
   addInitialQuestion,
   deleteInitialQuestion,
+  updateInitialQuestion, // Import the new controller
 } = require('../controllers/academyTypeController');
 const asyncHandler = require('express-async-handler');
 
 const router = express.Router();
 
-// Routes for Academy Types
+// Existing routes
 router.post(
   '/',
   authenticateToken,
@@ -52,6 +53,14 @@ router.delete(
   authenticateToken,
   authorizeRoles('ADMIN', 'SUPERADMIN'),
   asyncHandler(deleteInitialQuestion)
+);
+
+// **New PUT Route for Updating Initial Questions**
+router.put(
+  '/questions/:questionId',
+  authenticateToken,
+  authorizeRoles('ADMIN', 'SUPERADMIN'),
+  asyncHandler(updateInitialQuestion)
 );
 
 module.exports = router;

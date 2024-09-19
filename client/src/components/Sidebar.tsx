@@ -63,6 +63,12 @@ const Sidebar: React.FC = () => {
                         <Button raised rounded onClick={() => handleNavigation('/academy-types')}>
                             Academy types
                         </Button>
+                        <Button raised rounded onClick={() => handleNavigation('/add-categories-chains')}>
+                            Add categories and chains
+                        </Button>
+                        <Button raised rounded onClick={() => handleNavigation('/add-platform-tasks')}>
+                            Add platform tasks
+                        </Button>
                         <Button raised rounded onClick={() => handleNavigation('/inbox')}>
                             Inbox
                         </Button>

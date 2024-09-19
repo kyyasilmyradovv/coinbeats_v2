@@ -6,6 +6,7 @@ const jwt = require('jsonwebtoken');
 const createError = require('http-errors');
 const crypto = require('crypto');
 const sendEmail = require('../utils/sendEmail');
+const { performVerification } = require('../services/verificationService');
 
 const prisma = new PrismaClient();
 const SALT_ROUNDS = 10;
@@ -26,12 +27,21 @@ exports.getAllUsers = async (req, res, next) => {
     });
 
     // Calculate additional data
-    const usersWithDetails = users.map(user => {
-      const totalPoints = user.points.reduce((sum, point) => sum + point.value, 0);
+    const usersWithDetails = users.map((user) => {
+      const totalPoints = user.points.reduce(
+        (sum, point) => sum + point.value,
+        0
+      );
       const sessionCount = user.sessionLogs.length;
-      const subscription = user.academies.find(academy => academy.subscription);
-      const subscriptionStatus = subscription && subscription.subscription ? 'Active' : 'Inactive';
-      const subscriptionValidUntil = subscription && subscription.subscription ? new Date(subscription.subscription.endDate).toLocaleDateString() : 'N/A';
+      const subscription = user.academies.find(
+        (academy) => academy.subscription
+      );
+      const subscriptionStatus =
+        subscription && subscription.subscription ? 'Active' : 'Inactive';
+      const subscriptionValidUntil =
+        subscription && subscription.subscription
+          ? new Date(subscription.subscription.endDate).toLocaleDateString()
+          : 'N/A';
 
       return {
         ...user,
@@ -70,11 +80,17 @@ exports.getUserDetailsById = async (req, res, next) => {
       return next(createError(404, 'User not found'));
     }
 
-    const totalPoints = user.points.reduce((sum, point) => sum + point.value, 0);
+    const totalPoints = user.points.reduce(
+      (sum, point) => sum + point.value,
+      0
+    );
     const sessionCount = user.sessionLogs.length;
-    const subscription = user.academies.find(academy => academy.subscription);
+    const subscription = user.academies.find((academy) => academy.subscription);
     const subscriptionStatus = subscription ? 'Active' : 'Inactive';
-    const subscriptionValidUntil = subscription && subscription.subscription.endDate ? new Date(subscription.subscription.endDate).toLocaleDateString() : 'N/A';
+    const subscriptionValidUntil =
+      subscription && subscription.subscription.endDate
+        ? new Date(subscription.subscription.endDate).toLocaleDateString()
+        : 'N/A';
 
     res.json({
       ...user,
@@ -122,22 +138,25 @@ exports.deleteUser = async (req, res, next) => {
 exports.getUserByTelegramId = async (req, res, next) => {
   const telegramUserId = parseInt(req.params.telegramUserId, 10);
   try {
-    console.log("Fetching user with Telegram ID:", telegramUserId);
+    console.log('Fetching user with Telegram ID:', telegramUserId);
 
     const user = await prisma.user.findUnique({
       where: { telegramUserId },
-      include: { 
+      include: {
         points: true,
-        academies: true,  // Include academies in the response
+        academies: true, // Include academies in the response
       },
     });
 
     if (!user) {
-      console.log("User not found:", telegramUserId);
+      console.log('User not found:', telegramUserId);
       return next(createError(404, 'User not found'));
     }
 
-    const totalPoints = user.points.reduce((sum, point) => sum + point.value, 0);
+    const totalPoints = user.points.reduce(
+      (sum, point) => sum + point.value,
+      0
+    );
     const hasAcademy = user.academies.length > 0;
 
     res.json({ ...user, totalPoints, hasAcademy });
@@ -146,7 +165,6 @@ exports.getUserByTelegramId = async (req, res, next) => {
     next(createError(500, 'Error fetching user'));
   }
 };
-
 
 exports.updateUserRole = async (req, res, next) => {
   const { userId, newRole } = req.body;
@@ -183,8 +201,13 @@ exports.registerCreator = async (req, res, next) => {
     let user = await prisma.user.findUnique({ where: { telegramUserId } });
 
     if (user && user.role === 'CREATOR') {
-      console.log('User already exists with Telegram ID and is a creator:', telegramUserId);
-      return res.status(400).json({ message: 'User with this Telegram ID is already a creator' });
+      console.log(
+        'User already exists with Telegram ID and is a creator:',
+        telegramUserId
+      );
+      return res
+        .status(400)
+        .json({ message: 'User with this Telegram ID is already a creator' });
     }
 
     if (user && user.role === 'USER') {
@@ -194,7 +217,10 @@ exports.registerCreator = async (req, res, next) => {
 
       // Generate email confirmation token and send confirmation email
       const emailConfirmationToken = crypto.randomBytes(32).toString('hex');
-      console.log('Email confirmation token generated:', emailConfirmationToken);
+      console.log(
+        'Email confirmation token generated:',
+        emailConfirmationToken
+      );
 
       // Upgrade existing user role to CREATOR, update email, password, and confirmation token
       user = await prisma.user.update({
@@ -206,7 +232,10 @@ exports.registerCreator = async (req, res, next) => {
           emailConfirmationToken,
         },
       });
-      console.log('User role upgraded to CREATOR with updated email and password:', telegramUserId);
+      console.log(
+        'User role upgraded to CREATOR with updated email and password:',
+        telegramUserId
+      );
 
       const confirmationUrl = `${process.env.BACKEND_URL}/api/email/confirm-email?token=${emailConfirmationToken}`;
       console.log('Confirmation URL:', confirmationUrl);
@@ -217,10 +246,17 @@ exports.registerCreator = async (req, res, next) => {
         <a href="${confirmationUrl}">Confirm Email</a>
       `;
 
-      await sendEmail(email, 'Email Confirmation', 'Please confirm your email', message);
+      await sendEmail(
+        email,
+        'Email Confirmation',
+        'Please confirm your email',
+        message
+      );
       console.log('Confirmation email sent upon role upgrade');
 
-      return res.status(200).json({ message: 'User role upgraded to CREATOR. Please confirm your email.' });
+      return res.status(200).json({
+        message: 'User role upgraded to CREATOR. Please confirm your email.',
+      });
     }
 
     // If no user exists, create a new user
@@ -252,10 +288,17 @@ exports.registerCreator = async (req, res, next) => {
       <a href="${confirmationUrl}">Confirm Email</a>
     `;
 
-    await sendEmail(email, 'Email Confirmation', 'Please confirm your email', message);
+    await sendEmail(
+      email,
+      'Email Confirmation',
+      'Please confirm your email',
+      message
+    );
     console.log('Confirmation email sent upon user creation');
 
-    return res.status(201).json({ message: 'User registered as a CREATOR. Please confirm your email.' });
+    return res.status(201).json({
+      message: 'User registered as a CREATOR. Please confirm your email.',
+    });
   } catch (error) {
     console.error('Error registering creator:', error);
     next(createError(500, 'Error registering creator'));
@@ -283,7 +326,9 @@ exports.userInteraction = async (req, res, next) => {
           include: { bookmarkedAcademies: true },
         });
       } else {
-        return res.status(400).json({ message: 'Invalid action for non-existent user.' });
+        return res
+          .status(400)
+          .json({ message: 'Invalid action for non-existent user.' });
       }
     } else if (action === 'bookmark') {
       const alreadyBookmarked = user.bookmarkedAcademies.some(
@@ -295,7 +340,7 @@ exports.userInteraction = async (req, res, next) => {
         data: {
           bookmarkedAcademies: alreadyBookmarked
             ? { disconnect: { id: parseInt(academyId, 10) } } // Remove bookmark
-            : { connect: { id: parseInt(academyId, 10) } },   // Add bookmark
+            : { connect: { id: parseInt(academyId, 10) } }, // Add bookmark
         },
         include: { bookmarkedAcademies: true },
       });
@@ -378,7 +423,7 @@ exports.getBookmarkedAcademies = async (req, res, next) => {
     const user = await prisma.user.findUnique({
       where: { id: parseInt(userId, 10) },
       include: {
-        bookmarkedAcademies: true,  // Ensure this is included
+        bookmarkedAcademies: true, // Ensure this is included
       },
     });
 
@@ -386,9 +431,78 @@ exports.getBookmarkedAcademies = async (req, res, next) => {
       return next(createError(404, 'User not found'));
     }
 
-    res.json(user.bookmarkedAcademies);  // Return the bookmarked academies directly
+    res.json(user.bookmarkedAcademies); // Return the bookmarked academies directly
   } catch (error) {
     console.error('Error fetching bookmarked academies:', error);
     next(createError(500, 'Error fetching bookmarked academies'));
+  }
+};
+
+exports.completeVerificationTask = async (req, res, next) => {
+  const { taskId, twitterHandle } = req.body;
+  const userId = req.user.id;
+
+  try {
+    const verificationTask = await prisma.verificationTask.findUnique({
+      where: { id: taskId },
+    });
+
+    if (!verificationTask) {
+      return next(createError(404, 'Verification task not found'));
+    }
+
+    const isVerified = await performVerification(verificationTask, req.user, {
+      twitterHandle,
+    });
+
+    if (isVerified) {
+      // Check if task already completed
+      const existingCompletion = await prisma.userVerification.findFirst({
+        where: {
+          userId,
+          verificationTaskId: taskId,
+          verified: true,
+        },
+      });
+
+      if (existingCompletion && verificationTask.intervalType === 'ONETIME') {
+        return res.status(400).json({ message: 'Task already completed' });
+      }
+
+      // Record the completion
+      await prisma.userVerification.create({
+        data: {
+          userId,
+          verificationTaskId: taskId,
+          verified: true,
+          pointsAwarded: verificationTask.xp,
+          completedAt: new Date(),
+        },
+      });
+
+      // Update user's points
+      await prisma.point.create({
+        data: {
+          userId,
+          value: verificationTask.xp,
+          verificationTaskId: taskId,
+        },
+      });
+
+      res.json({
+        message: 'Task completed successfully',
+        pointsAwarded: verificationTask.xp,
+      });
+    } else {
+      res
+        .status(400)
+        .json({
+          message:
+            'Verification failed. Please ensure you have tweeted the correct message.',
+        });
+    }
+  } catch (error) {
+    console.error('Error completing verification task:', error);
+    next(createError(500, 'Error completing verification task'));
   }
 };

@@ -2,11 +2,11 @@
 
 import React, { useState, useEffect, useRef } from 'react'
 import { useInitData } from '@telegram-apps/sdk-react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
 import Navbar from '../components/common/Navbar'
 import Sidebar from '../components/common/Sidebar'
 import BottomTabBar from '../components/BottomTabBar'
-import { Page, Card, Radio, Button, Block } from 'konsta/react'
+import { Page, Card, Radio, Button, Block, Preloader } from 'konsta/react'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import 'swiper/swiper-bundle.css'
 import axiosInstance from '../api/axiosInstance'
@@ -22,11 +22,29 @@ import coinStack from '../images/coin-stack.png'
 import useUserStore from '../store/useUserStore'
 import AcademyCompletionSlide from '../components/AcademyCompletionSlide'
 import Linkify from 'react-linkify'
+import { extractYouTubeVideoId } from '../utils/extractYouTubeVideoId'
+
+// Import platform logos
+import xLogo from '../images/x.png'
+import telegramLogo from '../images/x.png'
+import youtubeLogo from '../images/x.png'
+import instagramLogo from '../images/x.png'
+import discordLogo from '../images/x.png'
+import emailLogo from '../images/x.png'
+import defaultLogo from '../images/x.png'
+
+const platformLogos: { [key: string]: string } = {
+    X: xLogo,
+    Telegram: telegramLogo,
+    YouTube: youtubeLogo,
+    Instagram: instagramLogo,
+    Discord: discordLogo,
+    Email: emailLogo
+}
 
 export default function ProductPage() {
     const initData = useInitData()
     const location = useLocation()
-    const navigate = useNavigate()
     const { academy } = location.state || {}
     const [activeFilter, setActiveFilter] = useState<string | null>(null)
     const [initialAnswers, setInitialAnswers] = useState<any[]>([])
@@ -40,6 +58,7 @@ export default function ProductPage() {
     const [showArrow, setShowArrow] = useState(true)
     const [userHasResponses, setUserHasResponses] = useState(false)
     const [showIntro, setShowIntro] = useState(false)
+    const [loadingQuests, setLoadingQuests] = useState(true)
 
     // Timer related state variables
     const [timer, setTimer] = useState(45)
@@ -97,7 +116,7 @@ export default function ProductPage() {
         if (academy) {
             fetchEarnedPoints()
             fetchQuests()
-            fetchQuestions() // Fetch questions when academy is available
+            fetchQuestions()
         }
     }, [academy])
 
@@ -140,6 +159,7 @@ export default function ProductPage() {
             } else {
                 setUserHasResponses(false)
                 setShowIntro(true) // Show intro if no responses
+                setInitialAnswers(questions)
             }
         } catch (error) {
             console.error('Error fetching user responses:', error.response ? error.response.data : error.message)
@@ -209,13 +229,16 @@ export default function ProductPage() {
         }
     }
 
+    // Fetch quests (tasks) when component mounts
     const fetchQuests = async () => {
         try {
-            const response = await axiosInstance.get(`/api/academies/${academy.id}/quests`)
+            const response = await axiosInstance.get(`/api/verification-tasks/academy/${academy.id}`)
             setQuests(response.data || [])
         } catch (error) {
             console.error('Error fetching quests:', error.response ? error.response.data : error.message)
             setQuests([])
+        } finally {
+            setLoadingQuests(false)
         }
     }
 
@@ -704,17 +727,9 @@ export default function ProductPage() {
                 {initialAnswers.length > 0 ? (
                     initialAnswers.map((question, index) => {
                         const videoUrl = question.video
-                        let embedUrl = ''
-
-                        if (videoUrl) {
-                            try {
-                                const urlParams = new URLSearchParams(new URL(videoUrl).search)
-                                const videoId = urlParams.get('v')
-                                embedUrl = `https://www.youtube.com/embed/${videoId}`
-                            } catch (error) {
-                                console.error('Invalid video URL:', videoUrl)
-                            }
-                        }
+                        console.log('Video URL:', videoUrl)
+                        const videoId = extractYouTubeVideoId(videoUrl || '')
+                        const embedUrl = videoId ? `https://www.youtube.com/embed/${videoId}` : ''
 
                         return (
                             <React.Fragment key={`watch-tab-${index}`}>
@@ -723,14 +738,14 @@ export default function ProductPage() {
                                         {embedUrl ? (
                                             <iframe
                                                 width="100%"
-                                                height="250"
+                                                height="315" // Adjust height as needed
                                                 src={embedUrl}
                                                 title={`Video ${index + 1}`}
                                                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                                 allowFullScreen
                                             />
                                         ) : (
-                                            <p className="text-center">Invalid video URL</p>
+                                            <p className="text-center text-red-500">Invalid video URL</p>
                                         )}
                                     </Card>
                                 </SwiperSlide>
@@ -749,15 +764,122 @@ export default function ProductPage() {
         </>
     )
 
+    // Handle action button click
+    const handleAction = (quest: any) => {
+        // Implement action based on verification method
+        // For example, redirect to a URL or open a modal
+        console.log('Action clicked for quest:', quest)
+        // Placeholder action
+        alert(`Performing action: ${getActionButtonText(quest.verificationMethod)}`)
+    }
+
+    // Handle verify button click
+    const handleVerify = async (quest: any) => {
+        // Implement verification logic
+        // For example, make an API call to verify the quest
+        console.log('Verify clicked for quest:', quest)
+        try {
+            const response = await axiosInstance.post(`/api/verification-tasks/${quest.id}/verify`, {
+                userId,
+                academyId: academy.id
+            })
+            alert('Verification successful!')
+        } catch (error) {
+            console.error('Error verifying quest:', error)
+            alert('Verification failed.')
+        }
+    }
+
+    // Get action button text based on verification method
+    const getActionButtonText = (verificationMethod: string) => {
+        switch (verificationMethod) {
+            case 'FOLLOW_USER':
+                return 'Follow'
+            case 'TWEET':
+                return 'Post on X'
+            case 'RETWEET':
+                return 'Retweet'
+            case 'LIKE_TWEET':
+                return 'Like Tweet'
+            case 'ADD_TO_BIO':
+                return 'Add to Bio'
+            case 'JOIN_TELEGRAM_CHANNEL':
+                return 'Join Channel'
+            case 'INVITE_TELEGRAM_FRIEND':
+                return 'Invite Friend'
+            case 'SUBSCRIBE_YOUTUBE_CHANNEL':
+                return 'Subscribe'
+            case 'WATCH_YOUTUBE_VIDEO':
+                return 'Watch Video'
+            case 'FOLLOW_INSTAGRAM_USER':
+                return 'Follow'
+            case 'JOIN_DISCORD_CHANNEL':
+                return 'Join Channel'
+            case 'PROVIDE_EMAIL':
+                return 'Provide Email'
+            case 'SHORT_CIRCUIT':
+                return 'Start Task'
+            default:
+                return 'Start Task'
+        }
+    }
+
+    // Render Quest Tab
     const renderQuestTab = () => (
-        <Block>
-            {quests.length > 0 ? (
+        <Block className="!m-0 !p-0">
+            {loadingQuests ? (
+                <div className="flex justify-center items-center mt-4">
+                    <Preloader size="w-12 h-12" />
+                </div>
+            ) : quests.length > 0 ? (
                 quests.map((quest, index) => (
                     <Card
                         key={index}
-                        className="m-2 p-2 !rounded-2xl !bg-gray-50 dark:!bg-gray-800 !border !border-gray-200 dark:!border-gray-700 !shadow-sm flex justify-between"
+                        className="!m-0 !p-0 !rounded-2xl !bg-gray-50 dark:!bg-gray-800 !border !border-gray-200 dark:!border-gray-700 !shadow-sm flex"
                     >
-                        <span className="text-gray-900 dark:text-gray-200">{quest.name}</span>
+                        <div className="flex">
+                            {/* Platform logo */}
+                            <div className="flex-shrink-0">
+                                <img src={platformLogos[quest.platform] || defaultLogo} alt={quest.platform} className="w-12 h-12" />
+                            </div>
+                            {/* Quest details */}
+                            <div className="flex-grow mx-4">
+                                <h3 className="text-lg font-semibold">{quest.name}</h3>
+                                <p className="text-sm text-gray-600 dark:text-gray-300">{quest.description}</p>
+                                <div className="flex items-center mt-2">
+                                    <span className="text-md font-semibold mr-1">+{quest.xp}</span>
+                                    <img src={coinStack} alt="coin stack" className="w-5 h-5" />
+                                </div>
+                            </div>
+                            {/* Action buttons */}
+                            <div className="flex flex-col justify-between">
+                                <Button
+                                    small
+                                    rounded
+                                    outline
+                                    onClick={() => handleAction(quest)}
+                                    className="mb-2"
+                                    style={{
+                                        background: 'linear-gradient(to left, #ff0077, #7700ff)',
+                                        color: '#fff'
+                                    }}
+                                >
+                                    {getActionButtonText(quest.verificationMethod)}
+                                </Button>
+                                <Button
+                                    small
+                                    rounded
+                                    outline
+                                    onClick={() => handleVerify(quest)}
+                                    style={{
+                                        background: 'linear-gradient(to left, #ff0077, #7700ff)',
+                                        color: '#fff'
+                                    }}
+                                >
+                                    Verify
+                                </Button>
+                            </div>
+                        </div>
                     </Card>
                 ))
             ) : (

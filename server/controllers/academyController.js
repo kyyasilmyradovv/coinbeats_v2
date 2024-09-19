@@ -424,7 +424,101 @@ exports.updateAcademy = async (req, res, next) => {
       data: dataToUpdate,
     });
 
-    // Further logic to update academy questions, quests, etc. if necessary
+    // Handle initialAnswers
+    if (parsedInitialAnswers !== undefined) {
+      for (const initialAnswer of parsedInitialAnswers) {
+        const {
+          id: questionId,
+          initialQuestionId,
+          question,
+          answer,
+          quizQuestion,
+          choices,
+          video,
+        } = initialAnswer;
+
+        // Update or create the academyQuestion
+        const updatedQuestion = await prisma.academyQuestion.upsert({
+          where: { id: questionId || 0 }, // Use 0 or a negative number to ensure upsert creates if not found
+          update: {
+            question,
+            answer,
+            quizQuestion,
+            video,
+          },
+          create: {
+            academyId: parseInt(id, 10),
+            initialQuestionId,
+            question,
+            answer,
+            quizQuestion,
+            video,
+          },
+        });
+
+        const questionIdToUse = updatedQuestion.id;
+
+        // Handle choices
+        if (choices && choices.length > 0) {
+          // Delete existing choices for the question
+          await prisma.choice.deleteMany({
+            where: { academyQuestionId: questionIdToUse },
+          });
+
+          // Create new choices
+          await prisma.choice.createMany({
+            data: choices.map((choice) => ({
+              academyQuestionId: questionIdToUse,
+              text: choice.answer,
+              isCorrect: choice.correct,
+            })),
+          });
+        }
+      }
+    }
+
+    // Handle raffles
+    if (parsedRaffles !== undefined) {
+      // Delete existing raffles
+      await prisma.raffle.deleteMany({
+        where: { academyId: parseInt(id, 10) },
+      });
+
+      // Create new raffles
+      if (parsedRaffles.length > 0) {
+        await prisma.raffle.createMany({
+          data: parsedRaffles.map((raffle) => ({
+            academyId: parseInt(id, 10),
+            amount: parseInt(raffle.amount, 10) || 0,
+            reward: raffle.reward || '',
+            currency: raffle.currency || '',
+            chain: raffle.chain || '',
+            dates: raffle.dates || '',
+            totalPool: parseInt(raffle.totalPool, 10) || 0,
+          })),
+        });
+      }
+    }
+
+    // Handle quests
+    if (parsedQuests !== undefined) {
+      // Delete existing quests
+      await prisma.quest.deleteMany({
+        where: { academyId: parseInt(id, 10) },
+      });
+
+      // Create new quests
+      if (parsedQuests.length > 0) {
+        await prisma.quest.createMany({
+          data: parsedQuests.map((quest) => ({
+            academyId: parseInt(id, 10),
+            name: quest.name || '',
+            link: quest.link || '',
+            platform: quest.platform || '',
+          })),
+        });
+      }
+    }
 
     res.json({
       message: 'Academy updated successfully',

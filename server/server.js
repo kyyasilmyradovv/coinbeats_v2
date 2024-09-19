@@ -51,7 +51,7 @@ app.use('/api/inbox', inboxRoutes);
 app.use('/api/email', emailRoutes);
 app.use('/api/sse', sseRoutes);
 app.use('/api/points', pointsRoutes);
-app.use('/api/verification', verificationTaskRoutes);
+app.use('/api/verification-tasks', verificationTaskRoutes);
 app.use('/api/academy-types', academyTypeRoutes);
 
 // Serve static files

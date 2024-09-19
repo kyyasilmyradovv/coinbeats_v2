@@ -8,6 +8,53 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum TaskType {
+  PLATFORM_SPECIFIC
+  ACADEMY_SPECIFIC
+}
+
+enum IntervalType {
+  ONETIME
+  REPEATED
+}
+
+enum DisplayLocation {
+  QUEST_TAB
+  END_OF_ACADEMY
+  GAMES_PAGE
+  HOME_PAGE
+  POINTS_PAGE
+  OTHER
+}
+
+enum Platform {
+  X
+  YOUTUBE
+  FACEBOOK
+  INSTAGRAM
+  TELEGRAM
+  DISCORD
+  EMAIL
+  NONE
+}
+
+enum VerificationMethod {
+  FOLLOW_USER
+  TWEET
+  RETWEET
+  LIKE_TWEET
+  ADD_TO_BIO
+  JOIN_TELEGRAM_CHANNEL
+  INVITE_TELEGRAM_FRIEND
+  INVITE_WITH_REFERRAL
+  SUBSCRIBE_YOUTUBE_CHANNEL
+  WATCH_YOUTUBE_VIDEO
+  FOLLOW_INSTAGRAM_USER
+  JOIN_DISCORD_CHANNEL
+  PROVIDE_EMAIL
+  SHORT_CIRCUIT
+}
+
 model User {
   id                     Int                @id @default(autoincrement())
   name                   String
@@ -25,6 +72,10 @@ model User {
   userResponses          UserResponse[]
   UserVerification       UserVerification[]
   bookmarkedAcademies    Academy[]          @relation("BookmarkedAcademies")
+  referralCode           String?            @unique
+  referredByUserId       Int?
+  referredBy             User?              @relation("UserReferrals", fields: [referredByUserId], references: [id])
+  referrals              User[]             @relation("UserReferrals")
 }
 
 model Academy {
@@ -60,6 +111,8 @@ model Academy {
   categories       Category[]         @relation("AcademyToCategory")
   chains           Chain[]            @relation("AcademyToChain")
   bookmarkedBy     User[]             @relation("BookmarkedAcademies")
+
+  VerificationTask VerificationTask[]
 }
 
 model Subscription {
@@ -186,13 +239,24 @@ model Chain {
 }
 
 model VerificationTask {
-  id               Int                @id @default(autoincrement())
-  platform         String
-  description      String
-  points           Int
-  createdAt        DateTime           @default(now())
-  Point            Point[]
-  userVerification UserVerification[]
+  id                 Int                @id @default(autoincrement())
+  name               String
+  description        String?
+  taskType           TaskType
+  intervalType       IntervalType
+  repeatInterval     Int?
+  displayLocation    DisplayLocation
+  platform           Platform?
+  verificationMethod VerificationMethod?
+  xp                 Int                @default(0)
+  shortCircuit       Boolean            @default(false)
+  shortCircuitTimer  Int?
+  academyId          Int?
+  academy            Academy?           @relation(fields: [academyId], references: [id])
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  Point              Point[]
+  userVerification   UserVerification[]
 }
 
 model UserVerification {
@@ -202,6 +266,7 @@ model UserVerification {
   academyId          Int?
   verified           Boolean          @default(false)
   createdAt          DateTime         @default(now())
+  completedAt        DateTime?
   pointsAwarded      Int              @default(0)
   academy            Academy?         @relation(fields: [academyId], references: [id])
   user               User             @relation(fields: [userId], references: [id])

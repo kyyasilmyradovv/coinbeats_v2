@@ -1,3 +1,5 @@
+// server/controllers/categoryController.js
+
 const { PrismaClient } = require('@prisma/client');
 const createError = require('http-errors');
 const prisma = new PrismaClient();
@@ -13,7 +15,9 @@ exports.createCategory = async (req, res, next) => {
     const category = await prisma.category.create({
       data: { name },
     });
-    res.status(201).json({ message: 'Category created successfully', category });
+    res
+      .status(201)
+      .json({ message: 'Category created successfully', category });
   } catch (error) {
     console.error('Error creating category:', error);
     next(createError(500, 'Error creating category'));
@@ -48,7 +52,10 @@ exports.updateCategory = async (req, res, next) => {
       where: { id: parseInt(id, 10) },
       data: { name },
     });
-    res.json({ message: 'Category updated successfully', category: updatedCategory });
+    res.json({
+      message: 'Category updated successfully',
+      category: updatedCategory,
+    });
   } catch (error) {
     console.error('Error updating category:', error);
     next(createError(500, 'Error updating category'));

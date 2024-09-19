@@ -1,140 +1,280 @@
-// controllers/verificationTaskController.js
+// server/controllers/verificationTaskController.js
+
 const { PrismaClient } = require('@prisma/client');
 const createError = require('http-errors');
+
 const prisma = new PrismaClient();
-const axios = require('axios');
-const querystring = require('querystring');
 
-// Create a new platform verification task (Admin/Platform)
 exports.createVerificationTask = async (req, res, next) => {
-  const { platform, description, points } = req.body;
-
-  console.log('Received request to create a verification task');
-  console.log(`Platform: ${platform}, Description: ${description}, Points: ${points}`);
+  const {
+    name,
+    description,
+    taskType,
+    intervalType,
+    repeatInterval,
+    displayLocation,
+    platform,
+    verificationMethod,
+    xp,
+    shortCircuit,
+    shortCircuitTimer,
+    academyId,
+  } = req.body;
 
   try {
-    const task = await prisma.verificationTask.create({
+    // For academy-specific tasks, ensure that the user is the creator of the academy
+    if (taskType === 'ACADEMY_SPECIFIC') {
+      if (!academyId) {
+        return next(
+          createError(400, 'academyId is required for academy-specific tasks')
+        );
+      }
+
+      const academy = await prisma.academy.findUnique({
+        where: { id: academyId },
+      });
+
+      if (!academy) {
+        return next(createError(404, 'Academy not found'));
+      }
+
+      if (academy.creatorId !== req.user.userId) {
+        return next(
+          createError(
+            403,
+            'You are not authorized to add tasks to this academy'
+          )
+        );
+      }
+    }
+
+    const verificationTask = await prisma.verificationTask.create({
       data: {
-        platform,
+        name,
         description,
-        points,
+        taskType,
+        intervalType,
+        repeatInterval,
+        displayLocation,
+        platform,
+        verificationMethod,
+        xp,
+        shortCircuit,
+        shortCircuitTimer,
+        academyId,
       },
     });
-    console.log('Verification task created successfully:', task);
-    res.status(201).json({ task });
+
+    res.status(201).json(verificationTask);
   } catch (error) {
     console.error('Error creating verification task:', error);
-    next(createError(500, 'Failed to create verification task'));
+    next(createError(500, 'Error creating verification task'));
   }
 };
 
-// Step 1: Redirect to Twitter OAuth for Authorization
-exports.twitterLogin = (req, res) => {
-  const client_id = process.env.TWITTER_CLIENT_ID;
-  const redirect_uri = process.env.TWITTER_REDIRECT_URI;
-
-  const authUrl = `https://twitter.com/i/oauth2/authorize?${querystring.stringify({
-    response_type: 'code',
-    client_id,
-    redirect_uri,
-    scope: 'tweet.read tweet.write',
-    state: 'state',
-    code_challenge: 'challenge',
-    code_challenge_method: 'plain'
-  })}`;
-
-  console.log('Redirecting to Twitter login:', authUrl);
-  res.redirect(authUrl);
-};
-
-// Step 2: Handle Twitter OAuth Callback and Get Access Token
-exports.twitterCallback = async (req, res, next) => {
-  const code = req.query.code;
-
+exports.getVerificationTasks = async (req, res, next) => {
   try {
-    const response = await axios.post('https://api.twitter.com/2/oauth2/token', {
-      grant_type: 'authorization_code',
-      code: code,
-      redirect_uri: process.env.TWITTER_REDIRECT_URI,
-      client_id: process.env.TWITTER_CLIENT_ID,
-      code_verifier: 'challenge'
-    }, {
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Authorization': `Basic ${Buffer.from(`${process.env.TWITTER_CLIENT_ID}:${process.env.TWITTER_CLIENT_SECRET}`).toString('base64')}`
-      }
-    });
+    let verificationTasks;
 
-    const { access_token } = response.data;
-    console.log('Twitter Access Token received:', access_token);
+    if (req.user.role === 'ADMIN' || req.user.role === 'SUPERADMIN') {
+      // For platform-specific tasks
+      verificationTasks = await prisma.verificationTask.findMany({
+        where: { taskType: 'PLATFORM_SPECIFIC' },
+      });
+    } else if (req.user.role === 'CREATOR') {
+      // For academy-specific tasks, only for the creator's academies
+      const academies = await prisma.academy.findMany({
+        where: { creatorId: req.user.id },
+        select: { id: true },
+      });
 
-    // Store access_token in session/database (mocked here)
-    req.session.access_token = access_token;
+      const academyIds = academies.map((academy) => academy.id);
 
-    // Redirect user to the verification page or UI where they can verify tweets
-    res.redirect(`/tweet-verification?access_token=${access_token}`);
+      verificationTasks = await prisma.verificationTask.findMany({
+        where: {
+          taskType: 'ACADEMY_SPECIFIC',
+          academyId: { in: academyIds },
+        },
+      });
+    } else {
+      // For users, fetch tasks assigned to them or available tasks
+      verificationTasks = await prisma.verificationTask.findMany({
+        where: {
+          OR: [
+            { taskType: 'PLATFORM_SPECIFIC' },
+            { taskType: 'ACADEMY_SPECIFIC' },
+          ],
+        },
+      });
+    }
+
+    res.json(verificationTasks);
   } catch (error) {
-    console.error('Error during Twitter OAuth callback:', error.response ? error.response.data : error.message);
-    next(createError(500, 'Twitter Authentication failed'));
+    console.error('Error fetching verification tasks:', error);
+    next(createError(500, 'Error fetching verification tasks'));
   }
 };
 
-// Step 3: Verify if the user has completed the Twitter task
-exports.verifyTwitterTask = async (req, res, next) => {
-  const { userId, tweetId, taskId } = req.body;
-
-  console.log('Received request to verify Twitter task');
-  console.log(`User ID: ${userId}, Tweet ID: ${tweetId}, Task ID: ${taskId}`);
+exports.getVerificationTaskById = async (req, res, next) => {
+  const { taskId } = req.params;
 
   try {
-    // Call Twitter API to get the tweet details
-    console.log(`Calling Twitter API for tweet ID: ${tweetId}`);
-    const tweetResponse = await axios.get(`https://api.twitter.com/2/tweets/${tweetId}`, {
-      headers: {
-        Authorization: `Bearer ${process.env.TWITTER_BEARER_TOKEN}`,
-      },
+    const verificationTask = await prisma.verificationTask.findUnique({
+      where: { id: parseInt(taskId, 10) },
     });
-    const tweetText = tweetResponse.data.data.text;
-    console.log('Tweet fetched successfully:', tweetText);
 
-    // Fetch the verification task from the database
-    console.log(`Fetching verification task with ID: ${taskId}`);
-    const task = await prisma.verificationTask.findUnique({ where: { id: taskId } });
-
-    if (!task) {
-      console.error('Verification task not found');
+    if (!verificationTask) {
       return next(createError(404, 'Verification task not found'));
     }
 
-    // Check if the tweet text includes the required task description
-    if (tweetText.includes(task.description)) {
-      console.log('Tweet matches the verification task description, awarding points');
-      
-      await prisma.userVerification.update({
-        where: { userId_verificationTaskId: { userId, verificationTaskId: taskId } },
-        data: { verified: true, pointsAwarded: task.points },
-      });
-      res.json({ message: 'Tweet verified successfully', points: task.points });
-    } else {
-      console.error('Tweet content does not match the task description');
-      res.status(400).json({ error: 'Tweet content does not match the task' });
-    }
+    res.json(verificationTask);
   } catch (error) {
-    console.error('Error verifying tweet:', error);
-    next(createError(500, 'Verification failed'));
+    console.error('Error fetching verification task:', error);
+    next(createError(500, 'Error fetching verification task'));
   }
 };
 
-// Get all verification tasks
-exports.getVerificationTasks = async (req, res, next) => {
-  console.log('Fetching all verification tasks');
+exports.updateVerificationTask = async (req, res, next) => {
+  const { taskId } = req.params;
+  const {
+    name,
+    description,
+    intervalType,
+    repeatInterval,
+    displayLocation,
+    platform,
+    verificationMethod,
+    xp,
+    shortCircuit,
+    shortCircuitTimer,
+  } = req.body;
 
   try {
-    const tasks = await prisma.verificationTask.findMany();
-    console.log('Fetched verification tasks:', tasks);
+    const verificationTask = await prisma.verificationTask.findUnique({
+      where: { id: parseInt(taskId, 10) },
+    });
+
+    if (!verificationTask) {
+      return next(createError(404, 'Verification task not found'));
+    }
+
+    // Authorization: Only the creator of the academy can update the task, or ADMIN/SUPERADMIN
+    if (verificationTask.taskType === 'ACADEMY_SPECIFIC') {
+      const academy = await prisma.academy.findUnique({
+        where: { id: verificationTask.academyId },
+      });
+
+      if (
+        academy.creatorId !== req.user.id &&
+        req.user.role !== 'ADMIN' &&
+        req.user.role !== 'SUPERADMIN'
+      ) {
+        return next(
+          createError(403, 'You are not authorized to update this task')
+        );
+      }
+    } else {
+      if (req.user.role !== 'ADMIN' && req.user.role !== 'SUPERADMIN') {
+        return next(
+          createError(403, 'You are not authorized to update this task')
+        );
+      }
+    }
+
+    const updatedTask = await prisma.verificationTask.update({
+      where: { id: parseInt(taskId, 10) },
+      data: {
+        name,
+        description,
+        intervalType,
+        repeatInterval,
+        displayLocation,
+        platform,
+        verificationMethod,
+        xp,
+        shortCircuit,
+        shortCircuitTimer,
+      },
+    });
+
+    res.json(updatedTask);
+  } catch (error) {
+    console.error('Error updating verification task:', error);
+    next(createError(500, 'Error updating verification task'));
+  }
+};
+
+exports.deleteVerificationTask = async (req, res, next) => {
+  const { taskId } = req.params;
+
+  try {
+    const verificationTask = await prisma.verificationTask.findUnique({
+      where: { id: parseInt(taskId, 10) },
+    });
+
+    if (!verificationTask) {
+      return next(createError(404, 'Verification task not found'));
+    }
+
+    // Authorization: Only the creator of the academy can delete the task, or ADMIN/SUPERADMIN
+    if (verificationTask.taskType === 'ACADEMY_SPECIFIC') {
+      const academy = await prisma.academy.findUnique({
+        where: { id: verificationTask.academyId },
+      });
+
+      if (
+        academy.creatorId !== req.user.id &&
+        req.user.role !== 'ADMIN' &&
+        req.user.role !== 'SUPERADMIN'
+      ) {
+        return next(
+          createError(403, 'You are not authorized to delete this task')
+        );
+      }
+    } else {
+      if (req.user.role !== 'ADMIN' && req.user.role !== 'SUPERADMIN') {
+        return next(
+          createError(403, 'You are not authorized to delete this task')
+        );
+      }
+    }
+
+    await prisma.verificationTask.delete({
+      where: { id: parseInt(taskId, 10) },
+    });
+
+    res.status(204).end();
+  } catch (error) {
+    console.error('Error deleting verification task:', error);
+    next(createError(500, 'Error deleting verification task'));
+  }
+};
+
+exports.getTasksForGamesPage = async (req, res, next) => {
+  try {
+    const tasks = await prisma.verificationTask.findMany({
+      where: {
+        taskType: 'PLATFORM_SPECIFIC',
+        displayLocation: 'GAMES_PAGE',
+      },
+    });
     res.json(tasks);
   } catch (error) {
-    console.error('Error fetching verification tasks:', error);
-    next(createError(500, 'Failed to fetch verification tasks'));
+    console.error('Error fetching tasks for games page:', error);
+    next(createError(500, 'Error fetching tasks for games page'));
+  }
+};
+
+TODO: exports.getTasksForHomepage = async (req, res, next) => {
+  try {
+    const tasks = await prisma.verificationTask.findMany({
+      where: {
+        displayLocation: 'HOME_PAGE',
+      },
+    });
+    res.json(tasks);
+  } catch (error) {
+    console.error('Error fetching tasks for homepage:', error);
+    next(createError(500, 'Error fetching tasks for homepage'));
   }
 };

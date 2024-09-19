@@ -21,6 +21,7 @@ import CreateAcademyPage from './pages/CreateAcademyPage'
 import MyAcademiesPage from './pages/MyAcademiesPage'
 import SuperAdminDashboardPage from './pages/SuperAdminDashboardPage'
 import AcademyTypePage from './pages/AcademyTypePage'
+import AddPlatformTasksPage from './pages/AddPlatformTasksPage'
 import UserDetailPage from './pages/UserDetailPage'
 import AddRafflesPage from './pages/AddRafflesPage'
 import AddQuestsPage from './pages/AddQuestsPage'
@@ -240,6 +241,14 @@ function RootComponent() {
                             element={
                                 <RouteGuard requiredRole="SUPERADMIN">
                                     <AcademyTypePage />
+                                </RouteGuard>
+                            }
+                        />
+                        <Route
+                            path="/add-platform-tasks"
+                            element={
+                                <RouteGuard requiredRole="SUPERADMIN">
+                                    <AddPlatformTasksPage />
                                 </RouteGuard>
                             }
                         />

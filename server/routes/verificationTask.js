@@ -1,29 +1,68 @@
-// routes/verificationTask.js
+// server/routes/verificationTask.js
+
 const express = require('express');
+const { authenticateToken, authorizeRoles } = require('../middleware/auth');
 const {
   createVerificationTask,
-  twitterLogin,
-  twitterCallback,
-  verifyTwitterTask,
   getVerificationTasks,
+  updateVerificationTask,
+  deleteVerificationTask,
+  getVerificationTaskById,
+  getTasksForGamesPage,
+  getTasksForHomepage,
 } = require('../controllers/verificationTaskController');
-const { authenticateToken } = require('../middleware/auth');
+const asyncHandler = require('express-async-handler');
 
 const router = express.Router();
 
-// Route for creating a new verification task (Admin/Platform)
-router.post('/create', authenticateToken, createVerificationTask);
+// Routes for platform-specific tasks (ADMIN and SUPERADMIN)
+router.post(
+  '/platform',
+  authenticateToken,
+  authorizeRoles('ADMIN', 'SUPERADMIN'),
+  asyncHandler(createVerificationTask)
+);
+router.get(
+  '/platform',
+  authenticateToken,
+  authorizeRoles('ADMIN', 'SUPERADMIN'),
+  asyncHandler(getVerificationTasks)
+);
 
-// Route for initiating Twitter OAuth login
-router.get('/twitter/login', twitterLogin);
+// Routes for academy-specific tasks (CREATOR)
+router.post(
+  '/academy',
+  authenticateToken,
+  authorizeRoles('CREATOR'),
+  asyncHandler(createVerificationTask)
+);
+router.get('/games', asyncHandler(getTasksForGamesPage));
+router.get('/homepage', asyncHandler(getTasksForHomepage));
+router.get(
+  '/academy/:academyId',
+  authenticateToken,
+  authorizeRoles('CREATOR'),
+  asyncHandler(getVerificationTasks)
+);
 
-// Route for handling Twitter OAuth callback
-router.get('/twitter/callback', twitterCallback);
+// Common routes
+router.get(
+  '/:taskId',
+  authenticateToken,
+  asyncHandler(getVerificationTaskById)
+);
 
-// Route for verifying Twitter task by a user
-router.post('/verify-twitter', authenticateToken, verifyTwitterTask);
-
-// Route for getting all verification tasks (for frontend to display)
-router.get('/', authenticateToken, getVerificationTasks);
+router.put(
+  '/:taskId',
+  authenticateToken,
+  authorizeRoles('ADMIN', 'SUPERADMIN', 'CREATOR'),
+  asyncHandler(updateVerificationTask)
+);
+router.delete(
+  '/:taskId',
+  authenticateToken,
+  authorizeRoles('ADMIN', 'SUPERADMIN', 'CREATOR'),
+  asyncHandler(deleteVerificationTask)
+);
 
 module.exports = router;
