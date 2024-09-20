@@ -6,7 +6,7 @@ import { useLocation } from 'react-router-dom'
 import Navbar from '../components/common/Navbar'
 import Sidebar from '../components/common/Sidebar'
 import BottomTabBar from '../components/BottomTabBar'
-import { Page, Card, Radio, Button, Block, Preloader } from 'konsta/react'
+import { Page, Card, Radio, Button, Block, Preloader, Dialog } from 'konsta/react'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import 'swiper/swiper-bundle.css'
 import axiosInstance from '../api/axiosInstance'
@@ -19,6 +19,7 @@ import chains from '../images/chains.png'
 import name from '../images/name.png'
 import gecko from '../images/coingecko.svg'
 import coinStack from '../images/coin-stack.png'
+import bunnyImage from '../images/bunny-head.png'
 import useUserStore from '../store/useUserStore'
 import AcademyCompletionSlide from '../components/AcademyCompletionSlide'
 import Linkify from 'react-linkify'
@@ -66,40 +67,23 @@ export default function ProductPage() {
     const [quizStarted, setQuizStarted] = useState(false)
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
     const [errorMessage, setErrorMessage] = useState('')
-    const [maxAllowedSlide, setMaxAllowedSlide] = useState(1) // Initialize to first quiz slide
+
+    // State for leave confirmation dialog
+    const [showLeaveConfirmation, setShowLeaveConfirmation] = useState(false)
+    const [pendingActiveFilter, setPendingActiveFilter] = useState<string | null>(null)
 
     // Define handlePrevClick and handleNextClick before using them
     const handlePrevClick = () => {
-        if (currentSlideIndex > 0 && swiperRef.current && swiperRef.current.swiper) {
+        if (swiperRef.current && swiperRef.current.swiper) {
             swiperRef.current.swiper.slidePrev()
             setErrorMessage('') // Reset error message when moving back
         }
     }
 
     const handleNextClick = () => {
-        const isQuizSlide = currentSlideIndex % 2 === 1 // Odd indices are quiz slides
-        const questionIndex = Math.floor(currentSlideIndex / 2)
-
-        if (isQuizSlide) {
-            const currentQuestion = initialAnswers[questionIndex]
-            if (currentQuestion.isCorrect !== undefined) {
-                // Allow moving to the next question
-                if (currentSlideIndex + 2 <= initialAnswers.length * 2 - 1) {
-                    setMaxAllowedSlide((prev) => Math.min(prev + 2, initialAnswers.length * 2 - 1))
-                }
-                if (swiperRef.current && swiperRef.current.swiper) {
-                    swiperRef.current.swiper.slideNext()
-                    setErrorMessage('') // Reset error message
-                }
-            } else {
-                setErrorMessage('You must check your answer before proceeding.')
-            }
-        } else {
-            // Allow moving to the quiz slide of the current question
-            if (swiperRef.current && swiperRef.current.swiper) {
-                swiperRef.current.swiper.slideNext()
-                setErrorMessage('') // Reset error message
-            }
+        if (swiperRef.current && swiperRef.current.swiper) {
+            swiperRef.current.swiper.slideNext()
+            setErrorMessage('')
         }
     }
 
@@ -121,8 +105,9 @@ export default function ProductPage() {
     }, [academy])
 
     useEffect(() => {
-        setCurrentSlideIndex(0)
-        setMaxAllowedSlide(1) // Reset maxAllowedSlide when filter changes
+        if (swiperRef.current && swiperRef.current.swiper) {
+            swiperRef.current.swiper.slideTo(currentQuestionIndex * 2)
+        }
     }, [activeFilter])
 
     useEffect(() => {
@@ -132,6 +117,13 @@ export default function ProductPage() {
             }
         }
     }, [])
+
+    // Clear timer when activeFilter changes
+    useEffect(() => {
+        if (timerIntervalRef.current) {
+            clearInterval(timerIntervalRef.current)
+        }
+    }, [activeFilter])
 
     const fetchEarnedPoints = async () => {
         try {
@@ -153,9 +145,6 @@ export default function ProductPage() {
             if (userResponses && userResponses.length > 0) {
                 setUserHasResponses(true)
                 setShowIntro(false) // Skip intro if there are existing responses
-                // Update maxAllowedSlide based on answered questions
-                const answeredSlides = userResponses.length * 2 - 1
-                setMaxAllowedSlide(answeredSlides)
             } else {
                 setUserHasResponses(false)
                 setShowIntro(true) // Show intro if no responses
@@ -285,19 +274,25 @@ export default function ProductPage() {
 
             if (correct) {
                 const totalXP = maxPoints
-                const basePoints = Math.floor(totalXP * 0.25)
 
-                if (timer > 30) {
+                if (activeFilter === 'read') {
+                    // Calculate points based on timer
+                    const basePoints = Math.floor(totalXP * 0.25)
+
+                    if (timer > 30) {
+                        pointsAwarded = totalXP
+                    } else if (timer > 0) {
+                        const remainingPoints = totalXP - basePoints
+                        const elapsedSeconds = 30 - timer
+                        const pointsDeducted = Math.floor((remainingPoints / 30) * elapsedSeconds)
+                        pointsAwarded = totalXP - pointsDeducted
+                    } else {
+                        pointsAwarded = basePoints
+                    }
+                } else if (activeFilter === 'watch') {
+                    // Full points on correct answer
                     pointsAwarded = totalXP
-                } else if (timer > 0) {
-                    const remainingPoints = totalXP - basePoints
-                    const elapsedSeconds = 30 - timer
-                    const pointsDeducted = Math.floor((remainingPoints / 30) * elapsedSeconds)
-                    pointsAwarded = totalXP - pointsDeducted
-                } else {
-                    pointsAwarded = basePoints
                 }
-
                 setEarnedPoints((prev) => prev + pointsAwarded)
                 setCurrentPoints(pointsAwarded)
                 triggerXPAnimation()
@@ -328,8 +323,6 @@ export default function ProductPage() {
                 )
             )
 
-            // Allow navigation to the next slide
-            setMaxAllowedSlide((prev) => Math.min(prev + 2, initialAnswers.length * 2 - 1))
             setErrorMessage('')
         } catch (error) {
             console.error('Error checking answer:', error.response ? error.response.data : error.message)
@@ -342,8 +335,8 @@ export default function ProductPage() {
             handleCompleteAcademy() // Invoke the API call function
         } else {
             if (swiperRef.current && swiperRef.current.swiper) {
-                swiperRef.current.swiper.slideNext()
-                setErrorMessage('') // Reset error message when moving to next question
+                swiperRef.current.swiper.slideTo(currentSlideIndex + 1)
+                setErrorMessage('')
             } else {
                 console.error('Swiper reference is not available.')
             }
@@ -374,37 +367,25 @@ export default function ProductPage() {
 
     const handleSlideChange = (swiper: any) => {
         const newIndex = swiper.activeIndex
-        const prevIndex = currentSlideIndex
         setCurrentSlideIndex(newIndex)
 
-        const prevQuestionIndex = currentQuestionIndex
         const newQuestionIndex = Math.floor(newIndex / 2)
+
         setCurrentQuestionIndex(newQuestionIndex)
-
-        const question = initialAnswers[newQuestionIndex]
-
-        if (newQuestionIndex !== prevQuestionIndex) {
-            // Moved to a new question
+        setErrorMessage('')
+        // Start timer for new question on read tab
+        if (activeFilter === 'read') {
+            const question = initialAnswers[newQuestionIndex]
             if (question && !question.timerStarted) {
                 startTimer()
                 setInitialAnswers((prevAnswers) => prevAnswers.map((q, qi) => (qi === newQuestionIndex ? { ...q, timerStarted: true } : q)))
             }
         }
-
-        // Check if the user is trying to navigate beyond the allowed slide
-        if (newIndex > maxAllowedSlide) {
-            setErrorMessage('Please complete the current question before proceeding.')
-            if (swiperRef.current && swiperRef.current.swiper) {
-                swiperRef.current.swiper.slideTo(maxAllowedSlide, 300)
-            }
-        } else {
-            setErrorMessage('')
-        }
     }
 
     const renderProgressbarWithArrows = () => {
-        const totalSlides = initialAnswers.length * 2 // Each question has 2 slides
-        const completedSlides = currentSlideIndex
+        const totalSlides = initialAnswers.length * 2
+        const completedSlides = currentSlideIndex + 1
 
         return (
             <div className="flex items-center justify-between mb-2 !mx-1 !rounded-2xl !bg-gray-50 dark:!bg-gray-800 !border !border-gray-200 dark:!border-gray-700 !shadow-sm p-2">
@@ -412,7 +393,7 @@ export default function ProductPage() {
                     <Icon
                         icon="mdi:arrow-left"
                         className={`text-gray-600 dark:text-gray-400 w-6 h-6 cursor-pointer ${currentSlideIndex === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
-                        onClick={handlePrevClick} // Now properly defined
+                        onClick={handlePrevClick}
                     />
                 </div>
                 <div className="relative flex-grow h-2 mx-2 bg-gray-200 rounded-full overflow-hidden">
@@ -430,7 +411,7 @@ export default function ProductPage() {
                         className={`text-gray-600 dark:text-gray-400 w-6 h-6 cursor-pointer ${
                             currentSlideIndex >= totalSlides - 1 ? 'opacity-50 cursor-not-allowed' : ''
                         }`}
-                        onClick={handleNextClick} // Now properly defined
+                        onClick={handleNextClick}
                     />
                 </div>
             </div>
@@ -438,6 +419,8 @@ export default function ProductPage() {
     }
 
     const renderTimerBar = () => {
+        if (activeFilter !== 'read') return null
+
         if (showIntro) {
             // Do not display timer on intro slide
             return null
@@ -508,6 +491,10 @@ export default function ProductPage() {
     }
 
     const renderReadTab = () => {
+        if (showIntro) {
+            return renderIntroSlide()
+        }
+
         return (
             <>
                 {quizStarted && timer >= 0 && renderTimerBar()}
@@ -516,8 +503,8 @@ export default function ProductPage() {
                     pagination={{ clickable: true }}
                     onSlideChange={handleSlideChange}
                     ref={swiperRef}
-                    allowTouchMove={true} // Enable swiping
-                    initialSlide={0}
+                    allowTouchMove={true}
+                    initialSlide={currentQuestionIndex * 2}
                 >
                     {initialAnswers.length > 0 ? (
                         initialAnswers.flatMap((_, index) => [renderInitialQuestionSlide(index), renderQuizSlide(index)])
@@ -568,8 +555,8 @@ export default function ProductPage() {
         setShowIntro(false)
         setQuizStarted(true)
 
-        // Start the timer for the first question before sliding
-        if (initialAnswers.length > 0 && !initialAnswers[0].timerStarted) {
+        // Start the timer for the first question
+        if (activeFilter === 'read' && initialAnswers.length > 0 && !initialAnswers[0].timerStarted) {
             startTimer()
             setInitialAnswers((prevAnswers) => prevAnswers.map((q, qi) => (qi === 0 ? { ...q, timerStarted: true } : q)))
         }
@@ -600,13 +587,13 @@ export default function ProductPage() {
     }
 
     // Define a custom decorator function with Tailwind classes for styling links
-    const linkDecorator = (href, text, key) => (
+    const linkDecorator = (href: string, text: string, key: number) => (
         <a href={href} key={key} className="text-blue-500 underline" target="_blank" rel="noopener noreferrer">
             {text}
         </a>
     )
 
-    const renderInitialQuestionSlide = (questionIndex) => {
+    const renderInitialQuestionSlide = (questionIndex: number) => {
         const question = initialAnswers[questionIndex]
         if (!question) return null
 
@@ -625,10 +612,11 @@ export default function ProductPage() {
                         <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">{question.question}</h2>
                         <ul className="list-disc list-inside text-gray-900 dark:text-gray-100">
                             <li>
-                                <strong>Total Supply:</strong> {parsedAnswer.totalSupply || 'N/A'}
+                                <strong>Total Supply:</strong> {parsedAnswer['totalSupply'] || 'N/A'}
                             </li>
                             <li>
-                                <strong>Contract Address:</strong> <Linkify componentDecorator={linkDecorator}>{parsedAnswer.contractAddress || 'N/A'}</Linkify>
+                                <strong>Contract Address:</strong>{' '}
+                                <Linkify componentDecorator={linkDecorator}>{parsedAnswer['contractAddress'] || 'N/A'}</Linkify>
                             </li>
                             {Object.entries(parsedAnswer).map(([key, value]) => {
                                 if (key === 'totalSupply' || key === 'contractAddress') return null
@@ -721,38 +709,11 @@ export default function ProductPage() {
                 pagination={{ clickable: true }}
                 onSlideChange={handleSlideChange}
                 ref={swiperRef}
-                allowTouchMove={true} // Enable swiping
-                initialSlide={0}
+                allowTouchMove={true}
+                initialSlide={currentQuestionIndex * 2}
             >
                 {initialAnswers.length > 0 ? (
-                    initialAnswers.map((question, index) => {
-                        const videoUrl = question.video
-                        console.log('Video URL:', videoUrl)
-                        const videoId = extractYouTubeVideoId(videoUrl || '')
-                        const embedUrl = videoId ? `https://www.youtube.com/embed/${videoId}` : ''
-
-                        return (
-                            <React.Fragment key={`watch-tab-${index}`}>
-                                <SwiperSlide key={`video-slide-${index}`}>
-                                    <Card className="!my-2 !mx-1 p-2 !rounded-2xl !bg-gray-50 dark:!bg-gray-800 !border !border-gray-200 dark:!border-gray-700 !shadow-sm">
-                                        {embedUrl ? (
-                                            <iframe
-                                                width="100%"
-                                                height="315" // Adjust height as needed
-                                                src={embedUrl}
-                                                title={`Video ${index + 1}`}
-                                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                                allowFullScreen
-                                            />
-                                        ) : (
-                                            <p className="text-center text-red-500">Invalid video URL</p>
-                                        )}
-                                    </Card>
-                                </SwiperSlide>
-                                {renderQuizSlide(index)}
-                            </React.Fragment>
-                        )
-                    })
+                    initialAnswers.flatMap((question, index) => [renderVideoSlide(index), renderQuizSlide(index)])
                 ) : (
                     <SwiperSlide key="no-videos">
                         <Card className="m-2 p-2">
@@ -763,6 +724,35 @@ export default function ProductPage() {
             </Swiper>
         </>
     )
+
+    const renderVideoSlide = (questionIndex: number) => {
+        const question = initialAnswers[questionIndex]
+        if (!question) return null
+
+        const videoUrl = question.video
+        console.log('Video URL:', videoUrl)
+        const videoId = extractYouTubeVideoId(videoUrl || '')
+        const embedUrl = videoId ? `https://www.youtube.com/embed/${videoId}` : ''
+
+        return (
+            <SwiperSlide key={`video-slide-${questionIndex}`}>
+                <Card className="!my-2 !mx-1 p-2 !rounded-2xl !bg-gray-50 dark:!bg-gray-800 !border !border-gray-200 dark:!border-gray-700 !shadow-sm">
+                    {embedUrl ? (
+                        <iframe
+                            width="100%"
+                            height="315"
+                            src={embedUrl}
+                            title={`Video ${questionIndex + 1}`}
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                        />
+                    ) : (
+                        <p className="text-center text-red-500">Invalid video URL</p>
+                    )}
+                </Card>
+            </SwiperSlide>
+        )
+    }
 
     // Handle action button click
     const handleAction = (quest: any) => {
@@ -926,6 +916,22 @@ export default function ProductPage() {
         }
     }, [userHasResponses])
 
+    // Function to check if user has answered at least one question
+    const hasAnsweredAtLeastOneQuestion = () => {
+        return initialAnswers.some((q) => q.isCorrect !== undefined)
+    }
+
+    // Handle tab change with confirmation dialog
+    const handleTabChange = (newFilter: string) => {
+        // If the user is trying to leave 'read' or 'watch' tab to 'quests', and they have answered at least one question, show confirmation dialog
+        if ((activeFilter === 'read' || activeFilter === 'watch') && newFilter === 'quests' && hasAnsweredAtLeastOneQuestion()) {
+            setPendingActiveFilter(newFilter)
+            setShowLeaveConfirmation(true)
+        } else {
+            setActiveFilter(newFilter)
+        }
+    }
+
     return (
         <Page className="bg-white dark:bg-gray-900">
             <Navbar />
@@ -969,7 +975,7 @@ export default function ProductPage() {
                             <Button
                                 outline
                                 rounded
-                                onClick={() => setActiveFilter('read')}
+                                onClick={() => handleTabChange('read')}
                                 className={`${
                                     activeFilter === 'read'
                                         ? 'bg-gray-100 dark:bg-gray-700 k-color-brand-purple shadow-lg'
@@ -981,7 +987,7 @@ export default function ProductPage() {
                             <Button
                                 outline
                                 rounded
-                                onClick={() => setActiveFilter('watch')}
+                                onClick={() => handleTabChange('watch')}
                                 className={`${
                                     activeFilter === 'watch'
                                         ? 'bg-gray-100 dark:bg-gray-700 k-color-brand-purple shadow-lg'
@@ -994,7 +1000,7 @@ export default function ProductPage() {
                             <Button
                                 outline
                                 rounded
-                                onClick={() => setActiveFilter('quests')}
+                                onClick={() => handleTabChange('quests')}
                                 className={`${
                                     activeFilter === 'quests'
                                         ? 'bg-gray-100 dark:bg-gray-700 k-color-brand-purple shadow-lg'
@@ -1124,7 +1130,7 @@ export default function ProductPage() {
                             </>
                         )}
 
-                        {activeFilter === null ? <></> : showIntro ? renderIntroSlide() : renderContent()}
+                        {activeFilter === null ? null : renderContent()}
                     </div>
                 </div>
             )}
@@ -1137,6 +1143,42 @@ export default function ProductPage() {
                     <div className="text-gray-800 dark:text-white mt-4 text-md font-semibold">+{currentPoints}</div>
                 </div>
             )}
+
+            {/* Leave confirmation dialog */}
+            <Dialog opened={showLeaveConfirmation} onBackdropClick={() => setShowLeaveConfirmation(false)} className="rounded-2xl p-4">
+                <div className="text-center">
+                    <img src={bunnyImage} alt="Bunny" className="w-16 h-16 mx-auto mb-4" />
+                    <p className="text-lg font-semibold">Are you sure you want to leave? Your points may be lost!</p>
+                    <div className="flex justify-center mt-4 gap-4">
+                        <Button
+                            rounded
+                            outline
+                            onClick={() => {
+                                setShowLeaveConfirmation(false)
+                                // Proceed with tab change
+                                setActiveFilter(pendingActiveFilter)
+                            }}
+                            style={{
+                                background: 'linear-gradient(to left, #ff0077, #7700ff)',
+                                color: '#fff'
+                            }}
+                        >
+                            I'm sure
+                        </Button>
+                        <Button
+                            rounded
+                            outline
+                            onClick={() => setShowLeaveConfirmation(false)}
+                            style={{
+                                background: 'linear-gradient(to left, #ff0077, #7700ff)',
+                                color: '#fff'
+                            }}
+                        >
+                            Let's continue
+                        </Button>
+                    </div>
+                </div>
+            </Dialog>
         </Page>
     )
 }
