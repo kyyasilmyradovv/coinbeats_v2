@@ -1,6 +1,7 @@
 // client/src/api/axiosInstance.ts
 import axios from 'axios'
 import useAuthStore from '../store/useAuthStore'
+import useSessionStore from '../store/useSessionStore'
 
 const axiosInstance = axios.create({
     // baseURL: 'https://subscribes.lt'
@@ -50,6 +51,20 @@ axiosInstance.interceptors.response.use(
 
         return Promise.reject(error)
     }
+)
+
+axiosInstance.interceptors.request.use(
+    (config) => {
+        const telegramUserId = useSessionStore.getState().userId
+        console.log('telegramUserId', telegramUserId)
+        if (telegramUserId) {
+            config.headers['X-Telegram-User-Id'] = telegramUserId
+        } else {
+            console.warn('No Telegram user ID found.')
+        }
+        return config
+    },
+    (error) => Promise.reject(error)
 )
 
 export default axiosInstance

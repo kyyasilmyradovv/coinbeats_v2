@@ -22,6 +22,7 @@ import MyAcademiesPage from './pages/MyAcademiesPage'
 import SuperAdminDashboardPage from './pages/SuperAdminDashboardPage'
 import AcademyTypePage from './pages/AcademyTypePage'
 import AddPlatformTasksPage from './pages/AddPlatformTasksPage'
+import CategoryChainManagementPage from './pages/CategoryChainManagementPage'
 import UserDetailPage from './pages/UserDetailPage'
 import AddRafflesPage from './pages/AddRafflesPage'
 import AddQuestsPage from './pages/AddQuestsPage'
@@ -101,11 +102,15 @@ function RootComponent() {
                     const telegramUserId = initData.user.id
                     const username = initData.user.username || 'Guest'
 
+                    // Get referralCode from URL
+                    const queryParams = new URLSearchParams(window.location.search)
+                    const referralCode = queryParams.get('referralCode')
+
                     try {
                         const response = await axios.get(`/api/users/${telegramUserId}`)
 
                         if (response.status === 200 && response.data) {
-                            const { id, email, role, totalPoints, points, bookmarks, academies, emailConfirmed } = response.data
+                            const { id, name, email, role, totalPoints, points, bookmarks, academies, emailConfirmed } = response.data
                             const hasAcademy = academies && academies.length > 0
 
                             setUser(
@@ -121,13 +126,51 @@ function RootComponent() {
                                 hasAcademy
                             )
                         } else {
-                            // User not found, set default values
-                            setUser(null, username, '', false, 'USER', 100, [], [], null, false)
+                            // User not found, register
+                            const registerResponse = await axios.post('/api/auth/register', {
+                                telegramUserId,
+                                username,
+                                referralCode
+                            })
+                            const userData = registerResponse.data
+                            const hasAcademy = userData.academies && userData.academies.length > 0
+
+                            setUser(
+                                userData.id,
+                                userData.username,
+                                userData.email,
+                                userData.emailConfirmed,
+                                userData.role,
+                                userData.totalPoints,
+                                userData.points || [],
+                                userData.bookmarkedAcademies || [],
+                                null,
+                                hasAcademy
+                            )
                         }
                     } catch (error) {
                         if (error.response && error.response.status === 404) {
-                            // User not found, set default values
-                            setUser(null, username, '', false, 'USER', 100, [], [], null, false)
+                            // User not found, register
+                            const registerResponse = await axios.post('/api/auth/register', {
+                                telegramUserId,
+                                username,
+                                referralCode
+                            })
+                            const userData = registerResponse.data
+                            const hasAcademy = userData.academies && userData.academies.length > 0
+
+                            setUser(
+                                userData.id,
+                                userData.username,
+                                userData.email,
+                                userData.emailConfirmed,
+                                userData.role,
+                                userData.totalPoints,
+                                userData.points || [],
+                                userData.bookmarkedAcademies || [],
+                                null,
+                                hasAcademy
+                            )
                         } else {
                             console.error('Error fetching user:', error)
                             // Set default values in case of error
@@ -249,6 +292,14 @@ function RootComponent() {
                             element={
                                 <RouteGuard requiredRole="SUPERADMIN">
                                     <AddPlatformTasksPage />
+                                </RouteGuard>
+                            }
+                        />
+                        <Route
+                            path="/add-categories-chains"
+                            element={
+                                <RouteGuard requiredRole="SUPERADMIN">
+                                    <CategoryChainManagementPage />
                                 </RouteGuard>
                             }
                         />

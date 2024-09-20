@@ -1,8 +1,10 @@
 // server/routes/user.js
 const express = require('express');
 const { authenticateToken, authorizeRoles } = require('../middleware/auth');
+const telegramAuth = require('../middleware/telegramAuth');
 const {
   getAllUsers,
+  getCurrentUser,
   createUser,
   deleteUser,
   getUserDetailsById,
@@ -19,6 +21,7 @@ const asyncHandler = require('express-async-handler');
 const router = express.Router();
 
 // Define user-related routes
+router.get('/me', telegramAuth, getCurrentUser);
 router.get(
   '/',
   authenticateToken,

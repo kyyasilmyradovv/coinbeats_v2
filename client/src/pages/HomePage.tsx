@@ -1,14 +1,15 @@
 // src/pages/HomePage.tsx
 
 import React, { useMemo, useState, useEffect } from 'react'
+import { initUtils } from '@telegram-apps/sdk'
 import axios from '../api/axiosInstance' // Adjust this import based on your setup
 import { useNavigate } from 'react-router-dom'
 import useCategoryChainStore from '../store/useCategoryChainStore'
 import Navbar from '../components/common/Navbar'
 import Sidebar from '../components/common/Sidebar'
-import { Page, List, ListInput, Card, Button, Dialog } from 'konsta/react'
+import { Page, List, ListInput, Card, Button, Dialog, Link, Block } from 'konsta/react'
 import { MdBookmarks } from 'react-icons/md'
-import { Icon } from '@iconify/react'
+import { FaTelegramPlane } from 'react-icons/fa' // Import the Telegram icon
 import useSessionStore from '../store/useSessionStore'
 import useUserStore from '~/store/useUserStore'
 import treasure from '../images/treasure1.png'
@@ -21,25 +22,26 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
     const [chain, setChain] = useState('')
     const [activeFilter, setActiveFilter] = useState('all')
     const [academies, setAcademies] = useState([])
-    const [bookmarkMessage, setBookmarkMessage] = useState('') // State for bookmark message
-    const [showBookmarkAnimation, setShowBookmarkAnimation] = useState(false) // State to control bookmark animation
+    const [bookmarkMessage, setBookmarkMessage] = useState('')
+    const [showBookmarkAnimation, setShowBookmarkAnimation] = useState(false)
     const [tasks, setTasks] = useState([])
     const [referralModalOpen, setReferralModalOpen] = useState(false)
     const [referralLink, setReferralLink] = useState('')
+    const [referralCode, setReferralCode] = useState('')
 
     const handleAction = (task) => {
         if (task.verificationMethod === 'INVITE_TELEGRAM_FRIEND') {
-            // Get the user's referral code
             axios
                 .get('/api/users/me')
                 .then((response) => {
-                    const referralCode = response.data.referralCode
-                    if (!referralCode) {
+                    const userReferralCode = response.data.referralCode
+                    if (!userReferralCode) {
                         alert('Referral code not available.')
                         return
                     }
-                    const referralLink = `${window.location.origin}?referralCode=${referralCode}`
-                    // Display the link and a button to share it
+                    const botUsername = 'CoinbeatsMiniApp_bot/miniapp' // Replace with your bot's username
+                    const referralLink = `https://t.me/${botUsername}?startapp=${userReferralCode}`
+                    setReferralCode(userReferralCode) // Store referralCode for later use
                     setReferralLink(referralLink)
                     setReferralModalOpen(true)
                 })
@@ -50,23 +52,20 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
         // ... handle other methods
     }
 
-    // Zustand User Store
     const { bookmarks, setBookmarks, userId, role, totalPoints, points, setUser } = useUserStore((state) => ({
         bookmarks: state.bookmarks,
         setBookmarks: state.setBookmarks,
         userId: state.userId,
         role: state.role,
         points: state.points,
-        totalPoints: state.totalPoints, // Summing up user points
+        totalPoints: state.totalPoints,
         setUser: state.setUser
     }))
 
-    // Zustand Session Store - Get telegramUserId from the session store
     const { telegramUserId } = useSessionStore((state) => ({
         telegramUserId: state.userId
     }))
 
-    // Zustand CategoryChain Store
     const { categories, chains, fetchCategoriesAndChains } = useCategoryChainStore((state) => ({
         categories: state.categories,
         chains: state.chains,
@@ -86,7 +85,6 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
         fetchHomepageTasks()
     }, [])
 
-    // Fetch academies and categories/chains on component mount
     useEffect(() => {
         const fetchAcademies = async () => {
             try {
@@ -101,13 +99,12 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
         fetchAcademies()
     }, [fetchCategoriesAndChains])
 
-    // Fetch bookmarks only after the userId is available
     useEffect(() => {
         const fetchBookmarkedAcademies = async () => {
             if (userId) {
                 try {
                     const response = await axios.get(`/api/users/${userId}/bookmarked-academies`)
-                    setBookmarks(response.data) // Store fetched bookmarks in Zustand
+                    setBookmarks(response.data)
                 } catch (error) {
                     console.error('Error fetching bookmarked academies:', error)
                 }
@@ -115,27 +112,22 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
         }
 
         if (userId) {
-            fetchBookmarkedAcademies() // Only fetch if userId is present
+            fetchBookmarkedAcademies()
         }
     }, [userId, setBookmarks])
 
     const handleBookmark = async (academy) => {
         try {
-            const response = await axios.post('/api/users/interaction', {
-                telegramUserId: telegramUserId, // Get telegramUserId from the session store
+            await axios.post('/api/users/interaction', {
+                telegramUserId: telegramUserId,
                 action: 'bookmark',
                 academyId: academy.id
             })
-            setBookmarks(academy) // Adds to local context for immediate UI update
-
-            // Set bookmark message and show animation
+            setBookmarks(academy)
             setBookmarkMessage(`Bookmarked!`)
             setShowBookmarkAnimation(true)
-
-            // Navigate to BookmarksPage and pass the academy object as state
             navigate('/saved', { state: { academy } })
 
-            // Remove the message and animation after 2 seconds
             setTimeout(() => {
                 setShowBookmarkAnimation(false)
                 setBookmarkMessage('')
@@ -175,6 +167,15 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
         navigate(`/product/${academy.id}`, { state: { academy } })
     }
 
+    const handleInviteFriend = () => {
+        const utils = initUtils()
+        const inviteLink = `https://t.me/CoinbeatsMiniApp_bot/miniapp?startapp=${referralCode}`
+        const shareText = `Join me on this awesome app!`
+
+        const fullUrl = `https://t.me/share/url?url=${encodeURIComponent(inviteLink)}&text=${encodeURIComponent(shareText)}`
+        utils.openTelegramLink(fullUrl)
+    }
+
     const copyReferralLink = () => {
         navigator.clipboard
             .writeText(referralLink)
@@ -191,45 +192,70 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
             <Navbar />
             <Sidebar />
 
-            <div className="flex flex-row justify-center items-center flex-wrap mb-6 mt-6">
-                <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-2 flex flex-row items-center px-6 m-2">
+            <div className="flex flex-row justify-center items-center mb-4 mt-4">
+                <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-1 flex flex-row items-center px-2 m-2 border border-gray-300 dark:border-gray-600 h-12 ml-4 justify-between">
                     {/* "Your Coins" card */}
-                    <img src={treasure} className="h-8 w-8 mr-4" alt="bunny mascot" />
-                    <div className="text-xs text-gray-500 dark:text-gray-400 font-semibold mr-4">Your Coins:</div>
-                    <div className="text-md font-bold text-black dark:text-white">{totalPoints}</div>
+                    <img src={treasure} className="h-8 w-8 mr-2" alt="Treasure box" />
+                    <div className="text-md font-bold text-black dark:text-white flex flex-grow w-full text-end">{totalPoints}</div>
                 </div>
 
                 {tasks.length > 0 && (
-                    <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-2 flex flex-row items-center px-6 m-2">
+                    <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg py-1 flex flex-grow flex-row items-center px-1 m-1 border border-gray-300 dark:border-gray-600 h-12 mr-4 justify-between">
                         {/* Task card */}
-                        <img src={`/images/platform-logos/${tasks[0].platform.toLowerCase()}.png`} className="h-10 w-10 mr-4" alt={tasks[0].platform} />
-                        <div className="text-xs text-gray-500 dark:text-gray-400 font-semibold mr-4">{tasks[0].name}</div>
+                        <FaTelegramPlane size={30} className="text-blue-400 mx-2" />
+                        <div className="flex flex-col flex-grow ml-2">
+                            <div className="text-[12px] text-gray-800 dark:text-gray-200 font-semibold mr-2">{tasks[0].name}</div>
+                        </div>
                         <Button
                             outline
                             rounded
                             onClick={() => handleAction(tasks[0])}
-                            className="text-[12px] !w-16"
+                            className="!text-2xs !w-fit !border-blue-400 !font-bold whitespace-nowrap mr-2 !px-2 !py-0"
                             style={{
-                                background: 'linear-gradient(to left, #ff0077, #7700ff)',
+                                background: 'linear-gradient(to left, #16a34a, #3b82f6)',
                                 color: '#fff'
                             }}
                         >
-                            Invite
+                            Invite +500
+                            <img src={coins} className="h-3 w-3 ml-1" alt="coins icon" />
                         </Button>
                     </div>
                 )}
             </div>
 
-            <Dialog opened={referralModalOpen} onBackdropClick={() => setReferralModalOpen(false)} title="Invite a Friend">
-                <div className="p-4">
+            <Dialog opened={referralModalOpen} onBackdropClick={() => setReferralModalOpen(false)} title="Invite a Friend" className="!m-0 !p-0 rounded-2xl">
+                <div className="p-0">
                     <p>Share this link with your friends:</p>
-                    <input type="text" value={referralLink} readOnly className="w-full p-2 border border-gray-300 rounded mt-2" />
-                    <Button onClick={copyReferralLink} className="mt-2">
-                        Copy Link
-                    </Button>
-                    <Button onClick={() => window.open(`https://t.me/share/url?url=${encodeURIComponent(referralLink)}`, '_blank')} className="mt-2">
-                        Share via Telegram
-                    </Button>
+                    <List className="!m-0 !p-0">
+                        <ListInput outline type="text" value={referralLink} readOnly className="w-full !m-0 !p-0 border border-gray-300 rounded mt-2" />
+                    </List>
+                    <div className="flex flex-col space-y-2 mt-2">
+                        <Button
+                            outline
+                            rounded
+                            onClick={copyReferralLink}
+                            className="!text-xs ml-4 mt-1 font-bold shadow-xl min-w-28 !mx-auto"
+                            style={{
+                                background: 'linear-gradient(to left, #ff0077, #7700ff)',
+                                color: '#fff'
+                            }}
+                        >
+                            Copy Invite Link
+                        </Button>
+                        <Button
+                            outline
+                            rounded
+                            onClick={handleInviteFriend}
+                            className="!text-xs ml-4 mt-1 font-bold shadow-xl min-w-28 !mx-auto"
+                            style={{
+                                background: 'linear-gradient(to left, #ff0077, #7700ff)',
+                                color: '#fff'
+                            }}
+                        >
+                            <FaTelegramPlane className="inline-block mr-2 !h-5 !w-5" />
+                            Invite Friend
+                        </Button>
+                    </div>
                 </div>
             </Dialog>
 
@@ -334,7 +360,10 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
                     const isCompleted = hasCompletedAcademy(academy.id)
 
                     return (
-                        <Card key={academy.id} className="relative flex flex-col items-center text-center !p-3 !rounded-2xl shadow-lg overflow-visible">
+                        <Card
+                            key={academy.id}
+                            className="relative flex flex-col items-center text-center !p-3 !rounded-2xl shadow-lg border border-gray-300 dark:border-gray-600 overflow-visible"
+                        >
                             <div className="absolute top-0 left-0 p-2">
                                 <button
                                     className={`${isBookmarked(academy.id) ? 'text-red-600' : 'text-amber-500'} rounded-full shadow-md focus:outline-none m-1`}
@@ -344,16 +373,17 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
                                 </button>
                             </div>
                             <div
-                                className={`flex items-center absolute top-0 right-0 px-1 py-[2px] ${
-                                    isCompleted ? 'bg-green-100' : 'bg-white'
+                                className={`flex items-center absolute top-0 right-0 px-2 py-[3px] ${
+                                    isCompleted ? 'bg-gradient-to-r from-teal-400 to-teal-100' : 'bg-gradient-to-r from-slate-400 to-slate-100'
                                 } bg-opacity-75 rounded-full text-sm font-bold text-gray-800 m-2`}
                             >
                                 {isCompleted ? (
-                                    // Use getCompletedAcademyPoints to find the specific points record and display the value
-                                    <>+{getCompletedAcademyPoints(academy.id)?.value} ✅</>
+                                    <>
+                                        <span className="text-xs">+{getCompletedAcademyPoints(academy.id)?.value} ✅</span>
+                                    </>
                                 ) : (
                                     <>
-                                        +{academy.xp} <img src={coins} className="h-5 w-5" alt="coins icon" />
+                                        <span className="text-xs">+{academy.xp}</span> <img src={coins} className="h-4 w-4" alt="coins icon" />
                                     </>
                                 )}
                             </div>
@@ -362,8 +392,18 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
                                 <img alt={academy.name} className="h-16 w-16 rounded-full mb-2" src={constructImageUrl(academy.logoUrl)} />
                             </div>
                             <div className="text-lg font-bold whitespace-nowrap">{academy.name}</div>
-                            <Button rounded large className="mt-2 font-bold shadow-xl min-w-28" onClick={() => handleMoreClick(academy)}>
-                                More
+                            {/* <Button rounded large className="mt-2 font-bold shadow-xl min-w-28" onClick={() => handleMoreClick(academy)}> */}
+                            <Button
+                                outline
+                                rounded
+                                onClick={() => handleMoreClick(academy)}
+                                className="!text-xs !w-16 ml-4 mt-2 font-bold shadow-xl min-w-28 !mx-auto"
+                                style={{
+                                    background: 'linear-gradient(to left, #ff0077, #7700ff)',
+                                    color: '#fff'
+                                }}
+                            >
+                                Study Now
                             </Button>
                             {new Date() - new Date(academy.createdAt) < 30 * 24 * 60 * 60 * 1000 && (
                                 <img src={NewIcon} alt="New" className="absolute left-7 -bottom-4 w-10 h-10 -translate-x-8" style={{ zIndex: 10 }} />

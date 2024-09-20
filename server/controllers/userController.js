@@ -494,15 +494,30 @@ exports.completeVerificationTask = async (req, res, next) => {
         pointsAwarded: verificationTask.xp,
       });
     } else {
-      res
-        .status(400)
-        .json({
-          message:
-            'Verification failed. Please ensure you have tweeted the correct message.',
-        });
+      res.status(400).json({
+        message:
+          'Verification failed. Please ensure you have tweeted the correct message.',
+      });
     }
   } catch (error) {
     console.error('Error completing verification task:', error);
     next(createError(500, 'Error completing verification task'));
+  }
+};
+
+exports.getCurrentUser = async (req, res, next) => {
+  try {
+    const { telegramUserId } = req.user;
+    const user = await prisma.user.findUnique({
+      where: { telegramUserId },
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json(user);
+  } catch (error) {
+    next(error);
   }
 };
