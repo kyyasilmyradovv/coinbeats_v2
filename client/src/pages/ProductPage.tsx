@@ -932,7 +932,7 @@ export default function ProductPage() {
             <Sidebar />
 
             {academy && (
-                <div className="px-4 pt-2">
+                <div className="px-2">
                     <div
                         className={`relative w-full ${headerExpanded ? 'h-48' : 'h-28'} bg-cover bg-center rounded-b-2xl transition-all duration-500`}
                         style={{
@@ -1007,10 +1007,10 @@ export default function ProductPage() {
                         </div>
                     </div>
 
-                    <div className="p-4">
+                    <div className="px-4 py-4">
                         {activeFilter === null && (
                             <>
-                                <Card className="flex flex-col rounded-2xl !shadow-lg p-2 !mx-0 !bg-gray-50 dark:!bg-gray-800 !border !border-gray-200 dark:!border-gray-700 !py-0">
+                                <Card className="!mb-4 !p-0 !rounded-2xl shadow-lg !m-0 relative border border-gray-300 dark:border-gray-600">
                                     <div className="flex items-center mb-2 text-lg text-gray-900 dark:text-gray-200">
                                         <img src={name} className="h-10 w-10 mr-4" alt="academy name" />
                                         <span className="text-gray-600 dark:text-gray-400 mr-2">Name:</span>
@@ -1047,13 +1047,14 @@ export default function ProductPage() {
                                     </div>
                                 </Card>
 
-                                <Card className="rounded-2xl !shadow-lg p-2 !mx-0 !bg-gray-50 dark:!bg-gray-800 !border !border-gray-200 dark:!border-gray-700 !mb-4">
+                                <Card className="!mb-4 !p-0 !rounded-2xl shadow-lg !m-0 relative border border-gray-300 dark:border-gray-600">
                                     <div className="grid grid-cols-2 gap-4 w-full">
                                         {academy.webpageUrl && (
                                             <Button
                                                 clear
                                                 raised
-                                                className="flex items-center justify-center gap-2 w-full dark:text-gray-200"
+                                                rounded
+                                                className="flex items-center !justify-start gap-2 w-full dark:text-gray-200 !bg-gray-50 dark:!bg-gray-800 !border !border-gray-200 dark:!border-gray-700"
                                                 onClick={() => window.open(academy.webpageUrl, '_blank')}
                                             >
                                                 <Icon icon="mdi:web" color="#6c757d" className="w-5 h-5" />
@@ -1064,7 +1065,8 @@ export default function ProductPage() {
                                             <Button
                                                 clear
                                                 raised
-                                                className="flex items-center justify-center gap-2 w-full dark:text-gray-200"
+                                                rounded
+                                                className="flex items-center !justify-start gap-2 w-full dark:text-gray-200 !bg-gray-50 dark:!bg-gray-800 !border !border-gray-200 dark:!border-gray-700"
                                                 onClick={() => window.open(academy.twitter, '_blank')}
                                             >
                                                 <Icon icon="mdi:twitter" color="#1DA1F2" className="w-5 h-5" />
@@ -1075,7 +1077,8 @@ export default function ProductPage() {
                                             <Button
                                                 clear
                                                 raised
-                                                className="flex items-center justify-center gap-2 dark:text-gray-200"
+                                                rounded
+                                                className="flex items-center !justify-start gap-2 w-full dark:text-gray-200 !bg-gray-50 dark:!bg-gray-800 !border !border-gray-200 dark:!border-gray-700"
                                                 onClick={() => window.open(academy.telegram, '_blank')}
                                             >
                                                 <Icon icon="mdi:telegram" color="#0088cc" className="w-5 h-5" />
@@ -1086,7 +1089,8 @@ export default function ProductPage() {
                                             <Button
                                                 clear
                                                 raised
-                                                className="flex items-center justify-center gap-2 dark:text-gray-200"
+                                                rounded
+                                                className="flex items-center !justify-start gap-2 w-full dark:text-gray-200 !bg-gray-50 dark:!bg-gray-800 !border !border-gray-200 dark:!border-gray-700"
                                                 onClick={() => window.open(academy.discord, '_blank')}
                                             >
                                                 <Icon icon="mdi:discord" color="#7289DA" className="w-5 h-5" />
@@ -1097,7 +1101,8 @@ export default function ProductPage() {
                                             <Button
                                                 clear
                                                 raised
-                                                className="flex items-center justify-center gap-2 w-full dark:text-gray-200"
+                                                rounded
+                                                className="flex items-center !justify-start gap-2 w-full dark:text-gray-200 !bg-gray-50 dark:!bg-gray-800 !border !border-gray-200 dark:!border-gray-700"
                                                 onClick={() => window.open(academy.coingecko, '_blank')}
                                             >
                                                 <img src={gecko} className="h-5 w-5" alt="Coingecko logo" />
@@ -1107,7 +1112,7 @@ export default function ProductPage() {
                                     </div>
                                 </Card>
 
-                                <Card className="flex flex-row rounded-2xl !shadow-lg p-2 !mx-0 !bg-gray-50 dark:!bg-gray-800 !border !border-gray-200 dark:!border-gray-700 !mb-12">
+                                <Card className="!mb-12 !p-0 !rounded-2xl shadow-lg !m-0 relative border border-gray-300 dark:border-gray-600">
                                     <div className="flex items-center justify-center text-gray-900 dark:text-gray-200">
                                         <img src={collected} className="h-10 w-10 mr-4" alt="collected coins" />
                                         <span className="text-lg text-gray-600 dark:text-gray-400 mr-2">Earned Coins:</span>
