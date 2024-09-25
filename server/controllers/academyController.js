@@ -886,13 +886,28 @@ exports.getAllAcademies = async (req, res, next) => {
       include: {
         categories: true,
         chains: true,
+        academyType: true, // Include academyType to access the type name
       },
-      orderBy: [
-        { createdAt: 'desc' }, // Order by creation date for the "New" filter
-      ],
     });
 
-    res.json(academies);
+    // Custom sorting to move Coinbeats academies to the top
+    const sortedAcademies = academies.sort((a, b) => {
+      if (
+        a.academyType.name === 'Coinbeats' &&
+        b.academyType.name !== 'Coinbeats'
+      ) {
+        return -1; // Move Coinbeats up
+      } else if (
+        a.academyType.name !== 'Coinbeats' &&
+        b.academyType.name === 'Coinbeats'
+      ) {
+        return 1; // Move other academies down
+      } else {
+        return new Date(b.createdAt) - new Date(a.createdAt); // Sort by creation date if both are the same type
+      }
+    });
+
+    res.json(sortedAcademies);
   } catch (error) {
     console.error('Error fetching academies:', error);
     next(createError(500, 'Error fetching academies'));

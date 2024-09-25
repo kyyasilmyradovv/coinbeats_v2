@@ -113,6 +113,9 @@ model Academy {
   bookmarkedBy     User[]             @relation("BookmarkedAcademies")
 
   VerificationTask VerificationTask[]
+
+  academyTypeId    Int?
+  academyType      AcademyType?       @relation(fields: [academyTypeId], references: [id])
 }
 
 model Subscription {
@@ -138,6 +141,7 @@ model AcademyType {
   createdAt        DateTime          @default(now()) @db.Timestamp(6)
   updatedAt        DateTime          @default(now()) @updatedAt @db.Timestamp(6)
   initialQuestions InitialQuestion[] @relation("AcademyTypeQuestions")
+  academies        Academy[]
 }
 
 model InitialQuestion {

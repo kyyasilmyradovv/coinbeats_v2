@@ -6,21 +6,18 @@ const prisma = new PrismaClient();
 
 exports.getInitialQuestions = async (req, res, next) => {
   try {
-    const questions = await prisma.initialQuestion.findMany({
-      include: {
-        academyQuestions: {
-          include: {
-            choices: true,
-          },
-        },
-      },
-    });
+    const { academyTypeId } = req.query;
 
-    if (!questions.length) {
-      return next(createError(404, 'No initial questions found'));
+    let whereClause = {};
+    if (academyTypeId) {
+      whereClause = { academyTypeId: parseInt(academyTypeId, 10) };
     }
 
-    res.json(questions);
+    const initialQuestions = await prisma.initialQuestion.findMany({
+      where: whereClause,
+    });
+
+    res.json(initialQuestions);
   } catch (error) {
     console.error('Error fetching initial questions:', error);
     next(createError(500, 'Error fetching initial questions'));

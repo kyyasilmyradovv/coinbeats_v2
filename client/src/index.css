@@ -80,3 +80,85 @@
 .custom-backdrop .konsta-backdrop {
     background-color: rgba(196, 186, 186, 0.055); /* Adjust the transparency */
 }
+
+.tab-background {
+    background: linear-gradient(45deg, #b39c63, #574c2f);
+    position: relative;
+    overflow: hidden;
+    border-radius: 0.75rem; /* Tailwind's rounded-xl */
+}
+
+.tab-background::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.3) 50%, rgba(255, 255, 255, 0) 100%);
+    filter: blur(8px);
+    transform: rotate(45deg);
+    animation: shine 5s infinite;
+}
+
+.coinbeats-background {
+    background: linear-gradient(45deg, #b39c63, #574c2f);
+    overflow: hidden;
+    border-radius: 0.75rem; /* Tailwind's rounded-xl */
+}
+
+.coinbeats-background::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.3) 50%, rgba(255, 255, 255, 0) 100%);
+    filter: blur(8px);
+    transform: rotate(45deg);
+    animation: shine 5s infinite;
+}
+
+.coinbeats-content {
+    background: linear-gradient(to bottom right, #1c1c1d, #2d2d2f); /* Updated gradient */
+    border-radius: 0.75rem;
+    overflow: hidden;
+}
+
+.coinbeats-content::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.3) 50%, rgba(255, 255, 255, 0) 100%);
+    filter: blur(8px);
+    transform: rotate(45deg);
+    animation: shine 5s infinite;
+}
+
+.coinbeats-label {
+    color: #fff;
+    font-weight: bold;
+}
+
+@keyframes shine {
+    0% {
+        transform: translate(-100%, 100%) rotate(45deg);
+    }
+    100% {
+        transform: translate(100%, -100%) rotate(45deg);
+    }
+}
+
+.tab-content {
+    background: linear-gradient(to bottom right, #1c1c1d, #2d2d2f); /* Updated gradient */
+    border-radius: 0.75rem;
+}
+
+.tab-label {
+    color: #fff;
+    font-weight: bold;
+}

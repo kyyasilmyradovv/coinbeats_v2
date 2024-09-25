@@ -38,6 +38,7 @@ interface Raffle {
 }
 
 interface Quest {
+    id?: number
     name: string
     link: string
     platform: string
@@ -52,8 +53,8 @@ interface AcademyState {
     telegram: string
     discord: string
     coingecko: string
-    logo: File | null
-    coverPhoto: File | null
+    logo: File | null | string
+    coverPhoto: File | null | string
     webpageUrl: string
     initialAnswers: InitialAnswer[]
     tokenomics: string
@@ -65,6 +66,7 @@ interface AcademyState {
     visibleQuestionsCount: number
     currentStep: number
     videoUrls: { initialQuestionId: number; url: string }[]
+    academyTypeId: number | null // Added academyTypeId
     setVideoUrl: (index: number, url: string) => void
     submitVideoLessons: (academyId: number) => Promise<void>
     setField: (
@@ -85,6 +87,10 @@ interface AcademyState {
             | 'setVideoUrl'
             | 'submitVideoLessons'
             | 'setPrefilledAcademyData'
+            | 'fetchVideoUrls'
+            | 'fetchQuests'
+            | 'updateAcademy'
+            | 'submitBasicAcademy'
         >,
         value: any
     ) => void
@@ -98,7 +104,7 @@ interface AcademyState {
     updateAcademy: (academyId: number, logoFile?: File | null, coverPhotoFile?: File | null) => Promise<void>
     submitBasicAcademy: () => Promise<void>
     resetAcademyData: () => void
-    fetchQuestions: () => Promise<void>
+    fetchQuestions: (academyTypeId: number) => Promise<void> // Updated to accept academyTypeId
     fetchVideoUrls: (academyId: number) => Promise<void>
     fetchQuests: (academyId: number) => Promise<void>
     nextStep: () => void
@@ -132,6 +138,7 @@ const useAcademyStore = create<AcademyState>()(
             currentStep: 0,
             videoUrls: [],
             initialAcademyData: {}, // Initialize as an empty object
+            academyTypeId: null, // Initialize academyTypeId as null
 
             setField: (field, value) =>
                 set(
@@ -155,6 +162,8 @@ const useAcademyStore = create<AcademyState>()(
                             correct: value.choice.correct ?? newChoices[value.index].correct
                         }
                         updatedAnswers[index].choices = newChoices
+                    } else if (field === 'chains') {
+                        updatedAnswers[index][field] = value
                     } else {
                         updatedAnswers[index][field] = value !== undefined ? value : updatedAnswers[index][field]
                     }
@@ -224,6 +233,9 @@ const useAcademyStore = create<AcademyState>()(
                     formData.append('telegram', state.telegram)
                     formData.append('discord', state.discord)
                     formData.append('coingecko', state.coingecko)
+
+                    // Include academyTypeId
+                    formData.append('academyTypeId', state.academyTypeId?.toString() || '')
 
                     // Process the tokenomics data
                     const tokenomicsData = {
@@ -314,6 +326,11 @@ const useAcademyStore = create<AcademyState>()(
                         formData.append('coverPhoto', coverPhotoFile || state.coverPhoto)
                     }
 
+                    // Include academyTypeId if it has changed
+                    if (state.academyTypeId !== initialState.academyTypeId) {
+                        formData.append('academyTypeId', state.academyTypeId?.toString() || '')
+                    }
+
                     // Compare and handle tokenomics data updates
                     const tokenomicsData = {
                         chains: state.initialAnswers[3]?.chains || [],
@@ -394,6 +411,9 @@ const useAcademyStore = create<AcademyState>()(
                     formData.append('congratsVideo', state.congratsVideo)
                     formData.append('getStarted', state.getStarted)
 
+                    // Include academyTypeId
+                    formData.append('academyTypeId', state.academyTypeId?.toString() || '')
+
                     // Add these fields as empty arrays or default values to make them visible on the edit page
                     formData.append('initialAnswers', JSON.stringify(state.initialAnswers || []))
                     formData.append('raffles', JSON.stringify(state.raffles || []))
@@ -437,7 +457,8 @@ const useAcademyStore = create<AcademyState>()(
                         videoUrls: [],
                         visibleQuestionsCount: 1,
                         currentStep: 0,
-                        initialAcademyData: {}
+                        initialAcademyData: {},
+                        academyTypeId: null // Reset academyTypeId
                     },
                     false,
                     'Reset Academy Data'
@@ -448,9 +469,9 @@ const useAcademyStore = create<AcademyState>()(
                 console.log('State after reset:', currentState)
             },
 
-            fetchQuestions: async () => {
+            fetchQuestions: async (academyTypeId: number) => {
                 try {
-                    const response = await axios.get('/api/questions/initial-questions')
+                    const response = await axios.get(`/api/questions/initial-questions?academyTypeId=${academyTypeId}`)
                     const questions = response.data
 
                     set(() => ({
@@ -551,7 +572,7 @@ const useAcademyStore = create<AcademyState>()(
 
                 if (data.academyQuestions.length === 0) {
                     try {
-                        const response = await axios.get('/api/questions/initial-questions') // Fetch initial questions from backend
+                        const response = await axios.get(`/api/questions/initial-questions?academyTypeId=${data.academyTypeId}`) // Fetch initial questions based on academyTypeId
                         initialQuestions = response.data
                     } catch (error) {
                         console.error('Error fetching initial questions:', error)
@@ -595,13 +616,14 @@ const useAcademyStore = create<AcademyState>()(
                     logo: data.logoUrl || null,
                     coverPhoto: data.coverPhotoUrl || null,
                     webpageUrl: data.webpageUrl || '',
-                    initialAnswers,
+                    initialAnswers: sortedInitialAnswers,
                     tokenomics: data.tokenomics || '',
                     teamBackground: data.teamBackground || '',
                     congratsVideo: data.congratsVideo || '',
                     getStarted: data.getStarted || '',
                     raffles: data.raffles || [],
-                    quests: data.quests || []
+                    quests: quests || [],
+                    academyTypeId: data.academyTypeId || null // Include academyTypeId
                 }
 
                 // Set the current state with the data

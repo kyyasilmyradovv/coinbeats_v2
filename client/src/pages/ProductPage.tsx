@@ -67,23 +67,47 @@ export default function ProductPage() {
     const [quizStarted, setQuizStarted] = useState(false)
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
     const [errorMessage, setErrorMessage] = useState('')
-
-    // State for leave confirmation dialog
-    const [showLeaveConfirmation, setShowLeaveConfirmation] = useState(false)
+    const [maxAllowedSlide, setMaxAllowedSlide] = useState(1) // Initialize to first quiz slide
     const [pendingActiveFilter, setPendingActiveFilter] = useState<string | null>(null)
+    const [showLeaveConfirmation, setShowLeaveConfirmation] = useState(false)
+    const activeFilterRef = useRef<string | null>(activeFilter)
 
-    // Define handlePrevClick and handleNextClick before using them
+    useEffect(() => {
+        activeFilterRef.current = activeFilter
+    }, [activeFilter])
+
+    // Define handlePrevClick and handleNextClick
     const handlePrevClick = () => {
-        if (swiperRef.current && swiperRef.current.swiper) {
+        if (currentSlideIndex > 0 && swiperRef.current && swiperRef.current.swiper) {
             swiperRef.current.swiper.slidePrev()
             setErrorMessage('') // Reset error message when moving back
         }
     }
 
     const handleNextClick = () => {
-        if (swiperRef.current && swiperRef.current.swiper) {
-            swiperRef.current.swiper.slideNext()
-            setErrorMessage('')
+        const isQuizSlide = currentSlideIndex % 2 === 1 // Odd indices are quiz slides
+        const questionIndex = Math.floor(currentSlideIndex / 2)
+
+        if (isQuizSlide) {
+            const currentQuestion = initialAnswers[questionIndex]
+            if (currentQuestion.isCorrect !== undefined) {
+                // Allow moving to the next question
+                if (currentSlideIndex + 2 <= initialAnswers.length * 2 - 1) {
+                    setMaxAllowedSlide((prev) => Math.min(prev + 2, initialAnswers.length * 2 - 1))
+                }
+                if (swiperRef.current && swiperRef.current.swiper) {
+                    swiperRef.current.swiper.slideNext()
+                    setErrorMessage('') // Reset error message
+                }
+            } else {
+                setErrorMessage('You must check your answer before proceeding.')
+            }
+        } else {
+            // Allow moving to the quiz slide of the current question
+            if (swiperRef.current && swiperRef.current.swiper) {
+                swiperRef.current.swiper.slideNext()
+                setErrorMessage('') // Reset error message
+            }
         }
     }
 
@@ -105,8 +129,10 @@ export default function ProductPage() {
     }, [academy])
 
     useEffect(() => {
-        if (swiperRef.current && swiperRef.current.swiper) {
-            swiperRef.current.swiper.slideTo(currentQuestionIndex * 2)
+        // Only reset maxAllowedSlide when navigating away from 'read' or 'watch' tabs
+        if (activeFilter !== 'read' && activeFilter !== 'watch') {
+            setCurrentSlideIndex(0)
+            setMaxAllowedSlide(1) // Reset maxAllowedSlide
         }
     }, [activeFilter])
 
@@ -118,12 +144,21 @@ export default function ProductPage() {
         }
     }, [])
 
-    // Clear timer when activeFilter changes
+    // Timer management based on activeFilter
     useEffect(() => {
-        if (timerIntervalRef.current) {
-            clearInterval(timerIntervalRef.current)
+        if (activeFilter === 'read' && quizStarted && !showIntro) {
+            const question = initialAnswers[currentQuestionIndex]
+            if (question && !question.timerStarted) {
+                setTimer(45)
+                startTimer()
+                setInitialAnswers((prevAnswers) => prevAnswers.map((q, qi) => (qi === currentQuestionIndex ? { ...q, timerStarted: true } : q)))
+            }
+        } else {
+            if (timerIntervalRef.current) {
+                clearInterval(timerIntervalRef.current) // Clear any existing timers
+            }
         }
-    }, [activeFilter])
+    }, [activeFilter, quizStarted, showIntro, currentQuestionIndex])
 
     const fetchEarnedPoints = async () => {
         try {
@@ -145,6 +180,9 @@ export default function ProductPage() {
             if (userResponses && userResponses.length > 0) {
                 setUserHasResponses(true)
                 setShowIntro(false) // Skip intro if there are existing responses
+                // Update maxAllowedSlide based on answered questions
+                const answeredSlides = userResponses.length * 2 - 1
+                setMaxAllowedSlide(answeredSlides)
             } else {
                 setUserHasResponses(false)
                 setShowIntro(true) // Show intro if no responses
@@ -274,25 +312,19 @@ export default function ProductPage() {
 
             if (correct) {
                 const totalXP = maxPoints
+                const basePoints = Math.floor(totalXP * 0.25)
 
-                if (activeFilter === 'read') {
-                    // Calculate points based on timer
-                    const basePoints = Math.floor(totalXP * 0.25)
-
-                    if (timer > 30) {
-                        pointsAwarded = totalXP
-                    } else if (timer > 0) {
-                        const remainingPoints = totalXP - basePoints
-                        const elapsedSeconds = 30 - timer
-                        const pointsDeducted = Math.floor((remainingPoints / 30) * elapsedSeconds)
-                        pointsAwarded = totalXP - pointsDeducted
-                    } else {
-                        pointsAwarded = basePoints
-                    }
-                } else if (activeFilter === 'watch') {
-                    // Full points on correct answer
+                if (timer > 30) {
                     pointsAwarded = totalXP
+                } else if (timer > 0) {
+                    const remainingPoints = totalXP - basePoints
+                    const elapsedSeconds = 30 - timer
+                    const pointsDeducted = Math.floor((remainingPoints / 30) * elapsedSeconds)
+                    pointsAwarded = totalXP - pointsDeducted
+                } else {
+                    pointsAwarded = basePoints
                 }
+
                 setEarnedPoints((prev) => prev + pointsAwarded)
                 setCurrentPoints(pointsAwarded)
                 triggerXPAnimation()
@@ -323,6 +355,8 @@ export default function ProductPage() {
                 )
             )
 
+            // Allow navigation to the next slide
+            setMaxAllowedSlide((prev) => Math.min(prev + 2, initialAnswers.length * 2 - 1))
             setErrorMessage('')
         } catch (error) {
             console.error('Error checking answer:', error.response ? error.response.data : error.message)
@@ -335,8 +369,8 @@ export default function ProductPage() {
             handleCompleteAcademy() // Invoke the API call function
         } else {
             if (swiperRef.current && swiperRef.current.swiper) {
-                swiperRef.current.swiper.slideTo(currentSlideIndex + 1)
-                setErrorMessage('')
+                swiperRef.current.swiper.slideNext()
+                setErrorMessage('') // Reset error message when moving to next question
             } else {
                 console.error('Swiper reference is not available.')
             }
@@ -370,13 +404,24 @@ export default function ProductPage() {
         setCurrentSlideIndex(newIndex)
 
         const newQuestionIndex = Math.floor(newIndex / 2)
-
         setCurrentQuestionIndex(newQuestionIndex)
-        setErrorMessage('')
+
+        const question = initialAnswers[newQuestionIndex]
+
+        // Restrict navigation beyond allowed slides
+        if (newIndex > maxAllowedSlide) {
+            setErrorMessage('Please complete the current question before proceeding.')
+            if (swiperRef.current && swiperRef.current.swiper) {
+                swiperRef.current.swiper.slideTo(maxAllowedSlide, 300)
+            }
+        } else {
+            setErrorMessage('')
+        }
+
         // Start timer for new question on read tab
         if (activeFilter === 'read') {
-            const question = initialAnswers[newQuestionIndex]
             if (question && !question.timerStarted) {
+                setTimer(45)
                 startTimer()
                 setInitialAnswers((prevAnswers) => prevAnswers.map((q, qi) => (qi === newQuestionIndex ? { ...q, timerStarted: true } : q)))
             }
@@ -384,8 +429,8 @@ export default function ProductPage() {
     }
 
     const renderProgressbarWithArrows = () => {
-        const totalSlides = initialAnswers.length * 2
-        const completedSlides = currentSlideIndex + 1
+        const totalSlides = initialAnswers.length * 2 // Each question has 2 slides
+        const completedSlides = currentSlideIndex
 
         return (
             <div className="flex items-center justify-between mb-2 !mx-1 !rounded-2xl !bg-gray-50 dark:!bg-gray-800 !border !border-gray-200 dark:!border-gray-700 !shadow-sm p-2">
@@ -470,13 +515,13 @@ export default function ProductPage() {
         }
 
         return (
-            <div className="flex items-center justify-between mb-2">
-                <div className="text-gray-900 dark:text-gray-300 text-md font-semibold flex w-8 h-8 items-center justify-center text-center">
-                    +{displayedPoints} <img src={coinStack} alt="coin stack" className="w-4 h-4 mr-1 mb-[4px]" />
+            <div className="flex items-center justify-between mb-2 gap-3">
+                <div className="text-gray-900 dark:text-gray-300 text-md font-semibold flex w-8 h-8 items-center justify-center text-center ml-1">
+                    +{displayedPoints} <img src={coinStack} alt="coin stack" className="w-4 h-4 mr-2 ml-2 mb-[4px]" />
                 </div>
                 <div className="relative flex-grow h-2 mx-2 bg-gray-200 rounded-full overflow-hidden">
                     <div
-                        className="absolute top-0 left-0 h-full rounded-full"
+                        className="absolute top-0 left-0 h-full rounded-full mx-2"
                         style={{
                             width: `${timePercentage}%`,
                             background: getBarColor()
@@ -504,7 +549,7 @@ export default function ProductPage() {
                     onSlideChange={handleSlideChange}
                     ref={swiperRef}
                     allowTouchMove={true}
-                    initialSlide={currentQuestionIndex * 2}
+                    initialSlide={currentSlideIndex}
                 >
                     {initialAnswers.length > 0 ? (
                         initialAnswers.flatMap((_, index) => [renderInitialQuestionSlide(index), renderQuizSlide(index)])
@@ -555,8 +600,8 @@ export default function ProductPage() {
         setShowIntro(false)
         setQuizStarted(true)
 
-        // Start the timer for the first question
-        if (activeFilter === 'read' && initialAnswers.length > 0 && !initialAnswers[0].timerStarted) {
+        // Start the timer for the first question before sliding
+        if (initialAnswers.length > 0 && !initialAnswers[0].timerStarted) {
             startTimer()
             setInitialAnswers((prevAnswers) => prevAnswers.map((q, qi) => (qi === 0 ? { ...q, timerStarted: true } : q)))
         }
@@ -569,16 +614,13 @@ export default function ProductPage() {
     }
 
     const startTimer = () => {
-        setTimer(45)
         if (timerIntervalRef.current) {
             clearInterval(timerIntervalRef.current)
         }
         timerIntervalRef.current = setInterval(() => {
             setTimer((prevTimer) => {
                 if (prevTimer <= 1) {
-                    if (timerIntervalRef.current) {
-                        clearInterval(timerIntervalRef.current)
-                    }
+                    clearInterval(timerIntervalRef.current)
                     return 0
                 }
                 return prevTimer - 1
@@ -705,13 +747,7 @@ export default function ProductPage() {
     const renderWatchTab = () => (
         <>
             {renderProgressbarWithArrows()}
-            <Swiper
-                pagination={{ clickable: true }}
-                onSlideChange={handleSlideChange}
-                ref={swiperRef}
-                allowTouchMove={true}
-                initialSlide={currentQuestionIndex * 2}
-            >
+            <Swiper pagination={{ clickable: true }} onSlideChange={handleSlideChange} ref={swiperRef} allowTouchMove={true} initialSlide={currentSlideIndex}>
                 {initialAnswers.length > 0 ? (
                     initialAnswers.flatMap((question, index) => [renderVideoSlide(index), renderQuizSlide(index)])
                 ) : (
@@ -916,15 +952,17 @@ export default function ProductPage() {
         }
     }, [userHasResponses])
 
-    // Function to check if user has answered at least one question
     const hasAnsweredAtLeastOneQuestion = () => {
         return initialAnswers.some((q) => q.isCorrect !== undefined)
     }
 
-    // Handle tab change with confirmation dialog
     const handleTabChange = (newFilter: string) => {
-        // If the user is trying to leave 'read' or 'watch' tab to 'quests', and they have answered at least one question, show confirmation dialog
-        if ((activeFilter === 'read' || activeFilter === 'watch') && newFilter === 'quests' && hasAnsweredAtLeastOneQuestion()) {
+        const currentFilter = activeFilterRef.current
+        console.log('Current Filter:', currentFilter)
+        console.log('New Filter:', newFilter)
+        console.log('Has Answered At Least One Question:', hasAnsweredAtLeastOneQuestion())
+
+        if ((currentFilter === 'read' || currentFilter === 'watch') && newFilter !== 'read' && newFilter !== 'watch' && !hasAnsweredAtLeastOneQuestion()) {
             setPendingActiveFilter(newFilter)
             setShowLeaveConfirmation(true)
         } else {
@@ -976,37 +1014,63 @@ export default function ProductPage() {
                                 outline
                                 rounded
                                 onClick={() => handleTabChange('read')}
-                                className={`${
-                                    activeFilter === 'read'
-                                        ? 'bg-gray-100 dark:bg-gray-700 k-color-brand-purple shadow-lg'
-                                        : 'bg-white dark:bg-gray-800 shadow-lg'
-                                }`}
+                                className={`${activeFilter === 'read' ? 'active-gradient shadow-lg' : 'default-gradient shadow-lg'} rounded-full`}
+                                style={{
+                                    background:
+                                        activeFilter === 'read' ? 'linear-gradient(to left, #ff77aa, #aa77ff)' : 'linear-gradient(to left, #ff0077, #7700ff)',
+                                    color: '#fff',
+                                    border: activeFilter === 'read' ? '2px solid #DE47F0' : '2px solid #DE47F0',
+                                    borderRadius: '9999px'
+                                }}
                             >
                                 Read
                             </Button>
+
                             <Button
                                 outline
                                 rounded
                                 onClick={() => handleTabChange('watch')}
                                 className={`${
-                                    activeFilter === 'watch'
-                                        ? 'bg-gray-100 dark:bg-gray-700 k-color-brand-purple shadow-lg'
-                                        : 'bg-white dark:bg-gray-800 shadow-lg'
-                                } ${!initialAnswers.some((question) => question.video) ? 'bg-black text-gray-500 border-gray-500 cursor-not-allowed' : ''}`}
+                                    activeFilter === 'watch' ? 'active-gradient shadow-lg' : 'default-gradient shadow-lg'
+                                } ${!initialAnswers.some((question) => question.video) ? 'disabled-gradient cursor-not-allowed' : ''} rounded-full`}
                                 disabled={!initialAnswers.some((question) => question.video)}
+                                style={{
+                                    background: !initialAnswers.some((question) => question.video)
+                                        ? 'linear-gradient(to left, #808080, #b3b3b3)'
+                                        : activeFilter === 'watch'
+                                          ? 'linear-gradient(to left, #ff77aa, #aa77ff)'
+                                          : 'linear-gradient(to left, #ff0077, #7700ff)',
+                                    color: '#fff',
+                                    border: !initialAnswers.some((question) => question.video)
+                                        ? '2px solid #b3b3b3'
+                                        : activeFilter === 'watch'
+                                          ? '2px solid #DE47F0'
+                                          : '2px solid #DE47F0',
+                                    borderRadius: '9999px'
+                                }}
                             >
                                 Watch
                             </Button>
+
                             <Button
                                 outline
                                 rounded
                                 onClick={() => handleTabChange('quests')}
                                 className={`${
-                                    activeFilter === 'quests'
-                                        ? 'bg-gray-100 dark:bg-gray-700 k-color-brand-purple shadow-lg'
-                                        : 'bg-white dark:bg-gray-800 shadow-lg'
-                                } ${quests.length === 0 ? 'bg-black text-gray-500 border-gray-500 cursor-not-allowed' : ''}`}
+                                    activeFilter === 'quests' ? 'active-gradient shadow-lg' : 'default-gradient shadow-lg'
+                                } ${quests.length === 0 ? 'disabled-gradient cursor-not-allowed' : ''} rounded-full`}
                                 disabled={quests.length === 0}
+                                style={{
+                                    background:
+                                        quests.length === 0
+                                            ? 'linear-gradient(to left, #808080, #b3b3b3)'
+                                            : activeFilter === 'quests'
+                                              ? 'linear-gradient(to left, #ff77aa, #aa77ff)'
+                                              : 'linear-gradient(to left, #ff0077, #7700ff)',
+                                    color: '#fff',
+                                    border: quests.length === 0 ? '2px solid #b3b3b3' : activeFilter === 'quests' ? '2px solid #DE47F0' : '2px solid #DE47F0',
+                                    borderRadius: '9999px'
+                                }}
                             >
                                 Quests
                             </Button>
@@ -1017,18 +1081,18 @@ export default function ProductPage() {
                         {activeFilter === null && (
                             <>
                                 <Card className="!mb-4 !p-0 !rounded-2xl shadow-lg !m-0 relative border border-gray-300 dark:border-gray-600">
-                                    <div className="flex items-center mb-2 text-lg text-gray-900 dark:text-gray-200">
-                                        <img src={name} className="h-10 w-10 mr-4" alt="academy name" />
+                                    <div className="flex items-center mb-2 text-md text-gray-900 dark:text-gray-200">
+                                        <img src={name} className="h-7 w-7 mr-4" alt="academy name" />
                                         <span className="text-gray-600 dark:text-gray-400 mr-2">Name:</span>
                                         <span className="text-black dark:text-gray-200 font-semibold truncate">{academy.name}</span>
                                     </div>
-                                    <div className="flex items-center mb-2 text-lg text-gray-900 dark:text-gray-200">
-                                        <img src={coins} className="h-10 w-10 mr-4" alt="coins to earn" />
+                                    <div className="flex items-center mb-2 text-md text-gray-900 dark:text-gray-200">
+                                        <img src={coins} className="h-7 w-7 mr-4" alt="coins to earn" />
                                         <span className="text-gray-600 dark:text-gray-400 mr-2">Coins to earn:</span>
                                         <span className="text-black dark:text-gray-200 font-semibold">{academy.xp}</span>
                                     </div>
-                                    <div className="flex items-center mb-2 text-lg text-gray-900 dark:text-gray-200">
-                                        <img src={ticker} className="h-10 w-10 mr-4" alt="academy ticker" />
+                                    <div className="flex items-center mb-2 text-md text-gray-900 dark:text-gray-200">
+                                        <img src={ticker} className="h-7 w-7 mr-4" alt="academy ticker" />
                                         <span className="text-gray-600 dark:text-gray-400 mr-2">Ticker:</span>
                                         <span className="text-black dark:text-gray-200 font-semibold">{academy.ticker}</span>
                                         {academy.dexScreener && (
@@ -1037,15 +1101,15 @@ export default function ProductPage() {
                                             </a>
                                         )}
                                     </div>
-                                    <div className="flex items-center mb-2 text-lg text-gray-900 dark:text-gray-200">
-                                        <img src={categories} className="h-10 w-10 mr-4" alt="academy categories" />
+                                    <div className="flex items-center mb-2 text-md text-gray-900 dark:text-gray-200">
+                                        <img src={categories} className="h-7 w-7 mr-4" alt="academy categories" />
                                         <span className="text-gray-600 dark:text-gray-400 mr-2">Categories:</span>
                                         <span className="text-black dark:text-gray-200 font-semibold truncate">
                                             {academy.categories.map((c: any) => c.name).join(', ')}
                                         </span>
                                     </div>
-                                    <div className="flex items-center mb-2 text-lg text-gray-900 dark:text-gray-200">
-                                        <img src={chains} className="h-10 w-10 mr-4" alt="academy chains" />
+                                    <div className="flex items-center mb-2 text-md text-gray-900 dark:text-gray-200">
+                                        <img src={chains} className="h-7 w-7 mr-4" alt="academy chains" />
                                         <span className="text-gray-600 dark:text-gray-400 mr-2">Chains:</span>
                                         <span className="text-black dark:text-gray-200 font-semibold truncate">
                                             {academy.chains.map((c: any) => c.name).join(', ')}
@@ -1060,7 +1124,7 @@ export default function ProductPage() {
                                                 clear
                                                 raised
                                                 rounded
-                                                className="flex items-center !justify-start gap-2 w-full dark:text-gray-200 !bg-gray-50 dark:!bg-gray-800 !border !border-gray-200 dark:!border-gray-700"
+                                                className="flex items-center !justify-start gap-2 w-full dark:text-gray-200 !text-xs bg-gradient-to-r from-gray-100 to-gray-300 dark:from-gray-700 dark:to-gray-900 border border-gray-200 dark:border-gray-700 rounded-full"
                                                 onClick={() => window.open(academy.webpageUrl, '_blank')}
                                             >
                                                 <Icon icon="mdi:web" color="#6c757d" className="w-5 h-5" />
@@ -1072,7 +1136,7 @@ export default function ProductPage() {
                                                 clear
                                                 raised
                                                 rounded
-                                                className="flex items-center !justify-start gap-2 w-full dark:text-gray-200 !bg-gray-50 dark:!bg-gray-800 !border !border-gray-200 dark:!border-gray-700"
+                                                className="flex items-center !justify-start gap-2 w-full dark:text-gray-200 !text-xs bg-gradient-to-r from-gray-100 to-gray-300 dark:from-gray-700 dark:to-gray-900 border border-gray-200 dark:border-gray-700 rounded-full"
                                                 onClick={() => window.open(academy.twitter, '_blank')}
                                             >
                                                 <Icon icon="mdi:twitter" color="#1DA1F2" className="w-5 h-5" />
@@ -1084,7 +1148,7 @@ export default function ProductPage() {
                                                 clear
                                                 raised
                                                 rounded
-                                                className="flex items-center !justify-start gap-2 w-full dark:text-gray-200 !bg-gray-50 dark:!bg-gray-800 !border !border-gray-200 dark:!border-gray-700"
+                                                className="flex items-center !justify-start gap-2 w-full dark:text-gray-200 !text-xs bg-gradient-to-r from-gray-100 to-gray-300 dark:from-gray-700 dark:to-gray-900 border border-gray-200 dark:border-gray-700 rounded-full"
                                                 onClick={() => window.open(academy.telegram, '_blank')}
                                             >
                                                 <Icon icon="mdi:telegram" color="#0088cc" className="w-5 h-5" />
@@ -1096,7 +1160,7 @@ export default function ProductPage() {
                                                 clear
                                                 raised
                                                 rounded
-                                                className="flex items-center !justify-start gap-2 w-full dark:text-gray-200 !bg-gray-50 dark:!bg-gray-800 !border !border-gray-200 dark:!border-gray-700"
+                                                className="flex items-center !justify-start gap-2 w-full dark:text-gray-200 !text-xs bg-gradient-to-r from-gray-100 to-gray-300 dark:from-gray-700 dark:to-gray-900 border border-gray-200 dark:border-gray-700 rounded-full"
                                                 onClick={() => window.open(academy.discord, '_blank')}
                                             >
                                                 <Icon icon="mdi:discord" color="#7289DA" className="w-5 h-5" />
@@ -1108,7 +1172,7 @@ export default function ProductPage() {
                                                 clear
                                                 raised
                                                 rounded
-                                                className="flex items-center !justify-start gap-2 w-full dark:text-gray-200 !bg-gray-50 dark:!bg-gray-800 !border !border-gray-200 dark:!border-gray-700"
+                                                className="flex items-center !justify-start gap-2 w-full dark:text-gray-200 !text-xs bg-gradient-to-r from-gray-100 to-gray-300 dark:from-gray-700 dark:to-gray-900 border border-gray-200 dark:border-gray-700 rounded-full"
                                                 onClick={() => window.open(academy.coingecko, '_blank')}
                                             >
                                                 <img src={gecko} className="h-5 w-5" alt="Coingecko logo" />
@@ -1120,9 +1184,9 @@ export default function ProductPage() {
 
                                 <Card className="!mb-12 !p-0 !rounded-2xl shadow-lg !m-0 relative border border-gray-300 dark:border-gray-600">
                                     <div className="flex items-center justify-center text-gray-900 dark:text-gray-200">
-                                        <img src={collected} className="h-10 w-10 mr-4" alt="collected coins" />
-                                        <span className="text-lg text-gray-600 dark:text-gray-400 mr-2">Earned Coins:</span>
-                                        <span className="text-lg text-black dark:text-gray-200 font-semibold">
+                                        <img src={collected} className="h-7 w-7 mr-4" alt="collected coins" />
+                                        <span className="text-md text-gray-600 dark:text-gray-400 mr-2">Earned Coins:</span>
+                                        <span className="text-md text-black dark:text-gray-200 font-semibold">
                                             {earnedPoints}/{academy.xp}
                                         </span>
                                     </div>
@@ -1162,6 +1226,7 @@ export default function ProductPage() {
                                 background: 'linear-gradient(to left, #ff0077, #7700ff)',
                                 color: '#fff'
                             }}
+                            className="!text-xs"
                         >
                             I'm sure
                         </Button>
@@ -1169,6 +1234,7 @@ export default function ProductPage() {
                             rounded
                             outline
                             onClick={() => setShowLeaveConfirmation(false)}
+                            className="!text-xs"
                             style={{
                                 background: 'linear-gradient(to left, #ff0077, #7700ff)',
                                 color: '#fff'

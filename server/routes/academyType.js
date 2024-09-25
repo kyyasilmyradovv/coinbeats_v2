@@ -9,24 +9,21 @@ const {
   deleteAcademyType,
   addInitialQuestion,
   deleteInitialQuestion,
-  updateInitialQuestion, // Import the new controller
+  updateInitialQuestion,
 } = require('../controllers/academyTypeController');
 const asyncHandler = require('express-async-handler');
 
 const router = express.Router();
 
-// Existing routes
+// Adjusted GET route to be publicly accessible
+router.get('/', asyncHandler(getAllAcademyTypes));
+
+// Other routes remain protected
 router.post(
   '/',
   authenticateToken,
   authorizeRoles('ADMIN', 'SUPERADMIN'),
   asyncHandler(createAcademyType)
-);
-router.get(
-  '/',
-  authenticateToken,
-  authorizeRoles('ADMIN', 'SUPERADMIN'),
-  asyncHandler(getAllAcademyTypes)
 );
 router.put(
   '/:id',

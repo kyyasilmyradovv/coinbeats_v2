@@ -8,12 +8,14 @@ import Sidebar from '../components/Sidebar'
 import useCategoryChainStore from '../store/useCategoryChainStore'
 import useAcademyStore from '../store/useAcademyStore'
 import bunnyLogo from '../images/bunny-mascot.png'
+import axiosInstance from '../api/axiosInstance'
 
 const CreateAcademyPage: React.FC = () => {
     const [rightPanelOpened, setRightPanelOpened] = useState(false)
     const [notificationOpen, setNotificationOpen] = useState(false)
     const [notificationText, setNotificationText] = useState('')
     const [visibleTooltip, setVisibleTooltip] = useState<number | null>(null)
+    const [academyTypes, setAcademyTypes] = useState([]) // New state for academy types
 
     const {
         name,
@@ -37,7 +39,8 @@ const CreateAcademyPage: React.FC = () => {
         fetchQuestions,
         resetAcademyData,
         nextStep,
-        prevStep
+        prevStep,
+        academyTypeId // Added to access selected academyTypeId from store
     } = useAcademyStore()
 
     const navigate = useNavigate()
@@ -45,13 +48,26 @@ const CreateAcademyPage: React.FC = () => {
     const { categories: categoryList, chains: chainList, fetchCategoriesAndChains } = useCategoryChainStore()
 
     useEffect(() => {
-        fetchQuestions()
+        fetchAcademyTypes() // Fetch academy types when component mounts
         fetchCategoriesAndChains()
-    }, [fetchQuestions, fetchCategoriesAndChains])
+    }, [fetchCategoriesAndChains])
 
-    const toggleSidebar = () => {
-        setRightPanelOpened(!rightPanelOpened)
+    // Fetch academy types from the backend
+    const fetchAcademyTypes = async () => {
+        try {
+            const response = await axiosInstance.get('/api/academy-types')
+            setAcademyTypes(response.data)
+        } catch (error) {
+            console.error('Error fetching academy types:', error)
+        }
     }
+
+    // Fetch initial questions whenever the selected academyTypeId changes
+    useEffect(() => {
+        if (academyTypeId) {
+            fetchQuestions(academyTypeId)
+        }
+    }, [academyTypeId, fetchQuestions])
 
     const handleFileChange = (
         field:
@@ -765,7 +781,7 @@ const CreateAcademyPage: React.FC = () => {
     )
 
     const slides = [
-        // First slide for Protocol Name, Ticker, and Category
+        // First slide for Protocol Name, Ticker, Category, and Academy Type
         <Card key="slide1" className="!mb-2 !p-0 !rounded-2xl shadow-lg !mx-4 relative border border-gray-300 dark:border-gray-600">
             <div className="flex items-center justify-center relative">
                 <h2 className="text-lg font-bold mb-4 text-center">Create Academy Form</h2>
@@ -777,7 +793,8 @@ const CreateAcademyPage: React.FC = () => {
                 </button>
                 {visibleTooltip === 6 && (
                     <div className="tooltip absolute bg-gray-700 text-white text-xs rounded-2xl p-4 mt-2 z-20">
-                        Fill in the protocol name, ticker (optional), and select category for your academy. This is the first step to create a new academy.
+                        Fill in the protocol name, ticker (optional), select category, and choose an academy type for your academy. This is the first step to
+                        create a new academy.
                         <button className="absolute top-0 right-0 text-white text-sm mt-1 mr-1" onClick={() => setVisibleTooltip(null)}>
                             &times;
                         </button>
@@ -836,13 +853,32 @@ const CreateAcademyPage: React.FC = () => {
                         </div>
                     ))}
                 </div>
+
+                {/* New Academy Type Dropdown */}
+                <ListInput
+                    label="Academy Type"
+                    type="select"
+                    outline
+                    onChange={(e) => {
+                        setField('academyTypeId', parseInt(e.target.value, 10))
+                    }}
+                    value={academyTypeId || ''}
+                    placeholder="Select Academy Type"
+                >
+                    <option value="">Select Academy Type</option>
+                    {academyTypes.map((type) => (
+                        <option key={type.id} value={type.id}>
+                            {type.name}
+                        </option>
+                    ))}
+                </ListInput>
             </List>
             <Button onClick={nextStep} large raised className="w-full bg-brand-primary text-white mt-4 rounded-full">
                 Next
             </Button>
         </Card>,
 
-        // Dynamically render each initial question slide
+        // Conditionally render initial question slides based on selected academyTypeId
         ...initialAnswers.map((_, index) => renderInitialQuestionSlide(index)),
 
         // Slide for Academy Details
@@ -869,15 +905,6 @@ const CreateAcademyPage: React.FC = () => {
             {slides[currentStep]}
 
             {/* Notification */}
-            <Notification
-                className="fixed top-0 left-0 z-50 border"
-                opened={notificationOpen}
-                icon={<img src={bunnyLogo} alt="Bunny Mascot" className="w-10 h-10" />}
-                title="Message from Coinbeats Bunny"
-                text={notificationText}
-                button={<Button onClick={() => setNotificationOpen(false)}>Close</Button>}
-                onClose={() => setNotificationOpen(false)}
-            />
             <Notification
                 className="fixed top-0 left-0 z-50 border"
                 opened={notificationOpen}

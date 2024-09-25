@@ -1,6 +1,7 @@
+// client/src/components/BottomTabBar.tsx
+
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Tabbar, TabbarLink, Icon } from 'konsta/react'
 import GraduationHat from '../images/graduation-hat.png'
 import Bookmark from '../images/bookmark.png'
 import GamePad from '../images/game-pad.png'
@@ -30,46 +31,108 @@ export default function BottomTabBar({ activeTab, setActiveTab }) {
         }
     }
 
-    const { darkMode } = useSessionStore((state) => ({ darkMode: state.darkMode }))
+    const { darkMode } = useSessionStore((state) => ({
+        darkMode: state.darkMode
+    }))
 
     return (
-        <Tabbar labels icons className={`left-0 bottom-0 fixed ${darkMode ? 'bg-gray-900' : 'bg-white'} shadow-md !py-1`}>
-            <TabbarLink
-                active={activeTab === 'tab-1'}
-                onClick={() => handleTabClick('tab-1')}
-                className={`rounded-xl !my-2 !mr-2 !px-3 !py-2 ${
-                    activeTab === 'tab-1' ? `!bg-slate-100 dark:!bg-[#1C1C1D] border border-brand-purple` : 'border border-gray-300 dark:border-gray-600'
-                }`}
-                icon={<Icon ios={<img src={GraduationHat} alt="Learn" />} material={<img src={GraduationHat} alt="Learn" />} />}
-                label="Learn"
-            />
-            <TabbarLink
-                active={activeTab === 'tab-2'}
-                onClick={() => handleTabClick('tab-2')}
-                className={`rounded-xl !my-2 !mr-2 !px-3 !py-2 ${
-                    activeTab === 'tab-2' ? `!bg-slate-100 dark:!bg-[#1C1C1D] border !border-brand-purple` : 'border border-gray-300 dark:border-gray-600'
-                }`}
-                icon={<Icon ios={<img src={Bookmark} alt="Bookmarks" />} material={<img src={Bookmark} alt="Bookmarks" />} />}
-                label="Bookmarks"
-            />
-            <TabbarLink
-                active={activeTab === 'tab-3'}
-                onClick={() => handleTabClick('tab-3')}
-                className={`rounded-xl !my-2 !mr-2 !px-3 !py-2 ${
-                    activeTab === 'tab-3' ? `!bg-slate-100 dark:!bg-[#1C1C1D] border !border-brand-purple` : 'border border-gray-300 dark:border-gray-600'
-                }`}
-                icon={<Icon ios={<img src={GamePad} alt="Earn" className="!p-1" />} material={<img src={GamePad} alt="Earn" className="!p-1" />} />}
-                label="Earn"
-            />
-            <TabbarLink
-                active={activeTab === 'tab-4'}
-                onClick={() => handleTabClick('tab-4')}
-                className={`rounded-xl !my-2 !px-3 !py-2 ${
-                    activeTab === 'tab-4' ? `!bg-slate-100 dark:!bg-[#1C1C1D] border !border-brand-purple` : 'border border-gray-300 dark:border-gray-600'
-                }`}
-                icon={<Icon ios={<img src={Trophy} alt="Points" className="!p-1" />} material={<img src={Trophy} alt="Points" className="!p-1" />} />}
-                label="Points"
-            />
-        </Tabbar>
+        <div className={`left-0 bottom-0 fixed w-full z-50 ${darkMode ? 'bg-[#1C1C1D]' : 'bg-gray-200'} shadow-md border-t border-gray-800`}>
+            <div className="flex justify-around h-16">
+                {/* Tab 1 */}
+                <div className="relative flex-1" onClick={() => handleTabClick('tab-1')}>
+                    {/* Bottom Div */}
+                    {activeTab === 'tab-1' && (
+                        <div className="absolute inset-0 rounded-xl tab-background m-1">
+                            {/* Top Div */}
+                            <div className={`relative m-[1px] rounded-xl overflow-hidden`}>
+                                <div className={`flex flex-col items-center justify-center ${activeTab === 'tab-1' ? 'tab-content' : ''}`}>
+                                    <div className="h-10 py-1">
+                                        <img src={GraduationHat} alt="Learn" className="w-full h-full object-contain" />
+                                    </div>
+                                    <span className="tab-label text-xs">Learn</span>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    <div className={`relative m-1 rounded-xl overflow-hidden border border-gray-600`}>
+                        <div className={`flex flex-col items-center justify-center ${activeTab === 'tab-1' ? 'tab-content' : ''}`}>
+                            <div className="h-10 py-1">
+                                <img src={GraduationHat} alt="Learn" className="w-full h-full object-contain" />
+                            </div>
+                            <span className="tab-label text-xs">Learn</span>
+                        </div>
+                    </div>
+                </div>
+                {/* Tab 2 */}
+                <div className="relative flex-1" onClick={() => handleTabClick('tab-2')}>
+                    {activeTab === 'tab-2' && (
+                        <div className="absolute inset-0 rounded-xl tab-background m-1">
+                            <div className={`relative m-[1px] rounded-xl overflow-hidden`}>
+                                <div className={`flex flex-col items-center justify-center ${activeTab === 'tab-2' ? 'tab-content' : ''}`}>
+                                    <div className="h-10 py-1">
+                                        <img src={Bookmark} alt="Bookmarks" className="w-full h-full object-contain" />
+                                    </div>
+                                    <span className="tab-label text-xs">Bookmarks</span>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    <div className={`relative m-1 rounded-xl overflow-hidden border border-gray-600`}>
+                        <div className={`flex flex-col items-center justify-center ${activeTab === 'tab-2' ? 'tab-content' : ''}`}>
+                            <div className="h-10 py-1">
+                                <img src={Bookmark} alt="Bookmarks" className="w-full h-full object-contain" />
+                            </div>
+                            <span className="tab-label text-xs">Bookmarks</span>
+                        </div>
+                    </div>
+                </div>
+                {/* Tab 3 */}
+                <div className="relative flex-1" onClick={() => handleTabClick('tab-3')}>
+                    {activeTab === 'tab-3' && (
+                        <div className="absolute inset-0 rounded-xl tab-background m-1">
+                            <div className={`relative m-[1px] rounded-xl overflow-hidden`}>
+                                <div className={`flex flex-col items-center justify-center ${activeTab === 'tab-3' ? 'tab-content' : ''}`}>
+                                    <div className="h-10 py-2">
+                                        <img src={GamePad} alt="Earn" className="w-full h-full object-contain" />
+                                    </div>
+                                    <span className="tab-label text-xs">Earn</span>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    <div className={`relative m-1 rounded-xl overflow-hidden border border-gray-600`}>
+                        <div className={`flex flex-col items-center justify-center ${activeTab === 'tab-3' ? 'tab-content' : ''}`}>
+                            <div className="h-10 py-2">
+                                <img src={GamePad} alt="Earn" className="w-full h-full object-contain" />
+                            </div>
+                            <span className="tab-label text-xs">Earn</span>
+                        </div>
+                    </div>
+                </div>
+                {/* Tab 4 */}
+                <div className="relative flex-1" onClick={() => handleTabClick('tab-4')}>
+                    {activeTab === 'tab-4' && (
+                        <div className="absolute inset-0 rounded-xl tab-background m-1">
+                            <div className={`relative m-[1px] rounded-xl overflow-hidden`}>
+                                <div className={`flex flex-col items-center justify-center ${activeTab === 'tab-4' ? 'tab-content' : ''}`}>
+                                    <div className="h-10 py-2">
+                                        <img src={Trophy} alt="Points" className="w-full h-full object-contain" />
+                                    </div>
+                                    <span className="tab-label text-xs">Points</span>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    <div className={`relative m-1 rounded-xl overflow-hidden border border-gray-600`}>
+                        <div className={`flex flex-col items-center justify-center ${activeTab === 'tab-4' ? 'tab-content' : ''}`}>
+                            <div className="h-10 py-2">
+                                <img src={Trophy} alt="Points" className="w-full h-full object-contain" />
+                            </div>
+                            <span className="tab-label text-xs">Points</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     )
 }

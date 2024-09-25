@@ -355,60 +355,77 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
                 </div>
             </div>
 
-            <div className="grid grid-cols-2 px-2 pt-6 pb-16">
+            <div className="grid grid-cols-2 gap-4 px-2 pt-6 pb-16">
                 {filteredData.map((academy) => {
                     const isCompleted = hasCompletedAcademy(academy.id)
+                    const isCoinbeats = academy.academyType.name === 'Coinbeats' // Check if academy is of Coinbeats type
 
                     return (
-                        <Card
-                            key={academy.id}
-                            className="relative flex flex-col items-center text-center !p-3 !rounded-2xl shadow-lg border border-gray-300 dark:border-gray-600 overflow-visible"
-                        >
-                            <div className="absolute top-0 left-0 p-2">
-                                <button
-                                    className={`${isBookmarked(academy.id) ? 'text-red-600' : 'text-amber-500'} rounded-full shadow-md focus:outline-none m-1`}
-                                    onClick={() => handleBookmark(academy)}
-                                >
-                                    <MdBookmarks className="h-5 w-5 transition-transform duration-300 transform hover:scale-110" />
-                                </button>
-                            </div>
-                            <div
-                                className={`flex items-center absolute top-0 right-0 px-2 py-[3px] ${
-                                    isCompleted ? 'bg-gradient-to-r from-teal-400 to-teal-100' : 'bg-gradient-to-r from-slate-400 to-slate-100'
-                                } bg-opacity-75 rounded-full text-sm font-bold text-gray-800 m-2`}
-                            >
-                                {isCompleted ? (
-                                    <>
-                                        <span className="text-xs">+{getCompletedAcademyPoints(academy.id)?.value} ✅</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <span className="text-xs">+{academy.xp}</span> <img src={coins} className="h-4 w-4" alt="coins icon" />
-                                    </>
-                                )}
-                            </div>
-
-                            <div className="flex items-center text-center w-full justify-center mt-1">
-                                <img alt={academy.name} className="h-16 w-16 rounded-full mb-2" src={constructImageUrl(academy.logoUrl)} />
-                            </div>
-                            <div className="text-lg font-bold whitespace-nowrap">{academy.name}</div>
-                            {/* <Button rounded large className="mt-2 font-bold shadow-xl min-w-28" onClick={() => handleMoreClick(academy)}> */}
-                            <Button
-                                outline
-                                rounded
-                                onClick={() => handleMoreClick(academy)}
-                                className="!text-xs !w-16 ml-4 mt-2 font-bold shadow-xl min-w-28 !mx-auto"
-                                style={{
-                                    background: 'linear-gradient(to left, #ff0077, #7700ff)',
-                                    color: '#fff'
-                                }}
-                            >
-                                Study Now
-                            </Button>
-                            {new Date() - new Date(academy.createdAt) < 30 * 24 * 60 * 60 * 1000 && (
-                                <img src={NewIcon} alt="New" className="absolute left-7 -bottom-4 w-10 h-10 -translate-x-8" style={{ zIndex: 10 }} />
+                        <div key={academy.id} className="relative">
+                            {/* Coinbeats background div */}
+                            {isCoinbeats && (
+                                <div className="absolute inset-0 pointer-events-none rounded-2xl z-0 coinbeats-background m-[14px] items-center justify-center"></div>
                             )}
-                        </Card>
+
+                            {/* Card element */}
+                            <Card
+                                className={`relative flex flex-col items-center text-center p-3 rounded-2xl shadow-lg overflow-visible z-10 bg-white dark:bg-zinc-900 ${
+                                    isCoinbeats ? 'coinbeats-content border-none' : 'border border-gray-300 dark:border-gray-600'
+                                }`}
+                            >
+                                {/* Bookmark Icon */}
+                                <div className="absolute top-2 left-2">
+                                    <button
+                                        className={`${
+                                            isBookmarked(academy.id) ? 'text-red-600' : 'text-amber-500'
+                                        } rounded-full shadow-md focus:outline-none m-1`}
+                                        onClick={() => handleBookmark(academy)}
+                                    >
+                                        <MdBookmarks className="h-5 w-5 transition-transform duration-300 transform hover:scale-110" />
+                                    </button>
+                                </div>
+
+                                {/* Completed badge */}
+                                <div
+                                    className={`flex items-center absolute top-2 right-2 px-2 py-[3px] ${
+                                        isCompleted ? 'bg-gradient-to-r from-teal-400 to-teal-100' : 'bg-gradient-to-r from-slate-400 to-slate-100'
+                                    } bg-opacity-75 rounded-full text-sm font-bold text-gray-800`}
+                                >
+                                    {isCompleted ? (
+                                        <span className="text-xs">+{getCompletedAcademyPoints(academy.id)?.value} ✅</span>
+                                    ) : (
+                                        <>
+                                            <span className="text-xs">+{academy.xp}</span>
+                                            <img src={coins} className="h-4 w-4" alt="coins icon" />
+                                        </>
+                                    )}
+                                </div>
+
+                                {/* Coinbeats content (image, etc.) */}
+                                <div className="flex items-center justify-center w-full mt-1">
+                                    <img alt={academy.name} className="h-16 w-16 rounded-full mb-2" src={constructImageUrl(academy.logoUrl)} />
+                                </div>
+
+                                <div className="text-lg font-bold whitespace-nowrap">{academy.name}</div>
+
+                                <Button
+                                    outline
+                                    rounded
+                                    onClick={() => handleMoreClick(academy)}
+                                    className="!text-xs !w-16 mt-2 font-bold shadow-xl min-w-28 !mx-auto"
+                                    style={{
+                                        background: 'linear-gradient(to left, #ff0077, #7700ff)',
+                                        color: '#fff'
+                                    }}
+                                >
+                                    Study Now
+                                </Button>
+
+                                {!isCoinbeats && new Date() - new Date(academy.createdAt) < 30 * 24 * 60 * 60 * 1000 && (
+                                    <img src={NewIcon} alt="New" className="absolute left-7 -bottom-4 w-10 h-10 -translate-x-8" style={{ zIndex: 10 }} />
+                                )}
+                            </Card>
+                        </div>
                     )
                 })}
             </div>
