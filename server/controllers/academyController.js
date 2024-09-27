@@ -84,6 +84,7 @@ exports.createAcademy = async (req, res, next) => {
       coingeckoLink = '',
       dexScreenerLink = '',
       contractAddress = '',
+      academyTypeId,
     } = req.body;
 
     const { userId } = req.user;
@@ -197,11 +198,12 @@ exports.createAcademy = async (req, res, next) => {
         webpageUrl,
         status: 'pending',
         creatorId: userId,
+        academyTypeId: academyTypeId ? parseInt(academyTypeId, 10) : null,
       },
     });
 
     // Allocate XP to Academy Questions and Quests
-    await allocateXp(academy.id, 200); // Total XP to allocate is 200
+    await allocateXp(academy.id, 500); // Total XP to allocate is 200
 
     res.status(201).json({ message: 'Academy created successfully', academy });
   } catch (error) {
@@ -230,6 +232,7 @@ exports.createBasicAcademy = async (req, res, next) => {
       coingeckoLink = '',
       dexScreenerLink = '',
       contractAddress = '',
+      academyTypeId,
     } = req.body;
 
     const { userId } = req.user;
@@ -301,6 +304,7 @@ exports.createBasicAcademy = async (req, res, next) => {
         webpageUrl,
         status: 'pending',
         creatorId: userId,
+        academyTypeId: academyTypeId ? parseInt(academyTypeId, 10) : null,
       },
     });
 
@@ -880,15 +884,25 @@ exports.allocateXp = async (req, res, next) => {
   }
 };
 
+// server/controllers/academyController.js
+
 exports.getAllAcademies = async (req, res, next) => {
   try {
     const academies = await prisma.academy.findMany({
       include: {
         categories: true,
         chains: true,
-        academyType: true, // Include academyType to access the type name
+        academyType: true,
       },
     });
+
+    // Fetch counts separately
+    for (const academy of academies) {
+      const pointCount = await prisma.point.count({
+        where: { academyId: academy.id },
+      });
+      academy.pointCount = pointCount;
+    }
 
     // Custom sorting to move Coinbeats academies to the top
     const sortedAcademies = academies.sort((a, b) => {

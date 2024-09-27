@@ -3,7 +3,7 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import GraduationHat from '../images/graduation-hat.png'
-import Bookmark from '../images/bookmark.png'
+import Bookmark from '../images/raffles.png'
 import GamePad from '../images/game-pad.png'
 import Trophy from '../images/trophy.png'
 import useSessionStore from '../store/useSessionStore'
@@ -72,7 +72,7 @@ export default function BottomTabBar({ activeTab, setActiveTab }) {
                                     <div className="h-10 py-1">
                                         <img src={Bookmark} alt="Bookmarks" className="w-full h-full object-contain" />
                                     </div>
-                                    <span className="tab-label text-xs">Bookmarks</span>
+                                    <span className="tab-label text-xs">Raffles</span>
                                 </div>
                             </div>
                         </div>
@@ -82,7 +82,7 @@ export default function BottomTabBar({ activeTab, setActiveTab }) {
                             <div className="h-10 py-1">
                                 <img src={Bookmark} alt="Bookmarks" className="w-full h-full object-contain" />
                             </div>
-                            <span className="tab-label text-xs">Bookmarks</span>
+                            <span className="tab-label text-xs">Raffles</span>
                         </div>
                     </div>
                 </div>

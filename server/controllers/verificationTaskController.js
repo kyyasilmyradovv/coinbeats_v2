@@ -254,8 +254,21 @@ exports.getTasksForGamesPage = async (req, res, next) => {
   try {
     const tasks = await prisma.verificationTask.findMany({
       where: {
-        taskType: 'PLATFORM_SPECIFIC',
-        displayLocation: 'GAMES_PAGE',
+        OR: [
+          {
+            taskType: 'PLATFORM_SPECIFIC',
+            displayLocation: 'GAMES_PAGE',
+          },
+          {
+            taskType: 'PLATFORM_SPECIFIC',
+            displayLocation: 'HOME_PAGE',
+          },
+        ],
+      },
+      include: {
+        _count: {
+          select: { userVerification: true },
+        },
       },
     });
     res.json(tasks);

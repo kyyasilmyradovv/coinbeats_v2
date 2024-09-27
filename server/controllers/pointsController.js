@@ -7,10 +7,12 @@ const prisma = new PrismaClient();
 // Get points by user and academy
 exports.getPointsByUserAndAcademy = async (req, res, next) => {
   console.log('getPointsByUserAndAcademy hit');
-  
+
   const { userId, academyId } = req.params;
 
-  console.log(`Parameters received: userId = ${userId}, academyId = ${academyId}`);
+  console.log(
+    `Parameters received: userId = ${userId}, academyId = ${academyId}`
+  );
 
   try {
     const points = await prisma.point.findMany({
@@ -20,16 +22,28 @@ exports.getPointsByUserAndAcademy = async (req, res, next) => {
       },
     });
 
-    console.log(`Points fetched for User ID ${userId} and Academy ID ${academyId}:`, points);
+    console.log(
+      `Points fetched for User ID ${userId} and Academy ID ${academyId}:`,
+      points
+    );
 
     if (!points || points.length === 0) {
-      console.log(`No points found for User ID ${userId} and Academy ID ${academyId}`);
-      return next(createError(404, `No points found for User ID ${userId} and Academy ID ${academyId}`));
+      console.log(
+        `No points found for User ID ${userId} and Academy ID ${academyId}`
+      );
+      return next(
+        createError(
+          404,
+          `No points found for User ID ${userId} and Academy ID ${academyId}`
+        )
+      );
     }
 
     const totalPoints = points.reduce((acc, point) => acc + point.value, 0);
 
-    console.log(`Total points for User ID ${userId} and Academy ID ${academyId}: ${totalPoints}`);
+    console.log(
+      `Total points for User ID ${userId} and Academy ID ${academyId}: ${totalPoints}`
+    );
 
     res.status(200).json({ value: totalPoints });
   } catch (error) {
@@ -38,35 +52,47 @@ exports.getPointsByUserAndAcademy = async (req, res, next) => {
   }
 };
 
-// Get leaderboard
+/// controllers/pointsController.js
+
 exports.getLeaderboard = async (req, res, next) => {
   console.log('getLeaderboard hit');
+
+  const { period } = req.query;
+
+  let dateFilter = {};
+
+  if (period === 'weekly') {
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+    dateFilter = {
+      createdAt: {
+        gte: oneWeekAgo,
+      },
+    };
+  }
 
   try {
     const leaderboard = await prisma.point.groupBy({
       by: ['userId'],
+      where: dateFilter,
       _sum: { value: true },
       orderBy: { _sum: { value: 'desc' } },
     });
 
-    console.log('Leaderboard fetched:', leaderboard);
-
-    // Fetching the user data separately based on userId
+    // Fetch user data for each leaderboard entry
     const leaderboardData = await Promise.all(
       leaderboard.map(async (entry) => {
         const user = await prisma.user.findUnique({
           where: { id: entry.userId },
         });
-        console.log(`User fetched for userId ${entry.userId}:`, user);
         return {
-                userId: entry.userId,
+          userId: entry.userId,
           name: user ? user.name : 'Unknown User',
           totalPoints: entry._sum.value,
         };
       })
     );
-
-    console.log('Leaderboard data after user fetching:', leaderboardData);
 
     res.status(200).json(leaderboardData);
   } catch (error) {
@@ -78,7 +104,7 @@ exports.getLeaderboard = async (req, res, next) => {
 // Get user points
 exports.getUserPoints = async (req, res, next) => {
   console.log('getUserPoints hit');
-  
+
   const { userId } = req.params;
 
   console.log(`Parameters received: userId = ${userId}`);
@@ -104,7 +130,7 @@ exports.getUserPoints = async (req, res, next) => {
 // Get user points breakdown
 exports.getUserPointsBreakdown = async (req, res, next) => {
   console.log('getUserPointsBreakdown hit');
-  
+
   const { userId } = req.params;
 
   console.log(`Parameters received: userId = ${userId}`);
@@ -127,7 +153,9 @@ exports.getUserPointsBreakdown = async (req, res, next) => {
 
     if (!points || points.length === 0) {
       console.log(`No points found for User ID ${userId}`);
-      return res.status(404).json({ message: `No points found for user ID ${userId}` });
+      return res
+        .status(404)
+        .json({ message: `No points found for user ID ${userId}` });
     }
 
     res.status(200).json(points);

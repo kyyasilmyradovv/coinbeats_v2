@@ -43,6 +43,7 @@ enum VerificationMethod {
   TWEET
   RETWEET
   LIKE_TWEET
+  COMMENT_ON_TWEET
   ADD_TO_BIO
   JOIN_TELEGRAM_CHANNEL
   INVITE_TELEGRAM_FRIEND
@@ -103,7 +104,7 @@ model Academy {
   dexScreener      String?
   creator          User               @relation(fields: [creatorId], references: [id])
   academyQuestions AcademyQuestion[]
-  Point            Point[]
+  points    Point[] @relation("AcademyToPoint")
   quests           Quest[]
   raffles          Raffle[]
   subscription     Subscription?
@@ -213,7 +214,8 @@ model Point {
   userId             Int
   academyId          Int?
   verificationTaskId Int?
-  academy            Academy?          @relation(fields: [academyId], references: [id])
+  createdAt          DateTime          @default(now())
+  academy   Academy? @relation("AcademyToPoint", fields: [academyId], references: [id])
   user               User              @relation(fields: [userId], references: [id])
   verificationTask   VerificationTask? @relation(fields: [verificationTaskId], references: [id])
 }

@@ -79,7 +79,7 @@ export default function BookmarksPage({ academy }) {
             <Navbar />
             <Sidebar />
             <div className="text-center flex w-full items-center justify-center absolute top-8">
-                <BlockTitle large>Bookmarks</BlockTitle>
+                <BlockTitle large>Raffles</BlockTitle>
             </div>
             <div className="grid grid-cols-2 px-2 pt-14 pb-16">
                 {bookmarkedAcademies.map((academy) => (

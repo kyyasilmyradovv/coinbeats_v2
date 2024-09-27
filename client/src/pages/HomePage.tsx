@@ -192,250 +192,263 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
             <Navbar />
             <Sidebar />
 
-            <div className="flex flex-row justify-center items-center mb-4 mt-4">
-                <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-1 flex flex-row items-center px-2 m-2 border border-gray-300 dark:border-gray-600 h-12 ml-4 justify-between">
-                    {/* "Your Coins" card */}
-                    <img src={treasure} className="h-8 w-8 mr-2" alt="Treasure box" />
-                    <div className="text-md font-bold text-black dark:text-white flex flex-grow w-full text-end">{totalPoints}</div>
-                </div>
-
-                {tasks.length > 0 && (
-                    <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg py-1 flex flex-grow flex-row items-center px-1 m-1 border border-gray-300 dark:border-gray-600 h-12 mr-4 justify-between">
-                        {/* Task card */}
-                        <FaTelegramPlane size={30} className="text-blue-400 mx-2" />
-                        <div className="flex flex-col flex-grow ml-2">
-                            <div className="text-[12px] text-gray-800 dark:text-gray-200 font-semibold mr-2">{tasks[0].name}</div>
+            <div className="relative min-h-screen bg-cosmos-bg bg-fixed bg-center bg-no-repeat bg-cover">
+                <div className="absolute inset-0 bg-black opacity-50 z-0"></div>
+                <div className="relative z-10">
+                    <div className="flex flex-row justify-center items-center mb-4 mt-4">
+                        <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-1 flex flex-row items-center px-2 m-2 border border-gray-300 dark:border-gray-600 h-12 ml-4 justify-between">
+                            {/* "Your Coins" card */}
+                            <img src={treasure} className="h-8 w-8 mr-2" alt="Treasure box" />
+                            <div className="text-md font-bold text-black dark:text-white flex flex-grow w-full text-end">{totalPoints}</div>
                         </div>
-                        <Button
-                            outline
-                            rounded
-                            onClick={() => handleAction(tasks[0])}
-                            className="!text-2xs !w-fit !border-blue-400 !font-bold whitespace-nowrap mr-2 !px-2 !py-0"
-                            style={{
-                                background: 'linear-gradient(to left, #16a34a, #3b82f6)',
-                                color: '#fff'
-                            }}
-                        >
-                            Invite +500
-                            <img src={coins} className="h-3 w-3 ml-1" alt="coins icon" />
-                        </Button>
-                    </div>
-                )}
-            </div>
 
-            <Dialog opened={referralModalOpen} onBackdropClick={() => setReferralModalOpen(false)} title="Invite a Friend" className="!m-0 !p-0 rounded-2xl">
-                <div className="p-0">
-                    <p>Share this link with your friends:</p>
-                    <List className="!m-0 !p-0">
-                        <ListInput outline type="text" value={referralLink} readOnly className="w-full !m-0 !p-0 border border-gray-300 rounded mt-2" />
-                    </List>
-                    <div className="flex flex-col space-y-2 mt-2">
-                        <Button
-                            outline
-                            rounded
-                            onClick={copyReferralLink}
-                            className="!text-xs ml-4 mt-1 font-bold shadow-xl min-w-28 !mx-auto"
-                            style={{
-                                background: 'linear-gradient(to left, #ff0077, #7700ff)',
-                                color: '#fff'
-                            }}
-                        >
-                            Copy Invite Link
-                        </Button>
-                        <Button
-                            outline
-                            rounded
-                            onClick={handleInviteFriend}
-                            className="!text-xs ml-4 mt-1 font-bold shadow-xl min-w-28 !mx-auto"
-                            style={{
-                                background: 'linear-gradient(to left, #ff0077, #7700ff)',
-                                color: '#fff'
-                            }}
-                        >
-                            <FaTelegramPlane className="inline-block mr-2 !h-5 !w-5" />
-                            Invite Friend
-                        </Button>
-                    </div>
-                </div>
-            </Dialog>
-
-            <div className="flex justify-between bg-white dark:bg-zinc-900 rounded-2xl m-4 shadow-lg">
-                <List className="w-full !my-0">
-                    <ListInput
-                        label="Category"
-                        type="select"
-                        dropdown
-                        outline
-                        placeholder="Please choose..."
-                        value={category}
-                        onChange={(e) => setCategory(e.target.value)}
-                    >
-                        <option value="">All</option>
-                        {categories.map((category) => (
-                            <option key={category.id} value={category.name}>
-                                {category.name}
-                            </option>
-                        ))}
-                    </ListInput>
-                </List>
-                <List className="w-full !my-0">
-                    <ListInput
-                        label="Chain"
-                        type="select"
-                        dropdown
-                        outline
-                        placeholder="Please choose..."
-                        value={chain}
-                        onChange={(e) => setChain(e.target.value)}
-                    >
-                        <option value="">All</option>
-                        {chains.map((chain) => (
-                            <option key={chain.id} value={chain.name}>
-                                {chain.name}
-                            </option>
-                        ))}
-                    </ListInput>
-                </List>
-            </div>
-
-            <div className="px-4">
-                <div className="flex gap-2 justify-center mt-4">
-                    <Button
-                        rounded
-                        outline
-                        small
-                        onClick={() => setActiveFilter('all')}
-                        className={`${
-                            activeFilter === 'all'
-                                ? 'bg-gray-100 dark:bg-gray-800 k-color-brand-purple shadow-lg !text-2xs'
-                                : 'bg-white dark:bg-gray-900 shadow-lg !text-2xs'
-                        }`}
-                    >
-                        All
-                    </Button>
-                    <Button
-                        rounded
-                        outline
-                        small
-                        onClick={() => setActiveFilter('sponsored')}
-                        className={`${
-                            activeFilter === 'sponsored'
-                                ? 'bg-gray-100 dark:bg-gray-800 k-color-brand-purple shadow-lg !text-2xs'
-                                : 'bg-white dark:bg-gray-900 shadow-lg !text-2xs'
-                        }`}
-                    >
-                        Sponsored
-                    </Button>
-                    <Button
-                        rounded
-                        outline
-                        small
-                        onClick={() => setActiveFilter('new')}
-                        className={`${
-                            activeFilter === 'new'
-                                ? 'bg-gray-100 dark:bg-gray-800 k-color-brand-purple shadow-lg !text-2xs'
-                                : 'bg-white dark:bg-gray-900 shadow-lg !text-2xs'
-                        }`}
-                    >
-                        New
-                    </Button>
-                    <Button
-                        rounded
-                        outline
-                        small
-                        onClick={() => setActiveFilter('topRated')}
-                        className={`${
-                            activeFilter === 'topRated'
-                                ? 'bg-gray-100 dark:bg-gray-800 k-color-brand-purple shadow-lg !text-2xs !whitespace-nowrap'
-                                : 'bg-white dark:bg-gray-900 shadow-lg !text-2xs !whitespace-nowrap'
-                        }`}
-                    >
-                        Most XP
-                    </Button>
-                </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 px-2 pt-6 pb-16">
-                {filteredData.map((academy) => {
-                    const isCompleted = hasCompletedAcademy(academy.id)
-                    const isCoinbeats = academy.academyType.name === 'Coinbeats' // Check if academy is of Coinbeats type
-
-                    return (
-                        <div key={academy.id} className="relative">
-                            {/* Coinbeats background div */}
-                            {isCoinbeats && (
-                                <div className="absolute inset-0 pointer-events-none rounded-2xl z-0 coinbeats-background m-[14px] items-center justify-center"></div>
-                            )}
-
-                            {/* Card element */}
-                            <Card
-                                className={`relative flex flex-col items-center text-center p-3 rounded-2xl shadow-lg overflow-visible z-10 bg-white dark:bg-zinc-900 ${
-                                    isCoinbeats ? 'coinbeats-content border-none' : 'border border-gray-300 dark:border-gray-600'
-                                }`}
-                            >
-                                {/* Bookmark Icon */}
-                                <div className="absolute top-2 left-2">
-                                    <button
-                                        className={`${
-                                            isBookmarked(academy.id) ? 'text-red-600' : 'text-amber-500'
-                                        } rounded-full shadow-md focus:outline-none m-1`}
-                                        onClick={() => handleBookmark(academy)}
-                                    >
-                                        <MdBookmarks className="h-5 w-5 transition-transform duration-300 transform hover:scale-110" />
-                                    </button>
+                        {tasks.length > 0 && (
+                            <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg py-1 flex flex-grow flex-row items-center px-1 m-1 border border-gray-300 dark:border-gray-600 h-12 mr-4 justify-between">
+                                {/* Task card */}
+                                <FaTelegramPlane size={30} className="text-blue-400 mx-2" />
+                                <div className="flex flex-col flex-grow ml-2">
+                                    <div className="text-[12px] text-gray-800 dark:text-gray-200 font-semibold mr-2">{tasks[0].name}</div>
                                 </div>
-
-                                {/* Completed badge */}
-                                <div
-                                    className={`flex items-center absolute top-2 right-2 px-2 py-[3px] ${
-                                        isCompleted ? 'bg-gradient-to-r from-teal-400 to-teal-100' : 'bg-gradient-to-r from-slate-400 to-slate-100'
-                                    } bg-opacity-75 rounded-full text-sm font-bold text-gray-800`}
-                                >
-                                    {isCompleted ? (
-                                        <span className="text-xs">+{getCompletedAcademyPoints(academy.id)?.value} ✅</span>
-                                    ) : (
-                                        <>
-                                            <span className="text-xs">+{academy.xp}</span>
-                                            <img src={coins} className="h-4 w-4" alt="coins icon" />
-                                        </>
-                                    )}
-                                </div>
-
-                                {/* Coinbeats content (image, etc.) */}
-                                <div className="flex items-center justify-center w-full mt-1">
-                                    <img alt={academy.name} className="h-16 w-16 rounded-full mb-2" src={constructImageUrl(academy.logoUrl)} />
-                                </div>
-
-                                <div className="text-lg font-bold whitespace-nowrap">{academy.name}</div>
-
                                 <Button
                                     outline
                                     rounded
-                                    onClick={() => handleMoreClick(academy)}
-                                    className="!text-xs !w-16 mt-2 font-bold shadow-xl min-w-28 !mx-auto"
+                                    onClick={() => handleAction(tasks[0])}
+                                    className="!text-2xs !w-fit !border-blue-400 !font-bold whitespace-nowrap mr-2 !px-2 !py-0"
+                                    style={{
+                                        background: 'linear-gradient(to left, #16a34a, #3b82f6)',
+                                        color: '#fff'
+                                    }}
+                                >
+                                    Invite +500
+                                    <img src={coins} className="h-3 w-3 ml-1" alt="coins icon" />
+                                </Button>
+                            </div>
+                        )}
+                    </div>
+
+                    <Dialog
+                        opened={referralModalOpen}
+                        onBackdropClick={() => setReferralModalOpen(false)}
+                        title="Invite a Friend"
+                        className="!m-0 !p-0 rounded-2xl"
+                    >
+                        <div className="p-0">
+                            <p>Share this link with your friends:</p>
+                            <List className="!m-0 !p-0">
+                                <ListInput outline type="text" value={referralLink} readOnly className="w-full !m-0 !p-0 border border-gray-300 rounded mt-2" />
+                            </List>
+                            <div className="flex flex-col space-y-2 mt-2">
+                                <Button
+                                    outline
+                                    rounded
+                                    onClick={copyReferralLink}
+                                    className="!text-xs ml-4 mt-1 font-bold shadow-xl min-w-28 !mx-auto"
                                     style={{
                                         background: 'linear-gradient(to left, #ff0077, #7700ff)',
                                         color: '#fff'
                                     }}
                                 >
-                                    Study Now
+                                    Copy Invite Link
                                 </Button>
-
-                                {!isCoinbeats && new Date() - new Date(academy.createdAt) < 30 * 24 * 60 * 60 * 1000 && (
-                                    <img src={NewIcon} alt="New" className="absolute left-7 -bottom-4 w-10 h-10 -translate-x-8" style={{ zIndex: 10 }} />
-                                )}
-                            </Card>
+                                <Button
+                                    outline
+                                    rounded
+                                    onClick={handleInviteFriend}
+                                    className="!text-xs ml-4 mt-1 font-bold shadow-xl min-w-28 !mx-auto"
+                                    style={{
+                                        background: 'linear-gradient(to left, #ff0077, #7700ff)',
+                                        color: '#fff'
+                                    }}
+                                >
+                                    <FaTelegramPlane className="inline-block mr-2 !h-5 !w-5" />
+                                    Invite Friend
+                                </Button>
+                            </div>
                         </div>
-                    )
-                })}
-            </div>
+                    </Dialog>
 
-            {showBookmarkAnimation && (
-                <div className="fixed inset-0 flex flex-col items-center justify-center z-50 animate-bookmark">
-                    <MdBookmarks className="h-20 w-20 text-amber-500 transform scale-105 transition-transform duration-1000 ease-out" />
-                    <div className="text-gray-800 dark:text-white mt-4 text-lg font-semibold">{bookmarkMessage}</div>
+                    <div className="flex justify-between bg-white dark:bg-zinc-900 rounded-2xl m-4 shadow-lg">
+                        <List className="w-full !my-0">
+                            <ListInput
+                                label="Category"
+                                type="select"
+                                dropdown
+                                outline
+                                placeholder="Please choose..."
+                                value={category}
+                                onChange={(e) => setCategory(e.target.value)}
+                            >
+                                <option value="">All</option>
+                                {categories.map((category) => (
+                                    <option key={category.id} value={category.name}>
+                                        {category.name}
+                                    </option>
+                                ))}
+                            </ListInput>
+                        </List>
+                        <List className="w-full !my-0">
+                            <ListInput
+                                label="Chain"
+                                type="select"
+                                dropdown
+                                outline
+                                placeholder="Please choose..."
+                                value={chain}
+                                onChange={(e) => setChain(e.target.value)}
+                            >
+                                <option value="">All</option>
+                                {chains.map((chain) => (
+                                    <option key={chain.id} value={chain.name}>
+                                        {chain.name}
+                                    </option>
+                                ))}
+                            </ListInput>
+                        </List>
+                    </div>
+
+                    <div className="px-4">
+                        <div className="flex gap-2 justify-center mt-4">
+                            <Button
+                                rounded
+                                outline
+                                small
+                                onClick={() => setActiveFilter('all')}
+                                className={`${
+                                    activeFilter === 'all'
+                                        ? 'bg-gray-100 dark:bg-gray-800 k-color-brand-purple shadow-lg !text-2xs'
+                                        : 'bg-white dark:bg-gray-900 shadow-lg !text-2xs'
+                                }`}
+                            >
+                                All
+                            </Button>
+                            <Button
+                                rounded
+                                outline
+                                small
+                                onClick={() => setActiveFilter('sponsored')}
+                                className={`${
+                                    activeFilter === 'sponsored'
+                                        ? 'bg-gray-100 dark:bg-gray-800 k-color-brand-purple shadow-lg !text-2xs'
+                                        : 'bg-white dark:bg-gray-900 shadow-lg !text-2xs'
+                                }`}
+                            >
+                                Sponsored
+                            </Button>
+                            <Button
+                                rounded
+                                outline
+                                small
+                                onClick={() => setActiveFilter('new')}
+                                className={`${
+                                    activeFilter === 'new'
+                                        ? 'bg-gray-100 dark:bg-gray-800 k-color-brand-purple shadow-lg !text-2xs'
+                                        : 'bg-white dark:bg-gray-900 shadow-lg !text-2xs'
+                                }`}
+                            >
+                                New
+                            </Button>
+                            <Button
+                                rounded
+                                outline
+                                small
+                                onClick={() => setActiveFilter('topRated')}
+                                className={`${
+                                    activeFilter === 'topRated'
+                                        ? 'bg-gray-100 dark:bg-gray-800 k-color-brand-purple shadow-lg !text-2xs !whitespace-nowrap'
+                                        : 'bg-white dark:bg-gray-900 shadow-lg !text-2xs !whitespace-nowrap'
+                                }`}
+                            >
+                                Most XP
+                            </Button>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-0 px-3 pt-6 pb-16">
+                        {filteredData.map((academy) => {
+                            const isCompleted = hasCompletedAcademy(academy.id)
+                            const isCoinbeats = academy.academyType.name === 'Coinbeats' // Check if academy is of Coinbeats type
+
+                            return (
+                                <div key={academy.id} className="relative">
+                                    {/* Coinbeats background div */}
+                                    {isCoinbeats && (
+                                        <div className="absolute inset-0 pointer-events-none rounded-2xl z-0 coinbeats-background m-[14px] items-center justify-center"></div>
+                                    )}
+
+                                    {/* Card element */}
+                                    <Card
+                                        className={`relative flex flex-col items-center text-center p-3 !m-4 rounded-2xl shadow-lg overflow-visible z-10 bg-white dark:bg-zinc-900 ${
+                                            isCoinbeats ? 'coinbeats-content border-none' : 'border border-gray-300 dark:border-gray-600'
+                                        }`}
+                                    >
+                                        {/* Bookmark Icon */}
+                                        <div className="absolute top-2 left-2">
+                                            <button
+                                                className={`${
+                                                    isBookmarked(academy.id) ? 'text-red-600' : 'text-amber-500'
+                                                } rounded-full shadow-md focus:outline-none m-1`}
+                                                onClick={() => handleBookmark(academy)}
+                                            >
+                                                <MdBookmarks className="h-5 w-5 transition-transform duration-300 transform hover:scale-110" />
+                                            </button>
+                                        </div>
+                                        {/* Completed badge */}
+                                        <div
+                                            className={`flex items-center absolute top-2 right-2 px-2 py-[3px] ${
+                                                isCompleted ? 'bg-gradient-to-r from-teal-400 to-teal-100' : 'bg-gradient-to-r from-slate-400 to-slate-100'
+                                            } bg-opacity-75 rounded-full text-sm font-bold text-gray-800`}
+                                        >
+                                            {isCompleted ? (
+                                                <span className="text-xs">+{getCompletedAcademyPoints(academy.id)?.value} ✅</span>
+                                            ) : (
+                                                <>
+                                                    <span className="text-xs">+{academy.xp}</span>
+                                                    <img src={coins} className="h-4 w-4" alt="coins icon" />
+                                                </>
+                                            )}
+                                        </div>
+                                        {/* Coinbeats content (image, etc.) */}
+                                        <div className="flex items-center justify-center w-full mt-1">
+                                            <img alt={academy.name} className="h-16 w-16 rounded-full mb-2" src={constructImageUrl(academy.logoUrl)} />
+                                        </div>
+                                        <div className="text-lg font-bold whitespace-nowrap">{academy.name}</div>
+                                        <Button
+                                            outline
+                                            rounded
+                                            onClick={() => handleMoreClick(academy)}
+                                            className="!text-xs !w-16 mt-2 font-bold shadow-xl min-w-28 !mx-auto"
+                                            style={{
+                                                background: 'linear-gradient(to left, #ff0077, #7700ff)',
+                                                color: '#fff'
+                                            }}
+                                        >
+                                            Study Now
+                                        </Button>
+                                        <div className="flex absolute bottom-1 right-1 mr-1">
+                                            👨<span className="mt-[1px] ml-1">{academy.pointCount}</span>
+                                        </div>
+                                        {!isCoinbeats && new Date() - new Date(academy.createdAt) < 30 * 24 * 60 * 60 * 1000 && (
+                                            <img
+                                                src={NewIcon}
+                                                alt="New"
+                                                className="absolute left-7 -bottom-4 w-10 h-10 -translate-x-8"
+                                                style={{ zIndex: 10 }}
+                                            />
+                                        )}
+                                    </Card>
+                                </div>
+                            )
+                        })}
+                    </div>
+
+                    {showBookmarkAnimation && (
+                        <div className="fixed inset-0 flex flex-col items-center justify-center z-50 animate-bookmark">
+                            <MdBookmarks className="h-20 w-20 text-amber-500 transform scale-105 transition-transform duration-1000 ease-out" />
+                            <div className="text-gray-800 dark:text-white mt-4 text-lg font-semibold">{bookmarkMessage}</div>
+                        </div>
+                    )}
                 </div>
-            )}
+            </div>
         </Page>
     )
 }

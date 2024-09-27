@@ -244,6 +244,7 @@ const AddPlatformTasksPage: React.FC = () => {
                                 <option value="TWEET">Tweet</option>
                                 <option value="RETWEET">Retweet</option>
                                 <option value="LIKE_TWEET">Like Tweet</option>
+                                <option value="COMMENT_ON_TWEET">Comment on tweet</option>
                                 <option value="ADD_TO_BIO">Add to Bio</option>
                                 <option value="JOIN_TELEGRAM_CHANNEL">Join Telegram Channel</option>
                                 <option value="INVITE_TELEGRAM_FRIEND">Invite Telegram Friend</option>
