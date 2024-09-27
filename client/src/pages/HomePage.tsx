@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom'
 import useCategoryChainStore from '../store/useCategoryChainStore'
 import Navbar from '../components/common/Navbar'
 import Sidebar from '../components/common/Sidebar'
-import { Page, List, ListInput, Card, Button, Dialog, Link, Block } from 'konsta/react'
+import { Page, List, ListInput, Card, Button, Dialog, Link, Block, Searchbar } from 'konsta/react'
 import { MdBookmarks } from 'react-icons/md'
 import { FaTelegramPlane } from 'react-icons/fa' // Import the Telegram icon
 import useSessionStore from '../store/useSessionStore'
@@ -28,6 +28,7 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
     const [referralModalOpen, setReferralModalOpen] = useState(false)
     const [referralLink, setReferralLink] = useState('')
     const [referralCode, setReferralCode] = useState('')
+    const [searchQuery, setSearchQuery] = useState('')
 
     const handleAction = (task) => {
         if (task.verificationMethod === 'INVITE_TELEGRAM_FRIEND') {
@@ -153,11 +154,12 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
         let data = academies
         if (category) data = data.filter((item) => item.categories.some((cat) => cat.name === category))
         if (chain) data = data.filter((item) => item.chains.some((ch) => ch.name === chain))
+        if (searchQuery) data = data.filter((item) => item.name.toLowerCase().includes(searchQuery.toLowerCase()))
         if (activeFilter === 'sponsored') data = data.filter((item) => item.sponsored)
         if (activeFilter === 'new') data = data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
         if (activeFilter === 'topRated') data = data.sort((a, b) => b.xp - a.xp)
         return data
-    }, [category, chain, activeFilter, academies])
+    }, [category, chain, searchQuery, activeFilter, academies]) // Added searchQuery to dependencies
 
     const constructImageUrl = (url) => {
         return `https://subscribes.lt/${url}`
@@ -219,7 +221,7 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
                                         color: '#fff'
                                     }}
                                 >
-                                    Invite +500
+                                    Invite +{tasks[0].xp}
                                     <img src={coins} className="h-3 w-3 ml-1" alt="coins icon" />
                                 </Button>
                             </div>
@@ -267,43 +269,63 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
                         </div>
                     </Dialog>
 
-                    <div className="flex justify-between bg-white dark:bg-zinc-900 rounded-2xl m-4 shadow-lg">
-                        <List className="w-full !my-0">
-                            <ListInput
-                                label="Category"
-                                type="select"
-                                dropdown
-                                outline
-                                placeholder="Please choose..."
-                                value={category}
-                                onChange={(e) => setCategory(e.target.value)}
-                            >
-                                <option value="">All</option>
-                                {categories.map((category) => (
-                                    <option key={category.id} value={category.name}>
-                                        {category.name}
-                                    </option>
-                                ))}
-                            </ListInput>
-                        </List>
-                        <List className="w-full !my-0">
-                            <ListInput
-                                label="Chain"
-                                type="select"
-                                dropdown
-                                outline
-                                placeholder="Please choose..."
-                                value={chain}
-                                onChange={(e) => setChain(e.target.value)}
-                            >
-                                <option value="">All</option>
-                                {chains.map((chain) => (
-                                    <option key={chain.id} value={chain.name}>
-                                        {chain.name}
-                                    </option>
-                                ))}
-                            </ListInput>
-                        </List>
+                    <div className="flex justify-between bg-white dark:bg-zinc-900 rounded-2xl mx-4 shadow-lg p-0 py-0">
+                        <div className="flex flex-row w-full space-x-0">
+                            <div className="!flex w-1/3">
+                                <List className="!flex !ml-0 !mr-0 !mt-0 !mb-0 !w-full">
+                                    <ListInput
+                                        className="!flex text-xs !ml-0 !mr-0 !mt-0 !mb-0"
+                                        label="Category"
+                                        type="select"
+                                        dropdown
+                                        outline
+                                        inputClassName="!flex !h-8 !ml-0 !mr-0 !mt-0 !mb-0"
+                                        placeholder="Please choose..."
+                                        value={category}
+                                        onChange={(e) => setCategory(e.target.value)}
+                                    >
+                                        <option value="">All</option>
+                                        {categories.map((category) => (
+                                            <option key={category.id} value={category.name}>
+                                                {category.name}
+                                            </option>
+                                        ))}
+                                    </ListInput>
+                                </List>
+                            </div>
+                            <div className="!flex w-1/3">
+                                <List className="!flex !ml-0 !mr-0 !mt-0 !mb-0 !w-full">
+                                    <ListInput
+                                        className="!flex text-xs !h-4 !ml-0 !mr-0 !mt-0 !mb-0"
+                                        label="Chain"
+                                        type="select"
+                                        dropdown
+                                        outline
+                                        inputClassName="!flex !h-8 !ml-0 !mr-0 !mt-0 !mb-0"
+                                        placeholder="Please choose..."
+                                        value={chain}
+                                        onChange={(e) => setChain(e.target.value)}
+                                    >
+                                        <option value="">All</option>
+                                        {chains.map((chain) => (
+                                            <option key={chain.id} value={chain.name}>
+                                                {chain.name}
+                                            </option>
+                                        ))}
+                                    </ListInput>
+                                </List>
+                            </div>
+                            <div className="flex w-1/3 h-full items-center justify-center text-center pr-2">
+                                <Searchbar
+                                    inputStyle={{ height: '2rem' }}
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    placeholder="Search"
+                                    className="text-xs"
+                                    clearButton
+                                />
+                            </div>
+                        </div>
                     </div>
 
                     <div className="px-4">
@@ -326,13 +348,13 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
                                 outline
                                 small
                                 onClick={() => setActiveFilter('sponsored')}
-                                className={`${
+                                className={`border-brand-blue text-brand-blue ${
                                     activeFilter === 'sponsored'
                                         ? 'bg-gray-100 dark:bg-gray-800 k-color-brand-purple shadow-lg !text-2xs'
                                         : 'bg-white dark:bg-gray-900 shadow-lg !text-2xs'
                                 }`}
                             >
-                                Sponsored
+                                Yet To Do
                             </Button>
                             <Button
                                 rounded
@@ -363,7 +385,7 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-0 px-3 pt-6 pb-16">
+                    <div className="grid grid-cols-3 gap-0 px-1 pt-6 pb-16">
                         {filteredData.map((academy) => {
                             const isCompleted = hasCompletedAcademy(academy.id)
                             const isCoinbeats = academy.academyType.name === 'Coinbeats' // Check if academy is of Coinbeats type
@@ -372,31 +394,31 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
                                 <div key={academy.id} className="relative">
                                     {/* Coinbeats background div */}
                                     {isCoinbeats && (
-                                        <div className="absolute inset-0 pointer-events-none rounded-2xl z-0 coinbeats-background m-[14px] items-center justify-center"></div>
+                                        <div className="absolute inset-0 pointer-events-none rounded-2xl z-0 coinbeats-background mx-[7px] mt-[7px] mb-[15px] items-center justify-center"></div>
                                     )}
 
                                     {/* Card element */}
                                     <Card
-                                        className={`relative flex flex-col items-center text-center p-3 !m-4 rounded-2xl shadow-lg overflow-visible z-10 bg-white dark:bg-zinc-900 ${
+                                        className={`relative flex flex-col items-center text-center p-0 !mb-4 !m-2 rounded-2xl shadow-lg overflow-visible z-10 bg-white dark:bg-zinc-900 ${
                                             isCoinbeats ? 'coinbeats-content border-none' : 'border border-gray-300 dark:border-gray-600'
                                         }`}
                                     >
                                         {/* Bookmark Icon */}
-                                        <div className="absolute top-2 left-2">
+                                        <div className="absolute top-1 left-1">
                                             <button
                                                 className={`${
                                                     isBookmarked(academy.id) ? 'text-red-600' : 'text-amber-500'
                                                 } rounded-full shadow-md focus:outline-none m-1`}
                                                 onClick={() => handleBookmark(academy)}
                                             >
-                                                <MdBookmarks className="h-5 w-5 transition-transform duration-300 transform hover:scale-110" />
+                                                <MdBookmarks className="h-4 w-4 transition-transform duration-300 transform hover:scale-110" />
                                             </button>
                                         </div>
                                         {/* Completed badge */}
                                         <div
-                                            className={`flex items-center absolute top-2 right-2 px-2 py-[3px] ${
+                                            className={`flex items-center absolute top-1 right-1 px-1 py-[1px] ${
                                                 isCompleted ? 'bg-gradient-to-r from-teal-400 to-teal-100' : 'bg-gradient-to-r from-slate-400 to-slate-100'
-                                            } bg-opacity-75 rounded-full text-sm font-bold text-gray-800`}
+                                            } bg-opacity-75 rounded-full text-2xs font-bold text-gray-800`}
                                         >
                                             {isCompleted ? (
                                                 <span className="text-xs">+{getCompletedAcademyPoints(academy.id)?.value} ✅</span>
@@ -411,12 +433,12 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
                                         <div className="flex items-center justify-center w-full mt-1">
                                             <img alt={academy.name} className="h-16 w-16 rounded-full mb-2" src={constructImageUrl(academy.logoUrl)} />
                                         </div>
-                                        <div className="text-lg font-bold whitespace-nowrap">{academy.name}</div>
+                                        <div className="text-md font-bold whitespace-nowrap">{academy.name}</div>
                                         <Button
                                             outline
                                             rounded
                                             onClick={() => handleMoreClick(academy)}
-                                            className="!text-xs !w-16 mt-2 font-bold shadow-xl min-w-28 !mx-auto"
+                                            className="!text-xs !w-16 mt-1 font-bold shadow-xl min-w-24 !mx-auto !h-6 !mb-3"
                                             style={{
                                                 background: 'linear-gradient(to left, #ff0077, #7700ff)',
                                                 color: '#fff'
@@ -428,12 +450,7 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
                                             👨<span className="mt-[1px] ml-1">{academy.pointCount}</span>
                                         </div>
                                         {!isCoinbeats && new Date() - new Date(academy.createdAt) < 30 * 24 * 60 * 60 * 1000 && (
-                                            <img
-                                                src={NewIcon}
-                                                alt="New"
-                                                className="absolute left-7 -bottom-4 w-10 h-10 -translate-x-8"
-                                                style={{ zIndex: 10 }}
-                                            />
+                                            <img src={NewIcon} alt="New" className="absolute left-7 -bottom-2 w-7 h-7 -translate-x-8" style={{ zIndex: 10 }} />
                                         )}
                                     </Card>
                                 </div>

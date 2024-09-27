@@ -1,7 +1,7 @@
 // client/src/pages/GamesPage.tsx
 
 import React, { useState, useEffect } from 'react'
-import { Page, BlockTitle, Card, Button, Dialog } from 'konsta/react'
+import { Page, BlockTitle, Button, Dialog } from 'konsta/react'
 import Navbar from '../components/common/Navbar'
 import Sidebar from '../components/common/Sidebar'
 import BottomTabBar from '../components/BottomTabBar'
@@ -29,6 +29,7 @@ export default function GamesPage() {
     const [referralModalOpen, setReferralModalOpen] = useState(false)
     const [referralLink, setReferralLink] = useState('')
     const [referralCode, setReferralCode] = useState('')
+    const [visibleTooltip, setVisibleTooltip] = useState<number | null>(null) // Tooltip state
 
     useEffect(() => {
         const fetchTasks = async () => {
@@ -43,6 +44,16 @@ export default function GamesPage() {
         fetchTasks()
     }, [])
 
+    const toggleTooltip = (tooltipIndex: number) => {
+        if (visibleTooltip === tooltipIndex) {
+            setVisibleTooltip(null)
+        } else {
+            setVisibleTooltip(tooltipIndex)
+            // Optionally, auto-hide the tooltip after a certain time
+            // setTimeout(() => setVisibleTooltip(null), 2000);
+        }
+    }
+
     const platformIcons = {
         X: <X className="w-8 h-8 !mb-3 text-blue-500 !p-0 !m-0" />,
         FACEBOOK: <FaFacebook className="w-8 h-8 !mb-3 text-blue-700 !p-0 !m-0" />,
@@ -50,7 +61,7 @@ export default function GamesPage() {
         TELEGRAM: <FaTelegramPlane className="w-8 h-8 !mb-3 text-blue-400 !p-0 !m-0" />,
         DISCORD: <FaDiscord className="w-8 h-8 !mb-3 text-indigo-600 !p-0 !m-0" />,
         YOUTUBE: <FaYoutube className="w-8 h-8 !mb-3 text-red-600 !p-0 !m-0" />,
-        EMAIL: <FaEnvelope className="w-8 h-8 !mb-3 text-green-500 !p-0 !m-0" /> // Added EMAIL icon
+        EMAIL: <FaEnvelope className="w-8 h-8 !mb-3 text-green-500 !p-0 !m-0" />
         // Add other platforms as needed
     }
 
@@ -207,16 +218,38 @@ export default function GamesPage() {
                         {inviteTask && (
                             <div
                                 key={inviteTask.id}
-                                className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg py-2 flex flex-row items-start px-1 border border-gray-300 dark:border-gray-600 h-16 justify-between w-full mb-2"
+                                className="relative bg-white dark:bg-zinc-900 rounded-2xl shadow-lg py-2 flex flex-row items-start px-1 border border-gray-300 dark:border-gray-600 h-16 justify-between w-full mb-2"
                             >
                                 {/* Platform Icon */}
-                                <div className="flex-shrink-0 w-16 h-16 flex items-center justify-center pb-2">
+                                <div className="w-12 h-16 flex items-center justify-center pb-2">
                                     {platformIcons[inviteTask.platform] || <div className="w-10 h-10 text-gray-500 p-2">?</div>}
                                 </div>
 
                                 <div className="flex flex-col flex-grow mx-2">
-                                    {/* Task Name */}
-                                    <h3 className={`font-bold text-left truncate ${inviteTask.name.length > 50 ? 'text-xs' : 'text-sm'}`}>{inviteTask.name}</h3>
+                                    {/* Task Name and Question Mark Button */}
+                                    <h3
+                                        className={`font-bold text-left break-words whitespace-normal ${
+                                            inviteTask.name.length > 50 ? 'text-xs' : 'text-sm'
+                                        } flex items-center relative`}
+                                    >
+                                        {inviteTask.name}
+                                        {/* Question Mark Button */}
+                                        <button
+                                            className="ml-2 rounded-full bg-gray-700 text-white text-xs font-bold w-5 h-5 flex items-center justify-center"
+                                            onClick={() => toggleTooltip(inviteTask.id)}
+                                        >
+                                            ?
+                                        </button>
+                                        {/* Tooltip */}
+                                        {visibleTooltip === inviteTask.id && (
+                                            <div className="tooltip absolute bg-gray-700 text-white text-xs rounded-2xl p-4 mt-2 z-20">
+                                                {inviteTask.description}
+                                                <button className="absolute top-0 right-0 text-white text-sm mt-1 mr-1" onClick={() => setVisibleTooltip(null)}>
+                                                    &times;
+                                                </button>
+                                            </div>
+                                        )}
+                                    </h3>
 
                                     {/* XP and Users Completed */}
                                     <div className="flex items-center mt-1">
@@ -228,12 +261,12 @@ export default function GamesPage() {
                                         {/* Spacer */}
                                         <div className="mx-2"></div>
                                         {/* Head count */}
-                                        <div className="flex items-center">
+                                        {/* <div className="flex items-center">
                                             <span role="img" aria-label="User" className="text-sm">
                                                 👨
                                             </span>
                                             <span className="ml-1 text-sm text-gray-100">{inviteTask._count.userVerification}</span>
-                                        </div>
+                                        </div> */}
                                     </div>
                                 </div>
 
@@ -269,21 +302,43 @@ export default function GamesPage() {
                             </div>
                         )}
 
+                        {/* Other Tasks */}
                         {tasks
                             .filter((task) => task.verificationMethod !== 'INVITE_TELEGRAM_FRIEND')
                             .map((task) => (
                                 <div
                                     key={task.id}
-                                    className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg py-1 flex flex-row items-start px-1 border border-gray-300 dark:border-gray-600 h-16 justify-between w-full mb-2"
+                                    className="relative bg-white dark:bg-zinc-900 rounded-2xl shadow-lg py-1 flex flex-row items-center px-1 border border-gray-300 dark:border-gray-600 h-16 justify-between w-full mb-2"
                                 >
                                     {/* Platform Icon */}
-                                    <div className="flex-shrink-0 w-16 h-16 flex items-center justify-center">
-                                        {platformIcons[task.platform] || <div className="w-10 h-10 text-gray-500 p-2">?</div>}
+                                    <div className="w-12 h-16 flex items-center justify-center pt-2">
+                                        {platformIcons[task.platform] || <div className="w-8 h-8 text-gray-500">?</div>}
                                     </div>
 
                                     <div className="flex flex-col flex-grow mx-2 py-1">
-                                        {/* Task Name */}
-                                        <h3 className={`font-bold text-left truncate ${task.name.length > 20 ? 'text-xs' : 'text-sm'}`}>{task.name}</h3>
+                                        {/* Task Name and Question Mark Button */}
+                                        <h3 className={`font-semibold text-left break-words whitespace-normal text-xs flex items-center relative`}>
+                                            {task.name}
+                                            {/* Question Mark Button */}
+                                            <button
+                                                className="ml-2 rounded-full bg-gray-700 text-white text-xs font-bold w-5 h-5 flex items-center justify-center"
+                                                onClick={() => toggleTooltip(task.id)}
+                                            >
+                                                ?
+                                            </button>
+                                            {/* Tooltip */}
+                                            {visibleTooltip === task.id && (
+                                                <div className="tooltip absolute bg-gray-700 text-white text-xs rounded-2xl p-4 mt-2 z-20">
+                                                    {task.description}
+                                                    <button
+                                                        className="absolute top-0 right-0 text-white text-sm mt-1 mr-1"
+                                                        onClick={() => setVisibleTooltip(null)}
+                                                    >
+                                                        &times;
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </h3>
 
                                         {/* XP and Users Completed */}
                                         <div className="flex items-center mt-1">
@@ -295,12 +350,12 @@ export default function GamesPage() {
                                             {/* Spacer */}
                                             <div className="mx-2"></div>
                                             {/* Head count */}
-                                            <div className="flex items-center">
+                                            {/* <div className="flex items-center">
                                                 <span role="img" aria-label="User" className="text-sm">
                                                     👨
                                                 </span>
                                                 <span className="ml-1 text-sm text-gray-100">{task._count.userVerification}</span>
-                                            </div>
+                                            </div> */}
                                         </div>
                                     </div>
 

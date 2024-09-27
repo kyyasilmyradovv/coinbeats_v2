@@ -203,7 +203,7 @@ exports.createAcademy = async (req, res, next) => {
     });
 
     // Allocate XP to Academy Questions and Quests
-    await allocateXp(academy.id, 500); // Total XP to allocate is 200
+    await allocateXp(academy.id, 500); // Total XP to allocate is 500
 
     res.status(201).json({ message: 'Academy created successfully', academy });
   } catch (error) {
