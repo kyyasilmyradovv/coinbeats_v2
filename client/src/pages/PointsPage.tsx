@@ -1,18 +1,16 @@
 import React, { useEffect, useState } from 'react'
-import { Card, BlockTitle, Page, Button, Dialog, List, ListInput } from 'konsta/react'
+import { Card, Page, Button, Dialog, List, ListInput } from 'konsta/react'
 import Navbar from '../components/common/Navbar'
 import Sidebar from '../components/common/Sidebar'
 import BottomTabBar from '../components/BottomTabBar'
 import axiosInstance from '../api/axiosInstance'
 import coinStack from '../images/coin-stack.png'
 import Trophy from '../images/trophy.png'
-import coins from '../images/treasure1.png'
 import ximage from '../images/x.png'
 import useUserStore from '~/store/useUserStore'
 import useSessionStore from '../store/useSessionStore'
 import treasure from '../images/treasure1.png'
 import { FaTelegramPlane } from 'react-icons/fa'
-import useCategoryChainStore from '../store/useCategoryChainStore'
 import { initUtils } from '@telegram-apps/sdk'
 
 const PointsPage: React.FC = () => {
@@ -30,6 +28,7 @@ const PointsPage: React.FC = () => {
     const [referralCode, setReferralCode] = useState('')
 
     const [activeTab, setActiveTab] = useState('tab-4') // Set active tab to Points
+    const [activeLeaderboardTab, setActiveLeaderboardTab] = useState('overall') // Updated to handle three tabs
 
     const { telegramUserId } = useSessionStore((state) => ({
         telegramUserId: state.userId
@@ -145,7 +144,7 @@ const PointsPage: React.FC = () => {
             <div className="relative min-h-screen bg-cosmos-bg bg-fixed bg-center bg-no-repeat bg-cover">
                 <div className="absolute inset-0 bg-black opacity-50 z-0"></div>
                 <div className="relative z-10">
-                    {/* Replace the single "Your Coins" card with the two cards from HomePage */}
+                    {/* Treasure and Task Cards */}
                     <div className="flex flex-row justify-center items-center mt-4">
                         <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-1 flex flex-row items-center px-2 m-2 border border-gray-300 dark:border-gray-600 h-12 ml-4 justify-between">
                             {/* "Your Coins" card */}
@@ -170,7 +169,7 @@ const PointsPage: React.FC = () => {
                                         color: '#fff'
                                     }}
                                 >
-                                    Invite +500
+                                    Invite +{tasks[0].xp}
                                     <img src={coinStack} className="h-3 w-3 ml-1" alt="coins icon" />
                                 </Button>
                             </div>
@@ -218,73 +217,123 @@ const PointsPage: React.FC = () => {
                         </div>
                     </Dialog>
 
-                    <div className="flex flex-col px-4">
-                        {/* Overall Leaderboard Card */}
-                        <Card className="!mb-2 !p-0 !rounded-2xl shadow-lg !mx-2 relative border border-gray-300 dark:border-gray-600 max-h-80 overflow-y-auto">
-                            <div className="flex justify-between">
-                                <h2 className="text-sm font-bold mb-2 text-center">Overall Leaderboard</h2>
-                                <h2 className="text-sm font-bold mb-2 text-center">Points</h2>
-                            </div>
-                            {leaderboard.map((user, index) => (
-                                <div key={user.userId} className="flex items-center mb-2">
-                                    <img src={Trophy} alt="Trophy" className="h-4 w-4 mr-2" />
-                                    <div className="text-xs font-semibold text-gray-600 dark:text-gray-300">
-                                        {index + 1}. {user.name}
-                                    </div>
-                                    <div className="flex flex-grow"></div>
-                                    <div className="text-sm font-bold text-gray-600 dark:text-gray-300">
-                                        <strong>{user.totalPoints}</strong>
-                                    </div>
-                                </div>
-                            ))}
-                        </Card>
+                    {/* Tabs for Leaderboards */}
+                    <div className="flex justify-center gap-2 mt-4 mx-4 relative z-10">
+                        <Button
+                            outline
+                            rounded
+                            onClick={() => setActiveLeaderboardTab('overall')}
+                            className={`${activeLeaderboardTab === 'overall' ? 'active-gradient shadow-lg' : 'default-gradient shadow-lg'} rounded-full text-xs`}
+                            style={{
+                                color: '#fff'
+                            }}
+                        >
+                            Overall
+                        </Button>
+                        <Button
+                            outline
+                            rounded
+                            onClick={() => setActiveLeaderboardTab('weekly')}
+                            className={`${activeLeaderboardTab === 'weekly' ? 'active-gradient shadow-lg' : 'default-gradient shadow-lg'} rounded-full text-xs`}
+                            style={{
+                                color: '#fff'
+                            }}
+                        >
+                            Weekly
+                        </Button>
+                        <Button
+                            outline
+                            rounded
+                            onClick={() => setActiveLeaderboardTab('stats')}
+                            className={`${activeLeaderboardTab === 'stats' ? 'active-gradient shadow-lg' : 'default-gradient shadow-lg'} rounded-full text-xs`}
+                            style={{
+                                color: '#fff'
+                            }}
+                        >
+                            Your Stats
+                        </Button>
+                    </div>
 
-                        {/* Weekly Leaderboard Card */}
-                        <Card className="!mb-2 !p-0 !rounded-2xl shadow-lg !mx-2 relative border border-gray-300 dark:border-gray-600 max-h-80 overflow-y-auto">
-                            <div className="flex justify-between">
-                                <h2 className="text-sm font-bold mb-2 text-center">Weekly Leaderboard</h2>
-                                <h2 className="text-sm font-bold mb-2 text-center">Points</h2>
-                            </div>
-                            {weeklyLeaderboard.map((user, index) => (
-                                <div key={user.userId} className="flex items-center mb-2">
-                                    <img src={Trophy} alt="Trophy" className="h-4 w-4 mr-2" />
-                                    <div className="text-xs font-semibold text-gray-600 dark:text-gray-300">
-                                        {index + 1}. {user.name}
+                    <div className="flex flex-col px-4 mt-4">
+                        {/* Render content based on activeLeaderboardTab */}
+                        {activeLeaderboardTab === 'overall' && (
+                            <>
+                                {/* Overall Leaderboard Card */}
+                                <Card className="!mb-2 !p-0 !rounded-2xl shadow-lg !mx-2 relative border border-gray-300 dark:border-gray-600 max-h-80 overflow-y-auto">
+                                    <div className="flex justify-between">
+                                        <h2 className="text-sm font-bold mb-2 text-center">Overall Leaderboard</h2>
+                                        <h2 className="text-sm font-bold mb-2 text-center">Points</h2>
                                     </div>
-                                    <div className="flex flex-grow"></div>
-                                    <div className="text-sm font-bold text-gray-600 dark:text-gray-300">
-                                        <strong>{user.totalPoints}</strong>
-                                    </div>
-                                </div>
-                            ))}
-                        </Card>
+                                    {leaderboard.map((user, index) => (
+                                        <div key={user.userId} className="flex items-center mb-2">
+                                            <img src={Trophy} alt="Trophy" className="h-4 w-4 mr-2" />
+                                            <div className="text-xs font-semibold text-gray-600 dark:text-gray-300">
+                                                {index + 1}. {user.name}
+                                            </div>
+                                            <div className="flex flex-grow"></div>
+                                            <div className="text-sm font-bold text-gray-600 dark:text-gray-300">
+                                                <strong>{user.totalPoints}</strong>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </Card>
+                            </>
+                        )}
 
-                        {/* Your Points Breakdown Card */}
-                        <Card className="!mb-2 !p-0 !rounded-2xl shadow-lg !mx-2 relative border border-gray-300 dark:border-gray-600">
-                            <h2 className="text-sm font-bold mb-4">Your Points Breakdown</h2>
-                            {userPoints.map((point, index) => (
-                                <div key={index} className="flex items-center mb-4">
-                                    <div className="bg-gray-900 mr-4 items-center justify-center text-center rounded-md w-7 h-6 flex">
-                                        {point.academy ? (
-                                            <img src={constructImageUrl(point.academy.logoUrl)} className="h-5 w-5 rounded-full" alt="academy logo" />
-                                        ) : point.verificationTask?.platform === 'X' ? (
-                                            <img src={ximage} alt="X Platform" className="h-5 w-5" />
-                                        ) : null}
+                        {activeLeaderboardTab === 'weekly' && (
+                            <>
+                                {/* Weekly Leaderboard Card */}
+                                <Card className="!mb-2 !p-0 !rounded-2xl shadow-lg !mx-2 relative border border-gray-300 dark:border-gray-600 max-h-80 overflow-y-auto">
+                                    <div className="flex justify-between">
+                                        <h2 className="text-sm font-bold mb-2 text-center">Weekly Leaderboard</h2>
+                                        <h2 className="text-sm font-bold mb-2 text-center">Points</h2>
                                     </div>
-                                    <div className="flex flex-row justify-between w-full">
-                                        <div>
-                                            <p className="text-sm font-semibold dark:text-gray-100">
-                                                {point.academy ? point.academy.name : point.verificationTask?.description}
-                                            </p>
+                                    {weeklyLeaderboard.map((user, index) => (
+                                        <div key={user.userId} className="flex items-center mb-2">
+                                            <img src={Trophy} alt="Trophy" className="h-4 w-4 mr-2" />
+                                            <div className="text-xs font-semibold text-gray-600 dark:text-gray-300">
+                                                {index + 1}. {user.name}
+                                            </div>
+                                            <div className="flex flex-grow"></div>
+                                            <div className="text-sm font-bold text-gray-600 dark:text-gray-300">
+                                                <strong>{user.totalPoints}</strong>
+                                            </div>
                                         </div>
-                                        <div className="flex">
-                                            <p className="text-sm font-semibold dark:text-gray-100">+{point.value}</p>
-                                            <img src={coinStack} alt="Coins" className="w-5 h-5 ml-2" />
+                                    ))}
+                                </Card>
+                            </>
+                        )}
+
+                        {activeLeaderboardTab === 'stats' && (
+                            <>
+                                {/* Your Points Breakdown Card */}
+                                <Card className="!mb-2 !p-4 !rounded-2xl shadow-lg !mx-2 relative border border-gray-300 dark:border-gray-600">
+                                    <h2 className="text-sm font-bold mb-4">Your Points Breakdown</h2>
+                                    {userPoints.map((point, index) => (
+                                        <div key={index} className="flex items-center mb-4">
+                                            <div className="bg-gray-900 mr-4 items-center justify-center text-center rounded-md w-7 h-6 flex">
+                                                {point.academy ? (
+                                                    <img src={constructImageUrl(point.academy.logoUrl)} className="h-5 w-5 rounded-full" alt="academy logo" />
+                                                ) : point.verificationTask?.platform === 'X' ? (
+                                                    <img src={ximage} alt="X Platform" className="h-5 w-5" />
+                                                ) : null}
+                                            </div>
+                                            <div className="flex flex-row justify-between w-full">
+                                                <div>
+                                                    <p className="text-sm font-semibold dark:text-gray-100">
+                                                        {point.academy ? point.academy.name : point.verificationTask?.description}
+                                                    </p>
+                                                </div>
+                                                <div className="flex">
+                                                    <p className="text-sm font-semibold dark:text-gray-100">+{point.value}</p>
+                                                    <img src={coinStack} alt="Coins" className="w-5 h-5 ml-2" />
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </Card>
+                                    ))}
+                                </Card>
+                            </>
+                        )}
                     </div>
 
                     <BottomTabBar activeTab={activeTab} setActiveTab={setActiveTab} />

@@ -1,5 +1,3 @@
-// client/src/pages/GamesPage.tsx
-
 import React, { useState, useEffect } from 'react'
 import { Page, BlockTitle, Button, Dialog } from 'konsta/react'
 import Navbar from '../components/common/Navbar'
@@ -9,7 +7,7 @@ import axios from '../api/axiosInstance'
 import coinStackIcon from '../images/coin-stack.png'
 import { FaTwitter, FaFacebook, FaInstagram, FaTelegramPlane, FaDiscord, FaYoutube, FaEnvelope } from 'react-icons/fa'
 import { initUtils } from '@telegram-apps/sdk'
-import { Fax, X } from '@mui/icons-material'
+import { X } from '@mui/icons-material'
 
 interface VerificationTask {
     id: number
@@ -18,6 +16,7 @@ interface VerificationTask {
     xp: number
     platform: string
     verificationMethod: string
+    intervalType: string
     _count: {
         userVerification: number
     }
@@ -29,7 +28,8 @@ export default function GamesPage() {
     const [referralModalOpen, setReferralModalOpen] = useState(false)
     const [referralLink, setReferralLink] = useState('')
     const [referralCode, setReferralCode] = useState('')
-    const [visibleTooltip, setVisibleTooltip] = useState<number | null>(null) // Tooltip state
+    const [visibleTooltip, setVisibleTooltip] = useState<number | null>(null)
+    const [activeTaskTab, setActiveTaskTab] = useState('repeated') // State for task tabs
 
     useEffect(() => {
         const fetchTasks = async () => {
@@ -49,8 +49,6 @@ export default function GamesPage() {
             setVisibleTooltip(null)
         } else {
             setVisibleTooltip(tooltipIndex)
-            // Optionally, auto-hide the tooltip after a certain time
-            // setTimeout(() => setVisibleTooltip(null), 2000);
         }
     }
 
@@ -162,6 +160,16 @@ export default function GamesPage() {
 
     const inviteTask = tasks.find((task) => task.verificationMethod === 'INVITE_TELEGRAM_FRIEND')
 
+    // Filter tasks based on active tab
+    const filteredTasks = tasks.filter((task) => {
+        if (activeTaskTab === 'onetime') {
+            return task.intervalType === 'ONETIME' && task.verificationMethod !== 'INVITE_TELEGRAM_FRIEND'
+        } else if (activeTaskTab === 'repeated') {
+            return task.intervalType === 'REPEATED' && task.verificationMethod !== 'INVITE_TELEGRAM_FRIEND'
+        }
+        return false
+    })
+
     return (
         <Page>
             <Navbar />
@@ -169,9 +177,9 @@ export default function GamesPage() {
             <div className="relative min-h-screen bg-cosmos-bg bg-fixed bg-center bg-no-repeat bg-cover">
                 <div className="absolute inset-0 bg-black opacity-50 z-0"></div>
                 <div className="relative z-10">
-                    <div className="text-center flex w-full items-center justify-center absolute top-0">
+                    {/* <div className="text-center flex w-full items-center justify-center absolute top-0">
                         <BlockTitle className="!m-0 !p-0">Earn by doing tasks</BlockTitle>
-                    </div>
+                    </div> */}
 
                     {/* Referral Dialog */}
                     <Dialog
@@ -213,7 +221,33 @@ export default function GamesPage() {
                         </div>
                     </Dialog>
 
-                    <div className="mt-0 px-4 py-10 mb-8">
+                    <div className="mt-0 px-4 pb-10 pt-4 mb-8">
+                        {/* Tabs for Tasks */}
+                        <div className="flex justify-center gap-2 mt-4 mx-4 relative z-10 mb-4">
+                            <Button
+                                outline
+                                rounded
+                                onClick={() => setActiveTaskTab('repeated')}
+                                className={`${activeTaskTab === 'repeated' ? 'active-gradient shadow-lg' : 'default-gradient shadow-lg'} rounded-full text-xs`}
+                                style={{
+                                    color: '#fff'
+                                }}
+                            >
+                                Repeated
+                            </Button>
+                            <Button
+                                outline
+                                rounded
+                                onClick={() => setActiveTaskTab('onetime')}
+                                className={`${activeTaskTab === 'onetime' ? 'active-gradient shadow-lg' : 'default-gradient shadow-lg'} rounded-full text-xs`}
+                                style={{
+                                    color: '#fff'
+                                }}
+                            >
+                                One-Time
+                            </Button>
+                        </div>
+
                         {/* Invite Task at the Top */}
                         {inviteTask && (
                             <div
@@ -258,15 +292,6 @@ export default function GamesPage() {
                                             <span className="mx-1 text-xs text-gray-100">+{inviteTask.xp}</span>
                                             <img src={coinStackIcon} alt="Coin Stack" className="w-4 h-4" />
                                         </div>
-                                        {/* Spacer */}
-                                        <div className="mx-2"></div>
-                                        {/* Head count */}
-                                        {/* <div className="flex items-center">
-                                            <span role="img" aria-label="User" className="text-sm">
-                                                👨
-                                            </span>
-                                            <span className="ml-1 text-sm text-gray-100">{inviteTask._count.userVerification}</span>
-                                        </div> */}
                                     </div>
                                 </div>
 
@@ -302,10 +327,9 @@ export default function GamesPage() {
                             </div>
                         )}
 
-                        {/* Other Tasks */}
-                        {tasks
-                            .filter((task) => task.verificationMethod !== 'INVITE_TELEGRAM_FRIEND')
-                            .map((task) => (
+                        {/* Display Tasks Based on Active Tab */}
+                        {filteredTasks.length > 0 ? (
+                            filteredTasks.map((task) => (
                                 <div
                                     key={task.id}
                                     className="relative bg-white dark:bg-zinc-900 rounded-2xl shadow-lg py-1 flex flex-row items-center px-1 border border-gray-300 dark:border-gray-600 h-16 justify-between w-full mb-2"
@@ -347,15 +371,6 @@ export default function GamesPage() {
                                                 <span className="mx-1 text-sm text-gray-100">+{task.xp}</span>
                                                 <img src={coinStackIcon} alt="Coin Stack" className="w-4 h-4" />
                                             </div>
-                                            {/* Spacer */}
-                                            <div className="mx-2"></div>
-                                            {/* Head count */}
-                                            {/* <div className="flex items-center">
-                                                <span role="img" aria-label="User" className="text-sm">
-                                                    👨
-                                                </span>
-                                                <span className="ml-1 text-sm text-gray-100">{task._count.userVerification}</span>
-                                            </div> */}
                                         </div>
                                     </div>
 
@@ -389,7 +404,10 @@ export default function GamesPage() {
                                         </Button>
                                     </div>
                                 </div>
-                            ))}
+                            ))
+                        ) : (
+                            <div className="text-center text-white mt-4">No tasks available.</div>
+                        )}
                     </div>
 
                     <BottomTabBar activeTab={activeTab} setActiveTab={setActiveTab} />

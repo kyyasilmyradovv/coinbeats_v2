@@ -2,19 +2,19 @@
 
 import React, { useMemo, useState, useEffect } from 'react'
 import { initUtils } from '@telegram-apps/sdk'
-import axios from '../api/axiosInstance' // Adjust this import based on your setup
+import axios from '../api/axiosInstance'
 import { useNavigate } from 'react-router-dom'
 import useCategoryChainStore from '../store/useCategoryChainStore'
 import Navbar from '../components/common/Navbar'
 import Sidebar from '../components/common/Sidebar'
 import { Page, List, ListInput, Card, Button, Dialog, Link, Block, Searchbar } from 'konsta/react'
 import { MdBookmarks } from 'react-icons/md'
-import { FaTelegramPlane } from 'react-icons/fa' // Import the Telegram icon
+import { FaTelegramPlane } from 'react-icons/fa'
 import useSessionStore from '../store/useSessionStore'
 import useUserStore from '~/store/useUserStore'
 import treasure from '../images/treasure1.png'
 import coins from '../images/coin-stack.png'
-import NewIcon from '../images/new.png' // Import the new icon
+import NewIcon from '../images/new.png'
 
 export default function HomePage({ theme, setTheme, setColorTheme }) {
     const navigate = useNavigate()
@@ -117,6 +117,29 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
         }
     }, [userId, setBookmarks])
 
+    const isBookmarked = (academyId) => {
+        return Array.isArray(bookmarks) ? bookmarks.some((bookmark) => bookmark.id === academyId) : false
+    }
+
+    const hasCompletedAcademy = (academyId) => {
+        return Array.isArray(points) ? points.some((point) => point.academyId === academyId) : false
+    }
+
+    const filteredData = useMemo(() => {
+        let data = academies
+        if (category) data = data.filter((item) => item.categories.some((cat) => cat.name === category))
+        if (chain) data = data.filter((item) => item.chains.some((ch) => ch.name === chain))
+        if (searchQuery) data = data.filter((item) => item.name.toLowerCase().includes(searchQuery.toLowerCase()))
+        if (activeFilter === 'yetToDo') data = data.filter((item) => !hasCompletedAcademy(item.id))
+        if (activeFilter === 'new') data = data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        if (activeFilter === 'topRated') data = data.sort((a, b) => b.xp - a.xp)
+        return data
+    }, [category, chain, searchQuery, activeFilter, academies, points]) // Added points to dependencies
+
+    const constructImageUrl = (url) => {
+        return `https://subscribes.lt/${url}`
+    }
+
     const handleBookmark = async (academy) => {
         try {
             await axios.post('/api/users/interaction', {
@@ -138,31 +161,8 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
         }
     }
 
-    const isBookmarked = (academyId) => {
-        return Array.isArray(bookmarks) ? bookmarks.some((bookmark) => bookmark.id === academyId) : false
-    }
-
-    const hasCompletedAcademy = (academyId) => {
-        return Array.isArray(points) ? points.some((point) => point.academyId === academyId) : false
-    }
-
     const getCompletedAcademyPoints = (academyId) => {
         return Array.isArray(points) ? points.find((point) => point.academyId === academyId) : null
-    }
-
-    const filteredData = useMemo(() => {
-        let data = academies
-        if (category) data = data.filter((item) => item.categories.some((cat) => cat.name === category))
-        if (chain) data = data.filter((item) => item.chains.some((ch) => ch.name === chain))
-        if (searchQuery) data = data.filter((item) => item.name.toLowerCase().includes(searchQuery.toLowerCase()))
-        if (activeFilter === 'sponsored') data = data.filter((item) => item.sponsored)
-        if (activeFilter === 'new') data = data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-        if (activeFilter === 'topRated') data = data.sort((a, b) => b.xp - a.xp)
-        return data
-    }, [category, chain, searchQuery, activeFilter, academies]) // Added searchQuery to dependencies
-
-    const constructImageUrl = (url) => {
-        return `https://subscribes.lt/${url}`
     }
 
     const handleMoreClick = (academy) => {
@@ -340,6 +340,9 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
                                         ? 'bg-gray-100 dark:bg-gray-800 k-color-brand-purple shadow-lg !text-2xs'
                                         : 'bg-white dark:bg-gray-900 shadow-lg !text-2xs'
                                 }`}
+                                style={{
+                                    color: '#fff'
+                                }}
                             >
                                 All
                             </Button>
@@ -347,12 +350,15 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
                                 rounded
                                 outline
                                 small
-                                onClick={() => setActiveFilter('sponsored')}
+                                onClick={() => setActiveFilter('yetToDo')}
                                 className={`border-brand-blue text-brand-blue ${
-                                    activeFilter === 'sponsored'
+                                    activeFilter === 'yetToDo'
                                         ? 'bg-gray-100 dark:bg-gray-800 k-color-brand-purple shadow-lg !text-2xs'
                                         : 'bg-white dark:bg-gray-900 shadow-lg !text-2xs'
                                 }`}
+                                style={{
+                                    color: '#fff'
+                                }}
                             >
                                 Yet To Do
                             </Button>
@@ -366,6 +372,9 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
                                         ? 'bg-gray-100 dark:bg-gray-800 k-color-brand-purple shadow-lg !text-2xs'
                                         : 'bg-white dark:bg-gray-900 shadow-lg !text-2xs'
                                 }`}
+                                style={{
+                                    color: '#fff'
+                                }}
                             >
                                 New
                             </Button>
@@ -379,6 +388,9 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
                                         ? 'bg-gray-100 dark:bg-gray-800 k-color-brand-purple shadow-lg !text-2xs !whitespace-nowrap'
                                         : 'bg-white dark:bg-gray-900 shadow-lg !text-2xs !whitespace-nowrap'
                                 }`}
+                                style={{
+                                    color: '#fff'
+                                }}
                             >
                                 Most XP
                             </Button>
@@ -388,7 +400,7 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
                     <div className="grid grid-cols-3 gap-0 px-1 pt-6 pb-16">
                         {filteredData.map((academy) => {
                             const isCompleted = hasCompletedAcademy(academy.id)
-                            const isCoinbeats = academy.academyType.name === 'Coinbeats' // Check if academy is of Coinbeats type
+                            const isCoinbeats = academy.academyType.name === 'Coinbeats'
 
                             return (
                                 <div key={academy.id} className="relative">
