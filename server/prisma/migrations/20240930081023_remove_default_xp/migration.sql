@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Academy" ALTER COLUMN "xp" DROP DEFAULT;

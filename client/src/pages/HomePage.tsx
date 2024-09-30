@@ -15,6 +15,8 @@ import useUserStore from '~/store/useUserStore'
 import treasure from '../images/treasure1.png'
 import coins from '../images/coin-stack.png'
 import NewIcon from '../images/new.png'
+import AnimatedNumber from '../components/AnimatedNumber'
+import bunnyImage from '../images/bunny-head.png'
 
 export default function HomePage({ theme, setTheme, setColorTheme }) {
     const navigate = useNavigate()
@@ -29,6 +31,9 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
     const [referralLink, setReferralLink] = useState('')
     const [referralCode, setReferralCode] = useState('')
     const [searchQuery, setSearchQuery] = useState('')
+    const [loginStreakData, setLoginStreakData] = useState(null)
+    const [showLoginStreakDialog, setShowLoginStreakDialog] = useState(false)
+    const [animationComplete, setAnimationComplete] = useState(false)
 
     const handleAction = (task) => {
         if (task.verificationMethod === 'INVITE_TELEGRAM_FRIEND') {
@@ -116,6 +121,29 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
             fetchBookmarkedAcademies()
         }
     }, [userId, setBookmarks])
+
+    useEffect(() => {
+        const handleLoginStreak = async () => {
+            try {
+                const response = await axios.post('/api/users/handle-login-streak')
+                const { userVerification, point } = response.data
+
+                // Update user points
+                setUser((prevState) => ({
+                    totalPoints: prevState.totalPoints + point.value,
+                    points: [...prevState.points, point]
+                }))
+
+                // Show the streak dialog
+                setLoginStreakData(userVerification)
+                setShowLoginStreakDialog(true)
+            } catch (error) {
+                console.error('Error handling login streak:', error)
+            }
+        }
+
+        handleLoginStreak()
+    }, [setUser])
 
     const isBookmarked = (academyId) => {
         return Array.isArray(bookmarks) ? bookmarks.some((bookmark) => bookmark.id === academyId) : false
@@ -268,6 +296,36 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
                             </div>
                         </div>
                     </Dialog>
+
+                    {showLoginStreakDialog && (
+                        <Dialog
+                            opened={showLoginStreakDialog}
+                            onBackdropClick={() => setShowLoginStreakDialog(false)}
+                            title="Daily Login Streak (1.5x)"
+                            className="!m-0 !p-0 !rounded-2xl"
+                        >
+                            <div className="p-0">
+                                <img src={bunnyImage} alt="Bunny" className="w-16 h-16 mx-auto mb-8 mt-6" />
+                                <div className="flex flex-col items-center">
+                                    <div className="rounded-full bg-gradient-to-r from-yellow-700 to-yellow-600 p-2">
+                                        <div className="w-12 h-12 text-center">
+                                            <div className="flex items-center justify-center text-black dark:text-white text-2xl font-bold">
+                                                {loginStreakData.streakCount}
+                                            </div>
+                                            <div className="flex items-center text-center justify-center">
+                                                <div className="text-md font-bold">Day</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="flex mt-10 mb-2 text-2xl font-bold">
+                                        <span className="mr-1">+</span>
+                                        <AnimatedNumber target={loginStreakData.pointsAwarded} duration={2000} onComplete={() => setAnimationComplete(true)} />
+                                        <img src={coins} className={`h-8 w-8 ml-2 ${animationComplete ? 'animate-zoom' : 'animate-coin-spin'}`} alt="Coin" />
+                                    </div>
+                                </div>
+                            </div>
+                        </Dialog>
+                    )}
 
                     <div className="flex justify-between bg-white dark:bg-zinc-900 rounded-2xl mx-4 shadow-lg p-0 py-0">
                         <div className="flex flex-row w-full space-x-0">

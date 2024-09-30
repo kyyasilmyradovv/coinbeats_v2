@@ -15,6 +15,7 @@ const {
   confirmEmail,
   getBookmarkedAcademies,
   completeVerificationTask,
+  handleLoginStreak,
 } = require('../controllers/userController');
 const asyncHandler = require('express-async-handler');
 
@@ -22,6 +23,7 @@ const router = express.Router();
 
 // Define user-related routes
 router.get('/me', telegramAuth, getCurrentUser);
+router.post('/handle-login-streak', asyncHandler(handleLoginStreak));
 router.get(
   '/',
   authenticateToken,

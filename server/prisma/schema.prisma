@@ -95,7 +95,7 @@ model Academy {
   webpageUrl       String?
   coverPhotoUrl    String?
   logoUrl          String?
-  xp               Int                @default(200)
+  xp               Int                
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @updatedAt
   sponsored        Boolean            @default(false)
@@ -274,9 +274,17 @@ model UserVerification {
   createdAt          DateTime         @default(now())
   completedAt        DateTime?
   pointsAwarded      Int              @default(0)
+  lastLoginDate      DateTime?
+  streakCount        Int              @default(1)
   academy            Academy?         @relation(fields: [academyId], references: [id])
   user               User             @relation(fields: [userId], references: [id])
   verificationTask   VerificationTask @relation(fields: [verificationTaskId], references: [id])
+}
+
+model Setting {
+  id    Int     @id @default(autoincrement())
+  key   String  @unique
+  value String?
 }
 
 enum Role {

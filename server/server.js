@@ -27,6 +27,7 @@ const sseRoutes = require('./routes/sse');
 const pointsRoutes = require('./routes/points');
 const verificationTaskRoutes = require('./routes/verificationTask');
 const academyTypeRoutes = require('./routes/academyType');
+const settingsRoutes = require('./routes/settings');
 
 // Initialize Express app
 const app = express();
@@ -53,6 +54,7 @@ app.use('/api/sse', sseRoutes);
 app.use('/api/points', pointsRoutes);
 app.use('/api/verification-tasks', verificationTaskRoutes);
 app.use('/api/academy-types', academyTypeRoutes);
+app.use('/api/settings', settingsRoutes);
 
 // Serve static files
 app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));

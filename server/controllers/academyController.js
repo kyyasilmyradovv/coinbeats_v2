@@ -139,6 +139,14 @@ exports.createAcademy = async (req, res, next) => {
       })
     );
 
+    // Get default XP from settings
+    const setting = await prisma.setting.findUnique({
+      where: { key: 'default_academy_xp' },
+    });
+
+    const totalXp = setting ? parseInt(setting.value, 10) : 500; // Default to 500 if not set
+
+    // Create the academy with the xp field
     const academy = await prisma.academy.create({
       data: {
         name,
@@ -199,11 +207,12 @@ exports.createAcademy = async (req, res, next) => {
         status: 'pending',
         creatorId: userId,
         academyTypeId: academyTypeId ? parseInt(academyTypeId, 10) : null,
+        xp: totalXp, // Set the xp field
       },
     });
 
     // Allocate XP to Academy Questions and Quests
-    await allocateXp(academy.id, 500); // Total XP to allocate is 500
+    await allocateXp(academy.id, totalXp); // Use the total XP from settings
 
     res.status(201).json({ message: 'Academy created successfully', academy });
   } catch (error) {
@@ -279,6 +288,14 @@ exports.createBasicAcademy = async (req, res, next) => {
       })
     );
 
+    // Get default XP from settings
+    const setting = await prisma.setting.findUnique({
+      where: { key: 'default_academy_xp' },
+    });
+
+    const totalXp = setting ? parseInt(setting.value, 10) : 500; // Default to 500 if not set
+
+    // Create the academy with the xp field
     const academy = await prisma.academy.create({
       data: {
         name,
@@ -305,6 +322,7 @@ exports.createBasicAcademy = async (req, res, next) => {
         status: 'pending',
         creatorId: userId,
         academyTypeId: academyTypeId ? parseInt(academyTypeId, 10) : null,
+        xp: totalXp, // Set the xp field
       },
     });
 

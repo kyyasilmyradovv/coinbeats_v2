@@ -13,26 +13,15 @@ interface UserState {
     role: UserRole
     totalPoints: number
     points: any[]
-    bookmarks: Array<any> // Add bookmarks
+    bookmarks: Array<any>
     authenticated: boolean
     token: string | null
     hasAcademy: boolean
     sidebarOpened: boolean
 
-    setUser: (
-        userId: number | null,
-        username: string,
-        email: string,
-        emailConfirmed: boolean,
-        role: UserRole,
-        totalPoints: number,
-        points: any[],
-        bookmarks: Array<any>, // Add bookmarks parameter
-        token: string | null,
-        hasAcademy: boolean
-    ) => void
+    setUser: (update: Partial<UserState> | ((state: UserState) => Partial<UserState>)) => void
 
-    setBookmarks: (bookmarks: Array<any>) => void // Add setter for bookmarks
+    setBookmarks: (bookmarks: Array<any>) => void
 
     loginUser: (data: {
         userId: number
@@ -42,7 +31,7 @@ interface UserState {
         role: UserRole
         totalPoints: number
         points: any[]
-        bookmarks: Array<any> // Add bookmarks
+        bookmarks: Array<any>
         token: string
         hasAcademy: boolean
     }) => void
@@ -62,27 +51,15 @@ const useUserStore = create<UserState>()(
         role: 'USER',
         totalPoints: 100,
         points: [],
-        bookmarks: [], // Initialize bookmarks as empty
+        bookmarks: [],
         authenticated: false,
         token: null,
         hasAcademy: false,
         sidebarOpened: false,
 
-        setUser: (userId, username, email, emailConfirmed, role, totalPoints, points, bookmarks, token, hasAcademy) =>
-            set({
-                userId,
-                username,
-                email,
-                emailConfirmed,
-                role,
-                totalPoints,
-                points,
-                bookmarks, // Update bookmarks when user is set
-                token,
-                hasAcademy
-            }),
+        setUser: (update) => set((state) => (typeof update === 'function' ? { ...state, ...update(state) } : { ...state, ...update })),
 
-        setBookmarks: (bookmarks) => set({ bookmarks }), // Setter function to update bookmarks
+        setBookmarks: (bookmarks) => set({ bookmarks }),
 
         loginUser: ({ userId, username, email, emailConfirmed, role, totalPoints, points, bookmarks, token, hasAcademy }) =>
             set({
@@ -93,7 +70,7 @@ const useUserStore = create<UserState>()(
                 role,
                 totalPoints,
                 points,
-                bookmarks, // Set bookmarks on login
+                bookmarks,
                 authenticated: true,
                 token,
                 hasAcademy
@@ -108,7 +85,7 @@ const useUserStore = create<UserState>()(
                 role: 'USER',
                 totalPoints: 100,
                 points: [],
-                bookmarks: [], // Clear bookmarks on logout
+                bookmarks: [],
                 authenticated: false,
                 token: null,
                 hasAcademy: false,

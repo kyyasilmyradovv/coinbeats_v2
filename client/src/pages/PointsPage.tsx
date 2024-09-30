@@ -316,12 +316,14 @@ const PointsPage: React.FC = () => {
                                                     <img src={constructImageUrl(point.academy.logoUrl)} className="h-5 w-5 rounded-full" alt="academy logo" />
                                                 ) : point.verificationTask?.platform === 'X' ? (
                                                     <img src={ximage} alt="X Platform" className="h-5 w-5" />
+                                                ) : point.verificationTask?.platform === 'NONE' ? (
+                                                    <img src={coinStack} alt="X Platform" className="h-5 w-5" />
                                                 ) : null}
                                             </div>
                                             <div className="flex flex-row justify-between w-full">
                                                 <div>
                                                     <p className="text-sm font-semibold dark:text-gray-100">
-                                                        {point.academy ? point.academy.name : point.verificationTask?.description}
+                                                        {point.academy ? point.academy.name : point.verificationTask?.name}
                                                     </p>
                                                 </div>
                                                 <div className="flex">

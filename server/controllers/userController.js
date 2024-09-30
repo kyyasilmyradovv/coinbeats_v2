@@ -521,3 +521,133 @@ exports.getCurrentUser = async (req, res, next) => {
     next(error);
   }
 };
+
+exports.handleLoginStreak = async (req, res, next) => {
+  const telegramUserId = req.headers['x-telegram-user-id'];
+
+  if (!telegramUserId) {
+    return next(createError(400, 'Telegram User ID is required'));
+  }
+
+  try {
+    // Find the user by telegramUserId
+    const user = await prisma.user.findUnique({
+      where: { telegramUserId: parseInt(telegramUserId, 10) },
+    });
+
+    if (!user) {
+      return next(createError(404, 'User not found'));
+    }
+
+    const userId = user.id;
+
+    // The rest of your login streak logic remains the same
+    // Find the Daily Login Streak task
+    const verificationTask = await prisma.verificationTask.findFirst({
+      where: {
+        name: 'Daily Login Streak',
+      },
+    });
+
+    if (!verificationTask) {
+      return next(createError(404, 'Daily Login Streak task not found'));
+    }
+
+    // Get current date
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    // Find existing UserVerification
+    let userVerification = await prisma.userVerification.findFirst({
+      where: {
+        userId: userId,
+        verificationTaskId: verificationTask.id,
+      },
+    });
+
+    if (userVerification) {
+      const lastLoginDate = userVerification.lastLoginDate;
+
+      if (lastLoginDate) {
+        const lastLogin = new Date(lastLoginDate);
+
+        // Check if last login was yesterday
+        if (
+          lastLogin.getFullYear() === yesterday.getFullYear() &&
+          lastLogin.getMonth() === yesterday.getMonth() &&
+          lastLogin.getDate() === yesterday.getDate()
+        ) {
+          // Continue streak
+          const newStreakCount = userVerification.streakCount + 1;
+          const newPointsAwarded = Math.floor(
+            userVerification.pointsAwarded * 1.5
+          );
+          userVerification = await prisma.userVerification.update({
+            where: { id: userVerification.id },
+            data: {
+              streakCount: newStreakCount,
+              pointsAwarded: newPointsAwarded,
+              lastLoginDate: today,
+            },
+          });
+        } else if (
+          lastLogin.getFullYear() === today.getFullYear() &&
+          lastLogin.getMonth() === today.getMonth() &&
+          lastLogin.getDate() === today.getDate()
+        ) {
+          // Already logged in today
+          return res.json({
+            message: 'Already logged in today',
+            userVerification,
+          });
+        } else {
+          // Reset streak
+          userVerification = await prisma.userVerification.update({
+            where: { id: userVerification.id },
+            data: {
+              streakCount: 1,
+              pointsAwarded: 100,
+              lastLoginDate: today,
+            },
+          });
+        }
+      } else {
+        // No lastLoginDate, reset streak
+        userVerification = await prisma.userVerification.update({
+          where: { id: userVerification.id },
+          data: {
+            streakCount: 1,
+            pointsAwarded: 100,
+            lastLoginDate: today,
+          },
+        });
+      }
+    } else {
+      // Create new UserVerification
+      userVerification = await prisma.userVerification.create({
+        data: {
+          userId: userId,
+          verificationTaskId: verificationTask.id,
+          pointsAwarded: 100,
+          streakCount: 1,
+          lastLoginDate: today,
+        },
+      });
+    }
+
+    // Create a new Point record
+    const point = await prisma.point.create({
+      data: {
+        value: userVerification.pointsAwarded,
+        userId: userId,
+        verificationTaskId: verificationTask.id,
+      },
+    });
+
+    res.json({ userVerification, point });
+  } catch (error) {
+    console.error('Error handling login streak:', error);
+    next(createError(500, 'Internal Server Error'));
+  }
+};

@@ -162,3 +162,32 @@
     color: #fff;
     font-weight: bold;
 }
+
+@keyframes coin-spin {
+    0% {
+        transform: rotateY(0deg);
+    }
+    100% {
+        transform: rotateY(360deg);
+    }
+}
+
+.animate-coin-spin {
+    animation: coin-spin 2s infinite linear;
+}
+
+@keyframes zoom-in-out {
+    0% {
+        transform: scale(1);
+    }
+    80% {
+        transform: scale(1.1);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.animate-zoom {
+    animation: zoom-in-out 0.5s forwards;
+}

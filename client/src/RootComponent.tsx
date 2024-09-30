@@ -113,18 +113,18 @@ function RootComponent() {
                             const { id, name, email, role, totalPoints, points, bookmarks, academies, emailConfirmed } = response.data
                             const hasAcademy = academies && academies.length > 0
 
-                            setUser(
-                                id,
-                                username,
-                                email,
-                                emailConfirmed,
-                                role,
-                                totalPoints,
-                                points || [],
-                                bookmarks || [],
-                                null, // Assuming token is handled elsewhere
-                                hasAcademy
-                            )
+                            setUser({
+                                userId: id,
+                                username: username,
+                                email: email,
+                                emailConfirmed: emailConfirmed,
+                                role: role,
+                                totalPoints: totalPoints,
+                                points: points || [],
+                                bookmarks: bookmarks || [],
+                                token: null, // Assuming token is handled elsewhere
+                                hasAcademy: hasAcademy
+                            })
                         } else {
                             // User not found, register
                             const registerResponse = await axios.post('/api/auth/register', {
@@ -135,18 +135,18 @@ function RootComponent() {
                             const userData = registerResponse.data
                             const hasAcademy = userData.academies && userData.academies.length > 0
 
-                            setUser(
-                                userData.id,
-                                userData.username,
-                                userData.email,
-                                userData.emailConfirmed,
-                                userData.role,
-                                userData.totalPoints,
-                                userData.points || [],
-                                userData.bookmarkedAcademies || [],
-                                null,
-                                hasAcademy
-                            )
+                            setUser({
+                                userId: userData.id,
+                                username: userData.username,
+                                email: userData.email,
+                                emailConfirmed: userData.emailConfirmed,
+                                role: userData.role,
+                                totalPoints: userData.totalPoints,
+                                points: userData.points || [],
+                                bookmarks: userData.bookmarkedAcademies || [],
+                                token: null,
+                                hasAcademy: hasAcademy
+                            })
                         }
                     } catch (error) {
                         if (error.response && error.response.status === 404) {
@@ -159,22 +159,33 @@ function RootComponent() {
                             const userData = registerResponse.data
                             const hasAcademy = userData.academies && userData.academies.length > 0
 
-                            setUser(
-                                userData.id,
-                                userData.username,
-                                userData.email,
-                                userData.emailConfirmed,
-                                userData.role,
-                                userData.totalPoints,
-                                userData.points || [],
-                                userData.bookmarkedAcademies || [],
-                                null,
-                                hasAcademy
-                            )
+                            setUser({
+                                userId: userData.id,
+                                username: userData.username,
+                                email: userData.email,
+                                emailConfirmed: userData.emailConfirmed,
+                                role: userData.role,
+                                totalPoints: userData.totalPoints,
+                                points: userData.points || [],
+                                bookmarks: userData.bookmarkedAcademies || [],
+                                token: null,
+                                hasAcademy: hasAcademy
+                            })
                         } else {
                             console.error('Error fetching user:', error)
                             // Set default values in case of error
-                            setUser(null, username, '', false, 'USER', 100, [], [], null, false)
+                            setUser({
+                                userId: null,
+                                username: 'Guest',
+                                email: '',
+                                emailConfirmed: false,
+                                role: 'USER',
+                                totalPoints: 100,
+                                points: [],
+                                bookmarks: [],
+                                token: null,
+                                hasAcademy: false
+                            })
                         }
                     }
 
@@ -192,12 +203,34 @@ function RootComponent() {
                     updateRouteDuration()
                 } else {
                     // initData not available, set default user
-                    setUser(null, 'Guest', '', false, 'USER', 100, [], [], null, false)
+                    setUser({
+                        userId: null,
+                        username: 'Guest',
+                        email: '',
+                        emailConfirmed: false,
+                        role: 'USER',
+                        totalPoints: 100,
+                        points: [],
+                        bookmarks: [],
+                        token: null,
+                        hasAcademy: false
+                    })
                 }
             } catch (e) {
                 console.error('Error initializing user session:', e)
                 // Set default user in case of error
-                setUser(null, 'Guest', '', false, 'USER', 100, [], [], null, false)
+                setUser({
+                    userId: null,
+                    username: 'Guest',
+                    email: '',
+                    emailConfirmed: false,
+                    role: 'USER',
+                    totalPoints: 100,
+                    points: [],
+                    bookmarks: [],
+                    token: null,
+                    hasAcademy: false
+                })
             } finally {
                 setIsLoading(false)
             }
