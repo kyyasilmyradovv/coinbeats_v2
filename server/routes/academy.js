@@ -26,13 +26,27 @@ const {
   updateAcademyWithVideos,
   getVideoUrls,
   saveUserResponse,
+  getAllAcademiesSuperadmin,
+  getAcademyDetailsSuperadmin,
 } = require('../controllers/academyController');
 
 const router = express.Router();
 
 // Public route to fetch all academies
 router.get('/academies', asyncHandler(getAllAcademies));
-
+router.get('/my', authenticateToken, asyncHandler(listMyAcademies));
+router.get(
+  '/',
+  authenticateToken,
+  authorizeRoles('SUPERADMIN'),
+  asyncHandler(getAllAcademiesSuperadmin)
+);
+router.get(
+  '/superadmin/:id',
+  authenticateToken,
+  authorizeRoles('SUPERADMIN'),
+  asyncHandler(getAcademyDetailsSuperadmin)
+);
 // Protected routes
 router.post(
   '/',
@@ -67,7 +81,6 @@ router.put(
   asyncHandler(updateAcademy)
 );
 
-router.get('/my', authenticateToken, asyncHandler(listMyAcademies));
 router.get('/:id', authenticateToken, asyncHandler(getAcademyDetails));
 router.get('/:id/questions', asyncHandler(getAcademyQuestions));
 router.get('/:userId/:academyId', asyncHandler(getUserResponses));

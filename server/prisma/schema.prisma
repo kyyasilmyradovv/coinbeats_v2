@@ -64,7 +64,7 @@ model User {
   role                   Role               @default(USER)
   createdAt              DateTime           @default(now())
   updatedAt              DateTime           @updatedAt
-  telegramUserId         Int                @unique
+  telegramUserId         BigInt                @unique
   emailConfirmationToken String?            @unique
   emailConfirmed         Boolean            @default(false)
   academies              Academy[]
@@ -77,6 +77,7 @@ model User {
   referredByUserId       Int?
   referredBy             User?              @relation("UserReferrals", fields: [referredByUserId], references: [id])
   referrals              User[]             @relation("UserReferrals")
+  allowedAcademyTypes AcademyType[] @relation("UserAcademyTypes")
 }
 
 model Academy {
@@ -90,7 +91,7 @@ model Academy {
   status           String
   teamBackground   String?
   telegram         String?
-  ticker           String
+  ticker           String?
   twitter          String?
   webpageUrl       String?
   coverPhotoUrl    String?
@@ -139,10 +140,12 @@ model AcademyType {
   id               Int               @id @default(autoincrement())
   name             String            @unique
   description      String?
+  restricted       Boolean           @default(false)
   createdAt        DateTime          @default(now()) @db.Timestamp(6)
   updatedAt        DateTime          @default(now()) @updatedAt @db.Timestamp(6)
   initialQuestions InitialQuestion[] @relation("AcademyTypeQuestions")
   academies        Academy[]
+  allowedUsers     User[]            @relation("UserAcademyTypes")
 }
 
 model InitialQuestion {

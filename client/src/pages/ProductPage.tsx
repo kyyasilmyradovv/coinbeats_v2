@@ -24,6 +24,13 @@ import useUserStore from '../store/useUserStore'
 import AcademyCompletionSlide from '../components/AcademyCompletionSlide'
 import Linkify from 'react-linkify'
 import { extractYouTubeVideoId } from '../utils/extractYouTubeVideoId'
+import wallet from '../images/wallet.png'
+import ticket from '../images/ticket.png'
+import moneyBag from '../images/money-bag.png'
+import coming from '../images/svgs/coming-soon3.svg'
+import clock from '../images/clock.png'
+import calendar from '../images/calendar.png'
+import handTrophy from '../images/hand-trophy.png'
 
 // Import platform logos
 import xLogo from '../images/x.png'
@@ -33,6 +40,7 @@ import instagramLogo from '../images/x.png'
 import discordLogo from '../images/x.png'
 import emailLogo from '../images/x.png'
 import defaultLogo from '../images/x.png'
+import { X } from '@mui/icons-material'
 
 const platformLogos: { [key: string]: string } = {
     X: xLogo,
@@ -60,6 +68,36 @@ export default function ProductPage() {
     const [userHasResponses, setUserHasResponses] = useState(false)
     const [showIntro, setShowIntro] = useState(false)
     const [loadingQuests, setLoadingQuests] = useState(true)
+    const nextRaffleDate = new Date('2024-10-12T14:00:00') // 12th October, 2pm
+    const raffles = [
+        {
+            date: new Date('2024-10-12T14:00:00'),
+            reward: '200 USDC',
+            winners: '10 x 20 USDC'
+        },
+        {
+            date: new Date('2024-10-20T14:00:00'),
+            reward: '200 USDC',
+            winners: '10 x 20 USDC'
+        },
+        {
+            date: new Date('2024-10-28T14:00:00'),
+            reward: '200 USDC',
+            winners: '10 x 20 USDC'
+        }
+    ]
+
+    const [timeRemainingList, setTimeRemainingList] = useState<string[]>([])
+    const [visibleTooltip, setVisibleTooltip] = useState<number | null>(null)
+    const toggleTooltip = (tooltipIndex: number) => {
+        if (visibleTooltip === tooltipIndex) {
+            setVisibleTooltip(null)
+        } else {
+            setVisibleTooltip(tooltipIndex)
+            // Optionally close the tooltip after 5 seconds
+            setTimeout(() => setVisibleTooltip(null), 5000)
+        }
+    }
 
     // Timer related state variables
     const [timer, setTimer] = useState(45)
@@ -83,6 +121,34 @@ export default function ProductPage() {
             setErrorMessage('') // Reset error message when moving back
         }
     }
+
+    useEffect(() => {
+        const updateTimer = () => {
+            const now = new Date()
+            const newTimeRemainingList = raffles.map((raffle) => {
+                const distance = raffle.date.getTime() - now.getTime()
+
+                if (distance < 0) {
+                    return 'Raffle has ended'
+                }
+
+                const days = Math.floor(distance / (1000 * 60 * 60 * 24))
+                const hours = Math.floor((distance / (1000 * 60 * 60)) % 24)
+                const minutes = Math.floor((distance / (1000 * 60)) % 60)
+                const seconds = Math.floor((distance / 1000) % 60)
+
+                return `${days}d ${hours}h ${minutes}m ${seconds}s`
+            })
+
+            setTimeRemainingList(newTimeRemainingList)
+        }
+
+        updateTimer() // Update immediately
+
+        const timerId = setInterval(updateTimer, 1000) // Update every second
+
+        return () => clearInterval(timerId)
+    }, [])
 
     const handleNextClick = () => {
         const isQuizSlide = currentSlideIndex % 2 === 1 // Odd indices are quiz slides
@@ -1139,8 +1205,7 @@ export default function ProductPage() {
                                                 className="flex items-center !justify-start gap-2 w-full dark:text-gray-200 !text-xs bg-gradient-to-r from-gray-100 to-gray-300 dark:from-gray-700 dark:to-gray-900 border border-gray-200 dark:border-gray-700 rounded-full"
                                                 onClick={() => window.open(academy.twitter, '_blank')}
                                             >
-                                                <Icon icon="mdi:twitter" color="#1DA1F2" className="w-5 h-5" />
-                                                TWITTER
+                                                <X className="w-6 h-6 text-blue-500 !p-1 !m-0" />X
                                             </Button>
                                         )}
                                         {academy.telegram && (
@@ -1181,6 +1246,124 @@ export default function ProductPage() {
                                         )}
                                     </div>
                                 </Card>
+
+                                <div className="relative overflow-hidden !rounded-2xl shadow-lg !m-0 tab-background !mb-4">
+                                    <div className="relative z-10 m-[2px] !rounded-2xl tab-content">
+                                        <div
+                                            className="!rounded-2xl p-4 raffles-content relative"
+                                            style={{
+                                                backgroundImage: `url(${wallet})`,
+                                                backgroundRepeat: 'no-repeat',
+                                                backgroundSize: '35%', // Adjusted to 1/3 size
+                                                backgroundPosition: 'right bottom'
+                                            }}
+                                        >
+                                            {/* Content of the Raffles card */}
+                                            {/* Modified Raffles Card */}
+                                            <div className="text-white relative">
+                                                {/* Next Raffle */}
+                                                <div className="mb-2">
+                                                    <div className="flex flex-row justify-between items-center mb-4">
+                                                        <div className="flex items-center !justify-between w-full">
+                                                            <div className="flex flex-row items-center">
+                                                                <img src={ticket} className="h-8 w-8 mr-2" alt="Ticket icon" />
+                                                                <span className="text-md font-semibold">Raffle</span>
+                                                            </div>
+                                                            <div className="flex-grow"></div>
+                                                            <div className="flex flex-row items-center">
+                                                                <span className="text-sm text-gray-300">How to get tickets</span>
+                                                                <button
+                                                                    className="ml-2 rounded-full bg-gray-700 text-white text-xs font-bold w-4 h-4 flex items-center justify-center"
+                                                                    onClick={() => toggleTooltip(0)}
+                                                                >
+                                                                    ?
+                                                                </button>
+                                                                {visibleTooltip === 0 && (
+                                                                    <div className="tooltip absolute bg-gray-700 text-white text-xs rounded-2xl p-2 mt-2 z-20">
+                                                                        When you complete academy quizzes, you earn raffle tickets for future raffles.
+                                                                        <button
+                                                                            className="absolute top-0 right-0 text-white text-sm mt-1 mr-1"
+                                                                            onClick={() => setVisibleTooltip(null)}
+                                                                        >
+                                                                            &times;
+                                                                        </button>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Next Raffle Date */}
+                                                    <div className="flex justify-between items-center mb-3">
+                                                        <div className="flex items-center">
+                                                            <img src={calendar} className="h-5 w-5 mr-2" alt="Calendar icon" />
+                                                            <span className="text-sm text-gray-300">Next Raffle:</span>
+                                                        </div>
+                                                        <div className="flex items-center bg-gradient-to-r from-pink-500 to-purple-600 text-white px-3 py-0 rounded-full shadow-lg">
+                                                            <span className="text-sm font-bold">
+                                                                {raffles[0].date.toLocaleDateString()} at{' '}
+                                                                {raffles[0].date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Reward Pool */}
+                                                    <div className="flex justify-between items-center mb-3">
+                                                        <div className="flex items-center">
+                                                            <img src={moneyBag} className="h-5 w-5 mr-2" alt="Money bag icon" />
+                                                            <span className="text-sm text-gray-300">Reward pool:</span>
+                                                        </div>
+                                                        <div className="text-sm flex items-center bg-gradient-to-r from-pink-500 to-purple-600 text-white px-3 py-0 rounded-full shadow-lg">
+                                                            <strong>{raffles[0].reward}</strong>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Winners */}
+                                                    <div className="flex justify-between items-center mb-3">
+                                                        <div className="flex items-center">
+                                                            <img src={handTrophy} className="h-5 w-5 mr-2" alt="Trophy icon" />
+                                                            <span className="text-sm text-gray-300">Winners:</span>
+                                                        </div>
+                                                        <div className="text-sm flex items-center bg-gradient-to-r from-pink-500 to-purple-600 text-white px-3 py-0 rounded-full shadow-lg">
+                                                            <strong>{raffles[0].winners}</strong>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Time Remaining */}
+                                                    <div className="flex justify-between items-center">
+                                                        <div className="flex items-center">
+                                                            <img src={clock} className="h-5 w-5 mr-2" alt="Clock icon" />
+                                                            <span className="text-sm text-gray-300">Time remaining:</span>
+                                                        </div>
+                                                        <div className="flex items-center bg-gradient-to-r from-pink-500 to-purple-600 text-white px-3 py-0 rounded-full shadow-lg">
+                                                            <span className="text-sm font-bold">{timeRemainingList[0]}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Future Raffles */}
+                                                <div className="mt-6">
+                                                    <div className="flex flex-row items-center mb-4">
+                                                        <img src={ticket} className="h-8 w-8 mr-2" alt="Ticket icon" />
+                                                        <span className="text-md font-semibold">Future Raffles</span>
+                                                    </div>
+                                                    {raffles.slice(1).map((raffle, index) => (
+                                                        <div key={index} className="mb-2 flex flex-row items-center">
+                                                            <img src={calendar} className="h-5 w-5 mr-2" alt="Calendar icon" />
+                                                            <p className="text-sm text-gray-300">
+                                                                {raffle.date.toLocaleDateString()} at{' '}
+                                                                {raffle.date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                            </p>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="absolute right-0 bottom-12">
+                                            <img src={coming} className="h-16 w-full -rotate-[35deg]" alt="coming icon" />
+                                        </div>
+                                    </div>
+                                </div>
 
                                 <Card className="!mb-12 !p-0 !rounded-2xl shadow-lg !m-0 relative border border-gray-300 dark:border-gray-600">
                                     <div className="flex items-center justify-center text-gray-900 dark:text-gray-200">

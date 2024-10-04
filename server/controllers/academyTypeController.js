@@ -4,69 +4,142 @@ const { PrismaClient } = require('@prisma/client');
 const createError = require('http-errors');
 const prisma = new PrismaClient();
 
+// Helper function to parse boolean values
+const parseBoolean = (value) => {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'string') {
+    if (value.toLowerCase() === 'true') return true;
+    if (value.toLowerCase() === 'false') return false;
+  }
+  return false;
+};
+
 // Create a new Academy Type
 exports.createAcademyType = async (req, res, next) => {
-  console.log('createAcademyType hit');
-  const { name, description } = req.body;
+  console.log('createAcademyType function called');
+  const { name, description, restricted, allowedUserEmails } = req.body;
+  console.log(
+    'Received restricted value:',
+    restricted,
+    'Type:',
+    typeof restricted
+  );
 
   try {
+    const restrictedValue = parseBoolean(restricted);
+    console.log('Parsed restrictedValue:', restrictedValue);
+
+    const dataToCreate = {
+      name,
+      description,
+      restricted: restrictedValue,
+    };
+    console.log('Data to create:', dataToCreate);
+
+    if (restrictedValue && allowedUserEmails) {
+      const users = await prisma.user.findMany({
+        where: { email: { in: allowedUserEmails } },
+      });
+
+      if (users.length !== allowedUserEmails.length) {
+        return next(
+          createError(400, 'Some emails do not correspond to existing users')
+        );
+      }
+
+      dataToCreate.allowedUsers = {
+        connect: users.map((user) => ({ id: user.id })),
+      };
+    }
+
     const newAcademyType = await prisma.academyType.create({
-      data: {
-        name,
-        description,
-      },
+      data: dataToCreate,
+      include: { allowedUsers: true },
     });
     console.log('New Academy Type created:', newAcademyType);
     res.status(201).json(newAcademyType);
   } catch (error) {
     console.error('Error creating academy type:', error);
-    next(
-      createError(500, 'Internal Server Error: Error creating academy type')
-    );
+    next(createError(500, 'Error creating academy type'));
   }
 };
 
 // Get all Academy Types
 exports.getAllAcademyTypes = async (req, res, next) => {
-  console.log('getAllAcademyTypes hit');
+  const { userId, role } = req.user; // Include role from the authenticated user
 
   try {
-    const academyTypes = await prisma.academyType.findMany({
-      include: {
-        initialQuestions: true,
-      },
-    });
-    console.log('Academy Types fetched:', academyTypes);
+    let academyTypes;
+
+    if (role === 'SUPERADMIN') {
+      // If the user is SUPERADMIN, fetch all academy types
+      academyTypes = await prisma.academyType.findMany({
+        include: { initialQuestions: true, allowedUsers: true },
+      });
+    } else {
+      // For other users, fetch only allowed or unrestricted academy types
+      academyTypes = await prisma.academyType.findMany({
+        where: {
+          OR: [
+            { restricted: false },
+            { allowedUsers: { some: { id: userId } } },
+          ],
+        },
+        include: { initialQuestions: true, allowedUsers: true },
+      });
+    }
+
     res.status(200).json(academyTypes);
   } catch (error) {
-    console.error('Error fetching academy types:', error);
-    next(
-      createError(500, 'Internal Server Error: Error fetching academy types')
-    );
+    next(createError(500, 'Error fetching academy types'));
   }
 };
 
 // Update an Academy Type
 exports.updateAcademyType = async (req, res, next) => {
-  console.log('updateAcademyType hit');
+  console.log('updateAcademyType function called');
   const { id } = req.params;
-  const { name, description } = req.body;
+  let { name, description, restricted, allowedUserEmails } = req.body;
+  console.log(
+    'Received restricted value:',
+    restricted,
+    'Type:',
+    typeof restricted
+  );
 
   try {
+    const dataToUpdate = {};
+    if (name !== undefined) dataToUpdate.name = name;
+    if (description !== undefined) dataToUpdate.description = description;
+    if (restricted !== undefined)
+      dataToUpdate.restricted = parseBoolean(restricted);
+
+    if (allowedUserEmails !== undefined) {
+      const users = await prisma.user.findMany({
+        where: { email: { in: allowedUserEmails } },
+      });
+
+      if (users.length !== allowedUserEmails.length) {
+        return next(
+          createError(400, 'Some emails do not correspond to existing users')
+        );
+      }
+
+      dataToUpdate.allowedUsers = {
+        set: users.map((user) => ({ id: user.id })),
+      };
+    }
+
     const updatedAcademyType = await prisma.academyType.update({
       where: { id: parseInt(id, 10) },
-      data: {
-        ...(name && { name }),
-        ...(description && { description }),
-      },
+      data: dataToUpdate,
+      include: { allowedUsers: true },
     });
     console.log('Academy Type updated:', updatedAcademyType);
     res.status(200).json(updatedAcademyType);
   } catch (error) {
     console.error('Error updating academy type:', error);
-    next(
-      createError(500, 'Internal Server Error: Error updating academy type')
-    );
+    next(createError(500, 'Error updating academy type'));
   }
 };
 

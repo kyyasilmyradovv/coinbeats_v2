@@ -18,6 +18,7 @@ interface UserState {
     token: string | null
     hasAcademy: boolean
     sidebarOpened: boolean
+    referralPointsAwarded: number // Added this line
 
     setUser: (update: Partial<UserState> | ((state: UserState) => Partial<UserState>)) => void
 
@@ -40,6 +41,8 @@ interface UserState {
     updateUserRole: (role: UserRole) => void
 
     toggleSidebar: () => void
+
+    resetReferralPointsAwarded: () => void // Added this function
 }
 
 const useUserStore = create<UserState>()(
@@ -56,6 +59,7 @@ const useUserStore = create<UserState>()(
         token: null,
         hasAcademy: false,
         sidebarOpened: false,
+        referralPointsAwarded: 0, // Initialize to 0
 
         setUser: (update) => set((state) => (typeof update === 'function' ? { ...state, ...update(state) } : { ...state, ...update })),
 
@@ -73,7 +77,8 @@ const useUserStore = create<UserState>()(
                 bookmarks,
                 authenticated: true,
                 token,
-                hasAcademy
+                hasAcademy,
+                referralPointsAwarded: 0 // Reset on login
             }),
 
         logoutUser: () =>
@@ -89,12 +94,15 @@ const useUserStore = create<UserState>()(
                 authenticated: false,
                 token: null,
                 hasAcademy: false,
-                sidebarOpened: false
+                sidebarOpened: false,
+                referralPointsAwarded: 0
             }),
 
         updateUserRole: (role) => set({ role: role || 'USER' }),
 
-        toggleSidebar: () => set((state) => ({ sidebarOpened: !state.sidebarOpened }))
+        toggleSidebar: () => set((state) => ({ sidebarOpened: !state.sidebarOpened })),
+
+        resetReferralPointsAwarded: () => set({ referralPointsAwarded: 0 }) // Implementation
     }))
 )
 

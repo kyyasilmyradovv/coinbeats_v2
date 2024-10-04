@@ -9,13 +9,13 @@ import useCategoryChainStore from '../store/useCategoryChainStore'
 import useAcademyStore from '../store/useAcademyStore'
 import bunnyLogo from '../images/bunny-mascot.png'
 import axiosInstance from '../api/axiosInstance'
+import useAuthStore from '../store/useAuthStore'
 
 const CreateAcademyPage: React.FC = () => {
-    const [rightPanelOpened, setRightPanelOpened] = useState(false)
     const [notificationOpen, setNotificationOpen] = useState(false)
     const [notificationText, setNotificationText] = useState('')
     const [visibleTooltip, setVisibleTooltip] = useState<number | null>(null)
-    const [academyTypes, setAcademyTypes] = useState([]) // New state for academy types
+    const [academyTypes, setAcademyTypes] = useState([]) // State for academy types
 
     const {
         name,
@@ -35,17 +35,18 @@ const CreateAcademyPage: React.FC = () => {
         submitAcademy,
         setField,
         setInitialAnswer,
-        toggleCorrectAnswer,
         fetchQuestions,
         resetAcademyData,
         nextStep,
         prevStep,
-        academyTypeId // Added to access selected academyTypeId from store
+        academyTypeId // Selected academyTypeId from store
     } = useAcademyStore()
 
     const navigate = useNavigate()
 
     const { categories: categoryList, chains: chainList, fetchCategoriesAndChains } = useCategoryChainStore()
+
+    const { userRole } = useAuthStore() // Get user role from auth store if needed
 
     useEffect(() => {
         fetchAcademyTypes() // Fetch academy types when component mounts
@@ -57,6 +58,14 @@ const CreateAcademyPage: React.FC = () => {
         try {
             const response = await axiosInstance.get('/api/academy-types')
             setAcademyTypes(response.data)
+
+            // Set default academy type if not already selected
+            if (!academyTypeId) {
+                const defaultType = response.data.find((type: any) => type.id === 1)
+                if (defaultType) {
+                    setField('academyTypeId', defaultType.id)
+                }
+            }
         } catch (error) {
             console.error('Error fetching academy types:', error)
         }
@@ -512,17 +521,11 @@ const CreateAcademyPage: React.FC = () => {
         </Card>
     )
 
-    // This function checks if a correct answer is selected for the current question
-    const validateCorrectAnswerSelected = (questionIndex: number) => {
-        const choices = initialAnswers[questionIndex].choices
-        return choices.some((choice) => choice.correct)
-    }
-
-    // Custom nextStep function to validate before proceeding
     const handleNextStep = (questionIndex: number) => {
         // If the current question is a quiz question, ensure one choice is marked as correct
         if (questionIndex < initialAnswers.length) {
-            if (!validateCorrectAnswerSelected(questionIndex)) {
+            const choices = initialAnswers[questionIndex].choices
+            if (!choices.some((choice) => choice.correct)) {
                 // Show notification if no choice is selected as correct
                 setNotificationText('To go to the next question, you have to mark one choice as correct.')
                 setNotificationOpen(true)
@@ -854,7 +857,7 @@ const CreateAcademyPage: React.FC = () => {
                     ))}
                 </div>
 
-                {/* New Academy Type Dropdown */}
+                {/* Academy Type Dropdown */}
                 <ListInput
                     label="Academy Type"
                     type="select"
@@ -862,11 +865,12 @@ const CreateAcademyPage: React.FC = () => {
                     onChange={(e) => {
                         setField('academyTypeId', parseInt(e.target.value, 10))
                     }}
-                    value={academyTypeId || ''}
+                    value={academyTypeId || 1} // Default to 1 if academyTypeId is not set
                     placeholder="Select Academy Type"
+                    disabled={academyTypes.length === 1} // Disable if only one type is available
                 >
-                    <option value="">Select Academy Type</option>
-                    {academyTypes.map((type) => (
+                    {/* Only display allowed academy types */}
+                    {academyTypes.map((type: any) => (
                         <option key={type.id} value={type.id}>
                             {type.name}
                         </option>

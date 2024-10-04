@@ -93,8 +93,8 @@ exports.createAcademy = async (req, res, next) => {
     const logoUrl = handleFileUpload(req.files, 'logo');
     const coverPhotoUrl = handleFileUpload(req.files, 'coverPhoto');
 
-    if (!name || !ticker) {
-      return next(createError(400, 'Name and ticker are required'));
+    if (!name) {
+      return next(createError(400, 'Name is required'));
     }
 
     const parsedCategories = JSON.parse(categories);
@@ -150,7 +150,7 @@ exports.createAcademy = async (req, res, next) => {
     const academy = await prisma.academy.create({
       data: {
         name,
-        ticker,
+        ticker: ticker || null,
         logoUrl,
         coverPhotoUrl,
         categories: {
@@ -299,7 +299,7 @@ exports.createBasicAcademy = async (req, res, next) => {
     const academy = await prisma.academy.create({
       data: {
         name,
-        ticker,
+        ticker: ticker || null,
         logoUrl,
         coverPhotoUrl,
         categories: {
@@ -342,12 +342,16 @@ const removeUndefinedFields = (obj) => {
   );
 };
 
+// Update Academy Controller
 exports.updateAcademy = async (req, res, next) => {
   const { id } = req.params;
 
   const {
     name,
-    ticker,
+    xp,
+    sponsored,
+    status,
+    creatorEmail, // For transferring ownership
     categories,
     chains,
     twitter,
@@ -365,6 +369,7 @@ exports.updateAcademy = async (req, res, next) => {
     coingeckoLink,
     dexScreenerLink,
     contractAddress,
+    academyTypeId,
   } = req.body;
 
   try {
@@ -388,14 +393,51 @@ exports.updateAcademy = async (req, res, next) => {
     // Prepare data for update
     const dataToUpdate = {};
 
+    // Update basic fields
     if (name !== undefined) dataToUpdate.name = name;
-    if (ticker !== undefined) dataToUpdate.ticker = ticker;
+    if (xp !== undefined) dataToUpdate.xp = parseInt(xp, 10);
+    if (sponsored !== undefined) dataToUpdate.sponsored = sponsored;
+    if (status !== undefined) dataToUpdate.status = status;
+    if (academyTypeId !== undefined)
+      dataToUpdate.academyTypeId = parseInt(academyTypeId, 10);
+    if (twitter !== undefined) dataToUpdate.twitter = twitter;
+    if (telegram !== undefined) dataToUpdate.telegram = telegram;
+    if (discord !== undefined) dataToUpdate.discord = discord;
+    if (coingecko !== undefined) dataToUpdate.coingecko = coingecko;
+    if (webpageUrl !== undefined) dataToUpdate.webpageUrl = webpageUrl;
+    if (teamBackground !== undefined)
+      dataToUpdate.teamBackground = teamBackground;
+    if (congratsVideo !== undefined) dataToUpdate.congratsVideo = congratsVideo;
+    if (getStarted !== undefined) dataToUpdate.getStarted = getStarted;
+    if (tokenomicsData && Object.keys(tokenomicsData).length)
+      dataToUpdate.tokenomics = tokenomicsData;
+    if (contractAddress !== undefined)
+      dataToUpdate.contractAddress = contractAddress;
+    if (dexScreenerLink !== undefined)
+      dataToUpdate.dexScreener = dexScreenerLink;
+
+    // Handle creatorEmail for transferring ownership
+    if (creatorEmail) {
+      const newCreator = await prisma.user.findUnique({
+        where: { email: creatorEmail },
+      });
+
+      if (!newCreator) {
+        return next(createError(404, 'User with provided email not found'));
+      }
+
+      dataToUpdate.creatorId = newCreator.id;
+    }
+
+    // Handle file uploads
     if (req.files && req.files.logo) {
       dataToUpdate.logoUrl = handleFileUpload(req.files, 'logo');
     }
     if (req.files && req.files.coverPhoto) {
       dataToUpdate.coverPhotoUrl = handleFileUpload(req.files, 'coverPhoto');
     }
+
+    // Update categories
     if (parsedCategories && parsedCategories.length) {
       const categoryRecords = await Promise.all(
         parsedCategories.map(async (categoryName) => {
@@ -412,6 +454,8 @@ exports.updateAcademy = async (req, res, next) => {
         set: categoryRecords.map((category) => ({ id: category.id })),
       };
     }
+
+    // Update chains
     if (parsedChains && parsedChains.length) {
       const chainRecords = await Promise.all(
         parsedChains.map(async (chainName) => {
@@ -428,17 +472,6 @@ exports.updateAcademy = async (req, res, next) => {
         set: chainRecords.map((chain) => ({ id: chain.id })),
       };
     }
-    if (twitter !== undefined) dataToUpdate.twitter = twitter;
-    if (telegram !== undefined) dataToUpdate.telegram = telegram;
-    if (discord !== undefined) dataToUpdate.discord = discord;
-    if (coingecko !== undefined) dataToUpdate.coingecko = coingecko;
-    if (webpageUrl !== undefined) dataToUpdate.webpageUrl = webpageUrl;
-    if (teamBackground !== undefined)
-      dataToUpdate.teamBackground = teamBackground;
-    if (congratsVideo !== undefined) dataToUpdate.congratsVideo = congratsVideo;
-    if (getStarted !== undefined) dataToUpdate.getStarted = getStarted;
-    if (Object.keys(tokenomicsData).length)
-      dataToUpdate.tokenomics = tokenomicsData;
 
     // Update the academy basic data
     const updatedAcademy = await prisma.academy.update({
@@ -446,7 +479,7 @@ exports.updateAcademy = async (req, res, next) => {
       data: dataToUpdate,
     });
 
-    // Handle initialAnswers
+    // Handle initialAnswers (academyQuestions)
     if (parsedInitialAnswers !== undefined) {
       for (const initialAnswer of parsedInitialAnswers) {
         const {
@@ -461,7 +494,7 @@ exports.updateAcademy = async (req, res, next) => {
 
         // Update or create the academyQuestion
         const updatedQuestion = await prisma.academyQuestion.upsert({
-          where: { id: questionId || 0 }, // Use 0 or a negative number to ensure upsert creates if not found
+          where: { id: questionId || 0 }, // Use 0 to ensure upsert creates if not found
           update: {
             question,
             answer,
@@ -581,12 +614,23 @@ exports.listMyAcademies = async (req, res, next) => {
 
 exports.getAcademyDetails = async (req, res, next) => {
   const { id } = req.params;
+  const { userId, role } = req.user; // Get userId and role from the request
   try {
     const academy = await prisma.academy.findUnique({
       where: { id: parseInt(id, 10) },
-      include: {
+      select: {
+        id: true,
+        name: true,
+        creatorId: true,
+        ticker: true,
+        logoUrl: true,
+        coverPhotoUrl: true,
         categories: true,
         chains: true,
+        twitter: true,
+        telegram: true,
+        discord: true,
+        coingecko: true,
         academyQuestions: {
           include: {
             choices: true,
@@ -595,6 +639,18 @@ exports.getAcademyDetails = async (req, res, next) => {
         },
         raffles: true,
         quests: true,
+        webpageUrl: true,
+        status: true,
+        teamBackground: true,
+        congratsVideo: true,
+        getStarted: true,
+        contractAddress: true,
+        dexScreener: true,
+        tokenomics: true,
+        academyTypeId: true,
+        xp: true,
+        createdAt: true,
+        updatedAt: true,
       },
     });
 
@@ -602,12 +658,50 @@ exports.getAcademyDetails = async (req, res, next) => {
       return next(createError(404, 'Academy not found'));
     }
 
+    // Authorization check: Allow access only if the user is the creator or has an admin role
+    if (
+      academy.creatorId !== userId &&
+      role !== 'ADMIN' &&
+      role !== 'SUPERADMIN'
+    ) {
+      return next(
+        createError(403, 'You are not authorized to access this academy')
+      );
+    }
+
     // Ensure empty fields are returned
     academy.academyQuestions = academy.academyQuestions || [];
     academy.raffles = academy.raffles || [];
     academy.quests = academy.quests || [];
 
-    console.log('Academy details response:', academy); // Log for debugging
+    res.json(academy);
+  } catch (error) {
+    console.error('Error fetching academy details:', error);
+    next(createError(500, 'Error fetching academy details'));
+  }
+};
+
+exports.getAcademyDetailsSuperadmin = async (req, res, next) => {
+  const { id } = req.params;
+  try {
+    const academy = await prisma.academy.findUnique({
+      where: { id: parseInt(id, 10) },
+      include: {
+        creator: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        academyType: true,
+        // Include other relations as needed
+      },
+    });
+
+    if (!academy) {
+      return next(createError(404, 'Academy not found'));
+    }
 
     res.json(academy);
   } catch (error) {
@@ -940,6 +1034,28 @@ exports.getAllAcademies = async (req, res, next) => {
     });
 
     res.json(sortedAcademies);
+  } catch (error) {
+    console.error('Error fetching academies:', error);
+    next(createError(500, 'Error fetching academies'));
+  }
+};
+
+exports.getAllAcademiesSuperadmin = async (req, res, next) => {
+  try {
+    const academies = await prisma.academy.findMany({
+      include: {
+        creator: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        academyType: true,
+      },
+    });
+
+    res.json(academies);
   } catch (error) {
     console.error('Error fetching academies:', error);
     next(createError(500, 'Error fetching academies'));

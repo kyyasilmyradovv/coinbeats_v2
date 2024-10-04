@@ -10,6 +10,7 @@ import ximage from '../images/x.png'
 import useUserStore from '~/store/useUserStore'
 import useSessionStore from '../store/useSessionStore'
 import treasure from '../images/treasure1.png'
+import bunny from '../images/bunny-head.png'
 import { FaTelegramPlane } from 'react-icons/fa'
 import { initUtils } from '@telegram-apps/sdk'
 
@@ -223,7 +224,11 @@ const PointsPage: React.FC = () => {
                             outline
                             rounded
                             onClick={() => setActiveLeaderboardTab('overall')}
-                            className={`${activeLeaderboardTab === 'overall' ? 'active-gradient shadow-lg' : 'default-gradient shadow-lg'} rounded-full text-xs`}
+                            className={`${
+                                activeLeaderboardTab === 'overall'
+                                    ? 'bg-gray-100 dark:bg-gray-800 k-color-brand-purple shadow-lg'
+                                    : 'bg-white dark:bg-gray-900 shadow-lg'
+                            } rounded-full text-xs`}
                             style={{
                                 color: '#fff'
                             }}
@@ -234,7 +239,11 @@ const PointsPage: React.FC = () => {
                             outline
                             rounded
                             onClick={() => setActiveLeaderboardTab('weekly')}
-                            className={`${activeLeaderboardTab === 'weekly' ? 'active-gradient shadow-lg' : 'default-gradient shadow-lg'} rounded-full text-xs`}
+                            className={`${
+                                activeLeaderboardTab === 'weekly'
+                                    ? 'bg-gray-100 dark:bg-gray-800 k-color-brand-purple shadow-lg'
+                                    : 'bg-white dark:bg-gray-900 shadow-lg'
+                            } rounded-full text-xs`}
                             style={{
                                 color: '#fff'
                             }}
@@ -245,7 +254,11 @@ const PointsPage: React.FC = () => {
                             outline
                             rounded
                             onClick={() => setActiveLeaderboardTab('stats')}
-                            className={`${activeLeaderboardTab === 'stats' ? 'active-gradient shadow-lg' : 'default-gradient shadow-lg'} rounded-full text-xs`}
+                            className={`${
+                                activeLeaderboardTab === 'stats'
+                                    ? 'bg-gray-100 dark:bg-gray-800 k-color-brand-purple shadow-lg'
+                                    : 'bg-white dark:bg-gray-900 shadow-lg'
+                            } rounded-full text-xs`}
                             style={{
                                 color: '#fff'
                             }}
@@ -318,6 +331,8 @@ const PointsPage: React.FC = () => {
                                                     <img src={ximage} alt="X Platform" className="h-5 w-5" />
                                                 ) : point.verificationTask?.platform === 'NONE' ? (
                                                     <img src={coinStack} alt="X Platform" className="h-5 w-5" />
+                                                ) : point.verificationTask?.verificationMethod === 'INVITE_TELEGRAM_FRIEND' ? (
+                                                    <img src={bunny} alt="X Platform" className="h-5 w-5" />
                                                 ) : null}
                                             </div>
                                             <div className="flex flex-row justify-between w-full">

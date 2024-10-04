@@ -1,22 +1,41 @@
+// client/src/pages/AcademyTypePage.tsx
+
 import React, { useState, useEffect } from 'react'
 import axios from '../api/axiosInstance'
-import { Card, Button, List, ListInput, Page, BlockTitle, Block, Notification, Popover } from 'konsta/react'
+import { Card, Button, List, ListInput, Page, BlockTitle, Block, Notification, Popover, ListItem, Toggle } from 'konsta/react'
 import Navbar from '../components/common/Navbar'
 import Sidebar from '../components/Sidebar'
 import bunnyLogo from '../images/bunny-mascot.png' // Ensure this path is correct
+import useAuthStore from '../store/useAuthStore' // Import your auth store to get access token
 
 const AcademyTypePage = () => {
+    interface User {
+        id: number
+        email: string
+    }
+
     interface AcademyType {
         id: string | number
         name: string
         description: string
+        restricted: boolean
+        allowedUsers: User[]
         initialQuestions: { id: string | number; question: string }[]
     }
 
+    interface NewAcademyType {
+        name: string
+        description: string
+        restricted: boolean
+        allowedUserEmails: string[]
+    }
+
     const [academyTypes, setAcademyTypes] = useState<AcademyType[]>([])
-    const [newAcademyType, setNewAcademyType] = useState<Pick<AcademyType, 'name' | 'description'>>({
+    const [newAcademyType, setNewAcademyType] = useState<NewAcademyType>({
         name: '',
-        description: ''
+        description: '',
+        restricted: false,
+        allowedUserEmails: []
     })
     const [newQuestion, setNewQuestion] = useState('')
     const [selectedTypeId, setSelectedTypeId] = useState<string | number | null>(null)
@@ -25,6 +44,10 @@ const AcademyTypePage = () => {
     const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
     const [confirmDeleteTypeId, setConfirmDeleteTypeId] = useState<string | number | null>(null)
     const [confirmDeleteQuestionId, setConfirmDeleteQuestionId] = useState<string | number | null>(null)
+    const { accessToken } = useAuthStore() // Get access token from your auth store
+
+    // New state to hold edited allowed user emails per academy type
+    const [editedAllowedUserEmails, setEditedAllowedUserEmails] = useState<{ [key: string]: string }>({})
 
     useEffect(() => {
         fetchAcademyTypes()
@@ -33,7 +56,9 @@ const AcademyTypePage = () => {
     const fetchAcademyTypes = async () => {
         console.log('Fetching academy types...')
         try {
-            const response = await axios.get('/api/academy-types')
+            const response = await axios.get('/api/academy-types', {
+                headers: { Authorization: `Bearer ${accessToken}` }
+            })
             console.log('Academy types fetched:', response.data)
             setAcademyTypes(response.data)
         } catch (error) {
@@ -46,12 +71,19 @@ const AcademyTypePage = () => {
     const handleCreateAcademyType = async () => {
         console.log('Creating academy type...')
         try {
-            const response = await axios.post('/api/academy-types', newAcademyType)
+            const response = await axios.post('/api/academy-types', newAcademyType, {
+                headers: { Authorization: `Bearer ${accessToken}` }
+            })
             console.log('Academy type created:', response.data)
             setNotificationText('Academy type created successfully.')
             setNotificationOpen(true)
             fetchAcademyTypes()
-            setNewAcademyType({ name: '', description: '' })
+            setNewAcademyType({
+                name: '',
+                description: '',
+                restricted: false,
+                allowedUserEmails: []
+            })
         } catch (error) {
             console.error('Error creating academy type:', error)
             setNotificationText('Failed to create academy type.')
@@ -68,7 +100,13 @@ const AcademyTypePage = () => {
 
         console.log('Adding initial question to academy type ID:', typeId)
         try {
-            const response = await axios.post(`/api/academy-types/${typeId}/questions`, { question: newQuestion })
+            const response = await axios.post(
+                `/api/academy-types/${typeId}/questions`,
+                { question: newQuestion },
+                {
+                    headers: { Authorization: `Bearer ${accessToken}` }
+                }
+            )
             console.log('Initial question added:', response.data)
             setNotificationText('Question added successfully.')
             setNotificationOpen(true)
@@ -92,7 +130,9 @@ const AcademyTypePage = () => {
         if (confirmDeleteTypeId !== null) {
             try {
                 console.log('Deleting academy type ID:', confirmDeleteTypeId)
-                await axios.delete(`/api/academy-types/${confirmDeleteTypeId}`)
+                await axios.delete(`/api/academy-types/${confirmDeleteTypeId}`, {
+                    headers: { Authorization: `Bearer ${accessToken}` }
+                })
                 setNotificationText('Academy type deleted successfully.')
                 setNotificationOpen(true)
                 fetchAcademyTypes()
@@ -117,7 +157,9 @@ const AcademyTypePage = () => {
         if (confirmDeleteQuestionId !== null) {
             try {
                 console.log('Deleting question ID:', confirmDeleteQuestionId)
-                await axios.delete(`/api/academy-types/questions/${confirmDeleteQuestionId}`)
+                await axios.delete(`/api/academy-types/questions/${confirmDeleteQuestionId}`, {
+                    headers: { Authorization: `Bearer ${accessToken}` }
+                })
                 setNotificationText('Question deleted successfully.')
                 setNotificationOpen(true)
                 fetchAcademyTypes()
@@ -153,7 +195,13 @@ const AcademyTypePage = () => {
         }
 
         try {
-            await axios.put(`/api/academy-types/questions/${questionId}`, { question: updatedQuestion })
+            await axios.put(
+                `/api/academy-types/questions/${questionId}`,
+                { question: updatedQuestion },
+                {
+                    headers: { Authorization: `Bearer ${accessToken}` }
+                }
+            )
             setNotificationText('Question updated successfully.')
             setNotificationOpen(true)
             fetchAcademyTypes()
@@ -161,6 +209,37 @@ const AcademyTypePage = () => {
             console.error('Error updating question:', error)
             setNotificationText('Failed to update question.')
             setNotificationOpen(true)
+        }
+    }
+
+    const handleUpdateAcademyType = async (typeId: string | number, updates: Partial<AcademyType>) => {
+        try {
+            await axios.put(`/api/academy-types/${typeId}`, updates, {
+                headers: { Authorization: `Bearer ${accessToken}` }
+            })
+            setNotificationText('Academy type updated successfully.')
+            setNotificationOpen(true)
+            fetchAcademyTypes()
+
+            // Clear the local edited emails for this type
+            setEditedAllowedUserEmails((prev) => {
+                const updated = { ...prev }
+                delete updated[typeId]
+                return updated
+            })
+        } catch (error) {
+            console.error('Error updating academy type:', error)
+            setNotificationText('Failed to update academy type.')
+            setNotificationOpen(true)
+        }
+    }
+
+    // Handler for the Apply button to update allowed user emails
+    const handleApplyAllowedUserEmails = (typeId: string | number) => {
+        const emails = editedAllowedUserEmails[typeId]
+        if (emails !== undefined) {
+            const allowedUserEmails = emails.split(',').map((email) => email.trim())
+            handleUpdateAcademyType(typeId, { allowedUserEmails })
         }
     }
 
@@ -206,13 +285,50 @@ const AcademyTypePage = () => {
                         placeholder="Description"
                         value={newAcademyType.description}
                         onChange={(e) => {
-                            setNewAcademyType({ ...newAcademyType, description: e.target.value })
+                            setNewAcademyType({
+                                ...newAcademyType,
+                                description: e.target.value
+                            })
                             autoResize(e)
                         }}
                         inputClassName="!resize-none"
                         className="!m-0 !p-0"
                         onInput={autoResize}
                     />
+                    {/* Toggle for Restrict Access */}
+                    <ListItem
+                        title="Restrict Access"
+                        after={
+                            <Toggle
+                                checked={newAcademyType.restricted}
+                                onChange={(e) =>
+                                    setNewAcademyType({
+                                        ...newAcademyType,
+                                        restricted: e.target.checked
+                                    })
+                                }
+                            />
+                        }
+                    />
+                    {/* Input field for allowed user emails */}
+                    {newAcademyType.restricted && (
+                        <ListInput
+                            label="Allowed User Emails"
+                            type="textarea"
+                            outline
+                            placeholder="Enter emails separated by commas"
+                            value={newAcademyType.allowedUserEmails.join(', ')}
+                            onChange={(e) =>
+                                setNewAcademyType({
+                                    ...newAcademyType,
+                                    allowedUserEmails: e.target.value.split(',').map((email) => email.trim())
+                                })
+                            }
+                            inputClassName="!resize-none"
+                            className="!m-0 !p-0"
+                            onInput={autoResize}
+                        />
+                    )}
                 </List>
                 <Button rounded onClick={handleCreateAcademyType}>
                     Create Academy Type
@@ -228,6 +344,52 @@ const AcademyTypePage = () => {
                     <p>
                         Description: <strong>{academyType.description}</strong>
                     </p>
+
+                    {/* Toggle for Restricted */}
+                    <List className="!m-0 !p-0">
+                        <ListItem
+                            title="Restricted"
+                            className="!m-0 !p-0"
+                            after={
+                                <Toggle
+                                    checked={academyType.restricted}
+                                    onChange={(e) =>
+                                        handleUpdateAcademyType(academyType.id, {
+                                            restricted: e.target.checked
+                                        })
+                                    }
+                                />
+                            }
+                        />
+                    </List>
+                    {/* If restricted, show allowed user emails */}
+                    {academyType.restricted && (
+                        <List className="!m-0 !p-0">
+                            <ListInput
+                                label="Allowed User Emails"
+                                type="textarea"
+                                outline
+                                placeholder="Enter emails separated by commas"
+                                value={
+                                    editedAllowedUserEmails[academyType.id] !== undefined
+                                        ? editedAllowedUserEmails[academyType.id]
+                                        : academyType.allowedUsers.map((user) => user.email).join(', ')
+                                }
+                                onChange={(e) =>
+                                    setEditedAllowedUserEmails({
+                                        ...editedAllowedUserEmails,
+                                        [academyType.id]: e.target.value
+                                    })
+                                }
+                                inputClassName="!resize-none"
+                                className="!m-0 !p-0"
+                                onInput={autoResize}
+                            />
+                            <Button className="text-xs mt-2" rounded onClick={() => handleApplyAllowedUserEmails(academyType.id)}>
+                                Apply
+                            </Button>
+                        </List>
+                    )}
 
                     <h3 className="text-center font-bold mt-4">Initial Questions</h3>
 

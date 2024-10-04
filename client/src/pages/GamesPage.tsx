@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Page, BlockTitle, Button, Dialog } from 'konsta/react'
+import { Page, BlockTitle, Button, Dialog, ListInput, List } from 'konsta/react'
 import Navbar from '../components/common/Navbar'
 import Sidebar from '../components/common/Sidebar'
 import BottomTabBar from '../components/BottomTabBar'
@@ -190,7 +190,9 @@ export default function GamesPage() {
                     >
                         <div className="p-0">
                             <p>Share this link with your friends:</p>
-                            <div className="w-full border border-gray-300 rounded mt-2 p-2 bg-white dark:bg-gray-800">{referralLink}</div>
+                            <List className="!m-0 !p-0">
+                                <ListInput outline type="text" value={referralLink} readOnly className="w-full !m-0 !p-0 border border-gray-300 rounded mt-2" />
+                            </List>
                             <div className="flex flex-col space-y-2 mt-2">
                                 <Button
                                     outline
@@ -228,7 +230,11 @@ export default function GamesPage() {
                                 outline
                                 rounded
                                 onClick={() => setActiveTaskTab('repeated')}
-                                className={`${activeTaskTab === 'repeated' ? 'active-gradient shadow-lg' : 'default-gradient shadow-lg'} rounded-full text-xs`}
+                                className={`${
+                                    activeTaskTab === 'repeated'
+                                        ? 'bg-gray-100 dark:bg-gray-800 k-color-brand-purple shadow-lg'
+                                        : 'bg-white dark:bg-gray-900 shadow-lg'
+                                } rounded-full text-xs`}
                                 style={{
                                     color: '#fff'
                                 }}
@@ -239,7 +245,11 @@ export default function GamesPage() {
                                 outline
                                 rounded
                                 onClick={() => setActiveTaskTab('onetime')}
-                                className={`${activeTaskTab === 'onetime' ? 'active-gradient shadow-lg' : 'default-gradient shadow-lg'} rounded-full text-xs`}
+                                className={`${
+                                    activeTaskTab === 'onetime'
+                                        ? 'bg-gray-100 dark:bg-gray-800 k-color-brand-purple shadow-lg'
+                                        : 'bg-white dark:bg-gray-900 shadow-lg'
+                                } rounded-full text-xs`}
                                 style={{
                                     color: '#fff'
                                 }}

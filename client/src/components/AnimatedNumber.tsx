@@ -28,7 +28,7 @@ function AnimatedNumber({ target, duration, onComplete }: AnimatedNumberProps) {
         }, 50)
 
         return () => clearInterval(interval)
-    }, [target, duration, onComplete])
+    }, [target, duration]) // Removed 'onComplete' from dependencies
 
     return <div>{number}</div>
 }

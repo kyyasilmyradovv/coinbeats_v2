@@ -29,6 +29,8 @@ import AddQuestsPage from './pages/AddQuestsPage'
 import EditAcademyPage from './pages/EditAcademyPage'
 import AddVideoLessonsPage from './pages/AddVideoLessonsPage'
 import AllocateXpPage from './pages/AllocateXpPage'
+import AcademyManagementPage from './pages/AcademyManagementPage'
+import AcademyDetailPage from './pages/AcademyDetailPage'
 import { BookmarkProvider } from './contexts/BookmarkContext'
 import { useInitData } from '@telegram-apps/sdk-react'
 import useSessionStore from './store/useSessionStore'
@@ -62,7 +64,6 @@ function RootComponent() {
 
     const location = useLocation()
 
-    // Ensure all hooks are called before any conditional returns
     const inIFrame = window.parent !== window
 
     useLayoutEffect(() => {
@@ -75,7 +76,6 @@ function RootComponent() {
         }
     }, [theme])
 
-    // Ensure dark mode class is synchronized with state
     useLayoutEffect(() => {
         if (darkMode) {
             document.documentElement.classList.add('dark')
@@ -96,34 +96,36 @@ function RootComponent() {
             routeStartTime = now
         }
 
+        console.log('This is the init data object', initData)
+
         const initializeUserSession = async () => {
             try {
                 if (initData && initData.user) {
                     const telegramUserId = initData.user.id
                     const username = initData.user.username || 'Guest'
 
-                    // Get referralCode from URL
-                    const queryParams = new URLSearchParams(window.location.search)
-                    const referralCode = queryParams.get('referralCode')
+                    // Get referralCode from initData.startParam
+                    const referralCode = initData.startParam || null
 
                     try {
                         const response = await axios.get(`/api/users/${telegramUserId}`)
 
                         if (response.status === 200 && response.data) {
-                            const { id, name, email, role, totalPoints, points, bookmarks, academies, emailConfirmed } = response.data
+                            const { id, name, email, role, totalPoints, points, bookmarkedAcademies, academies, emailConfirmed } = response.data
                             const hasAcademy = academies && academies.length > 0
 
                             setUser({
                                 userId: id,
-                                username: username,
+                                username: name,
                                 email: email,
                                 emailConfirmed: emailConfirmed,
                                 role: role,
                                 totalPoints: totalPoints,
                                 points: points || [],
-                                bookmarks: bookmarks || [],
-                                token: null, // Assuming token is handled elsewhere
-                                hasAcademy: hasAcademy
+                                bookmarks: bookmarkedAcademies || [],
+                                token: null,
+                                hasAcademy: hasAcademy,
+                                referralPointsAwarded: 0 // No referral points since user already exists
                             })
                         } else {
                             // User not found, register
@@ -132,12 +134,13 @@ function RootComponent() {
                                 username,
                                 referralCode
                             })
-                            const userData = registerResponse.data
+
+                            const { user: userData, pointsAwardedToUser } = registerResponse.data
                             const hasAcademy = userData.academies && userData.academies.length > 0
 
                             setUser({
                                 userId: userData.id,
-                                username: userData.username,
+                                username: userData.name,
                                 email: userData.email,
                                 emailConfirmed: userData.emailConfirmed,
                                 role: userData.role,
@@ -145,7 +148,8 @@ function RootComponent() {
                                 points: userData.points || [],
                                 bookmarks: userData.bookmarkedAcademies || [],
                                 token: null,
-                                hasAcademy: hasAcademy
+                                hasAcademy: hasAcademy,
+                                referralPointsAwarded: pointsAwardedToUser || 0
                             })
                         }
                     } catch (error) {
@@ -156,12 +160,13 @@ function RootComponent() {
                                 username,
                                 referralCode
                             })
-                            const userData = registerResponse.data
+
+                            const { user: userData, pointsAwardedToUser } = registerResponse.data
                             const hasAcademy = userData.academies && userData.academies.length > 0
 
                             setUser({
                                 userId: userData.id,
-                                username: userData.username,
+                                username: userData.name,
                                 email: userData.email,
                                 emailConfirmed: userData.emailConfirmed,
                                 role: userData.role,
@@ -169,7 +174,8 @@ function RootComponent() {
                                 points: userData.points || [],
                                 bookmarks: userData.bookmarkedAcademies || [],
                                 token: null,
-                                hasAcademy: hasAcademy
+                                hasAcademy: hasAcademy,
+                                referralPointsAwarded: pointsAwardedToUser || 0
                             })
                         } else {
                             console.error('Error fetching user:', error)
@@ -184,7 +190,8 @@ function RootComponent() {
                                 points: [],
                                 bookmarks: [],
                                 token: null,
-                                hasAcademy: false
+                                hasAcademy: false,
+                                referralPointsAwarded: 0
                             })
                         }
                     }
@@ -213,7 +220,8 @@ function RootComponent() {
                         points: [],
                         bookmarks: [],
                         token: null,
-                        hasAcademy: false
+                        hasAcademy: false,
+                        referralPointsAwarded: 0
                     })
                 }
             } catch (e) {
@@ -229,7 +237,8 @@ function RootComponent() {
                     points: [],
                     bookmarks: [],
                     token: null,
-                    hasAcademy: false
+                    hasAcademy: false,
+                    referralPointsAwarded: 0
                 })
             } finally {
                 setIsLoading(false)
@@ -307,6 +316,22 @@ function RootComponent() {
                             element={
                                 <RouteGuard requiredRole="SUPERADMIN">
                                     <UserDetailPage />
+                                </RouteGuard>
+                            }
+                        />
+                        <Route
+                            path="/academy-management"
+                            element={
+                                <RouteGuard requiredRole="SUPERADMIN">
+                                    <AcademyManagementPage />
+                                </RouteGuard>
+                            }
+                        />
+                        <Route
+                            path="/academy/:academyId"
+                            element={
+                                <RouteGuard requiredRole="SUPERADMIN">
+                                    <AcademyDetailPage />
                                 </RouteGuard>
                             }
                         />

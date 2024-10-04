@@ -57,6 +57,9 @@ const Sidebar: React.FC = () => {
                         <Button raised rounded onClick={() => handleNavigation('/user-management')}>
                             User Management
                         </Button>
+                        <Button raised rounded onClick={() => handleNavigation('/academy-management')}>
+                            Academy Management
+                        </Button>
                         <Button raised rounded onClick={() => handleNavigation('/academy-statistics')}>
                             Academy Statistics
                         </Button>

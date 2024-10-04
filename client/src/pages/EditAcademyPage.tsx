@@ -56,6 +56,14 @@ const EditAcademyPage: React.FC = () => {
                 setPrefilledAcademyData(response.data)
             } catch (error) {
                 console.error('Error fetching academy data:', error)
+                // Handle the error, perhaps redirect or show a message
+                if (error.response && error.response.status === 403) {
+                    // User is not authorized to access this academy
+                    alert('You are not authorized to access this academy.')
+                    navigate('/my-academies') // Redirect to another page
+                } else {
+                    alert('An error occurred while fetching the academy data.')
+                }
             } finally {
                 setLoading(false)
             }

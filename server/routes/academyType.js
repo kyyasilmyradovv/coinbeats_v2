@@ -16,7 +16,12 @@ const asyncHandler = require('express-async-handler');
 const router = express.Router();
 
 // Adjusted GET route to be publicly accessible
-router.get('/', asyncHandler(getAllAcademyTypes));
+router.get(
+  '/',
+  authenticateToken,
+  authorizeRoles('CREATOR', 'ADMIN', 'SUPERADMIN'),
+  asyncHandler(getAllAcademyTypes)
+);
 
 // Other routes remain protected
 router.post(

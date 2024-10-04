@@ -1,24 +1,26 @@
 // src/pages/HomePage.tsx
 
-import React, { useMemo, useState, useEffect } from 'react'
+import React, { useMemo, useState, useEffect, useRef } from 'react'
 import { initUtils } from '@telegram-apps/sdk'
 import axios from '../api/axiosInstance'
 import { useNavigate } from 'react-router-dom'
 import useCategoryChainStore from '../store/useCategoryChainStore'
 import Navbar from '../components/common/Navbar'
 import Sidebar from '../components/common/Sidebar'
-import { Page, List, ListInput, Card, Button, Dialog, Link, Block, Searchbar } from 'konsta/react'
+import { Page, List, ListInput, Card, Button, Dialog, Searchbar } from 'konsta/react'
 import { MdBookmarks } from 'react-icons/md'
-import { FaTelegramPlane } from 'react-icons/fa'
+import { FaTelegramPlane, FaTimes } from 'react-icons/fa'
 import useSessionStore from '../store/useSessionStore'
-import useUserStore from '~/store/useUserStore'
+import useUserStore from '../store/useUserStore'
 import treasure from '../images/treasure1.png'
 import coins from '../images/coin-stack.png'
 import NewIcon from '../images/new.png'
 import AnimatedNumber from '../components/AnimatedNumber'
-import bunnyImage from '../images/bunny-head.png'
+import Lottie from 'react-lottie'
+import bunnyAnimationData from '../animations/bunny.json'
+import coinsCreditedAnimationData from '../animations/coins-credited.json'
 
-export default function HomePage({ theme, setTheme, setColorTheme }) {
+export default function HomePage() {
     const navigate = useNavigate()
     const [category, setCategory] = useState('')
     const [chain, setChain] = useState('')
@@ -33,7 +35,11 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
     const [searchQuery, setSearchQuery] = useState('')
     const [loginStreakData, setLoginStreakData] = useState(null)
     const [showLoginStreakDialog, setShowLoginStreakDialog] = useState(false)
+    const [showReferralPointsDialog, setShowReferralPointsDialog] = useState(false)
     const [animationComplete, setAnimationComplete] = useState(false)
+
+    // Added useRef to ensure the login streak is handled only once
+    const loginStreakHandled = useRef(false)
 
     const handleAction = (task) => {
         if (task.verificationMethod === 'INVITE_TELEGRAM_FRIEND') {
@@ -55,18 +61,40 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
                     console.error('Error fetching user data:', error)
                 })
         }
-        // ... handle other methods
+        // ... handle other methods if any
     }
 
-    const { bookmarks, setBookmarks, userId, role, totalPoints, points, setUser } = useUserStore((state) => ({
-        bookmarks: state.bookmarks,
-        setBookmarks: state.setBookmarks,
-        userId: state.userId,
-        role: state.role,
-        points: state.points,
-        totalPoints: state.totalPoints,
-        setUser: state.setUser
-    }))
+    const bunnyAnimation = {
+        loop: true,
+        autoplay: true,
+        animationData: bunnyAnimationData,
+        rendererSettings: {
+            preserveAspectRatio: 'xMidYMid slice'
+        }
+    }
+
+    const coinsCreditedAnimation = {
+        loop: true,
+        autoplay: true,
+        animationData: coinsCreditedAnimationData,
+        rendererSettings: {
+            preserveAspectRatio: 'xMidYMid slice'
+        }
+    }
+
+    const { bookmarks, setBookmarks, userId, role, totalPoints, points, setUser, referralPointsAwarded, resetReferralPointsAwarded } = useUserStore(
+        (state) => ({
+            bookmarks: state.bookmarks,
+            setBookmarks: state.setBookmarks,
+            userId: state.userId,
+            role: state.role,
+            points: state.points,
+            totalPoints: state.totalPoints,
+            setUser: state.setUser,
+            referralPointsAwarded: state.referralPointsAwarded,
+            resetReferralPointsAwarded: state.resetReferralPointsAwarded
+        })
+    )
 
     const { telegramUserId } = useSessionStore((state) => ({
         telegramUserId: state.userId
@@ -77,6 +105,40 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
         chains: state.chains,
         fetchCategoriesAndChains: state.fetchCategoriesAndChains
     }))
+
+    const handleLoginStreak = async () => {
+        try {
+            const response = await axios.post('/api/users/handle-login-streak')
+            const { userVerification, point } = response.data
+
+            // Update user points
+            setUser((prevState) => ({
+                ...prevState,
+                totalPoints: prevState.totalPoints + point.value,
+                points: [...prevState.points, point]
+            }))
+
+            // Show the streak dialog
+            setLoginStreakData(userVerification)
+            setShowLoginStreakDialog(true)
+        } catch (error) {
+            console.error('Error handling login streak:', error)
+        }
+    }
+
+    useEffect(() => {
+        if (!loginStreakHandled.current) {
+            loginStreakHandled.current = true
+
+            if (referralPointsAwarded && referralPointsAwarded > 0) {
+                // Show referral points dialog
+                setShowReferralPointsDialog(true)
+            } else {
+                // Proceed to login streak
+                handleLoginStreak()
+            }
+        }
+    }, [referralPointsAwarded])
 
     useEffect(() => {
         const fetchHomepageTasks = async () => {
@@ -122,29 +184,6 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
         }
     }, [userId, setBookmarks])
 
-    useEffect(() => {
-        const handleLoginStreak = async () => {
-            try {
-                const response = await axios.post('/api/users/handle-login-streak')
-                const { userVerification, point } = response.data
-
-                // Update user points
-                setUser((prevState) => ({
-                    totalPoints: prevState.totalPoints + point.value,
-                    points: [...prevState.points, point]
-                }))
-
-                // Show the streak dialog
-                setLoginStreakData(userVerification)
-                setShowLoginStreakDialog(true)
-            } catch (error) {
-                console.error('Error handling login streak:', error)
-            }
-        }
-
-        handleLoginStreak()
-    }, [setUser])
-
     const isBookmarked = (academyId) => {
         return Array.isArray(bookmarks) ? bookmarks.some((bookmark) => bookmark.id === academyId) : false
     }
@@ -162,7 +201,7 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
         if (activeFilter === 'new') data = data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
         if (activeFilter === 'topRated') data = data.sort((a, b) => b.xp - a.xp)
         return data
-    }, [category, chain, searchQuery, activeFilter, academies, points]) // Added points to dependencies
+    }, [category, chain, searchQuery, activeFilter, academies, points])
 
     const constructImageUrl = (url) => {
         return `https://subscribes.lt/${url}`
@@ -229,7 +268,7 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
                         <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-1 flex flex-row items-center px-2 m-2 border border-gray-300 dark:border-gray-600 h-12 ml-4 justify-between">
                             {/* "Your Coins" card */}
                             <img src={treasure} className="h-8 w-8 mr-2" alt="Treasure box" />
-                            <div className="text-md font-bold text-black dark:text-white flex flex-grow w-full text-end">{totalPoints}</div>
+                            <div className="text-md font-bold text-black dark:text-white flex flex-grow w-full text-end mr-2">{totalPoints}</div>
                         </div>
 
                         {tasks.length > 0 && (
@@ -297,30 +336,66 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
                         </div>
                     </Dialog>
 
+                    {/* Referral Points Dialog */}
+                    {showReferralPointsDialog && (
+                        <Dialog
+                            opened={showReferralPointsDialog}
+                            onBackdropClick={() => {
+                                setShowReferralPointsDialog(false)
+                                resetReferralPointsAwarded()
+                                handleLoginStreak()
+                            }}
+                            className="!m-0 !p-0 !rounded-2xl !bg-opacity-80"
+                        >
+                            <div className="p-0 relative">
+                                <button
+                                    className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+                                    onClick={() => {
+                                        setShowReferralPointsDialog(false)
+                                        resetReferralPointsAwarded()
+                                        handleLoginStreak()
+                                    }}
+                                >
+                                    <FaTimes size={20} />
+                                </button>
+                                <div className="text-md font-bold text-center mt-4">Your referred points</div>
+                                <Lottie options={coinsCreditedAnimation} height={200} width={200} />
+                                <div className="flex mt-4 mb-2 text-2xl font-bold items-end justify-center">
+                                    <span className="mr-1">+</span>
+                                    <AnimatedNumber target={referralPointsAwarded} duration={2000} onComplete={() => setAnimationComplete(true)} />
+                                    <img src={coins} className={`h-8 w-8 ml-2 ${animationComplete ? 'animate-zoom' : 'animate-coin-spin'}`} alt="Coin" />
+                                </div>
+                            </div>
+                        </Dialog>
+                    )}
+
+                    {/* Login Streak Dialog */}
                     {showLoginStreakDialog && (
                         <Dialog
                             opened={showLoginStreakDialog}
                             onBackdropClick={() => setShowLoginStreakDialog(false)}
-                            title="Daily Login Streak (1.5x)"
-                            className="!m-0 !p-0 !rounded-2xl"
+                            className="!m-0 !p-0 !rounded-2xl !bg-opacity-80"
                         >
-                            <div className="p-0">
-                                <img src={bunnyImage} alt="Bunny" className="w-16 h-16 mx-auto mb-8 mt-6" />
+                            <div className="p-0 relative">
+                                <button className="absolute top-2 right-2 text-gray-500 hover:text-gray-700" onClick={() => setShowLoginStreakDialog(false)}>
+                                    <FaTimes size={20} />
+                                </button>
+                                <div className="text-md font-bold text-center mt-4">Daily Login Streak (1.5x)</div>
+                                <Lottie options={bunnyAnimation} height={200} width={200} />
                                 <div className="flex flex-col items-center">
-                                    <div className="rounded-full bg-gradient-to-r from-yellow-700 to-yellow-600 p-2">
+                                    {/* Updated styles for the "Day" circle */}
+                                    <div className="rounded-full p-2 bg-[linear-gradient(to_left,#ff0077,#7700ff)] border-2 border-[#DE47F0]">
                                         <div className="w-12 h-12 text-center">
-                                            <div className="flex items-center justify-center text-black dark:text-white text-2xl font-bold">
-                                                {loginStreakData.streakCount}
-                                            </div>
                                             <div className="flex items-center text-center justify-center">
-                                                <div className="text-md font-bold">Day</div>
+                                                <div className="text-md font-bold text-white">Day</div>
                                             </div>
+                                            <div className="flex items-center justify-center text-white text-2xl font-bold">{loginStreakData.streakCount}</div>
                                         </div>
                                     </div>
-                                    <div className="flex mt-10 mb-2 text-2xl font-bold">
+                                    <div className="flex mt-4 mb-2 text-2xl font-bold items-end justify-center">
                                         <span className="mr-1">+</span>
                                         <AnimatedNumber target={loginStreakData.pointsAwarded} duration={2000} onComplete={() => setAnimationComplete(true)} />
-                                        <img src={coins} className={`h-8 w-8 ml-2 ${animationComplete ? 'animate-zoom' : 'animate-coin-spin'}`} alt="Coin" />
+                                        <Lottie options={coinsCreditedAnimation} height={60} width={60} />
                                     </div>
                                 </div>
                             </div>
@@ -519,7 +594,7 @@ export default function HomePage({ theme, setTheme, setColorTheme }) {
                                         <div className="flex absolute bottom-1 right-1 mr-1">
                                             👨<span className="mt-[1px] ml-1">{academy.pointCount}</span>
                                         </div>
-                                        {!isCoinbeats && new Date() - new Date(academy.createdAt) < 30 * 24 * 60 * 60 * 1000 && (
+                                        {!isCoinbeats && new Date() - new Date(academy.createdAt) < 7 * 24 * 60 * 60 * 1000 && (
                                             <img src={NewIcon} alt="New" className="absolute left-7 -bottom-2 w-7 h-7 -translate-x-8" style={{ zIndex: 10 }} />
                                         )}
                                     </Card>

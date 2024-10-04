@@ -52,13 +52,19 @@ exports.registerUser = async (req, res, next) => {
   const { telegramUserId, username, referralCode } = req.body;
 
   try {
+    console.log('Registering user with Telegram ID:', telegramUserId);
+    console.log('Referral code received:', referralCode);
+
+    // Initialize variable to track points awarded to the new user
+    let pointsAwardedToUser = 0;
+
     // Check if user already exists
     let user = await prisma.user.findUnique({
       where: { telegramUserId },
     });
 
     if (!user) {
-      // Generate a unique referral code
+      // Generate a unique referral code for the new user
       const generateReferralCode = () => crypto.randomBytes(8).toString('hex');
       const newReferralCode = generateReferralCode();
 
@@ -70,39 +76,91 @@ exports.registerUser = async (req, res, next) => {
         referralCode: newReferralCode,
       };
 
+      // Initialize referringUser variable
+      let referringUser = null;
+
       // If referral code is provided, find the referring user
       if (referralCode) {
-        const referringUser = await prisma.user.findUnique({
+        referringUser = await prisma.user.findUnique({
           where: { referralCode },
         });
         if (referringUser) {
           newUserData.referredByUserId = referringUser.id;
+          console.log('Referring user found:', referringUser.id);
+        } else {
+          console.log('No user found with referral code:', referralCode);
         }
+      } else {
+        console.log('No referral code provided.');
       }
 
       // Create the new user
       user = await prisma.user.create({
         data: newUserData,
       });
+      console.log('New user created with ID:', user.id);
 
-      // Award XP to the referring user if applicable
-      if (user.referredByUserId) {
-        const xpAwarded = 50; // Or fetch from the task definition
-        // Create Point record
-        await prisma.point.create({
-          data: {
-            userId: user.referredByUserId,
-            value: xpAwarded,
-          },
-        });
-        // Create UserVerification record
-        const verificationTask = await prisma.verificationTask.findFirst({
-          where: {
-            verificationMethod: 'INVITE_TELEGRAM_FRIEND',
-            taskType: 'PLATFORM_SPECIFIC',
-          },
-        });
-        if (verificationTask) {
+      // Find the verification task
+      const verificationTask = await prisma.verificationTask.findFirst({
+        where: {
+          verificationMethod: 'INVITE_TELEGRAM_FRIEND',
+          taskType: 'PLATFORM_SPECIFIC',
+        },
+      });
+
+      if (verificationTask) {
+        const xpAwarded = verificationTask.xp;
+        console.log('VerificationTask found:', verificationTask);
+        console.log('XP to be awarded:', xpAwarded);
+
+        // Check for special case: if the referring user is user with id 3 or referral code 'P0q6Z2t9'
+        if (
+          referringUser &&
+          (referringUser.id === 3 || referringUser.referralCode === 'P0q6Z2t9')
+        ) {
+          console.log(
+            'Special case: awarding XP to the new user instead of the referrer.'
+          );
+
+          // Award XP to the new user
+          await prisma.point.create({
+            data: {
+              userId: user.id,
+              value: xpAwarded,
+              verificationTaskId: verificationTask.id,
+            },
+          });
+          console.log('Point record created for new user.');
+
+          // Create UserVerification record for the new user
+          await prisma.userVerification.create({
+            data: {
+              userId: user.id,
+              verificationTaskId: verificationTask.id,
+              verified: true,
+              pointsAwarded: xpAwarded,
+              completedAt: new Date(),
+            },
+          });
+          console.log('UserVerification record created for new user.');
+
+          // Set points awarded to user
+          pointsAwardedToUser = xpAwarded;
+        } else if (referringUser && user.referredByUserId) {
+          // Regular case: award XP to the referring user
+          console.log('Referring user ID:', user.referredByUserId);
+
+          // Create Point record for the referring user
+          await prisma.point.create({
+            data: {
+              userId: user.referredByUserId,
+              value: xpAwarded,
+              verificationTaskId: verificationTask.id,
+            },
+          });
+          console.log('Point record created for referring user.');
+
+          // Create UserVerification record for the referring user
           await prisma.userVerification.create({
             data: {
               userId: user.referredByUserId,
@@ -112,11 +170,29 @@ exports.registerUser = async (req, res, next) => {
               completedAt: new Date(),
             },
           });
+          console.log('UserVerification record created for referring user.');
+        } else {
+          console.log('No referring user; no XP will be awarded');
         }
+      } else {
+        console.error('VerificationTask not found for INVITE_TELEGRAM_FRIEND');
       }
+    } else {
+      console.log('User already exists with Telegram ID:', telegramUserId);
     }
 
-    res.json(user);
+    // Fetch updated user data with points and bookmarks
+    const updatedUser = await prisma.user.findUnique({
+      where: { id: user.id },
+      include: {
+        points: true,
+        bookmarkedAcademies: true,
+        academies: true,
+      },
+    });
+
+    // Return the user along with points awarded to the user
+    res.json({ user: updatedUser, pointsAwardedToUser });
   } catch (error) {
     console.error('Error registering user:', error);
     next(createError(500, 'Error registering user'));

@@ -139,6 +139,25 @@
     animation: shine 5s infinite;
 }
 
+.raffles-content {
+    background: linear-gradient(to bottom right, #2d2d2f, #323281); /* Updated gradient */
+    border-radius: 0.75rem;
+    overflow: hidden;
+}
+
+.raffles-content::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.3) 50%, rgba(255, 255, 255, 0) 100%);
+    filter: blur(8px);
+    transform: rotate(45deg);
+    animation: shine 5s infinite;
+}
+
 .coinbeats-label {
     color: #fff;
     font-weight: bold;
