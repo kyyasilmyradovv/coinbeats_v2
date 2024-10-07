@@ -62,12 +62,11 @@ exports.getLeaderboard = async (req, res, next) => {
   let dateFilter = {};
 
   if (period === 'weekly') {
-    const oneWeekAgo = new Date();
-    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+    const lastSunday = getLastSunday();
 
     dateFilter = {
       createdAt: {
-        gte: oneWeekAgo,
+        gte: lastSunday,
       },
     };
   }
@@ -100,6 +99,16 @@ exports.getLeaderboard = async (req, res, next) => {
     next(createError(500, 'Internal Server Error: Error fetching leaderboard'));
   }
 };
+
+// Helper function to get last Sunday at 00:00
+function getLastSunday() {
+  const now = new Date();
+  const dayOfWeek = now.getDay(); // 0 (Sunday) to 6 (Saturday)
+  const lastSunday = new Date(now);
+  lastSunday.setDate(now.getDate() - dayOfWeek);
+  lastSunday.setHours(0, 0, 0, 0); // Set to 00:00:00
+  return lastSunday;
+}
 
 // Get user points
 exports.getUserPoints = async (req, res, next) => {

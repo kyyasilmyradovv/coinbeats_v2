@@ -13,6 +13,7 @@ import treasure from '../images/treasure1.png'
 import bunny from '../images/bunny-head.png'
 import { FaTelegramPlane } from 'react-icons/fa'
 import { initUtils } from '@telegram-apps/sdk'
+import coming from '../images/svgs/coming-soon3.svg'
 
 const PointsPage: React.FC = () => {
     const { userId, totalPoints } = useUserStore((state) => ({
@@ -29,7 +30,8 @@ const PointsPage: React.FC = () => {
     const [referralCode, setReferralCode] = useState('')
 
     const [activeTab, setActiveTab] = useState('tab-4') // Set active tab to Points
-    const [activeLeaderboardTab, setActiveLeaderboardTab] = useState('overall') // Updated to handle three tabs
+    const [activeLeaderboardTab, setActiveLeaderboardTab] = useState('weekly') // Set default tab to 'weekly' so Scholarships is active
+    const [visibleTooltip, setVisibleTooltip] = useState(false) // State for tooltip visibility
 
     const { telegramUserId } = useSessionStore((state) => ({
         telegramUserId: state.userId
@@ -42,6 +44,9 @@ const PointsPage: React.FC = () => {
     const constructImageUrl = (url) => {
         return `https://subscribes.lt/${url}`
     }
+
+    const [startOfWeek, setStartOfWeek] = useState<Date | null>(null)
+    const [endOfWeek, setEndOfWeek] = useState<Date | null>(null)
 
     // Fetch user points breakdown using the new API
     const fetchUserPoints = async () => {
@@ -92,6 +97,27 @@ const PointsPage: React.FC = () => {
         }
 
         fetchTasks()
+    }, [])
+
+    // Compute start and end of the week
+    useEffect(() => {
+        function getWeekStartAndEndDates() {
+            const now = new Date()
+            const dayOfWeek = now.getDay() // 0 (Sunday) to 6 (Saturday)
+            const lastSunday = new Date(now)
+            lastSunday.setDate(now.getDate() - dayOfWeek)
+            lastSunday.setHours(0, 0, 0, 0) // Set to 00:00:00
+
+            const nextSaturday = new Date(lastSunday)
+            nextSaturday.setDate(lastSunday.getDate() + 6)
+            nextSaturday.setHours(23, 59, 59, 999)
+
+            return { startOfWeek: lastSunday, endOfWeek: nextSaturday }
+        }
+
+        const { startOfWeek, endOfWeek } = getWeekStartAndEndDates()
+        setStartOfWeek(startOfWeek)
+        setEndOfWeek(endOfWeek)
     }, [])
 
     const handleAction = (task) => {
@@ -147,7 +173,7 @@ const PointsPage: React.FC = () => {
                 <div className="relative z-10">
                     {/* Treasure and Task Cards */}
                     <div className="flex flex-row justify-center items-center mt-4">
-                        <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-1 flex flex-row items-center px-2 m-2 border border-gray-300 dark:border-gray-600 h-12 ml-4 justify-between">
+                        <div className="pr-2 bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-1 flex flex-row items-center px-2 m-2 border border-gray-300 dark:border-gray-600 h-12 ml-4 justify-between">
                             {/* "Your Coins" card */}
                             <img src={treasure} className="h-8 w-8 mr-2" alt="Treasure box" />
                             <div className="text-md font-bold text-black dark:text-white flex flex-grow w-full text-end">{totalPoints}</div>
@@ -220,6 +246,20 @@ const PointsPage: React.FC = () => {
 
                     {/* Tabs for Leaderboards */}
                     <div className="flex justify-center gap-2 mt-4 mx-4 relative z-10">
+                        {/* Scholarships Button (now first) */}
+                        <div className="relative coinbeats-background rounded-full text-xs w-full p-[2px]">
+                            <Button
+                                outline
+                                rounded
+                                onClick={() => setActiveLeaderboardTab('weekly')}
+                                className={`coinbeats-content rounded-full text-xs coinbeats-background !border-none !h-6`}
+                                style={{
+                                    color: '#fff'
+                                }}
+                            >
+                                Scholarships
+                            </Button>
+                        </div>
                         <Button
                             outline
                             rounded
@@ -238,21 +278,6 @@ const PointsPage: React.FC = () => {
                         <Button
                             outline
                             rounded
-                            onClick={() => setActiveLeaderboardTab('weekly')}
-                            className={`${
-                                activeLeaderboardTab === 'weekly'
-                                    ? 'bg-gray-100 dark:bg-gray-800 k-color-brand-purple shadow-lg'
-                                    : 'bg-white dark:bg-gray-900 shadow-lg'
-                            } rounded-full text-xs`}
-                            style={{
-                                color: '#fff'
-                            }}
-                        >
-                            Weekly
-                        </Button>
-                        <Button
-                            outline
-                            rounded
                             onClick={() => setActiveLeaderboardTab('stats')}
                             className={`${
                                 activeLeaderboardTab === 'stats'
@@ -267,12 +292,39 @@ const PointsPage: React.FC = () => {
                         </Button>
                     </div>
 
+                    {/* Scholarships Info */}
+                    {activeLeaderboardTab === 'weekly' && (
+                        <div className="text-center mt-2">
+                            <img src={coming} alt="Coming Soon" className="h-16 rotate-[3deg] mx-auto" />
+                            <p className="text-sm font-bold text-white flex items-center justify-center">
+                                Weekly Scholarships for Top 3: 3x100 USDC
+                                <button
+                                    className="ml-2 rounded-full bg-gray-700 text-white text-xs font-bold w-5 h-5 flex items-center justify-center"
+                                    onClick={() => setVisibleTooltip(!visibleTooltip)}
+                                >
+                                    ?
+                                </button>
+                            </p>
+                            {visibleTooltip && (
+                                <div className="tooltip relative bg-gray-700 text-white text-xs rounded-2xl p-4 mt-2 mx-auto w-11/12 max-w-md">
+                                    <p>
+                                        Weekly Scholarships are won by users who collect the most points during the week. In case of equal points, raffle
+                                        decides who wins the reward. Snapshot is taken every Sunday, 23.00 CET.
+                                    </p>
+                                    <button className="absolute top-0 right-0 text-white text-sm mt-1 mr-1" onClick={() => setVisibleTooltip(false)}>
+                                        &times;
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
                     <div className="flex flex-col px-4 mt-4">
                         {/* Render content based on activeLeaderboardTab */}
                         {activeLeaderboardTab === 'overall' && (
                             <>
                                 {/* Overall Leaderboard Card */}
-                                <Card className="!mb-2 !p-0 !rounded-2xl shadow-lg !mx-2 relative border border-gray-300 dark:border-gray-600 max-h-80 overflow-y-auto">
+                                <Card className="!mb-2 !p-0 !rounded-2xl shadow-lg !mx-2 relative border border-gray-300 dark:border-gray-600">
                                     <div className="flex justify-between">
                                         <h2 className="text-sm font-bold mb-2 text-center">Overall Leaderboard</h2>
                                         <h2 className="text-sm font-bold mb-2 text-center">Points</h2>
@@ -296,9 +348,17 @@ const PointsPage: React.FC = () => {
                         {activeLeaderboardTab === 'weekly' && (
                             <>
                                 {/* Weekly Leaderboard Card */}
-                                <Card className="!mb-2 !p-0 !rounded-2xl shadow-lg !mx-2 relative border border-gray-300 dark:border-gray-600 max-h-80 overflow-y-auto">
+                                <Card className="!mb-2 !p-0 !rounded-2xl shadow-lg !mx-2 !mt-0 relative border border-gray-300 dark:border-gray-600">
+                                    {/* Date Range */}
                                     <div className="flex justify-between">
                                         <h2 className="text-sm font-bold mb-2 text-center">Weekly Leaderboard</h2>
+                                        <div className="text-2xs text-gray-400">
+                                            {startOfWeek && endOfWeek && (
+                                                <span>
+                                                    {startOfWeek.toLocaleDateString()} - {endOfWeek.toLocaleDateString()}
+                                                </span>
+                                            )}
+                                        </div>
                                         <h2 className="text-sm font-bold mb-2 text-center">Points</h2>
                                     </div>
                                     {weeklyLeaderboard.map((user, index) => (
@@ -330,9 +390,9 @@ const PointsPage: React.FC = () => {
                                                 ) : point.verificationTask?.platform === 'X' ? (
                                                     <img src={ximage} alt="X Platform" className="h-5 w-5" />
                                                 ) : point.verificationTask?.platform === 'NONE' ? (
-                                                    <img src={coinStack} alt="X Platform" className="h-5 w-5" />
+                                                    <img src={coinStack} alt="Coins" className="h-5 w-5" />
                                                 ) : point.verificationTask?.verificationMethod === 'INVITE_TELEGRAM_FRIEND' ? (
-                                                    <img src={bunny} alt="X Platform" className="h-5 w-5" />
+                                                    <img src={bunny} alt="Bunny" className="h-5 w-5" />
                                                 ) : null}
                                             </div>
                                             <div className="flex flex-row justify-between w-full">

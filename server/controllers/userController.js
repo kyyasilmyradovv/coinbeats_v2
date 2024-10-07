@@ -136,9 +136,12 @@ exports.deleteUser = async (req, res, next) => {
 };
 
 exports.getUserByTelegramId = async (req, res, next) => {
-  const telegramUserId = parseInt(req.params.telegramUserId, 10);
+  let telegramUserId = req.params.telegramUserId;
   try {
     console.log('Fetching user with Telegram ID:', telegramUserId);
+
+    // Convert telegramUserId to BigInt
+    telegramUserId = BigInt(telegramUserId);
 
     const user = await prisma.user.findUnique({
       where: { telegramUserId },
@@ -149,7 +152,7 @@ exports.getUserByTelegramId = async (req, res, next) => {
     });
 
     if (!user) {
-      console.log('User not found:', telegramUserId);
+      console.log('User not found:', telegramUserId.toString());
       return next(createError(404, 'User not found'));
     }
 
@@ -159,7 +162,14 @@ exports.getUserByTelegramId = async (req, res, next) => {
     );
     const hasAcademy = user.academies.length > 0;
 
-    res.json({ ...user, totalPoints, hasAcademy });
+    const response = {
+      ...user,
+      totalPoints,
+      hasAcademy,
+    };
+
+    // Simply use res.json; middleware will handle BigInt serialization
+    res.json(response);
   } catch (error) {
     console.error('Error fetching user:', error);
     next(createError(500, 'Error fetching user'));
@@ -184,8 +194,11 @@ exports.updateUserRole = async (req, res, next) => {
 
 exports.registerCreator = async (req, res, next) => {
   try {
-    const { telegramUserId, name, email, password } = req.body;
+    let { telegramUserId, name, email, password } = req.body;
     console.log('Starting registration process...');
+
+    // Convert telegramUserId to BigInt
+    telegramUserId = BigInt(telegramUserId);
 
     // Check if a creator with the same email already exists
     const existingCreator = await prisma.user.findFirst({
@@ -203,7 +216,7 @@ exports.registerCreator = async (req, res, next) => {
     if (user && user.role === 'CREATOR') {
       console.log(
         'User already exists with Telegram ID and is a creator:',
-        telegramUserId
+        telegramUserId.toString()
       );
       return res
         .status(400)
@@ -234,7 +247,7 @@ exports.registerCreator = async (req, res, next) => {
       });
       console.log(
         'User role upgraded to CREATOR with updated email and password:',
-        telegramUserId
+        telegramUserId.toString()
       );
 
       const confirmationUrl = `${process.env.BACKEND_URL}/api/email/confirm-email?token=${emailConfirmationToken}`;
@@ -507,7 +520,11 @@ exports.completeVerificationTask = async (req, res, next) => {
 
 exports.getCurrentUser = async (req, res, next) => {
   try {
-    const { telegramUserId } = req.user;
+    let { telegramUserId } = req.user;
+
+    // Convert telegramUserId to BigInt
+    telegramUserId = BigInt(telegramUserId);
+
     const user = await prisma.user.findUnique({
       where: { telegramUserId },
     });
@@ -523,16 +540,19 @@ exports.getCurrentUser = async (req, res, next) => {
 };
 
 exports.handleLoginStreak = async (req, res, next) => {
-  const telegramUserId = req.headers['x-telegram-user-id'];
+  const telegramUserIdHeader = req.headers['x-telegram-user-id'];
 
-  if (!telegramUserId) {
+  if (!telegramUserIdHeader) {
     return next(createError(400, 'Telegram User ID is required'));
   }
 
   try {
+    // Convert telegramUserId to BigInt
+    const telegramUserId = BigInt(telegramUserIdHeader);
+
     // Find the user by telegramUserId
     const user = await prisma.user.findUnique({
-      where: { telegramUserId: parseInt(telegramUserId, 10) },
+      where: { telegramUserId },
     });
 
     if (!user) {

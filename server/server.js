@@ -3,6 +3,7 @@
 const path = require('path');
 const dotenv = require('dotenv');
 const express = require('express');
+const bigIntMiddleware = require('./middleware/bigIntMiddleware');
 const cors = require('cors');
 const createError = require('http-errors');
 
@@ -37,6 +38,9 @@ const PORT = process.env.PORT || 4000;
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Custom middleware
+app.use(bigIntMiddleware);
 
 // Route configuration
 app.use('/api/auth', authRoutes);

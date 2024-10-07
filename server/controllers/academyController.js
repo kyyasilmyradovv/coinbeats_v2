@@ -479,6 +479,17 @@ exports.updateAcademy = async (req, res, next) => {
       data: dataToUpdate,
     });
 
+    // If the xp field was updated, reallocate XP
+    if (xp !== undefined) {
+      try {
+        // Reallocate XP among questions and quests
+        await allocateXp(parseInt(id, 10), parseInt(xp, 10));
+      } catch (allocationError) {
+        console.error('Error allocating XP:', allocationError);
+        // Optionally handle allocation errors (e.g., rollback transaction)
+      }
+    }
+
     // Handle initialAnswers (academyQuestions)
     if (parsedInitialAnswers !== undefined) {
       for (const initialAnswer of parsedInitialAnswers) {
@@ -1154,7 +1165,7 @@ exports.submitQuizAnswers = async (req, res, next) => {
 
 exports.checkAnswer = async (req, res, next) => {
   const { academyId, questionId, choiceId } = req.body;
-  const telegramUserId = req.user
+  let telegramUserId = req.user
     ? req.user.telegramUserId
     : req.body.telegramUserId;
 
@@ -1165,16 +1176,19 @@ exports.checkAnswer = async (req, res, next) => {
   }
 
   try {
+    // Convert telegramUserId to BigInt
+    telegramUserId = BigInt(telegramUserId);
+
     // Check if the user exists by telegramUserId
     let user = await prisma.user.findUnique({
-      where: { telegramUserId },
+      where: { telegramUserId: telegramUserId },
     });
 
     // If the user doesn't exist, create a new user
     if (!user) {
       user = await prisma.user.create({
         data: {
-          telegramUserId,
+          telegramUserId: telegramUserId,
           role: 'USER',
           name: '',
         },
@@ -1186,9 +1200,9 @@ exports.checkAnswer = async (req, res, next) => {
     // Check if the user has already submitted an answer for this question
     const existingResponse = await prisma.userResponse.findFirst({
       where: {
-        userId,
+        userId: userId,
         choice: {
-          academyQuestionId: questionId,
+          academyQuestionId: parseInt(questionId, 10),
         },
       },
     });
@@ -1202,7 +1216,7 @@ exports.checkAnswer = async (req, res, next) => {
     // Find the correct choice for the question
     const correctChoice = await prisma.choice.findFirst({
       where: {
-        academyQuestionId: questionId,
+        academyQuestionId: parseInt(questionId, 10),
         isCorrect: true,
       },
     });
@@ -1214,11 +1228,11 @@ exports.checkAnswer = async (req, res, next) => {
     }
 
     // Check if the user's choice is correct
-    const isCorrect = correctChoice.id === choiceId;
+    const isCorrect = correctChoice.id === parseInt(choiceId, 10);
 
     // Get the maximum points for the question
     const question = await prisma.academyQuestion.findUnique({
-      where: { id: questionId },
+      where: { id: parseInt(questionId, 10) },
       select: { xp: true },
     });
 
@@ -1233,7 +1247,7 @@ exports.checkAnswer = async (req, res, next) => {
 exports.saveUserResponse = async (req, res, next) => {
   const { academyId, questionId, choiceId, isCorrect, pointsAwarded } =
     req.body;
-  const telegramUserId = req.user
+  let telegramUserId = req.user
     ? req.user.telegramUserId
     : req.body.telegramUserId;
 
@@ -1244,16 +1258,19 @@ exports.saveUserResponse = async (req, res, next) => {
   }
 
   try {
+    // Convert telegramUserId to BigInt
+    telegramUserId = BigInt(telegramUserId);
+
     // Check if the user exists by telegramUserId
     let user = await prisma.user.findUnique({
-      where: { telegramUserId },
+      where: { telegramUserId: telegramUserId },
     });
 
     // If the user doesn't exist, create a new user
     if (!user) {
       user = await prisma.user.create({
         data: {
-          telegramUserId,
+          telegramUserId: telegramUserId,
           role: 'USER',
           name: '',
         },
@@ -1265,9 +1282,9 @@ exports.saveUserResponse = async (req, res, next) => {
     // Check if the user has already submitted an answer for this question
     const existingResponse = await prisma.userResponse.findFirst({
       where: {
-        userId,
+        userId: userId,
         choice: {
-          academyQuestionId: questionId,
+          academyQuestionId: parseInt(questionId, 10),
         },
       },
     });
@@ -1281,10 +1298,10 @@ exports.saveUserResponse = async (req, res, next) => {
     // Save the user's response with points
     await prisma.userResponse.create({
       data: {
-        userId,
-        choiceId,
-        isCorrect,
-        pointsAwarded,
+        userId: userId,
+        choiceId: parseInt(choiceId, 10),
+        isCorrect: isCorrect,
+        pointsAwarded: pointsAwarded,
       },
     });
 

@@ -14,15 +14,18 @@ exports.logSession = async (req, res, next) => {
       routeDurations,
     } = req.body;
 
-    // Debugging: log incoming request data
-    console.log('Received session data:', req.body);
+    // Convert telegramUserId to BigInt
+    const telegramUserIdBigInt = BigInt(telegramUserId);
 
     // Validate and parse dates
     const parsedSessionStart = new Date(sessionStart);
     const parsedSessionEnd = new Date(sessionEnd);
 
     // Check if dates are valid
-    if (isNaN(parsedSessionStart.getTime()) || isNaN(parsedSessionEnd.getTime())) {
+    if (
+      isNaN(parsedSessionStart.getTime()) ||
+      isNaN(parsedSessionEnd.getTime())
+    ) {
       return next(createError(400, 'Invalid date format'));
     }
 
@@ -34,7 +37,7 @@ exports.logSession = async (req, res, next) => {
     // Create a new session log entry in the database
     const sessionLog = await prisma.sessionLog.create({
       data: {
-        telegramUserId,
+        telegramUserId: telegramUserIdBigInt,
         sessionStart: parsedSessionStart,
         sessionEnd: parsedSessionEnd,
         duration,

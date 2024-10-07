@@ -231,7 +231,7 @@ model SessionLog {
   duration       Int
   routeDurations Json
   createdAt      DateTime @default(now())
-  telegramUserId Int
+  telegramUserId BigInt
   user           User?    @relation(fields: [userId], references: [id])
 }
 

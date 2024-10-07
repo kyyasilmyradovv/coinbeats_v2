@@ -140,7 +140,7 @@ export default function BookmarksPage() {
                                         rounded
                                         large
                                         outline
-                                        className={`ml-1 font-bold text-2xs shadow-lg !w-18 !h-6 !px-2 !py-1 !mb-1 right-0 ${
+                                        className={`ml-1 font-bold text-2xs shadow-lg !w-20 !whitespace-nowrap !h-6 !px-2 !py-1 !mb-1 right-0 ${
                                             academy.inMyRaffles ? '!border-blue-400' : ''
                                         }`}
                                         style={{
@@ -150,7 +150,7 @@ export default function BookmarksPage() {
                                             color: '#fff'
                                         }}
                                     >
-                                        {academy.inMyRaffles ? '5 tickets' : 'Join'}
+                                        {academy.inMyRaffles ? '5 Entries' : 'Join'}
                                     </Button>
                                     <div className="text-sm font-bold flex items-center">
                                         <img src={moneyBag} className="h-6 w-6 mr-1" alt="Money bag icon" /> {academy.reward}

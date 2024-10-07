@@ -9,53 +9,58 @@ const prisma = new PrismaClient();
  * This function is called when the client connects to the SSE endpoint.
  */
 exports.emailConfirmationStatus = async (req, res, next) => {
-    const userId = req.query.userId;
+  let { userId } = req.query;
 
-    if (!userId) {
-        return next(createError(400, 'User ID is required.'));
-    }
+  if (!userId) {
+    return next(createError(400, 'User ID is required.'));
+  }
 
-    // Set headers for SSE
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
+  // Convert userId to BigInt
+  userId = BigInt(userId);
 
-    // Flush headers to establish SSE connection
-    res.flushHeaders();
+  // Set headers for SSE
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
 
-    const intervalId = setInterval(async () => {
-        try {
-            // Fetch user from database
-            const user = await prisma.user.findUnique({
-                where: { telegramUserId: Number(userId) }
-            });
+  // Flush headers to establish SSE connection
+  res.flushHeaders();
 
-            if (!user) {
-                clearInterval(intervalId);
-                res.write(`data: ${JSON.stringify({ error: 'User not found' })}\n\n`);
-                res.end();  // Close the SSE connection
-                return;
-            }
+  const intervalId = setInterval(async () => {
+    try {
+      // Fetch user from database
+      const user = await prisma.user.findUnique({
+        where: { telegramUserId: userId },
+      });
 
-            if (user.emailConfirmed) {
-                // Send email confirmation status to the client
-                res.write(`data: ${JSON.stringify({ emailConfirmed: true })}\n\n`);
-                clearInterval(intervalId);
-                res.end();  // Close the SSE connection
-            }
-        } catch (error) {
-            console.error('Error checking email confirmation:', error);
-
-            // Send error message via SSE
-            res.write(`data: ${JSON.stringify({ error: 'Failed to fetch user data' })}\n\n`);
-            clearInterval(intervalId);
-            res.end();  // Close the SSE connection
-        }
-    }, 1000);  // Check every second
-
-    // Handle connection close
-    req.on('close', () => {
+      if (!user) {
         clearInterval(intervalId);
-        res.end();
-    });
+        res.write(`data: ${JSON.stringify({ error: 'User not found' })}\n\n`);
+        res.end(); // Close the SSE connection
+        return;
+      }
+
+      if (user.emailConfirmed) {
+        // Send email confirmation status to the client
+        res.write(`data: ${JSON.stringify({ emailConfirmed: true })}\n\n`);
+        clearInterval(intervalId);
+        res.end(); // Close the SSE connection
+      }
+    } catch (error) {
+      console.error('Error checking email confirmation:', error);
+
+      // Send error message via SSE
+      res.write(
+        `data: ${JSON.stringify({ error: 'Failed to fetch user data' })}\n\n`
+      );
+      clearInterval(intervalId);
+      res.end(); // Close the SSE connection
+    }
+  }, 1000); // Check every second
+
+  // Handle connection close
+  req.on('close', () => {
+    clearInterval(intervalId);
+    res.end();
+  });
 };

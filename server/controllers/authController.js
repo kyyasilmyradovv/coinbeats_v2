@@ -49,11 +49,14 @@ exports.refreshToken = async (req, res) => {
 };
 
 exports.registerUser = async (req, res, next) => {
-  const { telegramUserId, username, referralCode } = req.body;
+  let { telegramUserId, username, referralCode } = req.body;
 
   try {
     console.log('Registering user with Telegram ID:', telegramUserId);
     console.log('Referral code received:', referralCode);
+
+    // Convert telegramUserId to BigInt
+    telegramUserId = BigInt(telegramUserId);
 
     // Initialize variable to track points awarded to the new user
     let pointsAwardedToUser = 0;

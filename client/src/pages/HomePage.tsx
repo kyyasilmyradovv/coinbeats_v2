@@ -358,7 +358,7 @@ export default function HomePage() {
                                 >
                                     <FaTimes size={20} />
                                 </button>
-                                <div className="text-md font-bold text-center mt-4">Your referred points</div>
+                                <div className="text-md font-bold text-center mt-4">Your special link bonus</div>
                                 <Lottie options={coinsCreditedAnimation} height={200} width={200} />
                                 <div className="flex mt-4 mb-2 text-2xl font-bold items-end justify-center">
                                     <span className="mr-1">+</span>
