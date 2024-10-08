@@ -1,6 +1,7 @@
 // server/controllers/authController.js
 
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 const { PrismaClient } = require('@prisma/client');
 const { generateAccessToken, generateRefreshToken } = require('../utils/jwt');
 const createError = require('http-errors');
@@ -8,6 +9,9 @@ const crypto = require('crypto');
 
 const prisma = new PrismaClient();
 const SALT_ROUNDS = 10;
+const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
+const JWT_REFRESH_SECRET =
+  process.env.JWT_REFRESH_SECRET || 'your_jwt_refresh_secret';
 
 exports.login = async (req, res) => {
   const { email, password } = req.body;
@@ -20,8 +24,19 @@ exports.login = async (req, res) => {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
 
-    const accessToken = generateAccessToken(user);
-    const refreshToken = generateRefreshToken(user);
+    const tokenPayload = {
+      id: user.id.toString(),
+      roles: user.roles, // Include roles array
+      telegramUserId: user.telegramUserId
+        ? user.telegramUserId.toString()
+        : null,
+      email: user.email,
+    };
+
+    const accessToken = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: '1h' });
+    const refreshToken = jwt.sign(tokenPayload, JWT_REFRESH_SECRET, {
+      expiresIn: '7d',
+    });
 
     console.log('Tokens generated for user:', user.id);
     res.json({ accessToken, refreshToken });
@@ -42,8 +57,18 @@ exports.refreshToken = async (req, res) => {
       return res.sendStatus(403);
     }
 
-    const newAccessToken = generateAccessToken(user);
-    console.log('Access token refreshed for user:', user.userId);
+    const tokenPayload = {
+      id: user.id,
+      roles: user.roles, // Include roles array
+      telegramUserId: user.telegramUserId,
+      email: user.email,
+    };
+
+    // No need to convert to strings here because they are already strings in the token
+    const newAccessToken = jwt.sign(tokenPayload, JWT_SECRET, {
+      expiresIn: '1h',
+    });
+    console.log('Access token refreshed for user:', user.id);
     res.json({ accessToken: newAccessToken });
   });
 };
@@ -75,7 +100,7 @@ exports.registerUser = async (req, res, next) => {
       const newUserData = {
         telegramUserId,
         name: username,
-        role: 'USER',
+        roles: ['USER'], // Initialize roles as ['USER']
         referralCode: newReferralCode,
       };
 

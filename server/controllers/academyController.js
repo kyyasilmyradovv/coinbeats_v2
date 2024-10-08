@@ -87,7 +87,7 @@ exports.createAcademy = async (req, res, next) => {
       academyTypeId,
     } = req.body;
 
-    const { userId } = req.user;
+    const { id: userId, roles } = req.user;
 
     // Handle file uploads
     const logoUrl = handleFileUpload(req.files, 'logo');
@@ -244,7 +244,7 @@ exports.createBasicAcademy = async (req, res, next) => {
       academyTypeId,
     } = req.body;
 
-    const { userId } = req.user;
+    const { id: userId, roles } = req.user;
 
     // Handle file uploads
     const logoUrl = handleFileUpload(req.files, 'logo');
@@ -598,7 +598,7 @@ exports.updateAcademy = async (req, res, next) => {
 
 exports.listMyAcademies = async (req, res, next) => {
   try {
-    const { userId } = req.user;
+    const { id: userId } = req.user;
 
     const academies = await prisma.academy.findMany({
       where: { creatorId: userId },
@@ -625,7 +625,7 @@ exports.listMyAcademies = async (req, res, next) => {
 
 exports.getAcademyDetails = async (req, res, next) => {
   const { id } = req.params;
-  const { userId, role } = req.user; // Get userId and role from the request
+  const { id: userId, roles } = req.user; // Get userId and roles from the request
   try {
     const academy = await prisma.academy.findUnique({
       where: { id: parseInt(id, 10) },
@@ -672,8 +672,8 @@ exports.getAcademyDetails = async (req, res, next) => {
     // Authorization check: Allow access only if the user is the creator or has an admin role
     if (
       academy.creatorId !== userId &&
-      role !== 'ADMIN' &&
-      role !== 'SUPERADMIN'
+      !roles.includes('ADMIN') &&
+      !roles.includes('SUPERADMIN')
     ) {
       return next(
         createError(403, 'You are not authorized to access this academy')
@@ -1007,8 +1007,6 @@ exports.allocateXp = async (req, res, next) => {
   }
 };
 
-// server/controllers/academyController.js
-
 exports.getAllAcademies = async (req, res, next) => {
   try {
     const academies = await prisma.academy.findMany({
@@ -1189,7 +1187,7 @@ exports.checkAnswer = async (req, res, next) => {
       user = await prisma.user.create({
         data: {
           telegramUserId: telegramUserId,
-          role: 'USER',
+          roles: ['USER'],
           name: '',
         },
       });
@@ -1271,7 +1269,7 @@ exports.saveUserResponse = async (req, res, next) => {
       user = await prisma.user.create({
         data: {
           telegramUserId: telegramUserId,
-          role: 'USER',
+          roles: ['USER'],
           name: '',
         },
       });

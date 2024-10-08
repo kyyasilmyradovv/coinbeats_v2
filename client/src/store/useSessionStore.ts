@@ -1,4 +1,4 @@
-// src/store/useSessionStore.ts
+// client/src/store/useSessionStore.ts
 
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
@@ -10,7 +10,7 @@ interface SessionState {
     routeDurations: Record<string, number>
     userId: number | null
     username: string
-    roles: string[]
+    roles: string[] // Updated to handle multiple roles
     currentRoute: string
     darkMode: boolean
     theme: string

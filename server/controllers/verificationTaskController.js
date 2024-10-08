@@ -38,12 +38,26 @@ exports.createVerificationTask = async (req, res, next) => {
         return next(createError(404, 'Academy not found'));
       }
 
-      if (academy.creatorId !== req.user.userId) {
+      if (
+        academy.creatorId !== req.user.id &&
+        !req.user.roles.includes('ADMIN') &&
+        !req.user.roles.includes('SUPERADMIN')
+      ) {
         return next(
           createError(
             403,
             'You are not authorized to add tasks to this academy'
           )
+        );
+      }
+    } else {
+      // For platform-specific tasks, only ADMIN or SUPERADMIN can create
+      if (
+        !req.user.roles.includes('ADMIN') &&
+        !req.user.roles.includes('SUPERADMIN')
+      ) {
+        return next(
+          createError(403, 'You are not authorized to create platform tasks')
         );
       }
     }
@@ -76,12 +90,15 @@ exports.getVerificationTasks = async (req, res, next) => {
   try {
     let verificationTasks;
 
-    if (req.user.role === 'ADMIN' || req.user.role === 'SUPERADMIN') {
+    if (
+      req.user.roles.includes('ADMIN') ||
+      req.user.roles.includes('SUPERADMIN')
+    ) {
       // For platform-specific tasks
       verificationTasks = await prisma.verificationTask.findMany({
         where: { taskType: 'PLATFORM_SPECIFIC' },
       });
-    } else if (req.user.role === 'CREATOR') {
+    } else if (req.user.roles.includes('CREATOR')) {
       // For academy-specific tasks, only for the creator's academies
       const academies = await prisma.academy.findMany({
         where: { creatorId: req.user.id },
@@ -166,15 +183,18 @@ exports.updateVerificationTask = async (req, res, next) => {
 
       if (
         academy.creatorId !== req.user.id &&
-        req.user.role !== 'ADMIN' &&
-        req.user.role !== 'SUPERADMIN'
+        !req.user.roles.includes('ADMIN') &&
+        !req.user.roles.includes('SUPERADMIN')
       ) {
         return next(
           createError(403, 'You are not authorized to update this task')
         );
       }
     } else {
-      if (req.user.role !== 'ADMIN' && req.user.role !== 'SUPERADMIN') {
+      if (
+        !req.user.roles.includes('ADMIN') &&
+        !req.user.roles.includes('SUPERADMIN')
+      ) {
         return next(
           createError(403, 'You are not authorized to update this task')
         );
@@ -224,15 +244,18 @@ exports.deleteVerificationTask = async (req, res, next) => {
 
       if (
         academy.creatorId !== req.user.id &&
-        req.user.role !== 'ADMIN' &&
-        req.user.role !== 'SUPERADMIN'
+        !req.user.roles.includes('ADMIN') &&
+        !req.user.roles.includes('SUPERADMIN')
       ) {
         return next(
           createError(403, 'You are not authorized to delete this task')
         );
       }
     } else {
-      if (req.user.role !== 'ADMIN' && req.user.role !== 'SUPERADMIN') {
+      if (
+        !req.user.roles.includes('ADMIN') &&
+        !req.user.roles.includes('SUPERADMIN')
+      ) {
         return next(
           createError(403, 'You are not authorized to delete this task')
         );
@@ -278,7 +301,7 @@ exports.getTasksForGamesPage = async (req, res, next) => {
   }
 };
 
-TODO: exports.getTasksForHomepage = async (req, res, next) => {
+exports.getTasksForHomepage = async (req, res, next) => {
   try {
     const tasks = await prisma.verificationTask.findMany({
       where: {

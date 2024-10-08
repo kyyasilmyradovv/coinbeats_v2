@@ -1,3 +1,5 @@
+// client/src/store/useAuthStore.ts
+
 import { create } from 'zustand'
 import axios from '../api/axiosInstance'
 import { jwtDecode } from 'jwt-decode'
@@ -7,7 +9,7 @@ import { devtools } from 'zustand/middleware'
 interface AuthState {
     accessToken: string | null
     refreshToken: string | null
-    userRole: string | null
+    userRoles: string[] // Updated to an array of strings
     login: (email: string, password: string) => Promise<void>
     logout: () => void
     refreshAccessToken: () => Promise<void>
@@ -20,7 +22,7 @@ const useAuthStore = create<AuthState>()(
         (set) => ({
             accessToken: null,
             refreshToken: null,
-            userRole: null,
+            userRoles: [], // Initialize as an empty array
 
             // Login method to authenticate user
             login: async (email, password) => {
@@ -30,14 +32,14 @@ const useAuthStore = create<AuthState>()(
                     const { accessToken, refreshToken } = response.data
                     const decodedToken: any = jwtDecode(accessToken)
 
-                    console.log('Login successful, setting tokens and role.')
-                    set({ accessToken, refreshToken, userRole: decodedToken.role })
+                    console.log('Login successful, setting tokens and roles.')
+                    set({ accessToken, refreshToken, userRoles: decodedToken.roles || [] })
                     localStorage.setItem('accessToken', accessToken)
                     localStorage.setItem('refreshToken', refreshToken)
 
                     console.log('Access Token:', accessToken)
                     console.log('Refresh Token:', refreshToken)
-                    console.log('User Role:', decodedToken.role)
+                    console.log('User Roles:', decodedToken.roles)
                 } catch (error) {
                     console.error('Login failed:', error)
                     throw new Error('Login failed')
@@ -47,7 +49,7 @@ const useAuthStore = create<AuthState>()(
             // Logout method to clear tokens and user info
             logout: () => {
                 console.log('Logging out and clearing tokens...')
-                set({ accessToken: null, refreshToken: null, userRole: null })
+                set({ accessToken: null, refreshToken: null, userRoles: [] })
                 localStorage.removeItem('accessToken')
                 localStorage.removeItem('refreshToken')
             },
@@ -63,13 +65,15 @@ const useAuthStore = create<AuthState>()(
 
                     if (!accessToken) throw new Error('No access token returned from refresh.')
 
-                    set({ accessToken })
+                    const decodedToken: any = jwtDecode(accessToken)
+
+                    set({ accessToken, userRoles: decodedToken.roles || [] })
                     localStorage.setItem('accessToken', accessToken)
 
                     console.log('Access token refreshed:', accessToken)
                 } catch (error) {
                     console.error('Token refresh failed, logging out user:', error)
-                    set({ accessToken: null, refreshToken: null, userRole: null })
+                    set({ accessToken: null, refreshToken: null, userRoles: [] })
                     localStorage.removeItem('accessToken')
                     localStorage.removeItem('refreshToken')
 
@@ -90,12 +94,12 @@ const useAuthStore = create<AuthState>()(
                         set({
                             accessToken,
                             refreshToken,
-                            userRole: decodedToken.role
+                            userRoles: decodedToken.roles || []
                         })
                         console.log('Initialized auth state from localStorage.')
                     } catch (error) {
                         console.error('Error decoding token:', error)
-                        set({ accessToken: null, refreshToken: null, userRole: null })
+                        set({ accessToken: null, refreshToken: null, userRoles: [] })
                         localStorage.removeItem('accessToken')
                         localStorage.removeItem('refreshToken')
                     }

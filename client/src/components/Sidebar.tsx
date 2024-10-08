@@ -8,8 +8,8 @@ import useSessionStore from '../store/useSessionStore'
 
 const Sidebar: React.FC = () => {
     const navigate = useNavigate()
-    const { role, sidebarOpened, toggleSidebar, setUser } = useUserStore((state) => ({
-        role: state.role,
+    const { roles, sidebarOpened, toggleSidebar, setUser } = useUserStore((state) => ({
+        roles: state.roles,
         sidebarOpened: state.sidebarOpened,
         toggleSidebar: state.toggleSidebar,
         setUser: state.setUser
@@ -46,80 +46,61 @@ const Sidebar: React.FC = () => {
         toggleSidebar()
     }
 
+    // Define role-based menu items
+    const roleMenuItems = {
+        SUPERADMIN: [
+            { label: 'Dashboard', path: '/superadmin-dashboard' },
+            { label: 'User Management', path: '/user-management' },
+            { label: 'Academy Management', path: '/academy-management' },
+            { label: 'Academy Statistics', path: '/academy-statistics' },
+            { label: 'Academy Types', path: '/academy-types' },
+            { label: 'Add Categories and Chains', path: '/add-categories-chains' },
+            { label: 'Add Platform Tasks', path: '/add-platform-tasks' },
+            { label: 'Inbox', path: '/inbox' },
+            { label: 'Subscription Management', path: '/subscription-management' }
+        ],
+        ADMIN: [
+            { label: 'Admin Dashboard', path: '/admin-dashboard' },
+            { label: 'User Management', path: '/user-management' },
+            { label: 'Inbox', path: '/inbox' }
+        ],
+        CREATOR: [
+            { label: 'Creator Dashboard', path: '/creator-dashboard' },
+            { label: 'Create Academy', path: '/create-academy' },
+            { label: 'My Academies', path: '/my-academies' },
+            { label: 'User Profile', path: '/user-profile' },
+            { label: 'Academy Statistics', path: '/academy-statistics' },
+            { label: 'Inbox', path: '/inbox' }
+        ]
+        // Add other roles if needed
+    }
+
     const renderRoleBasedLinks = () => {
-        switch (role) {
-            case 'SUPERADMIN':
-                return (
-                    <>
-                        <Button raised rounded onClick={() => handleNavigation('/superadmin-dashboard')}>
-                            Dashboard
-                        </Button>
-                        <Button raised rounded onClick={() => handleNavigation('/user-management')}>
-                            User Management
-                        </Button>
-                        <Button raised rounded onClick={() => handleNavigation('/academy-management')}>
-                            Academy Management
-                        </Button>
-                        <Button raised rounded onClick={() => handleNavigation('/academy-statistics')}>
-                            Academy Statistics
-                        </Button>
-                        <Button raised rounded onClick={() => handleNavigation('/academy-types')}>
-                            Academy types
-                        </Button>
-                        <Button raised rounded onClick={() => handleNavigation('/add-categories-chains')}>
-                            Add categories and chains
-                        </Button>
-                        <Button raised rounded onClick={() => handleNavigation('/add-platform-tasks')}>
-                            Add platform tasks
-                        </Button>
-                        <Button raised rounded onClick={() => handleNavigation('/inbox')}>
-                            Inbox
-                        </Button>
-                        <Button raised rounded onClick={() => handleNavigation('/subscription-management')}>
-                            Subscription Management
-                        </Button>
-                    </>
-                )
-            case 'ADMIN':
-                return (
-                    <>
-                        <Button raised rounded onClick={() => handleNavigation('/admin-dashboard')}>
-                            Admin Dashboard
-                        </Button>
-                        <Button raised rounded onClick={() => handleNavigation('/user-management')}>
-                            User Management
-                        </Button>
-                        <Button raised rounded onClick={() => handleNavigation('/inbox')}>
-                            Inbox
-                        </Button>
-                    </>
-                )
-            case 'CREATOR':
-                return (
-                    <>
-                        <Button raised rounded onClick={() => handleNavigation('/creator-dashboard')}>
-                            Creator Dashboard
-                        </Button>
-                        <Button raised rounded onClick={() => handleNavigation('/create-academy')}>
-                            Create Academy
-                        </Button>
-                        <Button raised rounded onClick={() => handleNavigation('/my-academies')}>
-                            My Academies
-                        </Button>
-                        <Button raised rounded onClick={() => handleNavigation('/user-profile')}>
-                            User Profile
-                        </Button>
-                        <Button raised rounded onClick={() => handleNavigation('/academy-statistics')}>
-                            Academy Statistics
-                        </Button>
-                        <Button raised rounded onClick={() => handleNavigation('/inbox')}>
-                            Inbox
-                        </Button>
-                    </>
-                )
-            default:
-                return null // Other roles or default case
+        if (!roles || roles.length === 0) {
+            return null
         }
+
+        const menuItems = []
+
+        roles.forEach((role) => {
+            const items = roleMenuItems[role]
+            if (items) {
+                menuItems.push(...items)
+            }
+        })
+
+        // Remove duplicates based on the path
+        const uniqueMenuItems = Array.from(new Set(menuItems.map((item) => item.path))).map((path) => menuItems.find((item) => item.path === path))
+
+        return (
+            <>
+                {uniqueMenuItems.map((item, index) => (
+                    <Button key={index} raised rounded onClick={() => handleNavigation(item.path)}>
+                        {item.label}
+                    </Button>
+                ))}
+            </>
+        )
     }
 
     return (
@@ -129,7 +110,7 @@ const Sidebar: React.FC = () => {
                     <BlockTitle className="mb-1">Connect your TON Wallet</BlockTitle>
                     <TonConnectButton className="mx-auto" />
 
-                    <BlockTitle>Theme</BlockTitle>
+                    {/* <BlockTitle>Theme</BlockTitle>
                     <List strong inset>
                         <ListItem label title="iOS Theme" media={<Radio onChange={() => setTheme('ios')} component="div" checked={theme === 'ios'} />} />
                         <ListItem
@@ -208,7 +189,7 @@ const Sidebar: React.FC = () => {
                                 <span className="bg-brand-purple w-6 h-6 rounded-full" />
                             </Link>
                         </div>
-                    </Popover>
+                    </Popover> */}
 
                     {/* Render role-based links */}
                     <Block className="space-y-2">{renderRoleBasedLinks()}</Block>

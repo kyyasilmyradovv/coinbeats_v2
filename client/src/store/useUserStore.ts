@@ -10,7 +10,7 @@ interface UserState {
     username: string
     email: string
     emailConfirmed: boolean
-    role: UserRole
+    roles: UserRole[]
     totalPoints: number
     points: any[]
     bookmarks: Array<any>
@@ -18,7 +18,7 @@ interface UserState {
     token: string | null
     hasAcademy: boolean
     sidebarOpened: boolean
-    referralPointsAwarded: number // Added this line
+    referralPointsAwarded: number
 
     setUser: (update: Partial<UserState> | ((state: UserState) => Partial<UserState>)) => void
 
@@ -29,7 +29,7 @@ interface UserState {
         username: string
         email: string
         emailConfirmed: boolean
-        role: UserRole
+        roles: UserRole[]
         totalPoints: number
         points: any[]
         bookmarks: Array<any>
@@ -38,11 +38,11 @@ interface UserState {
     }) => void
 
     logoutUser: () => void
-    updateUserRole: (role: UserRole) => void
+    updateUserRoles: (roles: UserRole[]) => void
 
     toggleSidebar: () => void
 
-    resetReferralPointsAwarded: () => void // Added this function
+    resetReferralPointsAwarded: () => void
 }
 
 const useUserStore = create<UserState>()(
@@ -51,7 +51,7 @@ const useUserStore = create<UserState>()(
         username: '',
         email: '',
         emailConfirmed: false,
-        role: 'USER',
+        roles: ['USER'],
         totalPoints: 100,
         points: [],
         bookmarks: [],
@@ -59,19 +59,19 @@ const useUserStore = create<UserState>()(
         token: null,
         hasAcademy: false,
         sidebarOpened: false,
-        referralPointsAwarded: 0, // Initialize to 0
+        referralPointsAwarded: 0,
 
         setUser: (update) => set((state) => (typeof update === 'function' ? { ...state, ...update(state) } : { ...state, ...update })),
 
         setBookmarks: (bookmarks) => set({ bookmarks }),
 
-        loginUser: ({ userId, username, email, emailConfirmed, role, totalPoints, points, bookmarks, token, hasAcademy }) =>
+        loginUser: ({ userId, username, email, emailConfirmed, roles, totalPoints, points, bookmarks, token, hasAcademy }) =>
             set({
                 userId,
                 username,
                 email,
                 emailConfirmed,
-                role,
+                roles,
                 totalPoints,
                 points,
                 bookmarks,
@@ -87,7 +87,7 @@ const useUserStore = create<UserState>()(
                 username: '',
                 email: '',
                 emailConfirmed: false,
-                role: 'USER',
+                roles: ['USER'],
                 totalPoints: 100,
                 points: [],
                 bookmarks: [],
@@ -98,11 +98,11 @@ const useUserStore = create<UserState>()(
                 referralPointsAwarded: 0
             }),
 
-        updateUserRole: (role) => set({ role: role || 'USER' }),
+        updateUserRoles: (roles) => set({ roles: roles.length > 0 ? roles : ['USER'] }),
 
         toggleSidebar: () => set((state) => ({ sidebarOpened: !state.sidebarOpened })),
 
-        resetReferralPointsAwarded: () => set({ referralPointsAwarded: 0 }) // Implementation
+        resetReferralPointsAwarded: () => set({ referralPointsAwarded: 0 })
     }))
 )
 

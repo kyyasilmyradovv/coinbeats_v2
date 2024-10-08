@@ -14,6 +14,8 @@ import bunny from '../images/bunny-head.png'
 import { FaTelegramPlane } from 'react-icons/fa'
 import { initUtils } from '@telegram-apps/sdk'
 import coming from '../images/svgs/coming-soon3.svg'
+import Lottie from 'react-lottie'
+import coinsEarnedAnimationData from '../animations/earned-coins.json'
 
 const PointsPage: React.FC = () => {
     const { userId, totalPoints } = useUserStore((state) => ({
@@ -47,6 +49,15 @@ const PointsPage: React.FC = () => {
 
     const [startOfWeek, setStartOfWeek] = useState<Date | null>(null)
     const [endOfWeek, setEndOfWeek] = useState<Date | null>(null)
+
+    const coinsEarnedAnimation = {
+        loop: true,
+        autoplay: true,
+        animationData: coinsEarnedAnimationData,
+        rendererSettings: {
+            preserveAspectRatio: 'xMidYMid slice'
+        }
+    }
 
     // Fetch user points breakdown using the new API
     const fetchUserPoints = async () => {
@@ -175,8 +186,12 @@ const PointsPage: React.FC = () => {
                     <div className="flex flex-row justify-center items-center mt-4">
                         <div className="pr-2 bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-1 flex flex-row items-center px-2 m-2 border border-gray-300 dark:border-gray-600 h-12 ml-4 justify-between">
                             {/* "Your Coins" card */}
-                            <img src={treasure} className="h-8 w-8 mr-2" alt="Treasure box" />
-                            <div className="text-md font-bold text-black dark:text-white flex flex-grow w-full text-end">{totalPoints}</div>
+                            <div className="w-10 h-10">
+                                <Lottie options={coinsEarnedAnimation} height={40} width={40} />
+                            </div>
+                            <div className="mt-1 text-md font-bold text-black dark:text-white flex flex-grow w-full text-end pr-2 items-center">
+                                {totalPoints}
+                            </div>
                         </div>
 
                         {tasks.length > 0 && (
@@ -190,7 +205,7 @@ const PointsPage: React.FC = () => {
                                     outline
                                     rounded
                                     onClick={() => handleAction(tasks[0])}
-                                    className="!text-2xs !w-fit !border-blue-400 !font-bold whitespace-nowrap mr-2 !px-2 !py-0"
+                                    className="!text-2xs !w-28 !h-6 !border-blue-400 !font-bold whitespace-nowrap mr-2 !px-2 !py-0"
                                     style={{
                                         background: 'linear-gradient(to left, #16a34a, #3b82f6)',
                                         color: '#fff'
@@ -252,7 +267,7 @@ const PointsPage: React.FC = () => {
                                 outline
                                 rounded
                                 onClick={() => setActiveLeaderboardTab('weekly')}
-                                className={`coinbeats-content rounded-full text-xs coinbeats-background !border-none !h-6`}
+                                className={`coinbeats-content rounded-full text-xs coinbeats-background !border-none !h-6 !px-2`}
                                 style={{
                                     color: '#fff'
                                 }}

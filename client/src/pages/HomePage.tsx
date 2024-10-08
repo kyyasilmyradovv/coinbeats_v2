@@ -19,6 +19,7 @@ import AnimatedNumber from '../components/AnimatedNumber'
 import Lottie from 'react-lottie'
 import bunnyAnimationData from '../animations/bunny.json'
 import coinsCreditedAnimationData from '../animations/coins-credited.json'
+import coinsEarnedAnimationData from '../animations/earned-coins.json'
 
 export default function HomePage() {
     const navigate = useNavigate()
@@ -82,19 +83,36 @@ export default function HomePage() {
         }
     }
 
-    const { bookmarks, setBookmarks, userId, role, totalPoints, points, setUser, referralPointsAwarded, resetReferralPointsAwarded } = useUserStore(
-        (state) => ({
-            bookmarks: state.bookmarks,
-            setBookmarks: state.setBookmarks,
-            userId: state.userId,
-            role: state.role,
-            points: state.points,
-            totalPoints: state.totalPoints,
-            setUser: state.setUser,
-            referralPointsAwarded: state.referralPointsAwarded,
-            resetReferralPointsAwarded: state.resetReferralPointsAwarded
-        })
-    )
+    const coinsEarnedAnimation = {
+        loop: true,
+        autoplay: true,
+        animationData: coinsEarnedAnimationData,
+        rendererSettings: {
+            preserveAspectRatio: 'xMidYMid slice'
+        }
+    }
+
+    const {
+        bookmarks,
+        setBookmarks,
+        userId,
+        roles, // Updated from role to roles
+        totalPoints,
+        points,
+        setUser,
+        referralPointsAwarded,
+        resetReferralPointsAwarded
+    } = useUserStore((state) => ({
+        bookmarks: state.bookmarks,
+        setBookmarks: state.setBookmarks,
+        userId: state.userId,
+        roles: state.roles, // Updated from role to roles
+        points: state.points,
+        totalPoints: state.totalPoints,
+        setUser: state.setUser,
+        referralPointsAwarded: state.referralPointsAwarded,
+        resetReferralPointsAwarded: state.resetReferralPointsAwarded
+    }))
 
     const { telegramUserId } = useSessionStore((state) => ({
         telegramUserId: state.userId
@@ -157,7 +175,9 @@ export default function HomePage() {
         const fetchAcademies = async () => {
             try {
                 const response = await axios.get('/api/academies/academies')
-                setAcademies(response.data)
+                // Filter academies to include only those with status 'approved'
+                const approvedAcademies = response.data.filter((academy) => academy.status === 'approved')
+                setAcademies(approvedAcademies)
             } catch (error) {
                 console.error('Error fetching academies:', error)
             }
@@ -267,8 +287,10 @@ export default function HomePage() {
                     <div className="flex flex-row justify-center items-center mb-4 mt-4">
                         <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-1 flex flex-row items-center px-2 m-2 border border-gray-300 dark:border-gray-600 h-12 ml-4 justify-between">
                             {/* "Your Coins" card */}
-                            <img src={treasure} className="h-8 w-8 mr-2" alt="Treasure box" />
-                            <div className="text-md font-bold text-black dark:text-white flex flex-grow w-full text-end mr-2">{totalPoints}</div>
+                            <div className="w-10 h-10">
+                                <Lottie options={coinsEarnedAnimation} height={40} width={40} />
+                            </div>
+                            <div className="text-md font-bold text-black dark:text-white flex flex-grow w-full text-end mr-2 mt-1">{totalPoints}</div>
                         </div>
 
                         {tasks.length > 0 && (

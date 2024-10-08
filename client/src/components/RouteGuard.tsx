@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { Navigate } from 'react-router-dom'
-import useAuthStore from '../store/useAuthStore' // Ensure this is correct
+import useAuthStore from '../store/useAuthStore'
 
 interface RouteGuardProps {
     children: JSX.Element
@@ -10,9 +10,9 @@ interface RouteGuardProps {
 }
 
 const RouteGuard: React.FC<RouteGuardProps> = ({ children, requiredRole }) => {
-    const { accessToken, userRole } = useAuthStore((state) => ({
+    const { accessToken, userRoles } = useAuthStore((state) => ({
         accessToken: state.accessToken,
-        userRole: state.userRole
+        userRoles: state.userRoles
     }))
 
     if (!accessToken) {
@@ -20,9 +20,9 @@ const RouteGuard: React.FC<RouteGuardProps> = ({ children, requiredRole }) => {
         return <Navigate to="/login" replace />
     }
 
-    if (requiredRole && userRole !== requiredRole) {
+    if (requiredRole && !userRoles.includes(requiredRole)) {
         // User is authenticated but does not have the required role
-        console.log(`User role is ${userRole}, but required role is ${requiredRole}`)
+        console.log(`User roles are ${userRoles.join(', ')}, but required role is ${requiredRole}`)
         return <Navigate to="/not-authorized" replace />
     }
 

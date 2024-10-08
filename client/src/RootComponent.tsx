@@ -107,11 +107,13 @@ function RootComponent() {
                     // Get referralCode from initData.startParam
                     const referralCode = initData.startParam || null
 
+                    let userRoles: string[] = ['USER'] // Default roles
+
                     try {
                         const response = await axios.get(`/api/users/${telegramUserId}`)
 
                         if (response.status === 200 && response.data) {
-                            const { id, name, email, role, totalPoints, points, bookmarkedAcademies, academies, emailConfirmed } = response.data
+                            const { id, name, email, roles, totalPoints, points, bookmarkedAcademies, academies, emailConfirmed } = response.data
                             const hasAcademy = academies && academies.length > 0
 
                             setUser({
@@ -119,7 +121,7 @@ function RootComponent() {
                                 username: name,
                                 email: email,
                                 emailConfirmed: emailConfirmed,
-                                role: role,
+                                roles: roles,
                                 totalPoints: totalPoints,
                                 points: points || [],
                                 bookmarks: bookmarkedAcademies || [],
@@ -127,6 +129,8 @@ function RootComponent() {
                                 hasAcademy: hasAcademy,
                                 referralPointsAwarded: 0 // No referral points since user already exists
                             })
+
+                            userRoles = roles || ['USER']
                         } else {
                             // User not found, register
                             const registerResponse = await axios.post('/api/auth/register', {
@@ -143,7 +147,7 @@ function RootComponent() {
                                 username: userData.name,
                                 email: userData.email,
                                 emailConfirmed: userData.emailConfirmed,
-                                role: userData.role,
+                                roles: userData.roles,
                                 totalPoints: userData.totalPoints,
                                 points: userData.points || [],
                                 bookmarks: userData.bookmarkedAcademies || [],
@@ -151,6 +155,8 @@ function RootComponent() {
                                 hasAcademy: hasAcademy,
                                 referralPointsAwarded: pointsAwardedToUser || 0
                             })
+
+                            userRoles = userData.roles || ['USER']
                         }
                     } catch (error) {
                         if (error.response && error.response.status === 404) {
@@ -169,7 +175,7 @@ function RootComponent() {
                                 username: userData.name,
                                 email: userData.email,
                                 emailConfirmed: userData.emailConfirmed,
-                                role: userData.role,
+                                roles: userData.roles,
                                 totalPoints: userData.totalPoints,
                                 points: userData.points || [],
                                 bookmarks: userData.bookmarkedAcademies || [],
@@ -177,6 +183,8 @@ function RootComponent() {
                                 hasAcademy: hasAcademy,
                                 referralPointsAwarded: pointsAwardedToUser || 0
                             })
+
+                            userRoles = userData.roles || ['USER']
                         } else {
                             console.error('Error fetching user:', error)
                             // Set default values in case of error
@@ -185,7 +193,7 @@ function RootComponent() {
                                 username: 'Guest',
                                 email: '',
                                 emailConfirmed: false,
-                                role: 'USER',
+                                roles: ['USER'],
                                 totalPoints: 100,
                                 points: [],
                                 bookmarks: [],
@@ -193,6 +201,8 @@ function RootComponent() {
                                 hasAcademy: false,
                                 referralPointsAwarded: 0
                             })
+
+                            userRoles = ['USER']
                         }
                     }
 
@@ -201,7 +211,7 @@ function RootComponent() {
                         sessionStartTime,
                         userId: telegramUserId,
                         username: username,
-                        roles: ['USER'] // Default role
+                        roles: userRoles
                     })
 
                     routeStartTime = sessionStartTime
@@ -215,7 +225,7 @@ function RootComponent() {
                         username: 'Guest',
                         email: '',
                         emailConfirmed: false,
-                        role: 'USER',
+                        roles: ['USER'],
                         totalPoints: 100,
                         points: [],
                         bookmarks: [],
@@ -232,7 +242,7 @@ function RootComponent() {
                     username: 'Guest',
                     email: '',
                     emailConfirmed: false,
-                    role: 'USER',
+                    roles: ['USER'],
                     totalPoints: 100,
                     points: [],
                     bookmarks: [],

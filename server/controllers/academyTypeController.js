@@ -66,12 +66,12 @@ exports.createAcademyType = async (req, res, next) => {
 
 // Get all Academy Types
 exports.getAllAcademyTypes = async (req, res, next) => {
-  const { userId, role } = req.user; // Include role from the authenticated user
+  const { id: userId, roles } = req.user; // Include roles from the authenticated user
 
   try {
     let academyTypes;
 
-    if (role === 'SUPERADMIN') {
+    if (roles.includes('SUPERADMIN')) {
       // If the user is SUPERADMIN, fetch all academy types
       academyTypes = await prisma.academyType.findMany({
         include: { initialQuestions: true, allowedUsers: true },

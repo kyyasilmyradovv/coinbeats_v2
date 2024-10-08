@@ -12,6 +12,9 @@ const prisma = new PrismaClient();
 const SALT_ROUNDS = 10;
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
 
+/**
+ * Get all users with additional details.
+ */
 exports.getAllUsers = async (req, res, next) => {
   try {
     const users = await prisma.user.findMany({
@@ -36,10 +39,11 @@ exports.getAllUsers = async (req, res, next) => {
       const subscription = user.academies.find(
         (academy) => academy.subscription
       );
-      const subscriptionStatus =
-        subscription && subscription.subscription ? 'Active' : 'Inactive';
+      const subscriptionStatus = subscription ? 'Active' : 'Inactive';
       const subscriptionValidUntil =
-        subscription && subscription.subscription
+        subscription &&
+        subscription.subscription &&
+        subscription.subscription.endDate
           ? new Date(subscription.subscription.endDate).toLocaleDateString()
           : 'N/A';
 
@@ -59,6 +63,9 @@ exports.getAllUsers = async (req, res, next) => {
   }
 };
 
+/**
+ * Get user details by user ID.
+ */
 exports.getUserDetailsById = async (req, res, next) => {
   const { userId } = req.params;
 
@@ -88,7 +95,9 @@ exports.getUserDetailsById = async (req, res, next) => {
     const subscription = user.academies.find((academy) => academy.subscription);
     const subscriptionStatus = subscription ? 'Active' : 'Inactive';
     const subscriptionValidUntil =
-      subscription && subscription.subscription.endDate
+      subscription &&
+      subscription.subscription &&
+      subscription.subscription.endDate
         ? new Date(subscription.subscription.endDate).toLocaleDateString()
         : 'N/A';
 
@@ -105,14 +114,17 @@ exports.getUserDetailsById = async (req, res, next) => {
   }
 };
 
+/**
+ * Create a new user with specified roles.
+ */
 exports.createUser = async (req, res, next) => {
-  const { name, email, password, role } = req.body;
+  const { name, email, password, roles } = req.body; // 'roles' is now an array
 
   try {
     const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
 
     const user = await prisma.user.create({
-      data: { name, email, password: hashedPassword, role },
+      data: { name, email, password: hashedPassword, roles },
     });
 
     res.json(user);
@@ -122,6 +134,9 @@ exports.createUser = async (req, res, next) => {
   }
 };
 
+/**
+ * Delete a user by user ID.
+ */
 exports.deleteUser = async (req, res, next) => {
   const { userId } = req.params;
   try {
@@ -135,6 +150,9 @@ exports.deleteUser = async (req, res, next) => {
   }
 };
 
+/**
+ * Get a user by Telegram ID.
+ */
 exports.getUserByTelegramId = async (req, res, next) => {
   let telegramUserId = req.params.telegramUserId;
   try {
@@ -168,7 +186,6 @@ exports.getUserByTelegramId = async (req, res, next) => {
       hasAcademy,
     };
 
-    // Simply use res.json; middleware will handle BigInt serialization
     res.json(response);
   } catch (error) {
     console.error('Error fetching user:', error);
@@ -176,22 +193,28 @@ exports.getUserByTelegramId = async (req, res, next) => {
   }
 };
 
-exports.updateUserRole = async (req, res, next) => {
-  const { userId, newRole } = req.body;
+/**
+ * Update a user's roles.
+ */
+exports.updateUserRoles = async (req, res, next) => {
+  const { userId, newRoles } = req.body; // 'newRoles' is an array
 
   try {
     const updatedUser = await prisma.user.update({
       where: { id: userId },
-      data: { role: newRole },
+      data: { roles: { set: newRoles } },
     });
 
     res.json(updatedUser);
   } catch (error) {
-    console.error('Error updating role:', error);
-    next(createError(500, 'Error updating role'));
+    console.error('Error updating roles:', error);
+    next(createError(500, 'Error updating roles'));
   }
 };
 
+/**
+ * Register a user as a creator.
+ */
 exports.registerCreator = async (req, res, next) => {
   try {
     let { telegramUserId, name, email, password } = req.body;
@@ -202,7 +225,7 @@ exports.registerCreator = async (req, res, next) => {
 
     // Check if a creator with the same email already exists
     const existingCreator = await prisma.user.findFirst({
-      where: { email, role: 'CREATOR' },
+      where: { email, roles: { has: 'CREATOR' } },
     });
 
     if (existingCreator) {
@@ -213,7 +236,7 @@ exports.registerCreator = async (req, res, next) => {
     // Check if a user with the given telegramUserId exists
     let user = await prisma.user.findUnique({ where: { telegramUserId } });
 
-    if (user && user.role === 'CREATOR') {
+    if (user && user.roles.includes('CREATOR')) {
       console.log(
         'User already exists with Telegram ID and is a creator:',
         telegramUserId.toString()
@@ -223,7 +246,7 @@ exports.registerCreator = async (req, res, next) => {
         .json({ message: 'User with this Telegram ID is already a creator' });
     }
 
-    if (user && user.role === 'USER') {
+    if (user && user.roles.includes('USER')) {
       // Hash the new password before updating
       const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
       console.log('Password hashed successfully');
@@ -235,18 +258,20 @@ exports.registerCreator = async (req, res, next) => {
         emailConfirmationToken
       );
 
-      // Upgrade existing user role to CREATOR, update email, password, and confirmation token
+      // Upgrade existing user's roles to include 'CREATOR'
+      const updatedRoles = [...new Set([...user.roles, 'CREATOR'])];
+
       user = await prisma.user.update({
         where: { telegramUserId },
         data: {
-          role: 'CREATOR',
+          roles: { set: updatedRoles },
           email,
           password: hashedPassword,
           emailConfirmationToken,
         },
       });
       console.log(
-        'User role upgraded to CREATOR with updated email and password:',
+        'User roles updated to include CREATOR with updated email and password:',
         telegramUserId.toString()
       );
 
@@ -268,25 +293,25 @@ exports.registerCreator = async (req, res, next) => {
       console.log('Confirmation email sent upon role upgrade');
 
       return res.status(200).json({
-        message: 'User role upgraded to CREATOR. Please confirm your email.',
+        message:
+          'User roles updated to include CREATOR. Please confirm your email.',
       });
     }
 
-    // If no user exists, create a new user
+    // If no user exists, create a new user with roles 'USER' and 'CREATOR'
     const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
     console.log('Password hashed successfully');
 
     const emailConfirmationToken = crypto.randomBytes(32).toString('hex');
     console.log('Email confirmation token generated:', emailConfirmationToken);
 
-    // Create the user
     user = await prisma.user.create({
       data: {
         telegramUserId,
         name,
         email,
         password: hashedPassword,
-        role: 'CREATOR',
+        roles: ['USER', 'CREATOR'],
         emailConfirmationToken,
       },
     });
@@ -318,6 +343,9 @@ exports.registerCreator = async (req, res, next) => {
   }
 };
 
+/**
+ * Handle user interactions like bookmarking academies.
+ */
 exports.userInteraction = async (req, res, next) => {
   try {
     const { telegramUserId, action, academyId } = req.body;
@@ -333,7 +361,7 @@ exports.userInteraction = async (req, res, next) => {
         user = await prisma.user.create({
           data: {
             telegramUserId,
-            role: 'USER',
+            roles: ['USER'],
             bookmarkedAcademies: { connect: { id: parseInt(academyId, 10) } }, // Initial bookmark
           },
           include: { bookmarkedAcademies: true },
@@ -366,38 +394,9 @@ exports.userInteraction = async (req, res, next) => {
   }
 };
 
-/* exports.confirmEmail = async (req, res, next) => {
-  const { token } = req.query;
-
-  try {
-    // Log the token received for debugging purposes
-    console.log("Received token:", token);
-
-    const user = await prisma.user.findFirst({
-      where: { emailConfirmationToken: token },
-    });
-
-    if (!user) {
-      console.log("User not found for token:", token);
-      return next(createError(400, 'Invalid or expired token'));
-    }
-
-    await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        emailConfirmed: true,
-        emailConfirmationToken: null,
-      },
-    });
-
-    // Redirect to the login page with success status
-    return res.redirect(`${process.env.FRONTEND_URL}/login?status=success`);
-  } catch (error) {
-    console.error('Error confirming email:', error);
-    return res.redirect(`${process.env.FRONTEND_URL}/login?status=failure`);
-  }
-}; */
-
+/**
+ * Toggle bookmark for an academy.
+ */
 exports.toggleBookmark = async (req, res, next) => {
   const { userId } = req.user;
   const { academyId } = req.body;
@@ -429,6 +428,9 @@ exports.toggleBookmark = async (req, res, next) => {
   }
 };
 
+/**
+ * Get bookmarked academies for a user.
+ */
 exports.getBookmarkedAcademies = async (req, res, next) => {
   const { userId } = req.params;
 
@@ -436,7 +438,7 @@ exports.getBookmarkedAcademies = async (req, res, next) => {
     const user = await prisma.user.findUnique({
       where: { id: parseInt(userId, 10) },
       include: {
-        bookmarkedAcademies: true, // Ensure this is included
+        bookmarkedAcademies: true,
       },
     });
 
@@ -444,13 +446,16 @@ exports.getBookmarkedAcademies = async (req, res, next) => {
       return next(createError(404, 'User not found'));
     }
 
-    res.json(user.bookmarkedAcademies); // Return the bookmarked academies directly
+    res.json(user.bookmarkedAcademies);
   } catch (error) {
     console.error('Error fetching bookmarked academies:', error);
     next(createError(500, 'Error fetching bookmarked academies'));
   }
 };
 
+/**
+ * Complete a verification task.
+ */
 exports.completeVerificationTask = async (req, res, next) => {
   const { taskId, twitterHandle } = req.body;
   const userId = req.user.id;
@@ -518,6 +523,9 @@ exports.completeVerificationTask = async (req, res, next) => {
   }
 };
 
+/**
+ * Get the current user based on authentication.
+ */
 exports.getCurrentUser = async (req, res, next) => {
   try {
     let { telegramUserId } = req.user;
@@ -539,6 +547,9 @@ exports.getCurrentUser = async (req, res, next) => {
   }
 };
 
+/**
+ * Handle login streak for a user.
+ */
 exports.handleLoginStreak = async (req, res, next) => {
   const telegramUserIdHeader = req.headers['x-telegram-user-id'];
 
@@ -561,7 +572,6 @@ exports.handleLoginStreak = async (req, res, next) => {
 
     const userId = user.id;
 
-    // The rest of your login streak logic remains the same
     // Find the Daily Login Streak task
     const verificationTask = await prisma.verificationTask.findFirst({
       where: {

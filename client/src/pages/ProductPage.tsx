@@ -31,6 +31,8 @@ import coming from '../images/svgs/coming-soon3.svg'
 import clock from '../images/clock.png'
 import calendar from '../images/calendar.png'
 import handTrophy from '../images/hand-trophy.png'
+import Lottie from 'react-lottie'
+import coinsEarnedAnimationData from '../animations/earned-coins.json'
 
 // Import platform logos
 import xLogo from '../images/x.png'
@@ -109,6 +111,18 @@ export default function ProductPage() {
     const [pendingActiveFilter, setPendingActiveFilter] = useState<string | null>(null)
     const [showLeaveConfirmation, setShowLeaveConfirmation] = useState(false)
     const activeFilterRef = useRef<string | null>(activeFilter)
+
+    const checkAnswerButtonRefs = useRef<(HTMLDivElement | null)[]>([]) // Updated to an array of refs
+    // Ref for the "Check Answer" buttons
+
+    const coinsEarnedAnimation = {
+        loop: true,
+        autoplay: true,
+        animationData: coinsEarnedAnimationData,
+        rendererSettings: {
+            preserveAspectRatio: 'xMidYMid slice'
+        }
+    }
 
     useEffect(() => {
         activeFilterRef.current = activeFilter
@@ -347,6 +361,11 @@ export default function ProductPage() {
 
     const handleChoiceClick = (questionIndex: number, choiceIndex: number) => {
         setInitialAnswers(initialAnswers.map((q, qi) => (qi === questionIndex ? { ...q, selectedChoice: choiceIndex } : q)))
+
+        // Scroll to the "Check Answer" button for the current question
+        if (checkAnswerButtonRefs.current[questionIndex]) {
+            checkAnswerButtonRefs.current[questionIndex].scrollIntoView({ behavior: 'smooth', block: 'center' })
+        }
     }
 
     const handleCheckAnswer = async (questionIndex: number) => {
@@ -759,7 +778,7 @@ export default function ProductPage() {
         if (!question) return null
 
         return (
-            <SwiperSlide key={`quiz-question-${questionIndex}`}>
+            <SwiperSlide key={`quiz-question-${questionIndex}-${question.isCorrect}`}>
                 <Card className="!mx-1 !my-2 p-2 !rounded-2xl !bg-gray-50 dark:!bg-gray-800 !border !border-gray-200 dark:!border-gray-700 !shadow-sm">
                     <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">{question.quizQuestion}</p>
                 </Card>
@@ -787,25 +806,35 @@ export default function ProductPage() {
                     ))}
                 </Card>
                 {errorMessage && <p className="text-red-600 text-center mb-4">{errorMessage}</p>}
-                <Button
-                    large
-                    rounded
-                    outline
-                    onClick={() => {
-                        if (question.isCorrect !== undefined) {
-                            handleNextQuestion()
-                        } else {
-                            handleCheckAnswer(questionIndex)
-                        }
-                    }}
-                    className="mt-4 mb-12"
-                    style={{
-                        background: 'linear-gradient(to left, #ff0077, #7700ff)',
-                        color: '#fff'
+                <div
+                    ref={(el) => {
+                        checkAnswerButtonRefs.current[questionIndex] = el
                     }}
                 >
-                    {question.isCorrect !== undefined ? (questionIndex === initialAnswers.length - 1 ? 'Complete academy' : 'Next question') : 'Check Answer'}
-                </Button>
+                    <Button
+                        large
+                        rounded
+                        outline
+                        onClick={() => {
+                            if (question.isCorrect !== undefined) {
+                                handleNextQuestion()
+                            } else {
+                                handleCheckAnswer(questionIndex)
+                            }
+                        }}
+                        className="mt-4 mb-12"
+                        style={{
+                            background: 'linear-gradient(to left, #ff0077, #7700ff)',
+                            color: '#fff'
+                        }}
+                    >
+                        {question.isCorrect !== undefined
+                            ? questionIndex === initialAnswers.length - 1
+                                ? 'Complete academy'
+                                : 'Next question'
+                            : 'Check Answer'}
+                    </Button>
+                </div>
             </SwiperSlide>
         )
     }
@@ -1299,7 +1328,7 @@ export default function ProductPage() {
                                                             <img src={calendar} className="h-5 w-5 mr-2" alt="Calendar icon" />
                                                             <span className="text-sm text-gray-300">Next Raffle:</span>
                                                         </div>
-                                                        <div className="flex items-center bg-gradient-to-r from-pink-500 to-purple-600 text-white px-3 py-0 rounded-full shadow-lg">
+                                                        <div className="flex items-center bg-gradient-to-r from-green-700 to-blue-800 text-white px-3 py-0 rounded-full shadow-lg">
                                                             <span className="text-sm font-bold">
                                                                 {raffles[0].date.toLocaleDateString()} at{' '}
                                                                 {raffles[0].date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -1313,7 +1342,7 @@ export default function ProductPage() {
                                                             <img src={moneyBag} className="h-5 w-5 mr-2" alt="Money bag icon" />
                                                             <span className="text-sm text-gray-300">Reward pool:</span>
                                                         </div>
-                                                        <div className="text-sm flex items-center bg-gradient-to-r from-pink-500 to-purple-600 text-white px-3 py-0 rounded-full shadow-lg">
+                                                        <div className="text-sm flex items-center bg-gradient-to-r from-green-700 to-blue-800 text-white px-3 py-0 rounded-full shadow-lg">
                                                             <strong>{raffles[0].reward}</strong>
                                                         </div>
                                                     </div>
@@ -1324,7 +1353,7 @@ export default function ProductPage() {
                                                             <img src={handTrophy} className="h-5 w-5 mr-2" alt="Trophy icon" />
                                                             <span className="text-sm text-gray-300">Winners:</span>
                                                         </div>
-                                                        <div className="text-sm flex items-center bg-gradient-to-r from-pink-500 to-purple-600 text-white px-3 py-0 rounded-full shadow-lg">
+                                                        <div className="text-sm flex items-center bg-gradient-to-r from-green-700 to-blue-800 text-white px-3 py-0 rounded-full shadow-lg">
                                                             <strong>{raffles[0].winners}</strong>
                                                         </div>
                                                     </div>
@@ -1335,7 +1364,7 @@ export default function ProductPage() {
                                                             <img src={clock} className="h-5 w-5 mr-2" alt="Clock icon" />
                                                             <span className="text-sm text-gray-300">Time remaining:</span>
                                                         </div>
-                                                        <div className="flex items-center bg-gradient-to-r from-pink-500 to-purple-600 text-white px-3 py-0 rounded-full shadow-lg">
+                                                        <div className="flex items-center bg-gradient-to-r from-green-700 to-blue-800 text-white px-3 py-0 rounded-full shadow-lg">
                                                             <span className="text-sm font-bold">{timeRemainingList[0]}</span>
                                                         </div>
                                                     </div>
@@ -1365,15 +1394,17 @@ export default function ProductPage() {
                                     </div>
                                 </div>
 
-                                <Card className="!mb-12 !p-0 !rounded-2xl shadow-lg !m-0 relative border border-gray-300 dark:border-gray-600">
-                                    <div className="flex items-center justify-center text-gray-900 dark:text-gray-200">
-                                        <img src={collected} className="h-7 w-7 mr-4" alt="collected coins" />
+                                <div className="!mb-12 !p-2 bg-white dark:bg-zinc-900 !m-0 !rounded-2xl shadow-lg relative border border-gray-300 dark:border-gray-600">
+                                    <div className="flex flex-row text-gray-900 dark:text-gray-200 items-center">
+                                        <div className="w-13 h-13 mr-2 items-center">
+                                            <Lottie options={coinsEarnedAnimation} height={50} width={50} />
+                                        </div>
                                         <span className="text-md text-gray-600 dark:text-gray-400 mr-2">Earned Coins:</span>
                                         <span className="text-md text-black dark:text-gray-200 font-semibold">
                                             {earnedPoints}/{academy.xp}
                                         </span>
                                     </div>
-                                </Card>
+                                </div>
                             </>
                         )}
 
