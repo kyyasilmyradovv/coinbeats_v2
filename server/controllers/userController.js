@@ -453,68 +453,107 @@ exports.getBookmarkedAcademies = async (req, res, next) => {
   }
 };
 
+const isSameDay = (d1, d2) => {
+  return (
+    d1.getFullYear() === d2.getFullYear() &&
+    d1.getMonth() === d2.getMonth() &&
+    d1.getDate() === d2.getDate()
+  );
+};
 /**
  * Complete a verification task.
  */
 exports.completeVerificationTask = async (req, res, next) => {
-  const { taskId, twitterHandle } = req.body;
-  const userId = req.user.id;
+  const { taskId, userId } = req.body;
+
+  if (!userId || !taskId) {
+    return next(createError(400, 'User ID and Task ID are required'));
+  }
 
   try {
+    // Find user
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      return next(createError(404, 'User not found'));
+    }
+
+    // Find the verification task
     const verificationTask = await prisma.verificationTask.findUnique({
       where: { id: taskId },
     });
-
     if (!verificationTask) {
       return next(createError(404, 'Verification task not found'));
     }
 
-    const isVerified = await performVerification(verificationTask, req.user, {
-      twitterHandle,
+    // Check if the user has started this task (userVerification must exist)
+    const userVerification = await prisma.userVerification.findFirst({
+      where: { userId: user.id, verificationTaskId: taskId },
+      orderBy: { completedAt: 'desc' },
+    });
+
+    // If no userVerification exists, return the message
+    if (!userVerification) {
+      return res.status(400).json({
+        message:
+          'You have not started this task yet. Please perform the task to verify.',
+      });
+    }
+
+    // Handle ONETIME tasks (can only be completed once)
+    if (verificationTask.intervalType === 'ONETIME') {
+      if (userVerification.verified) {
+        return res
+          .status(400)
+          .json({ message: 'This task can only be completed once.' });
+      }
+    }
+
+    // Handle REPEATED tasks (can only be completed once per day)
+    if (verificationTask.intervalType === 'REPEATED') {
+      const now = new Date();
+      const lastCompletionDate = userVerification
+        ? new Date(userVerification.completedAt)
+        : null;
+
+      if (lastCompletionDate && isSameDay(now, lastCompletionDate)) {
+        return res
+          .status(400)
+          .json({ message: 'This task can only be completed once per day.' });
+      }
+    }
+
+    // Perform verification logic and mark the task as complete
+    const isVerified = await performVerification(verificationTask, user, {
+      userVerification,
     });
 
     if (isVerified) {
-      // Check if task already completed
-      const existingCompletion = await prisma.userVerification.findFirst({
-        where: {
-          userId,
-          verificationTaskId: taskId,
-          verified: true,
-        },
-      });
-
-      if (existingCompletion && verificationTask.intervalType === 'ONETIME') {
-        return res.status(400).json({ message: 'Task already completed' });
-      }
-
-      // Record the completion
-      await prisma.userVerification.create({
+      await prisma.userVerification.update({
+        where: { id: userVerification.id },
         data: {
-          userId,
-          verificationTaskId: taskId,
           verified: true,
-          pointsAwarded: verificationTask.xp,
           completedAt: new Date(),
+          pointsAwarded: verificationTask.xp,
         },
       });
 
-      // Update user's points
+      // Award points to the user
       await prisma.point.create({
         data: {
-          userId,
+          userId: userId,
           value: verificationTask.xp,
           verificationTaskId: taskId,
         },
       });
 
-      res.json({
+      return res.json({
         message: 'Task completed successfully',
         pointsAwarded: verificationTask.xp,
       });
     } else {
-      res.status(400).json({
+      return res.status(400).json({
         message:
-          'Verification failed. Please ensure you have tweeted the correct message.',
+          'The tasks are manually confirmed. Come back in some time to verify.',
       });
     }
   } catch (error) {
@@ -522,7 +561,6 @@ exports.completeVerificationTask = async (req, res, next) => {
     next(createError(500, 'Error completing verification task'));
   }
 };
-
 /**
  * Get the current user based on authentication.
  */
@@ -610,9 +648,16 @@ exports.handleLoginStreak = async (req, res, next) => {
         ) {
           // Continue streak
           const newStreakCount = userVerification.streakCount + 1;
-          const newPointsAwarded = Math.floor(
-            userVerification.pointsAwarded * 1.5
-          );
+          let newPointsAwarded = userVerification.pointsAwarded;
+
+          if (newStreakCount <= 7) {
+            // Increase points by 1.5x for up to 7 days
+            newPointsAwarded = Math.floor(newPointsAwarded * 1.5);
+          } else {
+            // Cap points after 7 days
+            newPointsAwarded = Math.floor(userVerification.pointsAwarded);
+          }
+
           userVerification = await prisma.userVerification.update({
             where: { id: userVerification.id },
             data: {
@@ -666,6 +711,16 @@ exports.handleLoginStreak = async (req, res, next) => {
       });
     }
 
+    res.json({
+      message: 'Login streak updated successfully',
+      userVerification,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
     // Create a new Point record
     const point = await prisma.point.create({
       data: {
@@ -679,5 +734,125 @@ exports.handleLoginStreak = async (req, res, next) => {
   } catch (error) {
     console.error('Error handling login streak:', error);
     next(createError(500, 'Internal Server Error'));
+  }
+};
+
+exports.startVerificationTask = async (req, res, next) => {
+  const { taskId, userId } = req.body; // Get userId from request body
+
+  if (!userId) {
+    return next(createError(400, 'User ID is required'));
+  }
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId }, // Find user by userId
+    });
+
+    if (!user) {
+      return next(createError(404, 'User not found'));
+    }
+
+    const verificationTask = await prisma.verificationTask.findUnique({
+      where: { id: taskId },
+    });
+
+    if (!verificationTask) {
+      return next(createError(404, 'Verification task not found'));
+    }
+
+    let userVerification = await prisma.userVerification.findFirst({
+      where: {
+        userId,
+        verificationTaskId: taskId,
+        verified: false,
+      },
+    });
+
+    if (!userVerification) {
+      userVerification = await prisma.userVerification.create({
+        data: {
+          userId,
+          verificationTaskId: taskId,
+          verified: false,
+          createdAt: new Date(),
+        },
+      });
+    }
+
+    res.json({ message: 'Task started successfully' });
+  } catch (error) {
+    console.error('Error starting verification task:', error);
+    next(createError(500, 'Error starting verification task'));
+  }
+};
+
+exports.submitTask = async (req, res, next) => {
+  const { taskId, submissionText, userId } = req.body; // Get userId from request body
+
+  if (!userId || !taskId || !submissionText) {
+    return next(
+      createError(400, 'User ID, Task ID, and submission text are required')
+    );
+  }
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId }, // Find user by userId
+    });
+
+    if (!user) {
+      return next(createError(404, 'User not found'));
+    }
+
+    const verificationTask = await prisma.verificationTask.findUnique({
+      where: { id: taskId },
+    });
+
+    if (!verificationTask) {
+      return next(createError(404, 'Verification task not found'));
+    }
+
+    const submission = await prisma.userTaskSubmission.create({
+      data: {
+        userId,
+        taskId,
+        submissionText,
+      },
+    });
+
+    res.json({ message: 'Submission received and will be verified' });
+  } catch (error) {
+    console.error('Error submitting task:', error);
+    next(createError(500, 'Error submitting task'));
+  }
+};
+
+exports.getUserVerificationTasks = async (req, res, next) => {
+  console.log('Request body:', req.body); // Check if the userId is being received
+  const { userId } = req.body;
+
+  if (!userId) {
+    return res.status(400).json({ message: 'User ID is required' });
+  }
+
+  try {
+    const userVerificationTasks = await prisma.userVerification.findMany({
+      where: { userId: parseInt(userId, 10) },
+      include: {
+        verificationTask: true, // Include related task information
+      },
+    });
+
+    if (userVerificationTasks.length === 0) {
+      return res
+        .status(404)
+        .json({ message: 'No verification tasks found for this user.' });
+    }
+
+    res.json(userVerificationTasks);
+  } catch (error) {
+    console.error('Error fetching user verification tasks:', error);
+    next(createError(500, 'Error fetching user verification tasks'));
   }
 };

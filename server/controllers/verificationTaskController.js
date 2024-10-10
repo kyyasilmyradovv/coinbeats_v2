@@ -275,6 +275,8 @@ exports.deleteVerificationTask = async (req, res, next) => {
 
 exports.getTasksForGamesPage = async (req, res, next) => {
   try {
+    const userId = req.user ? req.user.id : null;
+
     const tasks = await prisma.verificationTask.findMany({
       where: {
         OR: [
@@ -292,6 +294,11 @@ exports.getTasksForGamesPage = async (req, res, next) => {
         _count: {
           select: { userVerification: true },
         },
+        userVerification: userId
+          ? {
+              where: { userId: userId },
+            }
+          : false, // Don't include userVerification if userId is null
       },
     });
     res.json(tasks);

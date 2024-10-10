@@ -2,12 +2,12 @@
 
 import React, { useMemo, useState, useEffect, useRef } from 'react'
 import { initUtils } from '@telegram-apps/sdk'
-import axios from '../api/axiosInstance'
+import axiosInstance from '../api/axiosInstance'
 import { useNavigate } from 'react-router-dom'
 import useCategoryChainStore from '../store/useCategoryChainStore'
 import Navbar from '../components/common/Navbar'
 import Sidebar from '../components/common/Sidebar'
-import { Page, List, ListInput, Card, Button, Dialog, Searchbar } from 'konsta/react'
+import { Page, List, ListInput, Card, Button, Dialog, Searchbar, Notification } from 'konsta/react'
 import { MdBookmarks } from 'react-icons/md'
 import { FaTelegramPlane, FaTimes } from 'react-icons/fa'
 import useSessionStore from '../store/useSessionStore'
@@ -20,6 +20,7 @@ import Lottie from 'react-lottie'
 import bunnyAnimationData from '../animations/bunny.json'
 import coinsCreditedAnimationData from '../animations/coins-credited.json'
 import coinsEarnedAnimationData from '../animations/earned-coins.json'
+import bunnyLogo from '../images/bunny-mascot.png'
 
 export default function HomePage() {
     const navigate = useNavigate()
@@ -38,18 +39,21 @@ export default function HomePage() {
     const [showLoginStreakDialog, setShowLoginStreakDialog] = useState(false)
     const [showReferralPointsDialog, setShowReferralPointsDialog] = useState(false)
     const [animationComplete, setAnimationComplete] = useState(false)
+    const [notificationOpen, setNotificationOpen] = useState(false)
+    const [notificationText, setNotificationText] = useState('')
 
     // Added useRef to ensure the login streak is handled only once
     const loginStreakHandled = useRef(false)
 
     const handleAction = (task) => {
         if (task.verificationMethod === 'INVITE_TELEGRAM_FRIEND') {
-            axios
+            axiosInstance
                 .get('/api/users/me')
                 .then((response) => {
                     const userReferralCode = response.data.referralCode
                     if (!userReferralCode) {
-                        alert('Referral code not available.')
+                        setNotificationText('Referral code not available.')
+                        setNotificationOpen(true)
                         return
                     }
                     const botUsername = 'CoinbeatsMiniApp_bot/miniapp' // Replace with your bot's username
@@ -114,6 +118,8 @@ export default function HomePage() {
         resetReferralPointsAwarded: state.resetReferralPointsAwarded
     }))
 
+    console.log('This is referral points on homepage store', referralPointsAwarded)
+
     const { telegramUserId } = useSessionStore((state) => ({
         telegramUserId: state.userId
     }))
@@ -126,13 +132,13 @@ export default function HomePage() {
 
     const handleLoginStreak = async () => {
         try {
-            const response = await axios.post('/api/users/handle-login-streak')
+            const response = await axiosInstance.post('/api/users/handle-login-streak')
             const { userVerification, point } = response.data
 
             // Update user points
             setUser((prevState) => ({
                 ...prevState,
-                totalPoints: prevState.totalPoints + point.value,
+                totalPoints: (prevState.totalPoints || 0) + point.value,
                 points: [...prevState.points, point]
             }))
 
@@ -161,7 +167,7 @@ export default function HomePage() {
     useEffect(() => {
         const fetchHomepageTasks = async () => {
             try {
-                const response = await axios.get('/api/verification-tasks/homepage')
+                const response = await axiosInstance.get('/api/verification-tasks/homepage')
                 setTasks(response.data)
             } catch (error) {
                 console.error('Error fetching homepage tasks:', error)
@@ -174,7 +180,7 @@ export default function HomePage() {
     useEffect(() => {
         const fetchAcademies = async () => {
             try {
-                const response = await axios.get('/api/academies/academies')
+                const response = await axiosInstance.get('/api/academies/academies')
                 // Filter academies to include only those with status 'approved'
                 const approvedAcademies = response.data.filter((academy) => academy.status === 'approved')
                 setAcademies(approvedAcademies)
@@ -191,7 +197,7 @@ export default function HomePage() {
         const fetchBookmarkedAcademies = async () => {
             if (userId) {
                 try {
-                    const response = await axios.get(`/api/users/${userId}/bookmarked-academies`)
+                    const response = await axiosInstance.get(`/api/users/${userId}/bookmarked-academies`)
                     setBookmarks(response.data)
                 } catch (error) {
                     console.error('Error fetching bookmarked academies:', error)
@@ -229,7 +235,7 @@ export default function HomePage() {
 
     const handleBookmark = async (academy) => {
         try {
-            await axios.post('/api/users/interaction', {
+            await axiosInstance.post('/api/users/interaction', {
                 telegramUserId: telegramUserId,
                 action: 'bookmark',
                 academyId: academy.id
@@ -269,7 +275,8 @@ export default function HomePage() {
         navigator.clipboard
             .writeText(referralLink)
             .then(() => {
-                alert('Referral link copied to clipboard!')
+                setNotificationText('Referral link copied to clipboard!')
+                setNotificationOpen(true)
             })
             .catch((error) => {
                 console.error('Error copying referral link:', error)
@@ -304,7 +311,7 @@ export default function HomePage() {
                                     outline
                                     rounded
                                     onClick={() => handleAction(tasks[0])}
-                                    className="!text-2xs !w-fit !border-blue-400 !font-bold whitespace-nowrap mr-2 !px-2 !py-0"
+                                    className="!text-2xs !w-28 !border-blue-400 !font-bold whitespace-nowrap mr-2 !px-2 !py-0"
                                     style={{
                                         background: 'linear-gradient(to left, #16a34a, #3b82f6)',
                                         color: '#fff'
@@ -371,7 +378,7 @@ export default function HomePage() {
                         >
                             <div className="p-0 relative">
                                 <button
-                                    className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+                                    className="absolute right-1 text-gray-500 hover:text-gray-700"
                                     onClick={() => {
                                         setShowReferralPointsDialog(false)
                                         resetReferralPointsAwarded()
@@ -381,7 +388,9 @@ export default function HomePage() {
                                     <FaTimes size={20} />
                                 </button>
                                 <div className="text-md font-bold text-center mt-4">Your special link bonus</div>
-                                <Lottie options={coinsCreditedAnimation} height={200} width={200} />
+                                <div className="mb-10">
+                                    <Lottie options={coinsCreditedAnimation} height={150} width={150} />
+                                </div>
                                 <div className="flex mt-4 mb-2 text-2xl font-bold items-end justify-center">
                                     <span className="mr-1">+</span>
                                     <AnimatedNumber target={referralPointsAwarded} duration={2000} onComplete={() => setAnimationComplete(true)} />
@@ -399,7 +408,7 @@ export default function HomePage() {
                             className="!m-0 !p-0 !rounded-2xl !bg-opacity-80"
                         >
                             <div className="p-0 relative">
-                                <button className="absolute top-2 right-2 text-gray-500 hover:text-gray-700" onClick={() => setShowLoginStreakDialog(false)}>
+                                <button className="absolute right-1 text-gray-500 hover:text-gray-700" onClick={() => setShowLoginStreakDialog(false)}>
                                     <FaTimes size={20} />
                                 </button>
                                 <div className="text-md font-bold text-center mt-4">Daily Login Streak (1.5x)</div>
@@ -416,7 +425,13 @@ export default function HomePage() {
                                     </div>
                                     <div className="flex mt-4 mb-2 text-2xl font-bold items-end justify-center">
                                         <span className="mr-1">+</span>
-                                        <AnimatedNumber target={loginStreakData.pointsAwarded} duration={2000} onComplete={() => setAnimationComplete(true)} />
+                                        <div className="mr-2">
+                                            <AnimatedNumber
+                                                target={loginStreakData.pointsAwarded}
+                                                duration={2000}
+                                                onComplete={() => setAnimationComplete(true)}
+                                            />
+                                        </div>
                                         <Lottie options={coinsCreditedAnimation} height={60} width={60} />
                                     </div>
                                 </div>
@@ -470,13 +485,13 @@ export default function HomePage() {
                                     </ListInput>
                                 </List>
                             </div>
-                            <div className="flex w-1/3 h-full items-center justify-center text-center pr-2">
+                            <div className="flex w-1/3 h-full items-center justify-center text-center pr-2 z-0">
                                 <Searchbar
                                     inputStyle={{ height: '2rem' }}
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     placeholder="Search"
-                                    className="text-xs"
+                                    className="text-xs z-0"
                                     clearButton
                                 />
                             </div>
@@ -624,6 +639,16 @@ export default function HomePage() {
                             )
                         })}
                     </div>
+
+                    <Notification
+                        className="fixed !mt-12 top-12 left-0 z-50 border"
+                        opened={notificationOpen}
+                        icon={<img src={bunnyLogo} alt="Bunny Mascot" className="w-10 h-10" />}
+                        title="Message from Coinbeats Bunny"
+                        text={notificationText}
+                        button={<Button onClick={() => setNotificationOpen(false)}>Close</Button>}
+                        onClose={() => setNotificationOpen(false)}
+                    />
 
                     {showBookmarkAnimation && (
                         <div className="fixed inset-0 flex flex-col items-center justify-center z-50 animate-bookmark">

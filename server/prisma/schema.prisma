@@ -78,6 +78,7 @@ model User {
   referredBy             User?              @relation("UserReferrals", fields: [referredByUserId], references: [id])
   referrals              User[]             @relation("UserReferrals")
   allowedAcademyTypes    AcademyType[]      @relation("UserAcademyTypes")
+  userTaskSubmissions UserTaskSubmission[]
 }
 
 model Academy {
@@ -266,6 +267,7 @@ model VerificationTask {
   updatedAt          DateTime           @updatedAt
   Point              Point[]
   userVerification   UserVerification[]
+  userTaskSubmissions UserTaskSubmission[]
 }
 
 model UserVerification {
@@ -282,6 +284,20 @@ model UserVerification {
   academy            Academy?         @relation(fields: [academyId], references: [id])
   user               User             @relation(fields: [userId], references: [id])
   verificationTask   VerificationTask @relation(fields: [verificationTaskId], references: [id])
+}
+
+model UserTaskSubmission {
+  id             Int               @id @default(autoincrement())
+  userId         Int
+  taskId         Int
+  submissionText String
+  createdAt      DateTime          @default(now())
+
+  user           User              @relation(fields: [userId], references: [id])
+  task           VerificationTask  @relation(fields: [taskId], references: [id])
+
+  @@index([userId])
+  @@index([taskId])
 }
 
 model Setting {

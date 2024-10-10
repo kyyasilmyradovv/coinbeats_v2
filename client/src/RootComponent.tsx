@@ -1,6 +1,6 @@
 // src/RootComponent.tsx
 
-import React, { useLayoutEffect, useEffect, useState } from 'react'
+import React, { useLayoutEffect, useEffect, useState, useRef } from 'react'
 import { Route, Routes, useLocation } from 'react-router-dom'
 import { App as KonstaApp, KonstaProvider } from 'konsta/react'
 import MainPage from './pages/MainPage'
@@ -42,6 +42,7 @@ import Spinner from './components/Spinner'
 function RootComponent() {
     const [isLoading, setIsLoading] = useState(true)
     const initData = useInitData()
+    const initializedRef = useRef(false)
 
     const { theme, darkMode, initializePreferences } = useSessionStore((state) => ({
         theme: state.theme,
@@ -85,6 +86,9 @@ function RootComponent() {
     }, [darkMode])
 
     useEffect(() => {
+        if (initializedRef.current) return // Prevent multiple initializations
+        initializedRef.current = true
+
         let routeStartTime = Date.now()
         let currentRoute = location.pathname
 
@@ -102,10 +106,13 @@ function RootComponent() {
             try {
                 if (initData && initData.user) {
                     const telegramUserId = initData.user.id
-                    const username = initData.user.username || 'Guest'
+                    const username = initData.user.username || initData.user.firstName || initData.user.lastName || 'Guest'
 
                     // Get referralCode from initData.startParam
                     const referralCode = initData.startParam || null
+
+                    // Set telegramUserId in useSessionStore before any axios requests
+                    useSessionStore.setState({ userId: telegramUserId })
 
                     let userRoles: string[] = ['USER'] // Default roles
 
@@ -113,8 +120,10 @@ function RootComponent() {
                         const response = await axios.get(`/api/users/${telegramUserId}`)
 
                         if (response.status === 200 && response.data) {
-                            const { id, name, email, roles, totalPoints, points, bookmarkedAcademies, academies, emailConfirmed } = response.data
+                            const { id, name, email, roles, points, bookmarkedAcademies, academies, emailConfirmed } = response.data
                             const hasAcademy = academies && academies.length > 0
+
+                            const totalPoints = points ? points.reduce((sum, point) => sum + point.value, 0) : 0
 
                             setUser({
                                 userId: id,
@@ -126,8 +135,7 @@ function RootComponent() {
                                 points: points || [],
                                 bookmarks: bookmarkedAcademies || [],
                                 token: null,
-                                hasAcademy: hasAcademy,
-                                referralPointsAwarded: 0 // No referral points since user already exists
+                                hasAcademy: hasAcademy
                             })
 
                             userRoles = roles || ['USER']
@@ -142,13 +150,15 @@ function RootComponent() {
                             const { user: userData, pointsAwardedToUser } = registerResponse.data
                             const hasAcademy = userData.academies && userData.academies.length > 0
 
+                            const totalPoints = userData.points ? userData.points.reduce((sum, point) => sum + point.value, 0) : 0
+
                             setUser({
                                 userId: userData.id,
                                 username: userData.name,
                                 email: userData.email,
                                 emailConfirmed: userData.emailConfirmed,
                                 roles: userData.roles,
-                                totalPoints: userData.totalPoints,
+                                totalPoints: totalPoints,
                                 points: userData.points || [],
                                 bookmarks: userData.bookmarkedAcademies || [],
                                 token: null,
@@ -168,7 +178,10 @@ function RootComponent() {
                             })
 
                             const { user: userData, pointsAwardedToUser } = registerResponse.data
+                            console.log('This is points awarded from Root', pointsAwardedToUser)
                             const hasAcademy = userData.academies && userData.academies.length > 0
+
+                            const totalPoints = userData.points ? userData.points.reduce((sum, point) => sum + point.value, 0) : 0
 
                             setUser({
                                 userId: userData.id,
@@ -176,7 +189,7 @@ function RootComponent() {
                                 email: userData.email,
                                 emailConfirmed: userData.emailConfirmed,
                                 roles: userData.roles,
-                                totalPoints: userData.totalPoints,
+                                totalPoints: totalPoints,
                                 points: userData.points || [],
                                 bookmarks: userData.bookmarkedAcademies || [],
                                 token: null,
@@ -194,12 +207,11 @@ function RootComponent() {
                                 email: '',
                                 emailConfirmed: false,
                                 roles: ['USER'],
-                                totalPoints: 100,
+                                totalPoints: 0,
                                 points: [],
                                 bookmarks: [],
                                 token: null,
-                                hasAcademy: false,
-                                referralPointsAwarded: 0
+                                hasAcademy: false
                             })
 
                             userRoles = ['USER']
@@ -226,12 +238,11 @@ function RootComponent() {
                         email: '',
                         emailConfirmed: false,
                         roles: ['USER'],
-                        totalPoints: 100,
+                        totalPoints: 0,
                         points: [],
                         bookmarks: [],
                         token: null,
-                        hasAcademy: false,
-                        referralPointsAwarded: 0
+                        hasAcademy: false
                     })
                 }
             } catch (e) {
@@ -243,12 +254,11 @@ function RootComponent() {
                     email: '',
                     emailConfirmed: false,
                     roles: ['USER'],
-                    totalPoints: 100,
+                    totalPoints: 0,
                     points: [],
                     bookmarks: [],
                     token: null,
-                    hasAcademy: false,
-                    referralPointsAwarded: 0
+                    hasAcademy: false
                 })
             } finally {
                 setIsLoading(false)
@@ -273,7 +283,7 @@ function RootComponent() {
             window.removeEventListener('beforeunload', handleSessionEnd)
             updateRouteDuration()
         }
-    }, [initData, startSession, setCurrentRoute, endSession, setUser, addRouteDuration, location])
+    }, [initData]) // Reduced dependencies to prevent unnecessary re-runs
 
     if (isLoading) {
         return (

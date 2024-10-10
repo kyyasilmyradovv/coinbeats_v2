@@ -1,5 +1,7 @@
+// src/pages/GamesPage.tsx
+
 import React, { useState, useEffect } from 'react'
-import { Page, BlockTitle, Button, Dialog, ListInput, List } from 'konsta/react'
+import { Page, Button, Dialog, ListInput, List, Notification } from 'konsta/react'
 import Navbar from '../components/common/Navbar'
 import Sidebar from '../components/common/Sidebar'
 import BottomTabBar from '../components/BottomTabBar'
@@ -8,6 +10,13 @@ import coinStackIcon from '../images/coin-stack.png'
 import { FaTwitter, FaFacebook, FaInstagram, FaTelegramPlane, FaDiscord, FaYoutube, FaEnvelope } from 'react-icons/fa'
 import { initUtils } from '@telegram-apps/sdk'
 import { X } from '@mui/icons-material'
+import bunnyLogo from '../images/bunny-mascot.png'
+import useUserStore from '../store/useUserStore'
+
+// Utility function to check if two dates are the same day
+const isSameDay = (d1, d2) => {
+    return d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth() && d1.getDate() === d2.getDate()
+}
 
 interface VerificationTask {
     id: number
@@ -17,32 +26,82 @@ interface VerificationTask {
     platform: string
     verificationMethod: string
     intervalType: string
+    shortCircuit: boolean
+    shortCircuitTimer: number | null
+    userVerification?: UserVerification[]
+    userTaskSubmissions?: UserTaskSubmission[]
     _count: {
         userVerification: number
     }
 }
 
+interface UserVerification {
+    id: number
+    userId: number
+    verificationTaskId: number
+    verified: boolean
+    createdAt: string
+    completedAt: string | null
+}
+
+interface UserTaskSubmission {
+    id: number
+    userId: number
+    taskId: number
+    submissionText: string
+    createdAt: string
+}
+
 export default function GamesPage() {
+    const { userId } = useUserStore()
     const [activeTab, setActiveTab] = useState('tab-3')
     const [tasks, setTasks] = useState<VerificationTask[]>([])
+    const [userVerificationTasks, setUserVerificationTasks] = useState<UserVerification[]>([])
     const [referralModalOpen, setReferralModalOpen] = useState(false)
     const [referralLink, setReferralLink] = useState('')
     const [referralCode, setReferralCode] = useState('')
     const [visibleTooltip, setVisibleTooltip] = useState<number | null>(null)
-    const [activeTaskTab, setActiveTaskTab] = useState('repeated') // State for task tabs
+    const [activeTaskTab, setActiveTaskTab] = useState('repeated')
+    const [notificationOpen, setNotificationOpen] = useState(false)
+    const [notificationText, setNotificationText] = useState('')
+    const [selectedTask, setSelectedTask] = useState<VerificationTask | null>(null)
+    const [taskInputValues, setTaskInputValues] = useState<{ [key: number]: string }>({})
+    const [submittedTasks, setSubmittedTasks] = useState<{ [key: number]: boolean }>({})
 
     useEffect(() => {
-        const fetchTasks = async () => {
-            try {
-                const response = await axios.get('/api/verification-tasks/games')
-                setTasks(response.data)
-            } catch (error) {
-                console.error('Error fetching tasks:', error)
-            }
-        }
-
         fetchTasks()
+        fetchUserVerificationTasks() // Fetch verification tasks for the user
     }, [])
+
+    const fetchTasks = async () => {
+        try {
+            const response = await axios.get('/api/verification-tasks/games')
+            setTasks(response.data)
+            console.log('Fetched tasks:', response.data)
+        } catch (error) {
+            console.error('Error fetching tasks:', error)
+        }
+    }
+
+    const fetchUserVerificationTasks = async () => {
+        try {
+            const response = await axios.post('/api/users/verification-tasks', {
+                userId // Send userId in the request body
+            })
+            setUserVerificationTasks(response.data)
+            console.log('Fetched user verification tasks:', response.data)
+        } catch (error) {
+            console.error('Error fetching user verification tasks:', error)
+        }
+    }
+
+    const hasTimerPassed = (taskCreatedAt: string, timer: number) => {
+        const createdAt = new Date(taskCreatedAt).getTime()
+        const now = Date.now()
+        const timeElapsed = (now - createdAt) / 1000 // Convert milliseconds to seconds
+
+        return timeElapsed > timer // Return true if 1000 seconds have passed
+    }
 
     const toggleTooltip = (tooltipIndex: number) => {
         if (visibleTooltip === tooltipIndex) {
@@ -52,14 +111,15 @@ export default function GamesPage() {
         }
     }
 
-    const platformIcons = {
+    const platformIcons: { [key: string]: JSX.Element } = {
         X: <X className="w-8 h-8 !mb-3 text-blue-500 !p-0 !m-0" />,
         FACEBOOK: <FaFacebook className="w-8 h-8 !mb-3 text-blue-700 !p-0 !m-0" />,
         INSTAGRAM: <FaInstagram className="w-8 h-8 !mb-3 text-pink-500 !p-0 !m-0" />,
         TELEGRAM: <FaTelegramPlane className="w-8 h-8 !mb-3 text-blue-400 !p-0 !m-0" />,
         DISCORD: <FaDiscord className="w-8 h-8 !mb-3 text-indigo-600 !p-0 !m-0" />,
         YOUTUBE: <FaYoutube className="w-8 h-8 !mb-3 text-red-600 !p-0 !m-0" />,
-        EMAIL: <FaEnvelope className="w-8 h-8 !mb-3 text-green-500 !p-0 !m-0" />
+        EMAIL: <FaEnvelope className="w-8 h-8 !mb-3 text-green-500 !p-0 !m-0" />,
+        NONE: <div className="w-8 h-8 text-gray-500">?</div>
         // Add other platforms as needed
     }
 
@@ -81,42 +141,203 @@ export default function GamesPage() {
                 return 'Invite'
             case 'PROVIDE_EMAIL':
                 return 'Submit'
+            case 'WATCH_YOUTUBE_VIDEO':
+                return 'Watch'
+            case 'SUBSCRIBE_YOUTUBE_CHANNEL':
+                return 'Subscribe'
+            case 'ADD_TO_BIO':
+                return 'Add to Bio'
             // Add other mappings as needed
             default:
                 return 'Action'
         }
     }
 
+    // Determine if a task requires an input field
+    function requiresInputField(task: VerificationTask): boolean {
+        const methodsRequiringInput = ['SHORT_CIRCUIT', 'PROVIDE_EMAIL', 'ADD_TO_BIO', 'SUBSCRIBE_YOUTUBE_CHANNEL']
+        return methodsRequiringInput.includes(task.verificationMethod)
+    }
+
+    // Get placeholder text based on task name
+    function getInputPlaceholder(task: VerificationTask): string {
+        switch (task.name) {
+            case 'Shill CB in other TG channels':
+                return 'Paste the message URL here'
+            case 'Create and post CoinBeats meme':
+                return 'Paste the link to your meme here'
+            case 'Join our newsletter':
+                return 'Enter your email address here'
+            case '“@CoinBeatsxyz Student” to X bio':
+                return 'Enter your X username here'
+            case 'Subscribe to @CoinBeats Youtube':
+                return 'Paste your YouTube username here'
+            default:
+                return 'Enter your submission here'
+        }
+    }
+
     const handleAction = (task: VerificationTask) => {
-        switch (task.verificationMethod) {
-            case 'TWEET':
-                const tweetText = encodeURIComponent(task.description)
-                window.open(`https://twitter.com/intent/tweet?text=${tweetText}`, '_blank')
-                break
-            case 'INVITE_TELEGRAM_FRIEND':
-                // Handle invite action
+        // Always perform the action, no need to check if the task is started or verified
+        if (requiresInputField(task)) {
+            openNotificationForTask(task) // Open notification for tasks that require input
+        } else {
+            // Direct the user to the appropriate action
+            switch (task.verificationMethod) {
+                case 'TWEET':
+                    const tweetText = encodeURIComponent(task.description || '')
+                    window.open(`https://twitter.com/intent/tweet?text=${tweetText}`, '_blank')
+                    break
+                case 'RETWEET':
+                    const retweetId = '1843673683413610985' // Replace with actual tweet ID
+                    window.open(`https://twitter.com/intent/retweet?tweet_id=${retweetId}`, '_blank')
+                    break
+                case 'FOLLOW_USER':
+                    const username = 'CoinBeatsxyz' // Replace with actual username
+                    window.open(`https://twitter.com/${username}`, '_blank')
+                    break
+                case 'LIKE_TWEET':
+                    const likeTweetId = '1843673683413610985' // Replace with actual tweet ID
+                    window.open(`https://twitter.com/intent/like?tweet_id=${likeTweetId}`, '_blank')
+                    break
+                case 'COMMENT_ON_TWEET':
+                    const commentTweetId = '1843673683413610985' // Replace with actual tweet ID
+                    window.open(`https://twitter.com/intent/tweet?in_reply_to=${commentTweetId}`, '_blank')
+                    break
+                case 'JOIN_TELEGRAM_CHANNEL':
+                    const telegramChannelLink = 'https://t.me/coinbeatsdiscuss' // Replace with your Telegram channel link
+                    window.open(telegramChannelLink, '_blank')
+                    break
+                case 'INVITE_TELEGRAM_FRIEND':
+                    // Handle invite action
+                    axios
+                        .get('/api/users/me')
+                        .then((response) => {
+                            const userReferralCode = response.data.referralCode
+                            if (!userReferralCode) {
+                                setNotificationText('Referral code not available.')
+                                setNotificationOpen(true)
+                                return
+                            }
+                            const botUsername = 'CoinbeatsMiniApp_bot/miniapp' // Replace with your bot's username
+                            const referralLink = `https://t.me/${botUsername}?startapp=${userReferralCode}`
+                            setReferralCode(userReferralCode)
+                            setReferralLink(referralLink)
+                            setReferralModalOpen(true)
+                        })
+                        .catch((error) => {
+                            console.error('Error fetching user data:', error)
+                        })
+                    break
+                case 'SUBSCRIBE_YOUTUBE_CHANNEL':
+                    const youtubeChannelUrl = 'https://www.youtube.com/@CoinBeats' // Replace with your YouTube channel URL
+                    window.open(youtubeChannelUrl, '_blank')
+                    break
+                case 'WATCH_YOUTUBE_VIDEO':
+                    const youtubeVideoUrl = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' // Replace with your YouTube video URL
+                    window.open(youtubeVideoUrl, '_blank')
+                    break
+                case 'FOLLOW_INSTAGRAM_USER':
+                    const instagramUsername = 'coinbeatsxyz' // Replace with actual username
+                    window.open(`https://www.instagram.com/${instagramUsername}/`, '_blank')
+                    break
+                case 'JOIN_DISCORD_CHANNEL':
+                    const discordInviteLink = 'https://discord.gg/your-invite-code' // Replace with your Discord invite link
+                    window.open(discordInviteLink, '_blank')
+                    break
+                case 'PROVIDE_EMAIL':
+                    setNotificationText('Please provide your email in the next step.')
+                    setNotificationOpen(true)
+                    break
+                case 'ADD_TO_BIO':
+                    setNotificationText('Please add "CoinBeats Student" to your X bio.')
+                    setNotificationOpen(true)
+                    window.open('https://twitter.com/settings/profile', '_blank')
+                    break
+                case 'SHORT_CIRCUIT':
+                    setNotificationText(task.description)
+                    setNotificationOpen(true)
+                    break
+                default:
+                    break
+            }
+
+            // Start the task in the background
+            axios
+                .post('/api/users/start-task', { taskId: task.id, userId })
+                .then(() => {
+                    console.log('Task started successfully')
+                })
+                .catch((error) => {
+                    console.error('Error starting task:', error)
+                })
+        }
+    }
+
+    const shouldDisableButton = (task: VerificationTask) => {
+        const userVerification = userVerificationTasks.find((verification) => verification.verificationTaskId === task.id)
+
+        if (!userVerification) {
+            return false // Task has not been started by the user yet
+        }
+
+        const isVerified = userVerification.verified
+        const completedToday = isVerified && isSameDay(new Date(), new Date(userVerification.completedAt))
+        const timerCheck = hasTimerPassed(userVerification.createdAt, 1000)
+
+        if (task.intervalType === 'ONETIME' && isVerified) {
+            return true // Disable button for one-time tasks that are already completed
+        }
+
+        if (task.intervalType === 'REPEATED' && completedToday && !timerCheck) {
+            return true // Disable button if the task is repeated but completed today and timer not passed
+        }
+
+        return false
+    }
+
+    const handleSubmitTask = (task) => {
+        const submissionText = taskInputValues[task.id]
+
+        if (!submissionText || submissionText.length < 5) {
+            setNotificationText('Please enter at least 5 characters.')
+            setNotificationOpen(true)
+            return
+        }
+
+        if (!userId) {
+            setNotificationText('User ID is missing. Please log in.')
+            setNotificationOpen(true)
+            return
+        }
+
+        axios
+            .post('/api/users/start-task', { taskId: task.id, userId })
+            .then(() => {
                 axios
-                    .get('/api/users/me')
+                    .post('/api/users/submit-task', { taskId: task.id, submissionText, userId })
                     .then((response) => {
-                        const userReferralCode = response.data.referralCode
-                        if (!userReferralCode) {
-                            alert('Referral code not available.')
-                            return
-                        }
-                        const botUsername = 'CoinbeatsMiniApp_bot/miniapp' // Replace with your bot's username
-                        const referralLink = `https://t.me/${botUsername}?startapp=${userReferralCode}`
-                        setReferralCode(userReferralCode)
-                        setReferralLink(referralLink)
-                        setReferralModalOpen(true)
+                        setNotificationText(response.data.message)
+                        setNotificationOpen(true)
+                        setSubmittedTasks({ ...submittedTasks, [task.id]: true })
                     })
                     .catch((error) => {
-                        console.error('Error fetching user data:', error)
+                        console.error('Error submitting task:', error)
+                        setNotificationText(error.response?.data?.message || 'Submission failed')
+                        setNotificationOpen(true)
                     })
-                break
-            // Handle other methods...
-            default:
-                break
-        }
+            })
+            .catch((error) => {
+                console.error('Error starting task:', error)
+                setNotificationText(error.response?.data?.message || 'Failed to start task')
+                setNotificationOpen(true)
+            })
+    }
+
+    const openNotificationForTask = (task: VerificationTask) => {
+        setSelectedTask(task) // Set the task that requires submission
+        setNotificationText(task.description) // Set notification text for the task
+        setNotificationOpen(true) // Open the notification
     }
 
     const handleInviteFriend = () => {
@@ -132,41 +353,45 @@ export default function GamesPage() {
         navigator.clipboard
             .writeText(referralLink)
             .then(() => {
-                alert('Referral link copied to clipboard!')
+                setNotificationText('Referral link copied to clipboard!')
+                setNotificationOpen(true)
             })
             .catch((error) => {
                 console.error('Error copying referral link:', error)
             })
     }
 
-    function handleVerify(task: VerificationTask) {
-        if (task.verificationMethod === 'TWEET') {
-            const twitterHandle = prompt('Please enter your Twitter handle (without @):')
-            if (twitterHandle) {
-                axios
-                    .post('/api/users/complete-task', { taskId: task.id, twitterHandle })
-                    .then((response) => {
-                        alert(response.data.message)
-                    })
-                    .catch((error) => {
-                        console.error('Error verifying task:', error)
-                        alert(error.response?.data?.message || 'Verification failed')
-                    })
-            }
-        } else {
-            // Handle other verification methods
+    const handleVerify = (task: VerificationTask) => {
+        const userVerification = task.userVerification && task.userVerification[0]
+        const isVerified = userVerification && userVerification.verified
+        const completedToday = isVerified && isSameDay(new Date(), new Date(userVerification?.completedAt))
+
+        // Prevent verification if already done for the day
+        if ((task.intervalType === 'ONETIME' && isVerified) || (task.intervalType === 'REPEATED' && completedToday)) {
+            setNotificationText('You have already completed this task.')
+            setNotificationOpen(true)
+            return
         }
+
+        // Verify the task...
+        axios
+            .post('/api/users/complete-task', { taskId: task.id, userId })
+            .then((response) => {
+                setNotificationText(response.data.message)
+                setNotificationOpen(true)
+                fetchTasks() // Refresh tasks after completion
+            })
+            .catch((error) => {
+                setNotificationText(error.response?.data?.message || 'Verification failed')
+                setNotificationOpen(true)
+            })
     }
 
     const inviteTask = tasks.find((task) => task.verificationMethod === 'INVITE_TELEGRAM_FRIEND')
 
-    // Filter tasks based on active tab
     const filteredTasks = tasks.filter((task) => {
-        if (activeTaskTab === 'onetime') {
-            return task.intervalType === 'ONETIME' && task.verificationMethod !== 'INVITE_TELEGRAM_FRIEND'
-        } else if (activeTaskTab === 'repeated') {
-            return task.intervalType === 'REPEATED' && task.verificationMethod !== 'INVITE_TELEGRAM_FRIEND'
-        }
+        if (activeTaskTab === 'onetime') return task.intervalType === 'ONETIME' && task.verificationMethod !== 'INVITE_TELEGRAM_FRIEND'
+        if (activeTaskTab === 'repeated') return task.intervalType === 'REPEATED' && task.verificationMethod !== 'INVITE_TELEGRAM_FRIEND'
         return false
     })
 
@@ -177,10 +402,6 @@ export default function GamesPage() {
             <div className="relative min-h-screen bg-cosmos-bg bg-fixed bg-center bg-no-repeat bg-cover">
                 <div className="absolute inset-0 bg-black opacity-50 z-0"></div>
                 <div className="relative z-10">
-                    {/* <div className="text-center flex w-full items-center justify-center absolute top-0">
-                        <BlockTitle className="!m-0 !p-0">Earn by doing tasks</BlockTitle>
-                    </div> */}
-
                     {/* Referral Dialog */}
                     <Dialog
                         opened={referralModalOpen}
@@ -222,6 +443,44 @@ export default function GamesPage() {
                             </div>
                         </div>
                     </Dialog>
+
+                    <Notification
+                        className="fixed !mt-12 top-12 left-0 z-50 border"
+                        opened={notificationOpen}
+                        icon={<img src={bunnyLogo} alt="Bunny Mascot" className="w-10 h-10" />}
+                        title="Message from CoinBeats Bunny"
+                        text={notificationText}
+                        button={<Button onClick={() => setNotificationOpen(false)}>Close</Button>}
+                        onClose={() => setNotificationOpen(false)}
+                    >
+                        {selectedTask && requiresInputField(selectedTask) && !submittedTasks[selectedTask.id] && (
+                            <div className="flex flex-row items-center">
+                                <List className="!m-1 !p-1">
+                                    <ListInput
+                                        type="text"
+                                        outline
+                                        value={taskInputValues[selectedTask.id] || ''}
+                                        onChange={(e) =>
+                                            setTaskInputValues({
+                                                ...taskInputValues,
+                                                [selectedTask.id]: e.target.value
+                                            })
+                                        }
+                                        placeholder={getInputPlaceholder(selectedTask)}
+                                        className="border rounded text-xs !m-1 !p-1"
+                                    />
+                                </List>
+                                <Button
+                                    rounded
+                                    onClick={() => handleSubmitTask(selectedTask)}
+                                    className="!text-2xs font-bold shadow-xl !w-20 !h-6 mt-1 justify-end"
+                                    style={{ background: 'linear-gradient(to left, #16a34a, #3b82f6)', color: '#fff' }}
+                                >
+                                    Send
+                                </Button>
+                            </div>
+                        )}
+                    </Notification>
 
                     <div className="mt-0 px-4 pb-10 pt-4 mb-8">
                         {/* Tabs for Tasks */}
@@ -311,7 +570,7 @@ export default function GamesPage() {
                                     <Button
                                         rounded
                                         onClick={() => handleAction(inviteTask)}
-                                        className="!text-2xs font-bold shadow-xl !w-16 !h-6"
+                                        className="!text-2xs font-bold shadow-xl !w-20 !h-6"
                                         style={{
                                             background: 'linear-gradient(to left, #16a34a, #3b82f6)',
                                             color: '#fff'
@@ -320,101 +579,120 @@ export default function GamesPage() {
                                         {getActionLabel(inviteTask.verificationMethod)}
                                     </Button>
 
-                                    {/* Verify Button */}
-                                    <Button
-                                        rounded
-                                        outline
-                                        onClick={() => handleVerify(inviteTask)}
-                                        className="!text-2xs font-bold shadow-xl !w-16 !h-6"
-                                        style={{
-                                            borderColor: '#3b82f6',
-                                            color: '#fff'
-                                        }}
-                                    >
-                                        Verify
-                                    </Button>
+                                    {/* Verify Button
+                                    {(() => {
+                                        const userVerification = inviteTask.userVerification && inviteTask.userVerification[0]
+                                        const isVerified = userVerification && userVerification.verified
+
+                                        if (isVerified) {
+                                            return <span className="text-green-500 font-bold text-xs">Completed</span>
+                                        } else {
+                                            return (
+                                                <Button
+                                                    rounded
+                                                    outline
+                                                    onClick={() => handleVerify(inviteTask)}
+                                                    className="!text-2xs font-bold shadow-xl !w-20 !h-6"
+                                                    style={{
+                                                        borderColor: '#3b82f6',
+                                                        color: '#fff'
+                                                    }}
+                                                >
+                                                    Verify
+                                                </Button>
+                                            )
+                                        }
+                                    })()} */}
                                 </div>
                             </div>
                         )}
 
                         {/* Display Tasks Based on Active Tab */}
                         {filteredTasks.length > 0 ? (
-                            filteredTasks.map((task) => (
-                                <div
-                                    key={task.id}
-                                    className="relative bg-white dark:bg-zinc-900 rounded-2xl shadow-lg py-1 flex flex-row items-center px-1 border border-gray-300 dark:border-gray-600 h-16 justify-between w-full mb-2"
-                                >
-                                    {/* Platform Icon */}
-                                    <div className="w-12 h-16 flex items-center justify-center pt-2">
-                                        {platformIcons[task.platform] || <div className="w-8 h-8 text-gray-500">?</div>}
-                                    </div>
+                            filteredTasks.map((task) => {
+                                // Find user verification for the current task
+                                const userVerification = userVerificationTasks.find((verification) => verification.verificationTaskId === task.id)
+                                const isVerified = userVerification?.verified
+                                const completedToday = isVerified && isSameDay(new Date(), new Date(userVerification?.completedAt))
+                                const timerCheck = userVerification && hasTimerPassed(userVerification.createdAt, 1000)
 
-                                    <div className="flex flex-col flex-grow mx-2 py-1">
-                                        {/* Task Name and Question Mark Button */}
-                                        <h3 className={`font-semibold text-left break-words whitespace-normal text-xs flex items-center relative`}>
-                                            {task.name}
-                                            {/* Question Mark Button */}
-                                            <button
-                                                className="ml-2 rounded-full bg-gray-700 text-white text-xs font-bold w-5 h-5 flex items-center justify-center"
-                                                onClick={() => toggleTooltip(task.id)}
-                                            >
-                                                ?
-                                            </button>
-                                            {/* Tooltip */}
-                                            {visibleTooltip === task.id && (
-                                                <div className="tooltip absolute bg-gray-700 text-white text-xs rounded-2xl p-4 mt-2 z-20">
-                                                    {task.description}
-                                                    <button
-                                                        className="absolute top-0 right-0 text-white text-sm mt-1 mr-1"
-                                                        onClick={() => setVisibleTooltip(null)}
-                                                    >
-                                                        &times;
-                                                    </button>
+                                // Determine if the "Action" or "Verify" button should be disabled
+                                const shouldDisableButton =
+                                    (task.intervalType === 'ONETIME' && isVerified) || (task.intervalType === 'REPEATED' && completedToday && !timerCheck)
+
+                                return (
+                                    <div
+                                        key={task.id}
+                                        className="relative bg-white dark:bg-zinc-900 rounded-2xl shadow-lg py-1 flex flex-row items-center px-1 border border-gray-300 dark:border-gray-600 h-16 justify-between w-full mb-2"
+                                    >
+                                        {/* Platform Icon */}
+                                        <div className="w-12 h-16 flex items-center justify-center pt-2">
+                                            {platformIcons[task.platform] || <div className="w-8 h-8 text-gray-500">?</div>}
+                                        </div>
+
+                                        <div className="flex flex-col flex-grow mx-2 py-1">
+                                            {/* Task Name and Tooltip */}
+                                            <h3 className="font-semibold text-left break-words whitespace-normal text-xs flex items-center relative">
+                                                {task.name}
+                                                <button
+                                                    className="ml-2 rounded-full bg-gray-700 text-white text-xs font-bold w-5 h-5 flex items-center justify-center"
+                                                    onClick={() => toggleTooltip(task.id)}
+                                                >
+                                                    ?
+                                                </button>
+                                                {visibleTooltip === task.id && (
+                                                    <div className="tooltip absolute bg-gray-700 text-white text-xs rounded-2xl p-4 mt-2 z-20">
+                                                        {task.description}
+                                                        <button
+                                                            className="absolute top-0 right-0 text-white text-sm mt-1 mr-1"
+                                                            onClick={() => setVisibleTooltip(null)}
+                                                        >
+                                                            &times;
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </h3>
+
+                                            {/* XP and Users Completed */}
+                                            <div className="flex items-center mt-1">
+                                                <div className="flex items-center">
+                                                    <span className="mx-1 text-sm text-gray-100">+{task.xp}</span>
+                                                    <img src={coinStackIcon} alt="Coin Stack" className="w-4 h-4" />
                                                 </div>
-                                            )}
-                                        </h3>
-
-                                        {/* XP and Users Completed */}
-                                        <div className="flex items-center mt-1">
-                                            {/* +XP with coin-stack icon */}
-                                            <div className="flex items-center">
-                                                <span className="mx-1 text-sm text-gray-100">+{task.xp}</span>
-                                                <img src={coinStackIcon} alt="Coin Stack" className="w-4 h-4" />
                                             </div>
                                         </div>
-                                    </div>
 
-                                    {/* Buttons */}
-                                    <div className="flex flex-col space-y-1 justify-center mr-2">
-                                        {/* Action Button */}
-                                        <Button
-                                            rounded
-                                            onClick={() => handleAction(task)}
-                                            className="!text-2xs font-bold shadow-xl !w-16 !h-6"
-                                            style={{
-                                                background: 'linear-gradient(to left, #16a34a, #3b82f6)',
-                                                color: '#fff'
-                                            }}
-                                        >
-                                            {getActionLabel(task.verificationMethod)}
-                                        </Button>
+                                        <div className="flex flex-col space-y-1 justify-center mr-2">
+                                            {/* Action Button */}
+                                            <Button
+                                                rounded
+                                                onClick={() => handleAction(task)}
+                                                className="!text-2xs font-bold shadow-xl !w-20 !h-6"
+                                                style={{ background: 'linear-gradient(to left, #16a34a, #3b82f6)', color: '#fff' }}
+                                                disabled={shouldDisableButton}
+                                            >
+                                                {getActionLabel(task.verificationMethod)}
+                                            </Button>
 
-                                        {/* Verify Button */}
-                                        <Button
-                                            rounded
-                                            outline
-                                            onClick={() => handleVerify(task)}
-                                            className="!text-2xs font-bold shadow-xl !w-16 !h-6"
-                                            style={{
-                                                borderColor: '#3b82f6',
-                                                color: '#fff'
-                                            }}
-                                        >
-                                            Verify
-                                        </Button>
+                                            {/* Verify Button */}
+                                            <Button
+                                                rounded
+                                                outline
+                                                onClick={() => handleVerify(task)}
+                                                className="!text-2xs font-bold shadow-xl !w-20 !h-6"
+                                                style={{
+                                                    borderColor: isVerified ? '#16a34a' : '#3b82f6', // Green border for completed
+                                                    backgroundColor: 'transparent', // Green background for completed
+                                                    color: '#fff' // White text for completed, blue otherwise
+                                                }}
+                                                disabled={isVerified} // Disable if task is verified
+                                            >
+                                                {isVerified ? 'Completed' : 'Verify'}
+                                            </Button>
+                                        </div>
                                     </div>
-                                </div>
-                            ))
+                                )
+                            })
                         ) : (
                             <div className="text-center text-white mt-4">No tasks available.</div>
                         )}

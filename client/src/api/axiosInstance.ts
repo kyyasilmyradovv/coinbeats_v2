@@ -4,8 +4,8 @@ import useAuthStore from '../store/useAuthStore'
 import useSessionStore from '../store/useSessionStore'
 
 const axiosInstance = axios.create({
-    baseURL: 'https://subscribes.lt'
-    // baseURL: 'http://localhost:4000'
+    // baseURL: 'https://subscribes.lt'
+    baseURL: 'http://localhost:4000'
 })
 
 // Request interceptor for adding token to requests
@@ -14,8 +14,6 @@ axiosInstance.interceptors.request.use(
         const accessToken = useAuthStore.getState().accessToken || localStorage.getItem('accessToken')
         if (accessToken) {
             config.headers['Authorization'] = `Bearer ${accessToken}`
-        } else {
-            console.warn('No auth token found. Request may be unauthorized.')
         }
         return config
     },
@@ -53,14 +51,17 @@ axiosInstance.interceptors.response.use(
     }
 )
 
+// Request interceptor for adding tokens to requests
 axiosInstance.interceptors.request.use(
     (config) => {
+        const accessToken = useAuthStore.getState().accessToken || localStorage.getItem('accessToken')
+        if (accessToken) {
+            config.headers['Authorization'] = `Bearer ${accessToken}`
+        }
+
         const telegramUserId = useSessionStore.getState().userId
-        console.log('telegramUserId', telegramUserId)
         if (telegramUserId) {
             config.headers['X-Telegram-User-Id'] = telegramUserId
-        } else {
-            console.warn('No Telegram user ID found.')
         }
         return config
     },

@@ -16,6 +16,9 @@ const {
   getBookmarkedAcademies,
   completeVerificationTask,
   handleLoginStreak,
+  startVerificationTask,
+  submitTask,
+  getUserVerificationTasks,
 } = require('../controllers/userController');
 const asyncHandler = require('express-async-handler');
 
@@ -24,6 +27,10 @@ const router = express.Router();
 // Define user-related routes
 router.get('/me', telegramAuth, getCurrentUser);
 router.post('/handle-login-streak', asyncHandler(handleLoginStreak));
+router.post('/start-task', asyncHandler(startVerificationTask)); // No auth middleware
+router.post('/submit-task', asyncHandler(submitTask));
+router.post('/complete-task', asyncHandler(completeVerificationTask));
+router.post('/verification-tasks', asyncHandler(getUserVerificationTasks));
 router.get(
   '/',
   authenticateToken,
@@ -61,11 +68,6 @@ router.get('/confirm-email', asyncHandler(confirmEmail));
 router.get(
   '/:userId/bookmarked-academies',
   asyncHandler(getBookmarkedAcademies)
-);
-router.post(
-  '/complete-task',
-  authenticateToken,
-  asyncHandler(completeVerificationTask)
 );
 
 module.exports = router;

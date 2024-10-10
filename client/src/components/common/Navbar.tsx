@@ -13,13 +13,14 @@ import useSessionStore from '../../store/useSessionStore'
 const Navbar: React.FC = () => {
     const initData = useInitData()
     const navigate = useNavigate()
-    const { toggleSidebar } = useUserStore((state) => ({
-        toggleSidebar: state.toggleSidebar
+    const { toggleSidebar, username } = useUserStore((state) => ({
+        toggleSidebar: state.toggleSidebar,
+        username: state.username
     }))
 
     const { darkMode } = useSessionStore((state) => ({ darkMode: state.darkMode }))
 
-    const username = useMemo(() => initData?.user?.username || 'Guest', [initData])
+    // const username = useMemo(() => initData?.user?.username || 'Guest', [initData])
     const userAvatar = useMemo(() => initData?.user?.photo_url || `${avatar}`, [initData])
 
     const canGoBack = window.history.length > 1

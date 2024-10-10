@@ -87,25 +87,23 @@ const AddPlatformTasksPage: React.FC = () => {
 
     const handleSubmit = async () => {
         try {
+            const taskData = {
+                ...formData,
+                taskType: 'PLATFORM_SPECIFIC',
+                xp: formData.xp ? parseInt(formData.xp.toString(), 10) : 0,
+                repeatInterval: formData.repeatInterval ? parseInt(formData.repeatInterval.toString(), 10) : null,
+                shortCircuitTimer: formData.shortCircuitTimer ? parseInt(formData.shortCircuitTimer.toString(), 10) : null,
+                shortCircuit: formData.shortCircuit
+            }
+
             if (editingTask) {
                 // Update existing task
-                await axios.put(`/api/verification-tasks/${editingTask.id}`, {
-                    ...formData,
-                    xp: formData.xp ? parseInt(formData.xp.toString(), 10) : 0,
-                    repeatInterval: formData.repeatInterval ? parseInt(formData.repeatInterval.toString(), 10) : null,
-                    shortCircuitTimer: formData.shortCircuitTimer ? parseInt(formData.shortCircuitTimer.toString(), 10) : null
-                })
+                await axios.put(`/api/verification-tasks/${editingTask.id}`, taskData)
                 setNotificationText('Task updated successfully.')
-                setTasks((prevTasks) => prevTasks.map((task) => (task.id === editingTask.id ? { ...task, ...formData } : task)))
+                setTasks((prevTasks) => prevTasks.map((task) => (task.id === editingTask.id ? { ...task, ...taskData } : task)))
             } else {
                 // Create new task
-                const response = await axios.post('/api/verification-tasks/platform', {
-                    ...formData,
-                    taskType: 'PLATFORM_SPECIFIC',
-                    xp: formData.xp ? parseInt(formData.xp.toString(), 10) : 0,
-                    repeatInterval: formData.repeatInterval ? parseInt(formData.repeatInterval.toString(), 10) : null,
-                    shortCircuitTimer: formData.shortCircuitTimer ? parseInt(formData.shortCircuitTimer.toString(), 10) : null
-                })
+                const response = await axios.post('/api/verification-tasks/platform', taskData)
                 setNotificationText('Task created successfully.')
                 setTasks((prevTasks) => [...prevTasks, response.data])
             }

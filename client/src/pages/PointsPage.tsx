@@ -339,7 +339,7 @@ const PointsPage: React.FC = () => {
                         {activeLeaderboardTab === 'overall' && (
                             <>
                                 {/* Overall Leaderboard Card */}
-                                <Card className="!mb-2 !p-0 !rounded-2xl shadow-lg !mx-2 relative border border-gray-300 dark:border-gray-600">
+                                <Card className="!mb-16 !p-0 !rounded-2xl shadow-lg !mx-2 relative border border-gray-300 dark:border-gray-600">
                                     <div className="flex justify-between">
                                         <h2 className="text-sm font-bold mb-2 text-center">Overall Leaderboard</h2>
                                         <h2 className="text-sm font-bold mb-2 text-center">Points</h2>
@@ -363,7 +363,7 @@ const PointsPage: React.FC = () => {
                         {activeLeaderboardTab === 'weekly' && (
                             <>
                                 {/* Weekly Leaderboard Card */}
-                                <Card className="!mb-2 !p-0 !rounded-2xl shadow-lg !mx-2 !mt-0 relative border border-gray-300 dark:border-gray-600">
+                                <Card className="!mb-16 !p-0 !rounded-2xl shadow-lg !mx-2 !mt-0 relative border border-gray-300 dark:border-gray-600">
                                     {/* Date Range */}
                                     <div className="flex justify-between">
                                         <h2 className="text-sm font-bold mb-2 text-center">Weekly Leaderboard</h2>
@@ -395,7 +395,7 @@ const PointsPage: React.FC = () => {
                         {activeLeaderboardTab === 'stats' && (
                             <>
                                 {/* Your Points Breakdown Card */}
-                                <Card className="!mb-2 !p-4 !rounded-2xl shadow-lg !mx-2 relative border border-gray-300 dark:border-gray-600">
+                                <Card className="!mb-16 !p-4 !rounded-2xl shadow-lg !mx-2 relative border border-gray-300 dark:border-gray-600">
                                     <h2 className="text-sm font-bold mb-4">Your Points Breakdown</h2>
                                     {userPoints.map((point, index) => (
                                         <div key={index} className="flex items-center mb-4">
