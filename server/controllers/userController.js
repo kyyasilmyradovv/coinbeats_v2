@@ -648,14 +648,14 @@ exports.handleLoginStreak = async (req, res, next) => {
         ) {
           // Continue streak
           const newStreakCount = userVerification.streakCount + 1;
-          let newPointsAwarded = userVerification.pointsAwarded;
 
+          // Check if streak is less than or equal to 7
+          let newPointsAwarded;
           if (newStreakCount <= 7) {
-            // Increase points by 1.5x for up to 7 days
-            newPointsAwarded = Math.floor(newPointsAwarded * 1.5);
+            newPointsAwarded = Math.floor(userVerification.pointsAwarded * 1.5);
           } else {
-            // Cap points after 7 days
-            newPointsAwarded = Math.floor(userVerification.pointsAwarded);
+            // Keep pointsAwarded the same as on the 7th day
+            newPointsAwarded = userVerification.pointsAwarded;
           }
 
           userVerification = await prisma.userVerification.update({
@@ -710,16 +710,6 @@ exports.handleLoginStreak = async (req, res, next) => {
         },
       });
     }
-
-    res.json({
-      message: 'Login streak updated successfully',
-      userVerification,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
 
     // Create a new Point record
     const point = await prisma.point.create({

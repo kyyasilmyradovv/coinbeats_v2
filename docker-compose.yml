@@ -1,5 +1,5 @@
 services:
-  frontend:
+  frontend-blue:
     build:
       context: ./client
       dockerfile: Dockerfile
@@ -8,17 +8,43 @@ services:
     networks:
       - app-network
     depends_on:
-      - backend
+      - backend-blue
     restart: always
 
-  backend:
+  backend-blue:
     build:
       context: ./server
       dockerfile: Dockerfile
     ports:
       - "5000:4000"
     env_file:
-      - .env.production # Specify which env file to use
+      - .env.production
+    volumes:
+      - uploads:/app/public/uploads
+    restart: always
+    networks:
+      - app-network
+
+  frontend-green:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    ports:
+      - "8084:3000"
+    networks:
+      - app-network
+    depends_on:
+      - backend-green
+    restart: always
+
+  backend-green:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    ports:
+      - "5001:4000"
+    env_file:
+      - .env.production
     volumes:
       - uploads:/app/public/uploads
     restart: always

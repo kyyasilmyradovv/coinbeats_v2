@@ -4,8 +4,8 @@ import useAuthStore from '../store/useAuthStore'
 import useSessionStore from '../store/useSessionStore'
 
 const axiosInstance = axios.create({
-    // baseURL: 'https://subscribes.lt'
-    baseURL: 'http://localhost:4000'
+    baseURL: 'https://subscribes.lt'
+    // baseURL: 'http://localhost:4000'
 })
 
 // Request interceptor for adding token to requests
