@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { Card, Page, Button, Dialog, List, ListInput } from 'konsta/react'
+import { FaTwitter, FaFacebook, FaInstagram, FaTelegramPlane, FaDiscord, FaYoutube, FaEnvelope } from 'react-icons/fa'
+import { X } from '@mui/icons-material'
 import Navbar from '../components/common/Navbar'
 import Sidebar from '../components/common/Sidebar'
 import BottomTabBar from '../components/BottomTabBar'
@@ -11,16 +13,17 @@ import useUserStore from '~/store/useUserStore'
 import useSessionStore from '../store/useSessionStore'
 import treasure from '../images/treasure1.png'
 import bunny from '../images/bunny-head.png'
-import { FaTelegramPlane } from 'react-icons/fa'
 import { initUtils } from '@telegram-apps/sdk'
 import coming from '../images/svgs/coming-soon3.svg'
 import Lottie from 'react-lottie'
 import coinsEarnedAnimationData from '../animations/earned-coins.json'
+import bronzeMedal from '../images/bronze-medal.png'
 
 const PointsPage: React.FC = () => {
     const { userId, totalPoints } = useUserStore((state) => ({
         userId: state.userId,
-        totalPoints: state.totalPoints
+        totalPoints: state.totalPoints,
+        userName: state.username
     }))
 
     const [leaderboard, setLeaderboard] = useState<any[]>([])
@@ -59,6 +62,17 @@ const PointsPage: React.FC = () => {
         }
     }
 
+    const platformIcons: { [key: string]: JSX.Element } = {
+        X: <X className="w-5 h-5 text-blue-500" />,
+        FACEBOOK: <FaFacebook className="w-5 h-5 text-blue-700" />,
+        INSTAGRAM: <FaInstagram className="w-5 h-5 text-pink-500" />,
+        TELEGRAM: <FaTelegramPlane className="w-5 h-5 text-blue-400" />,
+        DISCORD: <FaDiscord className="w-5 h-5 text-indigo-600" />,
+        YOUTUBE: <FaYoutube className="w-5 h-5 text-red-600" />,
+        EMAIL: <FaEnvelope className="w-5 h-5 text-green-500" />
+        // Add more platforms if needed
+    }
+
     // Fetch user points breakdown using the new API
     const fetchUserPoints = async () => {
         if (!userId) {
@@ -68,6 +82,7 @@ const PointsPage: React.FC = () => {
 
         try {
             const response = await axiosInstance.get(`/api/points/breakdown/${userId}`)
+            console.log('Fetched Points:', response.data)
             setUserPoints(response.data)
         } catch (error) {
             console.error('Error fetching user points:', error)
@@ -94,7 +109,7 @@ const PointsPage: React.FC = () => {
 
             fetchLeaderboards()
         }
-    }, [userId]) // Only runs when userId changes and is non-null
+    }, [userId, totalPoints]) // Only runs when userId changes and is non-null
 
     // Fetch tasks (for the Invite button)
     useEffect(() => {
@@ -183,7 +198,7 @@ const PointsPage: React.FC = () => {
                 <div className="absolute inset-0 bg-black opacity-50 z-0"></div>
                 <div className="relative z-10">
                     {/* Treasure and Task Cards */}
-                    <div className="flex flex-row justify-center items-center mt-4">
+                    <div className="flex flex-row justify-center items-center mt-2">
                         <div className="pr-2 bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-1 flex flex-row items-center px-2 m-2 border border-gray-300 dark:border-gray-600 h-12 ml-4 justify-between">
                             {/* "Your Coins" card */}
                             <div className="w-10 h-10">
@@ -260,7 +275,7 @@ const PointsPage: React.FC = () => {
                     </Dialog>
 
                     {/* Tabs for Leaderboards */}
-                    <div className="flex justify-center gap-2 mt-4 mx-4 relative z-10">
+                    <div className="flex justify-center gap-2 mt-2 mx-4 relative z-10">
                         {/* Scholarships Button (now first) */}
                         <div className="relative coinbeats-background rounded-full text-xs w-full p-[2px]">
                             <Button
@@ -344,18 +359,44 @@ const PointsPage: React.FC = () => {
                                         <h2 className="text-sm font-bold mb-2 text-center">Overall Leaderboards</h2>
                                         <h2 className="text-sm font-bold mb-2 text-center">Points</h2>
                                     </div>
-                                    {leaderboard.map((user, index) => (
-                                        <div key={user.userId} className="flex items-center mb-2">
-                                            <img src={Trophy} alt="Trophy" className="h-4 w-4 mr-2" />
-                                            <div className="text-xs font-semibold text-gray-600 dark:text-gray-300">
-                                                {index + 1}. {user.name}
+                                    {leaderboard.map((user, index) => {
+                                        const isCurrentUser = user.userId === userId // Compare user IDs
+
+                                        // Set the correct icon and dimensions based on the user's ranking
+                                        const icon = index < 3 ? Trophy : index < 10 ? bronzeMedal : null
+                                        const iconClass = index < 3 ? 'h-5 w-5' : index < 10 ? 'h-4 w-3' : 'h-5 w-5 invisible' // Invisible if no icon
+
+                                        return (
+                                            <div key={user.userId} className="flex items-center mb-2">
+                                                {/* Placeholder for icon */}
+                                                <div className={`flex w-5 ${iconClass} mr-2 justify-end`}>
+                                                    {icon && <img src={icon} alt={index < 3 ? 'Trophy' : 'Bronze Medal'} className={`${iconClass}`} />}
+                                                </div>
+
+                                                {/* User name */}
+                                                <div
+                                                    className={`${
+                                                        isCurrentUser
+                                                            ? 'text-black dark:text-white font-bold underline text-md'
+                                                            : 'text-gray-600 dark:text-gray-300 text-xs font-semibold'
+                                                    } flex-grow`}
+                                                >
+                                                    {index + 1}. {user.name}
+                                                </div>
+
+                                                {/* Points */}
+                                                <div
+                                                    className={`${
+                                                        isCurrentUser
+                                                            ? 'text-black dark:text-white font-bold text-md'
+                                                            : 'text-gray-600 dark:text-gray-300 text-sm font-bold'
+                                                    }`}
+                                                >
+                                                    <strong>{user.totalPoints}</strong>
+                                                </div>
                                             </div>
-                                            <div className="flex flex-grow"></div>
-                                            <div className="text-sm font-bold text-gray-600 dark:text-gray-300">
-                                                <strong>{user.totalPoints}</strong>
-                                            </div>
-                                        </div>
-                                    ))}
+                                        )
+                                    })}
                                 </Card>
                             </>
                         )}
@@ -376,18 +417,44 @@ const PointsPage: React.FC = () => {
                                         </div>
                                         <h2 className="text-sm font-bold mb-2 text-center">Points</h2>
                                     </div>
-                                    {weeklyLeaderboard.map((user, index) => (
-                                        <div key={user.userId} className="flex items-center mb-2">
-                                            <img src={Trophy} alt="Trophy" className="h-4 w-4 mr-2" />
-                                            <div className="text-xs font-semibold text-gray-600 dark:text-gray-300">
-                                                {index + 1}. {user.name}
+                                    {weeklyLeaderboard.map((user, index) => {
+                                        const isCurrentUser = user.userId === userId // Compare user IDs
+
+                                        // Set the correct icon and dimensions based on the user's ranking
+                                        const icon = index < 3 ? Trophy : index < 10 ? bronzeMedal : null
+                                        const iconClass = index < 3 ? 'h-5 w-5' : index < 10 ? 'h-4 w-3' : 'h-5 w-5 invisible' // Invisible if no icon
+
+                                        return (
+                                            <div key={user.userId} className="flex items-center mb-2">
+                                                {/* Placeholder for icon */}
+                                                <div className={`flex w-5 ${iconClass} mr-2 justify-end`}>
+                                                    {icon && <img src={icon} alt={index < 3 ? 'Trophy' : 'Bronze Medal'} className={`${iconClass}`} />}
+                                                </div>
+
+                                                {/* User name */}
+                                                <div
+                                                    className={`${
+                                                        isCurrentUser
+                                                            ? 'text-black dark:text-white font-bold underline text-md'
+                                                            : 'text-gray-600 dark:text-gray-300 text-xs font-semibold'
+                                                    } flex-grow`}
+                                                >
+                                                    {index + 1}. {user.name}
+                                                </div>
+
+                                                {/* Points */}
+                                                <div
+                                                    className={`${
+                                                        isCurrentUser
+                                                            ? 'text-black dark:text-white font-bold text-md'
+                                                            : 'text-gray-600 dark:text-gray-300 text-sm font-bold'
+                                                    }`}
+                                                >
+                                                    <strong>{user.totalPoints}</strong>
+                                                </div>
                                             </div>
-                                            <div className="flex flex-grow"></div>
-                                            <div className="text-sm font-bold text-gray-600 dark:text-gray-300">
-                                                <strong>{user.totalPoints}</strong>
-                                            </div>
-                                        </div>
-                                    ))}
+                                        )
+                                    })}
                                 </Card>
                             </>
                         )}
@@ -397,32 +464,53 @@ const PointsPage: React.FC = () => {
                                 {/* Your Points Breakdown Card */}
                                 <Card className="!mb-18 !p-4 !rounded-2xl shadow-lg !mx-2 relative border border-gray-300 dark:border-gray-600">
                                     <h2 className="text-sm font-bold mb-4">Your Points Breakdown</h2>
-                                    {userPoints.map((point, index) => (
-                                        <div key={index} className="flex items-center mb-4">
-                                            <div className="bg-gray-900 mr-4 items-center justify-center text-center rounded-md w-7 h-6 flex">
-                                                {point.academy ? (
-                                                    <img src={constructImageUrl(point.academy.logoUrl)} className="h-5 w-5 rounded-full" alt="academy logo" />
-                                                ) : point.verificationTask?.platform === 'X' ? (
-                                                    <img src={ximage} alt="X Platform" className="h-5 w-5" />
-                                                ) : point.verificationTask?.platform === 'NONE' ? (
-                                                    <img src={coinStack} alt="Coins" className="h-5 w-5" />
-                                                ) : point.verificationTask?.verificationMethod === 'INVITE_TELEGRAM_FRIEND' ? (
-                                                    <img src={bunny} alt="Bunny" className="h-5 w-5" />
-                                                ) : null}
-                                            </div>
-                                            <div className="flex flex-row justify-between w-full">
-                                                <div>
-                                                    <p className="text-sm font-semibold dark:text-gray-100">
-                                                        {point.academy ? point.academy.name : point.verificationTask?.name}
-                                                    </p>
+
+                                    {/* Sort userPoints by createdAt in descending order */}
+                                    {userPoints
+                                        .sort((a, b) => {
+                                            console.log('Point A:', a) // Log each point to check properties
+                                            console.log('Point B:', b)
+
+                                            const dateA = new Date(a.createdAt)
+                                            const dateB = new Date(b.createdAt)
+
+                                            // Check if createdAt exists and log the dates
+                                            console.log('Date A:', dateA, 'Date B:', dateB)
+
+                                            return dateB - dateA // Sort by newest first
+                                        })
+                                        .map((point, index) => (
+                                            <div key={index} className="flex items-center mb-4 justify-between">
+                                                <div className="bg-gray-900 mr-4 items-center justify-center text-center rounded-md w-7 h-6 flex-shrink-0 flex">
+                                                    {point.academy ? (
+                                                        <img
+                                                            src={constructImageUrl(point.academy.logoUrl)}
+                                                            className="h-5 w-5 rounded-full"
+                                                            alt="academy logo"
+                                                        />
+                                                    ) : point.verificationTask?.platform && platformIcons[point.verificationTask.platform] ? (
+                                                        platformIcons[point.verificationTask.platform]
+                                                    ) : point.verificationTask?.platform === 'NONE' ? (
+                                                        <img src={bunny} alt="Coins" className="h-5 w-5" />
+                                                    ) : point.verificationTask?.verificationMethod === 'INVITE_TELEGRAM_FRIEND' ? (
+                                                        <img src={bunny} alt="Bunny" className="h-5 w-5" />
+                                                    ) : (
+                                                        <img src={bunny} alt="Coins" className="h-5 w-5" />
+                                                    )}
                                                 </div>
-                                                <div className="flex">
-                                                    <p className="text-sm font-semibold dark:text-gray-100">+{point.value}</p>
-                                                    <img src={coinStack} alt="Coins" className="w-5 h-5 ml-2" />
+                                                <div className="flex flex-col w-full">
+                                                    <div className="flex justify-between items-center">
+                                                        <p className="text-sm font-semibold dark:text-gray-100">
+                                                            {point.academy ? point.academy.name : point.verificationTask?.name}
+                                                        </p>
+                                                        <div className="flex items-center w-20 justify-end">
+                                                            <p className="text-sm font-semibold dark:text-gray-100">+{point.value}</p>
+                                                            <img src={coinStack} alt="Coins" className="w-5 h-5 ml-2 flex-shrink-0" />
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    ))}
+                                        ))}
                                 </Card>
                             </>
                         )}

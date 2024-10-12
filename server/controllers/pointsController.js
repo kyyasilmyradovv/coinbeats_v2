@@ -52,8 +52,6 @@ exports.getPointsByUserAndAcademy = async (req, res, next) => {
   }
 };
 
-/// controllers/pointsController.js
-
 exports.getLeaderboard = async (req, res, next) => {
   console.log('getLeaderboard hit');
 
@@ -155,6 +153,9 @@ exports.getUserPointsBreakdown = async (req, res, next) => {
       include: {
         academy: true,
         verificationTask: true,
+      },
+      orderBy: {
+        createdAt: 'desc', // Order by createdAt directly in the query
       },
     });
 

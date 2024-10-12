@@ -181,9 +181,28 @@ export default function HomePage() {
         const fetchAcademies = async () => {
             try {
                 const response = await axiosInstance.get('/api/academies/academies')
+
                 // Filter academies to include only those with status 'approved'
                 const approvedAcademies = response.data.filter((academy) => academy.status === 'approved')
-                setAcademies(approvedAcademies)
+
+                // Separate Coinbeats academies from others
+                const coinbeatsAcademies = approvedAcademies.filter((academy) => academy.academyType.name === 'Coinbeats')
+                const otherAcademies = approvedAcademies.filter((academy) => academy.academyType.name !== 'Coinbeats')
+
+                // Shuffle the other academies (Fisher-Yates shuffle algorithm)
+                const shuffleArray = (array) => {
+                    for (let i = array.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1))
+                        ;[array[i], array[j]] = [array[j], array[i]]
+                    }
+                    return array
+                }
+                const shuffledOtherAcademies = shuffleArray(otherAcademies)
+
+                // Combine the Coinbeats academies (always first) with the shuffled non-Coinbeats academies
+                const combinedAcademies = [...coinbeatsAcademies, ...shuffledOtherAcademies]
+
+                setAcademies(combinedAcademies)
             } catch (error) {
                 console.error('Error fetching academies:', error)
             }
@@ -521,7 +540,7 @@ export default function HomePage() {
                                 outline
                                 small
                                 onClick={() => setActiveFilter('yetToDo')}
-                                className={`border-brand-blue text-brand-blue ${
+                                className={`!border-brand-blue text-brand-blue ${
                                     activeFilter === 'yetToDo'
                                         ? 'bg-gray-100 dark:bg-gray-800 k-color-brand-purple shadow-lg !text-2xs'
                                         : 'bg-white dark:bg-gray-900 shadow-lg !text-2xs'

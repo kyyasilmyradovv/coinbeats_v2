@@ -65,7 +65,10 @@ export default function ProductPage() {
     const [currentPoints, setCurrentPoints] = useState(0)
     const [showXPAnimation, setShowXPAnimation] = useState(false)
     const swiperRef = useRef<any>(null)
-    const userId = useUserStore((state) => state.userId)
+    const { userId, setUser } = useUserStore((state) => ({
+        userId: state.userId,
+        setUser: state.setUser
+    }))
     const [showArrow, setShowArrow] = useState(true)
     const [userHasResponses, setUserHasResponses] = useState(false)
     const [showIntro, setShowIntro] = useState(false)
@@ -468,6 +471,21 @@ export default function ProductPage() {
                 academyId: academy.id,
                 userId
             })
+
+            // Fetch updated total points from the backend
+            const response = await axiosInstance.get(`/api/points/user/${userId}`)
+            const userPoints = response.data
+
+            // Calculate the total points
+            const totalPoints = userPoints.reduce((sum: number, point: { value: number }) => sum + point.value, 0)
+            console.log('Total points in product page:', totalPoints)
+
+            // Update the global store
+            setUser((prevState) => ({
+                ...prevState,
+                totalPoints: totalPoints,
+                points: userPoints
+            }))
 
             fetchEarnedPoints()
             setActiveFilter('completion')

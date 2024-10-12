@@ -53,7 +53,10 @@ interface UserTaskSubmission {
 }
 
 export default function GamesPage() {
-    const { userId } = useUserStore()
+    const { userId, setUser } = useUserStore((state) => ({
+        userId: state.userId,
+        setUser: state.setUser
+    }))
     const [activeTab, setActiveTab] = useState('tab-3')
     const [tasks, setTasks] = useState<VerificationTask[]>([])
     const [userVerificationTasks, setUserVerificationTasks] = useState<UserVerification[]>([])
@@ -361,6 +364,15 @@ export default function GamesPage() {
             })
     }
 
+    const fetchTotalPoints = async () => {
+        try {
+            const response = await axios.get(`/api/users/${userId}/total-points`)
+            setUser({ totalPoints: response.data.totalPoints }) // Update the store with new points
+        } catch (error) {
+            console.error('Error fetching total points:', error)
+        }
+    }
+
     const handleVerify = (task: VerificationTask) => {
         const userVerification = task.userVerification && task.userVerification[0]
         const isVerified = userVerification && userVerification.verified
@@ -379,6 +391,7 @@ export default function GamesPage() {
             .then((response) => {
                 setNotificationText(response.data.message)
                 setNotificationOpen(true)
+                fetchTotalPoints()
                 fetchTasks() // Refresh tasks after completion
             })
             .catch((error) => {
