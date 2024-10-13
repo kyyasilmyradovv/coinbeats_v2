@@ -4,6 +4,8 @@ import React, { useMemo, useState, useEffect, useRef } from 'react'
 import { initUtils } from '@telegram-apps/sdk'
 import axiosInstance from '../api/axiosInstance'
 import { useNavigate } from 'react-router-dom'
+import useAcademiesStore from '../store/useAcademiesStore'
+import { FixedSizeGrid } from 'react-window'
 import useCategoryChainStore from '../store/useCategoryChainStore'
 import Navbar from '../components/common/Navbar'
 import Sidebar from '../components/common/Sidebar'
@@ -338,6 +340,11 @@ export default function HomePage() {
     // Implement the handleSubmitFeedback function
     const handleSubmitFeedback = () => {
         if (!selectedTask) return
+        if (feedbackText.length < 100) {
+            setNotificationText('Please enter at least 100 characters.')
+            setNotificationOpen(true)
+            return
+        }
         const taskId = selectedTask.id
 
         // Start the task
@@ -425,8 +432,8 @@ export default function HomePage() {
                                             outline
                                             rounded
                                             onClick={() => handleAction(task)}
-                                            className={`!text-2xs !w-fit !font-bold whitespace-nowrap mr-2 !px-4 !py-0 ${
-                                                task.verificationMethod === 'LEAVE_FEEDBACK' ? '!border-orange-400' : '!border-blue-400'
+                                            className={`!text-2xs !font-bold whitespace-nowrap mr-2 ${
+                                                task.verificationMethod === 'LEAVE_FEEDBACK' ? '!border-orange-400 !w-[130px]' : '!border-blue-400 !w-[110px]'
                                             }`}
                                             style={{
                                                 background:
@@ -451,31 +458,46 @@ export default function HomePage() {
                         title={selectedTask ? selectedTask.name : 'Feedback'}
                         className="!m-0 !p-0 rounded-2xl !w-80"
                     >
-                        <div className="p-4">
+                        <div className="p-4 relative">
+                            {/* X Button to Close Dialog */}
+                            <button className="absolute -top-7 right-1 text-gray-500 hover:text-gray-700" onClick={() => setFeedbackDialogOpen(false)}>
+                                <FaTimes size={20} />
+                            </button>
                             <div className="flex items-center justify-center mb-4">
                                 <Lottie options={bunnyHappyAnimation} height={150} width={150} />
                             </div>
                             <p>{selectedTask ? selectedTask.description : ''}</p>
-                            <List className="!m-0 !p-0 !ml-0 !mr-0">
-                                <ListInput
-                                    type="textarea"
-                                    outline
-                                    inputStyle={{ height: '5rem', marginLeft: '0', marginRight: '0' }}
-                                    placeholder="Enter your feedback here..."
-                                    value={feedbackText}
-                                    onChange={(e) => setFeedbackText(e.target.value)}
-                                    className="w-full !m-0 !p-0 border border-gray-300 rounded mt-2 !ml-0 !mr-0"
-                                />
-                            </List>
+                            <div className="relative">
+                                <List className="!m-0 !p-0 !ml-0 !mr-0">
+                                    <ListInput
+                                        type="textarea"
+                                        outline
+                                        inputStyle={{ height: '5rem' }}
+                                        placeholder="Enter your feedback here..."
+                                        value={feedbackText}
+                                        onChange={(e) => setFeedbackText(e.target.value)}
+                                        className="w-full !m-0 !p-0 border border-gray-300 rounded mt-2 !ml-0 !mr-0"
+                                    />
+                                </List>
+                                {/* Character Count Display */}
+                                <div className="absolute -top-7 right-2 mt-2 mr-2 text-xs" style={{ color: feedbackText.length >= 100 ? 'green' : 'red' }}>
+                                    {feedbackText.length}/100
+                                </div>
+                            </div>
                             <Button
                                 rounded
                                 outline
                                 onClick={handleSubmitFeedback}
-                                className="!text-xs mt-4 font-bold shadow-xl min-w-28 !mx-auto"
+                                className="!text-xs mt-4 font-bold shadow-xl min-w-28 !mx-auto !h-7"
                                 style={{
-                                    background: 'linear-gradient(to left, #ff0077, #7700ff)',
-                                    color: '#fff'
+                                    background:
+                                        feedbackText.length >= 100
+                                            ? 'linear-gradient(to left, #ff0077, #7700ff)'
+                                            : 'linear-gradient(to left, #52525b, #27272a)', // Gray gradient when disabled
+                                    color: '#fff',
+                                    borderColor: '#9c27b0' // Ensure border is visible
                                 }}
+                                disabled={feedbackText.length < 100}
                             >
                                 Send
                             </Button>

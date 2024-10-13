@@ -158,7 +158,7 @@ const AcademyCompletionSlide: React.FC<AcademyCompletionSlideProps> = ({ earnedP
                                 </p>
                                 <img src={coinStack} alt="coin stack" className="w-6 h-6 ml-2 mb-2" />
                             </div>
-                            <p className="text-md dark:text-gray-100 mb-2">{task.description}</p>
+                            <p className="text-md dark:text-gray-100 mb-2">🎉 I just completed {academyName} academy on CoinBeats Crypto School</p>
                         </div>
                     </div>
                     <div className="flex">

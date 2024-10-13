@@ -7,12 +7,22 @@ import Sidebar from '../components/common/Sidebar'
 import BottomTabBar from '../components/BottomTabBar'
 import axios from '../api/axiosInstance'
 import coinStackIcon from '../images/coin-stack.png'
-import { FaTwitter, FaFacebook, FaInstagram, FaTelegramPlane, FaDiscord, FaYoutube, FaEnvelope } from 'react-icons/fa'
+import { FaTwitter, FaFacebook, FaInstagram, FaTelegramPlane, FaDiscord, FaYoutube, FaEnvelope, FaTimes } from 'react-icons/fa'
 import { initUtils } from '@telegram-apps/sdk'
-import { X } from '@mui/icons-material'
 import bunnyLogo from '../images/bunny-mascot.png'
 import coinbeats from '../images/coinbeats-l.svg'
 import useUserStore from '../store/useUserStore'
+import Lottie from 'react-lottie'
+import bunnyHappyAnimationData from '../animations/bunny-happy.json'
+
+const bunnyHappyAnimation = {
+    loop: true,
+    autoplay: true,
+    animationData: bunnyHappyAnimationData,
+    rendererSettings: {
+        preserveAspectRatio: 'xMidYMid slice'
+    }
+}
 
 // Utility function to check if two dates are the same day
 const isSameDay = (d1, d2) => {
@@ -72,6 +82,10 @@ export default function GamesPage() {
     const [taskInputValues, setTaskInputValues] = useState<{ [key: number]: string }>({})
     const [submittedTasks, setSubmittedTasks] = useState<{ [key: number]: boolean }>({})
 
+    // Feedback handling state variables
+    const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false)
+    const [feedbackText, setFeedbackText] = useState('')
+
     useEffect(() => {
         fetchTasks()
         fetchUserVerificationTasks() // Fetch verification tasks for the user
@@ -104,7 +118,7 @@ export default function GamesPage() {
         const now = Date.now()
         const timeElapsed = (now - createdAt) / 1000 // Convert milliseconds to seconds
 
-        return timeElapsed > timer // Return true if 1000 seconds have passed
+        return timeElapsed > timer // Return true if timer seconds have passed
     }
 
     const toggleTooltip = (tooltipIndex: number) => {
@@ -116,14 +130,14 @@ export default function GamesPage() {
     }
 
     const platformIcons: { [key: string]: JSX.Element } = {
-        X: <X className="w-8 h-8 !mb-3 text-blue-500 !p-0 !m-0" />,
+        X: <FaTwitter className="w-8 h-8 !mb-3 text-blue-500 !p-0 !m-0" />,
         FACEBOOK: <FaFacebook className="w-8 h-8 !mb-3 text-blue-700 !p-0 !m-0" />,
         INSTAGRAM: <FaInstagram className="w-8 h-8 !mb-3 text-pink-500 !p-0 !m-0" />,
         TELEGRAM: <FaTelegramPlane className="w-8 h-8 !mb-3 text-blue-400 !p-0 !m-0" />,
         DISCORD: <FaDiscord className="w-8 h-8 !mb-3 text-indigo-600 !p-0 !m-0" />,
         YOUTUBE: <FaYoutube className="w-8 h-8 !mb-3 text-red-600 !p-0 !m-0" />,
         EMAIL: <FaEnvelope className="w-8 h-8 !mb-3 text-green-500 !p-0 !m-0" />,
-        NONE: <img src={coinbeats} className="w-8 h-8 text-gray-500 !mb-3" />
+        NONE: <img src={coinbeats} alt="CoinBeats" className="w-8 h-8 !mb-3" />
         // Add other platforms as needed
     }
 
@@ -151,6 +165,8 @@ export default function GamesPage() {
                 return 'Subscribe'
             case 'ADD_TO_BIO':
                 return 'Add to Bio'
+            case 'LEAVE_FEEDBACK':
+                return 'Feedback'
             // Add other mappings as needed
             default:
                 return 'Action'
@@ -185,6 +201,9 @@ export default function GamesPage() {
         // Always perform the action, no need to check if the task is started or verified
         if (requiresInputField(task)) {
             openNotificationForTask(task) // Open notification for tasks that require input
+        } else if (task.verificationMethod === 'LEAVE_FEEDBACK') {
+            setSelectedTask(task)
+            setFeedbackDialogOpen(true)
         } else {
             // Direct the user to the appropriate action
             switch (task.verificationMethod) {
@@ -375,7 +394,7 @@ export default function GamesPage() {
     }
 
     const handleVerify = (task: VerificationTask) => {
-        const userVerification = task.userVerification && task.userVerification[0]
+        const userVerification = userVerificationTasks.find((verification) => verification.verificationTaskId === task.id)
         const isVerified = userVerification && userVerification.verified
         const completedToday = isVerified && isSameDay(new Date(), new Date(userVerification?.completedAt))
 
@@ -408,6 +427,40 @@ export default function GamesPage() {
         if (activeTaskTab === 'repeated') return task.intervalType === 'REPEATED' && task.verificationMethod !== 'INVITE_TELEGRAM_FRIEND'
         return false
     })
+
+    // Handle feedback submission
+    const handleSubmitFeedback = () => {
+        if (!selectedTask) return
+        const taskId = selectedTask.id
+
+        // Start the task
+        axios
+            .post('/api/users/start-task', { taskId, userId })
+            .then(() => {
+                // Submit the feedback
+                axios
+                    .post('/api/users/submit-task', { taskId, submissionText: feedbackText, userId })
+                    .then((response) => {
+                        setFeedbackDialogOpen(false)
+                        setNotificationText(
+                            'We appreciate your feedback very much! The admins will review your feedback and credit you the points. You can see your points on the Points page under your stats tab.'
+                        )
+                        setNotificationOpen(true)
+                        setFeedbackText('')
+                        setSelectedTask(null)
+                    })
+                    .catch((error) => {
+                        console.error('Error submitting feedback:', error)
+                        setNotificationText('Error submitting feedback. Please try again later.')
+                        setNotificationOpen(true)
+                    })
+            })
+            .catch((error) => {
+                console.error('Error starting task:', error)
+                setNotificationText('Error starting task. Please try again later.')
+                setNotificationOpen(true)
+            })
+    }
 
     return (
         <Page>
@@ -457,6 +510,46 @@ export default function GamesPage() {
                             </div>
                         </div>
                     </Dialog>
+
+                    {/* Feedback Dialog */}
+                    {selectedTask && (
+                        <Dialog
+                            opened={feedbackDialogOpen}
+                            onBackdropClick={() => setFeedbackDialogOpen(false)}
+                            title={selectedTask ? selectedTask.name : 'Feedback'}
+                            className="!m-0 !p-0 rounded-2xl !w-80"
+                        >
+                            <div className="p-4">
+                                <div className="flex items-center justify-center mb-4">
+                                    <Lottie options={bunnyHappyAnimation} height={150} width={150} />
+                                </div>
+                                <p>{selectedTask ? selectedTask.description : ''}</p>
+                                <List className="!m-0 !p-0 !ml-0 !mr-0">
+                                    <ListInput
+                                        type="textarea"
+                                        outline
+                                        inputStyle={{ height: '5rem', marginLeft: '0', marginRight: '0' }}
+                                        placeholder="Enter your feedback here..."
+                                        value={feedbackText}
+                                        onChange={(e) => setFeedbackText(e.target.value)}
+                                        className="w-full !m-0 !p-0 border border-gray-300 rounded mt-2 !ml-0 !mr-0"
+                                    />
+                                </List>
+                                <Button
+                                    rounded
+                                    outline
+                                    onClick={handleSubmitFeedback}
+                                    className="!text-xs mt-4 font-bold shadow-xl min-w-28 !mx-auto"
+                                    style={{
+                                        background: 'linear-gradient(to left, #ff0077, #7700ff)',
+                                        color: '#fff'
+                                    }}
+                                >
+                                    Send
+                                </Button>
+                            </div>
+                        </Dialog>
+                    )}
 
                     <Notification
                         className="fixed !mt-12 top-12 left-0 z-50 border"
@@ -592,31 +685,6 @@ export default function GamesPage() {
                                     >
                                         {getActionLabel(inviteTask.verificationMethod)}
                                     </Button>
-
-                                    {/* Verify Button
-                                    {(() => {
-                                        const userVerification = inviteTask.userVerification && inviteTask.userVerification[0]
-                                        const isVerified = userVerification && userVerification.verified
-
-                                        if (isVerified) {
-                                            return <span className="text-green-500 font-bold text-xs">Completed</span>
-                                        } else {
-                                            return (
-                                                <Button
-                                                    rounded
-                                                    outline
-                                                    onClick={() => handleVerify(inviteTask)}
-                                                    className="!text-2xs font-bold shadow-xl !w-20 !h-6"
-                                                    style={{
-                                                        borderColor: '#3b82f6',
-                                                        color: '#fff'
-                                                    }}
-                                                >
-                                                    Verify
-                                                </Button>
-                                            )
-                                        }
-                                    })()} */}
                                 </div>
                             </div>
                         )}
@@ -682,27 +750,32 @@ export default function GamesPage() {
                                                 rounded
                                                 onClick={() => handleAction(task)}
                                                 className="!text-2xs font-bold shadow-xl !w-20 !h-6"
-                                                style={{ background: 'linear-gradient(to left, #16a34a, #3b82f6)', color: '#fff' }}
+                                                style={{
+                                                    background: 'linear-gradient(to left, #16a34a, #3b82f6)',
+                                                    color: '#fff'
+                                                }}
                                                 disabled={shouldDisableButton}
                                             >
                                                 {getActionLabel(task.verificationMethod)}
                                             </Button>
 
                                             {/* Verify Button */}
-                                            <Button
-                                                rounded
-                                                outline
-                                                onClick={() => handleVerify(task)}
-                                                className="!text-2xs font-bold shadow-xl !w-20 !h-6"
-                                                style={{
-                                                    borderColor: isVerified ? '#16a34a' : '#3b82f6', // Green border for completed
-                                                    backgroundColor: 'transparent', // Green background for completed
-                                                    color: '#fff' // White text for completed, blue otherwise
-                                                }}
-                                                disabled={isVerified} // Disable if task is verified
-                                            >
-                                                {isVerified ? 'Completed' : 'Verify'}
-                                            </Button>
+                                            {task.verificationMethod !== 'LEAVE_FEEDBACK' && (
+                                                <Button
+                                                    rounded
+                                                    outline
+                                                    onClick={() => handleVerify(task)}
+                                                    className="!text-2xs font-bold shadow-xl !w-20 !h-6"
+                                                    style={{
+                                                        borderColor: isVerified ? '#16a34a' : '#3b82f6', // Green border for completed
+                                                        backgroundColor: 'transparent', // Green background for completed
+                                                        color: '#fff' // White text for completed, blue otherwise
+                                                    }}
+                                                    disabled={isVerified} // Disable if task is verified
+                                                >
+                                                    {isVerified ? 'Completed' : 'Verify'}
+                                                </Button>
+                                            )}
                                         </div>
                                     </div>
                                 )
@@ -718,3 +791,5 @@ export default function GamesPage() {
         </Page>
     )
 }
+
+GamesPage.displayName = 'GamesPage'
