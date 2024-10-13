@@ -5,20 +5,33 @@ import { useNavigate } from 'react-router-dom'
 import ximage from '../images/x.png'
 import axiosInstance from '../api/axiosInstance'
 import useUserStore from '~/store/useUserStore'
+import { FaTwitter } from 'react-icons/fa'
+import bunnyLogo from '../images/bunny-mascot.png'
+import { X } from '@mui/icons-material'
 
 type AcademyCompletionSlideProps = {
     earnedPoints: number
     totalPoints: number
-    academyName: string // Add the academy name as a prop
+    academyName: string
+}
+
+interface VerificationTask {
+    id: number
+    name: string
+    description: string
+    xp: number
+    platform: string
+    verificationMethod: string
 }
 
 const AcademyCompletionSlide: React.FC<AcademyCompletionSlideProps> = ({ earnedPoints, totalPoints, academyName }) => {
     const navigate = useNavigate()
-    const [isAuthenticated, setIsAuthenticated] = useState(false) // Handle Twitter auth state
-    const [accessToken, setAccessToken] = useState<string | null>(null) // Store the Twitter access token
+    const [isAuthenticated, setIsAuthenticated] = useState(false)
+    const [accessToken, setAccessToken] = useState<string | null>(null)
     const { userId } = useUserStore((state) => ({
         userId: state.userId
     }))
+    const [endOfAcademyTasks, setEndOfAcademyTasks] = useState<VerificationTask[]>([]) // Fetch tasks for END_OF_ACADEMY
 
     // Prefilled tweet content
     const tweetContent = `I just completed ${academyName} academy on CoinBeats Crypto School! 🎉🚀 #CoinBeats #CryptoSchool`
@@ -59,20 +72,19 @@ const AcademyCompletionSlide: React.FC<AcademyCompletionSlideProps> = ({ earnedP
                 return
             }
 
-            // Assume the user posts the tweet and we fetch the latest tweet ID from their timeline
             const response = await axiosInstance.get('/api/verification/twitter/fetch-latest-tweet', {
                 headers: {
-                    Authorization: `Bearer ${accessToken}` // Use the token received from OAuth
+                    Authorization: `Bearer ${accessToken}`
                 }
             })
 
-            const tweetId = response.data.tweetId // Assuming backend returns the latest tweet ID
+            const tweetId = response.data.tweetId
             console.log('Tweet ID:', tweetId)
 
             const verifyResponse = await axiosInstance.post('/api/verification/verify-twitter', {
                 userId: userId,
                 tweetId: tweetId,
-                taskId: 1 // Task ID for verification
+                taskId: 1
             })
 
             if (verifyResponse.data.points) {
@@ -82,6 +94,20 @@ const AcademyCompletionSlide: React.FC<AcademyCompletionSlideProps> = ({ earnedP
             console.error('Verification failed:', error)
         }
     }
+
+    // Fetch tasks with the 'END_OF_ACADEMY' display location
+    const fetchEndOfAcademyTasks = async () => {
+        try {
+            const response = await axiosInstance.get('/api/verification-tasks/end-of-academy')
+            setEndOfAcademyTasks(response.data)
+        } catch (error) {
+            console.error('Error fetching end of academy tasks:', error)
+        }
+    }
+
+    useEffect(() => {
+        fetchEndOfAcademyTasks()
+    }, [])
 
     return (
         <div className="flex flex-col items-center justify-center h-full mb-12">
@@ -115,29 +141,36 @@ const AcademyCompletionSlide: React.FC<AcademyCompletionSlideProps> = ({ earnedP
                 Explore more academies
             </Button>
 
-            <Card className="!my-6 !mx-0 !p-1 !rounded-2xl border border-gray-400 dark:border-gray-700 shadow-lg flex items-center justify-between">
-                {/* Left Side: Celebration Emoji and Text */}
-                <div className="flex items-start">
-                    <div className="w-[96px] h-[48px] bg-gray-300 mr-4 items-center justify-center text-center rounded-md pl-[1px]">
-                        <img src={ximage} alt="coin stack" className="w-[90px] h-[50px]" />
-                    </div>
-                    <div>
-                        <div className="flex items-center">
-                            <p className="text-[16px] font-bold dark:text-gray-100 mb-2">Post to X +50</p>{' '}
-                            <img src={coinStack} alt="coin stack" className="w-6 h-6 ml-2 mb-2" />
+            {/* Display End of Academy Tasks */}
+            {endOfAcademyTasks.map((task) => (
+                <Card
+                    key={task.id}
+                    className="!my-6 !mx-0 !p-1 !rounded-2xl border border-gray-400 dark:border-gray-700 shadow-lg flex items-center justify-between !w-full"
+                >
+                    <div className="flex items-start w-full">
+                        <div className="w-9 h-9 mr-4 items-center justify-center text-center rounded-md">
+                            <X className="!w-9 !h-9 !mb-3 text-gray-300 !p-0 !m-0" />
                         </div>
-                        <p className="text-md dark:text-gray-100 mb-2">🎉 I just completed {academyName} academy on CoinBeats Crypto School</p>
+                        <div>
+                            <div className="flex items-center">
+                                <p className="text-[16px] font-bold dark:text-gray-100 mb-2">
+                                    {task.name} +{task.xp}
+                                </p>
+                                <img src={coinStack} alt="coin stack" className="w-6 h-6 ml-2 mb-2" />
+                            </div>
+                            <p className="text-md dark:text-gray-100 mb-2">{task.description}</p>
+                        </div>
                     </div>
-                </div>
-                <div className="flex">
-                    <Button rounded solid outline onClick={handleTwitterLogin} className="flex items-center py-2 mx-2 rounded-xl shadow-sm">
-                        Post on X
-                    </Button>
-                    <Button rounded onClick={handleTweetVerify} className="flex items-center py-2 mx-2 rounded-xl shadow-sm">
-                        Verify
-                    </Button>
-                </div>
-            </Card>
+                    <div className="flex">
+                        <Button rounded outline onClick={handleTwitterLogin} className="flex items-center py-2 mx-2 rounded-xl shadow-sm">
+                            Post on X
+                        </Button>
+                        <Button rounded onClick={handleTweetVerify} className="flex items-center py-2 mx-2 rounded-xl shadow-sm">
+                            Verify
+                        </Button>
+                    </div>
+                </Card>
+            ))}
         </div>
     )
 }

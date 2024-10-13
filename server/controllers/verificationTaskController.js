@@ -321,3 +321,22 @@ exports.getTasksForHomepage = async (req, res, next) => {
     next(createError(500, 'Error fetching tasks for homepage'));
   }
 };
+
+exports.getTasksForAcademypage = async (req, res, next) => {
+  try {
+    const tasks = await prisma.verificationTask.findMany({
+      where: {
+        displayLocation: 'END_OF_ACADEMY',
+      },
+      include: {
+        _count: {
+          select: { userVerification: true },
+        },
+      },
+    });
+    res.json(tasks);
+  } catch (error) {
+    console.error('Error fetching end of academy tasks:', error);
+    next(createError(500, 'Error fetching end of academy tasks'));
+  }
+};

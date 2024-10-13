@@ -1,11 +1,11 @@
 // client/src/api/axiosInstance.ts
+
 import axios from 'axios'
 import useAuthStore from '../store/useAuthStore'
 import useSessionStore from '../store/useSessionStore'
 
 const axiosInstance = axios.create({
-    baseURL: 'https://subscribes.lt'
-    // baseURL: 'http://localhost:4000'
+    baseURL: import.meta.env.VITE_API_BASE_URL // Automatically switches based on environment
 })
 
 // Request interceptor for adding token to requests

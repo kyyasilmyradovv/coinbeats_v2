@@ -54,6 +54,7 @@ enum VerificationMethod {
   JOIN_DISCORD_CHANNEL
   PROVIDE_EMAIL
   SHORT_CIRCUIT
+  LEAVE_FEEDBACK
 }
 
 model User {
@@ -292,6 +293,7 @@ model UserTaskSubmission {
   taskId         Int
   submissionText String
   createdAt      DateTime          @default(now())
+  processed      Boolean           @default(false) // New field
 
   user           User              @relation(fields: [userId], references: [id])
   task           VerificationTask  @relation(fields: [taskId], references: [id])

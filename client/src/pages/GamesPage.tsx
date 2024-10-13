@@ -11,6 +11,7 @@ import { FaTwitter, FaFacebook, FaInstagram, FaTelegramPlane, FaDiscord, FaYoutu
 import { initUtils } from '@telegram-apps/sdk'
 import { X } from '@mui/icons-material'
 import bunnyLogo from '../images/bunny-mascot.png'
+import coinbeats from '../images/coinbeats-l.svg'
 import useUserStore from '../store/useUserStore'
 
 // Utility function to check if two dates are the same day
@@ -122,7 +123,7 @@ export default function GamesPage() {
         DISCORD: <FaDiscord className="w-8 h-8 !mb-3 text-indigo-600 !p-0 !m-0" />,
         YOUTUBE: <FaYoutube className="w-8 h-8 !mb-3 text-red-600 !p-0 !m-0" />,
         EMAIL: <FaEnvelope className="w-8 h-8 !mb-3 text-green-500 !p-0 !m-0" />,
-        NONE: <div className="w-8 h-8 text-gray-500">?</div>
+        NONE: <img src={coinbeats} className="w-8 h-8 text-gray-500 !mb-3" />
         // Add other platforms as needed
     }
 

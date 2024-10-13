@@ -210,3 +210,17 @@
 .animate-zoom {
     animation: zoom-in-out 0.5s forwards;
 }
+
+/* Custom scrollbar */
+select::-webkit-scrollbar {
+    width: 6px; /* Narrow scrollbar */
+}
+
+select::-webkit-scrollbar-track {
+    background: #1f2937; /* dark background */
+}
+
+select::-webkit-scrollbar-thumb {
+    background-color: #4b5563; /* gray-700 color */
+    border-radius: 10px;
+}

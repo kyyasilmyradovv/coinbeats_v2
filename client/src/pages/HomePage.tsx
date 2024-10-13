@@ -20,6 +20,7 @@ import Lottie from 'react-lottie'
 import bunnyAnimationData from '../animations/bunny.json'
 import coinsCreditedAnimationData from '../animations/coins-credited.json'
 import coinsEarnedAnimationData from '../animations/earned-coins.json'
+import bunnyHappyAnimationData from '../animations/bunny-happy.json'
 import bunnyLogo from '../images/bunny-mascot.png'
 
 export default function HomePage() {
@@ -41,33 +42,39 @@ export default function HomePage() {
     const [animationComplete, setAnimationComplete] = useState(false)
     const [notificationOpen, setNotificationOpen] = useState(false)
     const [notificationText, setNotificationText] = useState('')
+    const [leaderboard, setLeaderboard] = useState([])
 
     // Added useRef to ensure the login streak is handled only once
     const loginStreakHandled = useRef(false)
 
-    const handleAction = (task) => {
-        if (task.verificationMethod === 'INVITE_TELEGRAM_FRIEND') {
-            axiosInstance
-                .get('/api/users/me')
-                .then((response) => {
-                    const userReferralCode = response.data.referralCode
-                    if (!userReferralCode) {
-                        setNotificationText('Referral code not available.')
-                        setNotificationOpen(true)
-                        return
-                    }
-                    const botUsername = 'CoinbeatsMiniApp_bot/miniapp' // Replace with your bot's username
-                    const referralLink = `https://t.me/${botUsername}?startapp=${userReferralCode}`
-                    setReferralCode(userReferralCode) // Store referralCode for later use
-                    setReferralLink(referralLink)
-                    setReferralModalOpen(true)
-                })
-                .catch((error) => {
-                    console.error('Error fetching user data:', error)
-                })
-        }
-        // ... handle other methods if any
-    }
+    // Add state variables for feedback handling
+    const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false)
+    const [feedbackText, setFeedbackText] = useState('')
+    const [selectedTask, setSelectedTask] = useState(null)
+
+    const { bookmarks, setBookmarks, userId, roles, totalPoints, points, setUser, referralPointsAwarded, resetReferralPointsAwarded } = useUserStore(
+        (state) => ({
+            bookmarks: state.bookmarks,
+            setBookmarks: state.setBookmarks,
+            userId: state.userId,
+            roles: state.roles,
+            points: state.points,
+            totalPoints: state.totalPoints,
+            setUser: state.setUser,
+            referralPointsAwarded: state.referralPointsAwarded,
+            resetReferralPointsAwarded: state.resetReferralPointsAwarded
+        })
+    )
+
+    const { telegramUserId } = useSessionStore((state) => ({
+        telegramUserId: state.userId
+    }))
+
+    const { categories, chains, fetchCategoriesAndChains } = useCategoryChainStore((state) => ({
+        categories: state.categories,
+        chains: state.chains,
+        fetchCategoriesAndChains: state.fetchCategoriesAndChains
+    }))
 
     const bunnyAnimation = {
         loop: true,
@@ -96,39 +103,14 @@ export default function HomePage() {
         }
     }
 
-    const {
-        bookmarks,
-        setBookmarks,
-        userId,
-        roles, // Updated from role to roles
-        totalPoints,
-        points,
-        setUser,
-        referralPointsAwarded,
-        resetReferralPointsAwarded
-    } = useUserStore((state) => ({
-        bookmarks: state.bookmarks,
-        setBookmarks: state.setBookmarks,
-        userId: state.userId,
-        roles: state.roles, // Updated from role to roles
-        points: state.points,
-        totalPoints: state.totalPoints,
-        setUser: state.setUser,
-        referralPointsAwarded: state.referralPointsAwarded,
-        resetReferralPointsAwarded: state.resetReferralPointsAwarded
-    }))
-
-    console.log('This is referral points on homepage store', referralPointsAwarded)
-
-    const { telegramUserId } = useSessionStore((state) => ({
-        telegramUserId: state.userId
-    }))
-
-    const { categories, chains, fetchCategoriesAndChains } = useCategoryChainStore((state) => ({
-        categories: state.categories,
-        chains: state.chains,
-        fetchCategoriesAndChains: state.fetchCategoriesAndChains
-    }))
+    const bunnyHappyAnimation = {
+        loop: true,
+        autoplay: true,
+        animationData: bunnyHappyAnimationData,
+        rendererSettings: {
+            preserveAspectRatio: 'xMidYMid slice'
+        }
+    }
 
     const handleLoginStreak = async () => {
         try {
@@ -281,6 +263,33 @@ export default function HomePage() {
         navigate(`/product/${academy.id}`, { state: { academy } })
     }
 
+    const handleAction = (task) => {
+        if (task.verificationMethod === 'INVITE_TELEGRAM_FRIEND') {
+            axiosInstance
+                .get('/api/users/me')
+                .then((response) => {
+                    const userReferralCode = response.data.referralCode
+                    if (!userReferralCode) {
+                        setNotificationText('Referral code not available.')
+                        setNotificationOpen(true)
+                        return
+                    }
+                    const botUsername = 'CoinbeatsMiniApp_bot/miniapp' // Replace with your bot's username
+                    const referralLink = `https://t.me/${botUsername}?startapp=${userReferralCode}`
+                    setReferralCode(userReferralCode) // Store referralCode for later use
+                    setReferralLink(referralLink)
+                    setReferralModalOpen(true)
+                })
+                .catch((error) => {
+                    console.error('Error fetching user data:', error)
+                })
+        } else if (task.verificationMethod === 'LEAVE_FEEDBACK') {
+            setSelectedTask(task)
+            setFeedbackDialogOpen(true)
+        }
+        // ... handle other methods if any
+    }
+
     const handleInviteFriend = () => {
         const utils = initUtils()
         const inviteLink = `https://t.me/CoinbeatsMiniApp_bot/miniapp?startapp=${referralCode}`
@@ -302,6 +311,64 @@ export default function HomePage() {
             })
     }
 
+    // Fetch leaderboard when userId is available
+    useEffect(() => {
+        if (userId) {
+            const fetchLeaderboard = async () => {
+                try {
+                    const response = await axiosInstance.get('/api/points/leaderboard')
+                    setLeaderboard(response.data)
+                } catch (error) {
+                    console.error('Error fetching leaderboard:', error)
+                }
+            }
+            fetchLeaderboard()
+        }
+    }, [userId])
+
+    // Compute userRank
+    const userRank = useMemo(() => {
+        if (leaderboard && userId) {
+            const rank = leaderboard.findIndex((user) => user.userId === userId)
+            return rank >= 0 ? rank + 1 : null
+        }
+        return null
+    }, [leaderboard, userId])
+
+    // Implement the handleSubmitFeedback function
+    const handleSubmitFeedback = () => {
+        if (!selectedTask) return
+        const taskId = selectedTask.id
+
+        // Start the task
+        axiosInstance
+            .post('/api/users/start-task', { taskId, userId })
+            .then(() => {
+                // Submit the feedback
+                axiosInstance
+                    .post('/api/users/submit-task', { taskId, submissionText: feedbackText, userId })
+                    .then((response) => {
+                        setFeedbackDialogOpen(false)
+                        setNotificationText(
+                            'We appreciate your feedback very much! The admins will review your feedback and credit you the points. You can see your points on the Points page under your stats tab.'
+                        )
+                        setNotificationOpen(true)
+                        setFeedbackText('')
+                        setSelectedTask(null)
+                    })
+                    .catch((error) => {
+                        console.error('Error submitting feedback:', error)
+                        setNotificationText('Error submitting feedback. Please try again later.')
+                        setNotificationOpen(true)
+                    })
+            })
+            .catch((error) => {
+                console.error('Error starting task:', error)
+                setNotificationText('Error starting task. Please try again later.')
+                setNotificationOpen(true)
+            })
+    }
+
     return (
         <Page>
             <Navbar />
@@ -310,39 +377,112 @@ export default function HomePage() {
             <div className="relative min-h-screen bg-cosmos-bg bg-fixed bg-center bg-no-repeat bg-cover">
                 <div className="absolute inset-0 bg-black opacity-50 z-0"></div>
                 <div className="relative z-10">
-                    <div className="flex flex-row justify-center items-center mb-4 mt-4">
-                        <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-1 flex flex-row items-center px-2 m-2 border border-gray-300 dark:border-gray-600 h-12 ml-4 justify-between">
+                    <div className="flex flex-row justify-center items-center mb-2 mt-2">
+                        <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-1 flex flex-col items-center px-2 m-2 border border-gray-300 dark:border-gray-600 h-auto ml-4">
                             {/* "Your Coins" card */}
-                            <div className="w-10 h-10">
-                                <Lottie options={coinsEarnedAnimation} height={40} width={40} />
+                            <div className="flex flex-row items-center justify-between w-full">
+                                <div className="w-10 h-10">
+                                    <Lottie options={coinsEarnedAnimation} height={40} width={40} />
+                                </div>
+                                <div className="text-md font-bold text-black dark:text-white flex-grow text-end mr-2 mt-1">{totalPoints}</div>
                             </div>
-                            <div className="text-md font-bold text-black dark:text-white flex flex-grow w-full text-end mr-2 mt-1">{totalPoints}</div>
+                            {/* User Rank */}
+                            {userRank && (
+                                <div className="flex flex-row items-center mt-2 w-full">
+                                    <div className="w-10 h-10 items-center">
+                                        <Lottie options={bunnyHappyAnimation} height={35} width={35} />
+                                    </div>
+                                    <div className="flex flex-col file:text-md font-bold text-black dark:text-white flex-grow text-end mr-2 mt-1">
+                                        <div className="flex flex-row items-center justify-center">
+                                            <span className="text-center">{userRank}</span>
+                                        </div>
+                                        <div className="flex flex-row items-center justify-center">
+                                            <span className="text-xs text-gray-300">Rank</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
-                        {tasks.length > 0 && (
-                            <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg py-1 flex flex-grow flex-row items-center px-1 m-1 border border-gray-300 dark:border-gray-600 h-12 mr-4 justify-between">
-                                {/* Task card */}
-                                <FaTelegramPlane size={30} className="text-blue-400 mx-2" />
-                                <div className="flex flex-col flex-grow ml-2">
-                                    <div className="text-[12px] text-gray-800 dark:text-gray-200 font-semibold mr-2">{tasks[0].name}</div>
-                                </div>
-                                <Button
-                                    outline
-                                    rounded
-                                    onClick={() => handleAction(tasks[0])}
-                                    className="!text-2xs !w-28 !border-blue-400 !font-bold whitespace-nowrap mr-2 !px-2 !py-0"
-                                    style={{
-                                        background: 'linear-gradient(to left, #16a34a, #3b82f6)',
-                                        color: '#fff'
-                                    }}
-                                >
-                                    Invite +{tasks[0].xp}
-                                    <img src={coins} className="h-3 w-3 ml-1" alt="coins icon" />
-                                </Button>
-                            </div>
-                        )}
+                        {/* Map over tasks to display all task items */}
+                        <div className="flex flex-col flex-grow">
+                            {tasks.length > 0 &&
+                                tasks.map((task, index) => (
+                                    <div
+                                        key={index}
+                                        className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg py-1 flex flex-row items-center px-1 m-1 border border-gray-300 dark:border-gray-600 h-12 mr-4 justify-between"
+                                    >
+                                        {/* Task card */}
+                                        {task.verificationMethod === 'LEAVE_FEEDBACK' ? (
+                                            <div className="text-2xl mx-2">🙏</div>
+                                        ) : (
+                                            <FaTelegramPlane size={30} className="text-blue-400 mx-2" />
+                                        )}
+                                        <div className="flex flex-col flex-grow ml-2">
+                                            <div className="text-[12px] text-gray-800 dark:text-gray-200 font-semibold mr-2">{task.name}</div>
+                                        </div>
+                                        <Button
+                                            outline
+                                            rounded
+                                            onClick={() => handleAction(task)}
+                                            className={`!text-2xs !w-fit !font-bold whitespace-nowrap mr-2 !px-4 !py-0 ${
+                                                task.verificationMethod === 'LEAVE_FEEDBACK' ? '!border-orange-400' : '!border-blue-400'
+                                            }`}
+                                            style={{
+                                                background:
+                                                    task.verificationMethod === 'LEAVE_FEEDBACK'
+                                                        ? 'linear-gradient(to left, #3b82f6, #ff0077)'
+                                                        : 'linear-gradient(to left, #16a34a, #3b82f6)',
+                                                color: '#fff'
+                                            }}
+                                        >
+                                            {task.verificationMethod === 'LEAVE_FEEDBACK' ? 'Feedback' : 'Invite'} +{task.xp}
+                                            <img src={coins} className="h-3 w-3 ml-1" alt="coins icon" />
+                                        </Button>
+                                    </div>
+                                ))}
+                        </div>
                     </div>
 
+                    {/* Feedback Dialog */}
+                    <Dialog
+                        opened={feedbackDialogOpen}
+                        onBackdropClick={() => setFeedbackDialogOpen(false)}
+                        title={selectedTask ? selectedTask.name : 'Feedback'}
+                        className="!m-0 !p-0 rounded-2xl !w-80"
+                    >
+                        <div className="p-4">
+                            <div className="flex items-center justify-center mb-4">
+                                <Lottie options={bunnyHappyAnimation} height={150} width={150} />
+                            </div>
+                            <p>{selectedTask ? selectedTask.description : ''}</p>
+                            <List className="!m-0 !p-0 !ml-0 !mr-0">
+                                <ListInput
+                                    type="textarea"
+                                    outline
+                                    inputStyle={{ height: '5rem', marginLeft: '0', marginRight: '0' }}
+                                    placeholder="Enter your feedback here..."
+                                    value={feedbackText}
+                                    onChange={(e) => setFeedbackText(e.target.value)}
+                                    className="w-full !m-0 !p-0 border border-gray-300 rounded mt-2 !ml-0 !mr-0"
+                                />
+                            </List>
+                            <Button
+                                rounded
+                                outline
+                                onClick={handleSubmitFeedback}
+                                className="!text-xs mt-4 font-bold shadow-xl min-w-28 !mx-auto"
+                                style={{
+                                    background: 'linear-gradient(to left, #ff0077, #7700ff)',
+                                    color: '#fff'
+                                }}
+                            >
+                                Send
+                            </Button>
+                        </div>
+                    </Dialog>
+
+                    {/* Referral Dialog */}
                     <Dialog
                         opened={referralModalOpen}
                         onBackdropClick={() => setReferralModalOpen(false)}
@@ -458,24 +598,43 @@ export default function HomePage() {
                         </Dialog>
                     )}
 
-                    <div className="flex justify-between bg-white dark:bg-zinc-900 rounded-2xl mx-4 shadow-lg p-0 py-0">
+                    {/* Notification */}
+                    <Notification
+                        className="fixed !mt-12 top-12 left-0 z-50 border"
+                        opened={notificationOpen}
+                        icon={<img src={bunnyLogo} alt="Bunny Mascot" className="w-10 h-10" />}
+                        title="Message from CoinBeats Bunny"
+                        text={notificationText}
+                        button={<Button onClick={() => setNotificationOpen(false)}>Close</Button>}
+                        onClose={() => setNotificationOpen(false)}
+                    />
+
+                    <div className="flex flex-col justify-between bg-white dark:bg-zinc-900 rounded-2xl mx-2 shadow-lg p-0 py-0">
+                        <div className="flex flex-row w-full mt-1 items-center ml-4">
+                            <span className="text-xs text-gray-800 dark:text-gray-300 ml-2">Filter by:</span>
+                        </div>
                         <div className="flex flex-row w-full space-x-0">
                             <div className="!flex w-1/3">
-                                <List className="!flex !ml-0 !mr-0 !mt-0 !mb-0 !w-full">
+                                <List className="!flex !ml-0 !mr-0 !mt-0 !mb-0 !w-full !my-0">
                                     <ListInput
                                         className="!flex text-xs !ml-0 !mr-0 !mt-0 !mb-0"
                                         label="Category"
                                         type="select"
                                         dropdown
                                         outline
-                                        inputClassName="!flex !h-8 !ml-0 !mr-0 !mt-0 !mb-0"
+                                        inputClassName="!flex !h-7 !ml-0 !mr-0 !mt-0 !mb-0"
+                                        inputStyle={{ fontSize: '0.85rem' }}
                                         placeholder="Please choose..."
                                         value={category}
                                         onChange={(e) => setCategory(e.target.value)}
                                     >
                                         <option value="">All</option>
                                         {categories.map((category) => (
-                                            <option key={category.id} value={category.name}>
+                                            <option
+                                                key={category.id}
+                                                value={category.name}
+                                                className="!dark:text-white !text-black dark:bg-gray-800 !bg-gray-100"
+                                            >
                                                 {category.name}
                                             </option>
                                         ))}
@@ -483,14 +642,15 @@ export default function HomePage() {
                                 </List>
                             </div>
                             <div className="!flex w-1/3">
-                                <List className="!flex !ml-0 !mr-0 !mt-0 !mb-0 !w-full">
+                                <List className="!flex !ml-0 !mr-0 !mt-0 !mb-0 !w-full !my-0">
                                     <ListInput
                                         className="!flex text-xs !h-4 !ml-0 !mr-0 !mt-0 !mb-0"
                                         label="Chain"
                                         type="select"
                                         dropdown
                                         outline
-                                        inputClassName="!flex !h-8 !ml-0 !mr-0 !mt-0 !mb-0"
+                                        inputClassName="!flex !h-7 !ml-0 !mr-0 !mt-0 !mb-0"
+                                        inputStyle={{ fontSize: '0.85rem' }}
                                         placeholder="Please choose..."
                                         value={chain}
                                         onChange={(e) => setChain(e.target.value)}
@@ -504,13 +664,13 @@ export default function HomePage() {
                                     </ListInput>
                                 </List>
                             </div>
-                            <div className="flex w-1/3 h-full items-center justify-center text-center pr-2 z-0">
+                            <div className="flex w-1/3 items-center justify-center text-center pr-2 z-0">
                                 <Searchbar
-                                    inputStyle={{ height: '2rem' }}
+                                    inputStyle={{ height: '1.9rem', fontSize: '0.85rem' }}
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     placeholder="Search"
-                                    className="text-xs z-0"
+                                    className="!text-2xs z-0 !items-center !justify-center !my-auto !h-7 !placeholder:text-sm"
                                     clearButton
                                 />
                             </div>
@@ -586,7 +746,12 @@ export default function HomePage() {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-0 px-1 pt-6 pb-16">
+                    {/* Render the total number of academies */}
+                    <div className="text-gray-300 text-xs mt-2 ml-6">
+                        <span className="text-white font-bold">{academies.length} </span> Academies
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-0 px-1 pt-1 pb-16">
                         {filteredData.map((academy) => {
                             const isCompleted = hasCompletedAcademy(academy.id)
                             const isCoinbeats = academy.academyType.name === 'Coinbeats'
@@ -658,16 +823,6 @@ export default function HomePage() {
                             )
                         })}
                     </div>
-
-                    <Notification
-                        className="fixed !mt-12 top-12 left-0 z-50 border"
-                        opened={notificationOpen}
-                        icon={<img src={bunnyLogo} alt="Bunny Mascot" className="w-10 h-10" />}
-                        title="Message from Coinbeats Bunny"
-                        text={notificationText}
-                        button={<Button onClick={() => setNotificationOpen(false)}>Close</Button>}
-                        onClose={() => setNotificationOpen(false)}
-                    />
 
                     {showBookmarkAnimation && (
                         <div className="fixed inset-0 flex flex-col items-center justify-center z-50 animate-bookmark">

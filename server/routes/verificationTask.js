@@ -10,6 +10,7 @@ const {
   getVerificationTaskById,
   getTasksForGamesPage,
   getTasksForHomepage,
+  getTasksForAcademypage,
 } = require('../controllers/verificationTaskController');
 const asyncHandler = require('express-async-handler');
 
@@ -38,6 +39,7 @@ router.post(
 );
 router.get('/games', asyncHandler(getTasksForGamesPage));
 router.get('/homepage', asyncHandler(getTasksForHomepage));
+router.get('/end-of-academy', asyncHandler(getTasksForAcademypage));
 router.get(
   '/academy/:academyId',
   authenticateToken,
