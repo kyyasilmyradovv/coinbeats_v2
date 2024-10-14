@@ -1,4 +1,5 @@
 // src/store/useAcademiesStore.js
+
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
 import axiosInstance from '../api/axiosInstance'
@@ -7,6 +8,7 @@ const useAcademiesStore = create()(
     devtools((set) => ({
         academies: [],
         isLoading: false,
+        setAcademies: (academies: any[]) => set({ academies }),
         fetchAcademies: async () => {
             set({ isLoading: true })
             try {

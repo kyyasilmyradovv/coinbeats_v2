@@ -468,14 +468,8 @@ const PointsPage: React.FC = () => {
                                     {/* Sort userPoints by createdAt in descending order */}
                                     {userPoints
                                         .sort((a, b) => {
-                                            console.log('Point A:', a) // Log each point to check properties
-                                            console.log('Point B:', b)
-
                                             const dateA = new Date(a.createdAt)
                                             const dateB = new Date(b.createdAt)
-
-                                            // Check if createdAt exists and log the dates
-                                            console.log('Date A:', dateA, 'Date B:', dateB)
 
                                             return dateB - dateA // Sort by newest first
                                         })

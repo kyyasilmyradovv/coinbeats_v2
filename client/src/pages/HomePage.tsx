@@ -5,7 +5,6 @@ import { initUtils } from '@telegram-apps/sdk'
 import axiosInstance from '../api/axiosInstance'
 import { useNavigate } from 'react-router-dom'
 import useAcademiesStore from '../store/useAcademiesStore'
-import { FixedSizeGrid } from 'react-window'
 import useCategoryChainStore from '../store/useCategoryChainStore'
 import Navbar from '../components/common/Navbar'
 import Sidebar from '../components/common/Sidebar'
@@ -14,7 +13,6 @@ import { MdBookmarks } from 'react-icons/md'
 import { FaTelegramPlane, FaTimes } from 'react-icons/fa'
 import useSessionStore from '../store/useSessionStore'
 import useUserStore from '../store/useUserStore'
-import treasure from '../images/treasure1.png'
 import coins from '../images/coin-stack.png'
 import NewIcon from '../images/new.png'
 import AnimatedNumber from '../components/AnimatedNumber'
@@ -30,7 +28,6 @@ export default function HomePage() {
     const [category, setCategory] = useState('')
     const [chain, setChain] = useState('')
     const [activeFilter, setActiveFilter] = useState('all')
-    const [academies, setAcademies] = useState([])
     const [bookmarkMessage, setBookmarkMessage] = useState('')
     const [showBookmarkAnimation, setShowBookmarkAnimation] = useState(false)
     const [tasks, setTasks] = useState([])
@@ -76,6 +73,10 @@ export default function HomePage() {
         categories: state.categories,
         chains: state.chains,
         fetchCategoriesAndChains: state.fetchCategoriesAndChains
+    }))
+
+    const { academies } = useAcademiesStore((state) => ({
+        academies: state.academies
     }))
 
     const bunnyAnimation = {
@@ -162,38 +163,7 @@ export default function HomePage() {
     }, [])
 
     useEffect(() => {
-        const fetchAcademies = async () => {
-            try {
-                const response = await axiosInstance.get('/api/academies/academies')
-
-                // Filter academies to include only those with status 'approved'
-                const approvedAcademies = response.data.filter((academy) => academy.status === 'approved')
-
-                // Separate Coinbeats academies from others
-                const coinbeatsAcademies = approvedAcademies.filter((academy) => academy.academyType.name === 'Coinbeats')
-                const otherAcademies = approvedAcademies.filter((academy) => academy.academyType.name !== 'Coinbeats')
-
-                // Shuffle the other academies (Fisher-Yates shuffle algorithm)
-                const shuffleArray = (array) => {
-                    for (let i = array.length - 1; i > 0; i--) {
-                        const j = Math.floor(Math.random() * (i + 1))
-                        ;[array[i], array[j]] = [array[j], array[i]]
-                    }
-                    return array
-                }
-                const shuffledOtherAcademies = shuffleArray(otherAcademies)
-
-                // Combine the Coinbeats academies (always first) with the shuffled non-Coinbeats academies
-                const combinedAcademies = [...coinbeatsAcademies, ...shuffledOtherAcademies]
-
-                setAcademies(combinedAcademies)
-            } catch (error) {
-                console.error('Error fetching academies:', error)
-            }
-        }
-
         fetchCategoriesAndChains()
-        fetchAcademies()
     }, [fetchCategoriesAndChains])
 
     useEffect(() => {
@@ -222,15 +192,39 @@ export default function HomePage() {
     }
 
     const filteredData = useMemo(() => {
-        let data = academies
+        let data = academies || []
+
+        // Filter academies to include only those with status 'approved'
+        data = data.filter((academy) => academy.status === 'approved')
+
+        // Separate Coinbeats academies from others
+        const coinbeatsAcademies = data.filter((academy) => academy.academyType.name === 'Coinbeats')
+        const otherAcademies = data.filter((academy) => academy.academyType.name !== 'Coinbeats')
+
+        // Shuffle the other academies (Fisher-Yates shuffle algorithm)
+        const shuffleArray = (array) => {
+            const shuffled = [...array]
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1))
+                ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+            }
+            return shuffled
+        }
+        const shuffledOtherAcademies = shuffleArray(otherAcademies)
+
+        // Combine the Coinbeats academies (always first) with the shuffled non-Coinbeats academies
+        data = [...coinbeatsAcademies, ...shuffledOtherAcademies]
+
+        // Apply filters
         if (category) data = data.filter((item) => item.categories.some((cat) => cat.name === category))
         if (chain) data = data.filter((item) => item.chains.some((ch) => ch.name === chain))
         if (searchQuery) data = data.filter((item) => item.name.toLowerCase().includes(searchQuery.toLowerCase()))
         if (activeFilter === 'yetToDo') data = data.filter((item) => !hasCompletedAcademy(item.id))
         if (activeFilter === 'new') data = data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
         if (activeFilter === 'topRated') data = data.sort((a, b) => b.xp - a.xp)
+
         return data
-    }, [category, chain, searchQuery, activeFilter, academies, points])
+    }, [academies, category, chain, searchQuery, activeFilter, points])
 
     const constructImageUrl = (url) => {
         return `https://subscribes.lt/${url}`
@@ -384,6 +378,7 @@ export default function HomePage() {
             <div className="relative min-h-screen bg-cosmos-bg bg-fixed bg-center bg-no-repeat bg-cover">
                 <div className="absolute inset-0 bg-black opacity-50 z-0"></div>
                 <div className="relative z-10">
+                    {/* Header and Tasks */}
                     <div className="flex flex-row justify-center items-center mb-2 mt-2">
                         <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-1 flex flex-col items-center px-2 m-2 border border-gray-300 dark:border-gray-600 h-auto ml-4">
                             {/* "Your Coins" card */}
@@ -428,12 +423,12 @@ export default function HomePage() {
                                         <div className="flex flex-col flex-grow ml-2">
                                             <div className="text-[12px] text-gray-800 dark:text-gray-200 font-semibold mr-2">{task.name}</div>
                                         </div>
-                                        <Button
-                                            outline
-                                            rounded
+                                        <button
                                             onClick={() => handleAction(task)}
-                                            className={`!text-2xs !font-bold whitespace-nowrap mr-2 ${
-                                                task.verificationMethod === 'LEAVE_FEEDBACK' ? '!border-orange-400 !w-[130px]' : '!border-blue-400 !w-[110px]'
+                                            className={`text-2xs font-bold whitespace-nowrap mr-2 rounded-full flex flex-row h-6 uppercase items-center justify-center ${
+                                                task.verificationMethod === 'LEAVE_FEEDBACK'
+                                                    ? 'border border-orange-400 px-4 w-fit-content min-w-28'
+                                                    : 'border border-blue-400 px-4 w-fit-content  min-w-28'
                                             }`}
                                             style={{
                                                 background:
@@ -445,7 +440,7 @@ export default function HomePage() {
                                         >
                                             {task.verificationMethod === 'LEAVE_FEEDBACK' ? 'Feedback' : 'Invite'} +{task.xp}
                                             <img src={coins} className="h-3 w-3 ml-1" alt="coins icon" />
-                                        </Button>
+                                        </button>
                                     </div>
                                 ))}
                         </div>
@@ -631,6 +626,7 @@ export default function HomePage() {
                         onClose={() => setNotificationOpen(false)}
                     />
 
+                    {/* Filters */}
                     <div className="flex flex-col justify-between bg-white dark:bg-zinc-900 rounded-2xl mx-2 shadow-lg p-0 py-0">
                         <div className="flex flex-row w-full mt-1 items-center ml-4">
                             <span className="text-xs text-gray-800 dark:text-gray-300 ml-2">Filter by:</span>
@@ -699,6 +695,7 @@ export default function HomePage() {
                         </div>
                     </div>
 
+                    {/* Filter Buttons */}
                     <div className="px-4">
                         <div className="flex gap-2 justify-center mt-4">
                             <Button
@@ -770,10 +767,11 @@ export default function HomePage() {
 
                     {/* Render the total number of academies */}
                     <div className="text-gray-300 text-xs mt-2 ml-6">
-                        <span className="text-white font-bold">{academies.length} </span> Academies
+                        <span className="text-white font-bold">{filteredData.length} </span> Academies
                     </div>
 
-                    <div className="grid grid-cols-3 gap-0 px-1 pt-1 pb-16">
+                    {/* Tailwind Grid */}
+                    <div className="grid grid-cols-3 gap-0 px-2 pt-1 pb-16">
                         {filteredData.map((academy) => {
                             const isCompleted = hasCompletedAcademy(academy.id)
                             const isCoinbeats = academy.academyType.name === 'Coinbeats'
@@ -819,14 +817,19 @@ export default function HomePage() {
                                         </div>
                                         {/* Coinbeats content (image, etc.) */}
                                         <div className="flex items-center justify-center w-full mt-1">
-                                            <img alt={academy.name} className="h-16 w-16 rounded-full mb-2" src={constructImageUrl(academy.logoUrl)} />
+                                            <img
+                                                alt={academy.name}
+                                                className="h-16 w-16 rounded-full mb-2"
+                                                src={constructImageUrl(academy.logoUrl)}
+                                                loading="lazy" // Lazy loading the image
+                                            />
                                         </div>
                                         <div className="text-md font-bold whitespace-nowrap">{academy.name}</div>
                                         <Button
                                             outline
                                             rounded
                                             onClick={() => handleMoreClick(academy)}
-                                            className="!text-xs !w-16 mt-1 font-bold shadow-xl min-w-24 !mx-auto !h-6 !mb-3"
+                                            className="!text-xs !w-24 !mx-auto mt-1 font-bold shadow-xl !h-6 !mb-3 !whitespace-nowrap"
                                             style={{
                                                 background: 'linear-gradient(to left, #ff0077, #7700ff)',
                                                 color: '#fff'
