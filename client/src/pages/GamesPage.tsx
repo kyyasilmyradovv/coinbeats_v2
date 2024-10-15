@@ -5,13 +5,14 @@ import { Page, Button, Dialog, ListInput, List, Notification } from 'konsta/reac
 import Navbar from '../components/common/Navbar'
 import Sidebar from '../components/common/Sidebar'
 import BottomTabBar from '../components/BottomTabBar'
-import axios from '../api/axiosInstance'
 import coinStackIcon from '../images/coin-stack.png'
-import { FaTwitter, FaFacebook, FaInstagram, FaTelegramPlane, FaDiscord, FaYoutube, FaEnvelope, FaTimes } from 'react-icons/fa'
+import { FaTwitter, FaFacebook, FaInstagram, FaTelegramPlane, FaDiscord, FaYoutube, FaEnvelope } from 'react-icons/fa'
 import { initUtils } from '@telegram-apps/sdk'
 import bunnyLogo from '../images/bunny-mascot.png'
 import coinbeats from '../images/coinbeats-l.svg'
 import useUserStore from '../store/useUserStore'
+import useTasksStore from '../store/useTasksStore'
+import useUserVerificationStore from '../store/useUserVerificationStore'
 import Lottie from 'react-lottie'
 import bunnyHappyAnimationData from '../animations/bunny-happy.json'
 
@@ -39,41 +40,30 @@ interface VerificationTask {
     intervalType: string
     shortCircuit: boolean
     shortCircuitTimer: number | null
-    userVerification?: UserVerification[]
-    userTaskSubmissions?: UserTaskSubmission[]
-    _count: {
-        userVerification: number
-    }
-}
-
-interface UserVerification {
-    id: number
-    userId: number
-    verificationTaskId: number
-    verified: boolean
-    createdAt: string
-    completedAt: string | null
-}
-
-interface UserTaskSubmission {
-    id: number
-    userId: number
-    taskId: number
-    submissionText: string
-    createdAt: string
 }
 
 export default function GamesPage() {
-    const { userId, setUser } = useUserStore((state) => ({
+    const { userId, referralCode } = useUserStore((state) => ({
         userId: state.userId,
-        setUser: state.setUser
+        referralCode: state.referralCode
     }))
+
+    const { gameTasks, fetchGameTasks } = useTasksStore((state) => ({
+        gameTasks: state.gameTasks,
+        fetchGameTasks: state.fetchGameTasks
+    }))
+
+    const { userVerificationTasks, fetchUserVerificationTasks, startTask, submitTask, completeTask } = useUserVerificationStore((state) => ({
+        userVerificationTasks: state.userVerificationTasks,
+        fetchUserVerificationTasks: state.fetchUserVerificationTasks,
+        startTask: state.startTask,
+        submitTask: state.submitTask,
+        completeTask: state.completeTask
+    }))
+
     const [activeTab, setActiveTab] = useState('tab-3')
-    const [tasks, setTasks] = useState<VerificationTask[]>([])
-    const [userVerificationTasks, setUserVerificationTasks] = useState<UserVerification[]>([])
     const [referralModalOpen, setReferralModalOpen] = useState(false)
     const [referralLink, setReferralLink] = useState('')
-    const [referralCode, setReferralCode] = useState('')
     const [visibleTooltip, setVisibleTooltip] = useState<number | null>(null)
     const [activeTaskTab, setActiveTaskTab] = useState('repeated')
     const [notificationOpen, setNotificationOpen] = useState(false)
@@ -87,31 +77,9 @@ export default function GamesPage() {
     const [feedbackText, setFeedbackText] = useState('')
 
     useEffect(() => {
-        fetchTasks()
-        fetchUserVerificationTasks() // Fetch verification tasks for the user
-    }, [])
-
-    const fetchTasks = async () => {
-        try {
-            const response = await axios.get('/api/verification-tasks/games')
-            setTasks(response.data)
-            console.log('Fetched tasks:', response.data)
-        } catch (error) {
-            console.error('Error fetching tasks:', error)
-        }
-    }
-
-    const fetchUserVerificationTasks = async () => {
-        try {
-            const response = await axios.post('/api/users/verification-tasks', {
-                userId // Send userId in the request body
-            })
-            setUserVerificationTasks(response.data)
-            console.log('Fetched user verification tasks:', response.data)
-        } catch (error) {
-            console.error('Error fetching user verification tasks:', error)
-        }
-    }
+        fetchGameTasks()
+        fetchUserVerificationTasks()
+    }, [fetchGameTasks, fetchUserVerificationTasks])
 
     const hasTimerPassed = (taskCreatedAt: string, timer: number) => {
         const createdAt = new Date(taskCreatedAt).getTime()
@@ -197,10 +165,9 @@ export default function GamesPage() {
         }
     }
 
-    const handleAction = (task: VerificationTask) => {
-        // Always perform the action, no need to check if the task is started or verified
+    const handleAction = async (task: VerificationTask) => {
         if (requiresInputField(task)) {
-            openNotificationForTask(task) // Open notification for tasks that require input
+            openNotificationForTask(task)
         } else if (task.verificationMethod === 'LEAVE_FEEDBACK') {
             setSelectedTask(task)
             setFeedbackDialogOpen(true)
@@ -232,25 +199,20 @@ export default function GamesPage() {
                     window.open(telegramChannelLink, '_blank')
                     break
                 case 'INVITE_TELEGRAM_FRIEND':
-                    // Handle invite action
-                    axios
-                        .get('/api/users/me')
-                        .then((response) => {
-                            const userReferralCode = response.data.referralCode
-                            if (!userReferralCode) {
-                                setNotificationText('Referral code not available.')
-                                setNotificationOpen(true)
-                                return
-                            }
-                            const botUsername = 'CoinbeatsMiniApp_bot/miniapp' // Replace with your bot's username
-                            const referralLink = `https://t.me/${botUsername}?startapp=${userReferralCode}`
-                            setReferralCode(userReferralCode)
-                            setReferralLink(referralLink)
-                            setReferralModalOpen(true)
-                        })
-                        .catch((error) => {
-                            console.error('Error fetching user data:', error)
-                        })
+                    try {
+                        const userReferralCode = referralCode
+                        if (!userReferralCode) {
+                            setNotificationText('Referral code not available.')
+                            setNotificationOpen(true)
+                            return
+                        }
+                        const botUsername = 'CoinbeatsMiniApp_bot/miniapp' // Replace with your bot's username
+                        const referralLink = `https://t.me/${botUsername}?startapp=${userReferralCode}`
+                        setReferralLink(referralLink)
+                        setReferralModalOpen(true)
+                    } catch (error) {
+                        console.error('Error fetching user data:', error)
+                    }
                     break
                 case 'SUBSCRIBE_YOUTUBE_CHANNEL':
                     const youtubeChannelUrl = 'https://www.youtube.com/@CoinBeats' // Replace with your YouTube channel URL
@@ -286,14 +248,11 @@ export default function GamesPage() {
             }
 
             // Start the task in the background
-            axios
-                .post('/api/users/start-task', { taskId: task.id, userId })
-                .then(() => {
-                    console.log('Task started successfully')
-                })
-                .catch((error) => {
-                    console.error('Error starting task:', error)
-                })
+            try {
+                await startTask(task.id)
+            } catch (error) {
+                console.error('Error starting task:', error)
+            }
         }
     }
 
@@ -319,7 +278,7 @@ export default function GamesPage() {
         return false
     }
 
-    const handleSubmitTask = (task) => {
+    const handleSubmitTask = async (task) => {
         const submissionText = taskInputValues[task.id]
 
         if (!submissionText || submissionText.length < 5) {
@@ -328,33 +287,17 @@ export default function GamesPage() {
             return
         }
 
-        if (!userId) {
-            setNotificationText('User ID is missing. Please log in.')
+        try {
+            await startTask(task.id)
+            await submitTask(task.id, submissionText)
+            setNotificationText('Submission successful!')
             setNotificationOpen(true)
-            return
+            setSubmittedTasks({ ...submittedTasks, [task.id]: true })
+        } catch (error) {
+            console.error('Error submitting task:', error)
+            setNotificationText('Submission failed')
+            setNotificationOpen(true)
         }
-
-        axios
-            .post('/api/users/start-task', { taskId: task.id, userId })
-            .then(() => {
-                axios
-                    .post('/api/users/submit-task', { taskId: task.id, submissionText, userId })
-                    .then((response) => {
-                        setNotificationText(response.data.message)
-                        setNotificationOpen(true)
-                        setSubmittedTasks({ ...submittedTasks, [task.id]: true })
-                    })
-                    .catch((error) => {
-                        console.error('Error submitting task:', error)
-                        setNotificationText(error.response?.data?.message || 'Submission failed')
-                        setNotificationOpen(true)
-                    })
-            })
-            .catch((error) => {
-                console.error('Error starting task:', error)
-                setNotificationText(error.response?.data?.message || 'Failed to start task')
-                setNotificationOpen(true)
-            })
     }
 
     const openNotificationForTask = (task: VerificationTask) => {
@@ -384,16 +327,7 @@ export default function GamesPage() {
             })
     }
 
-    const fetchTotalPoints = async () => {
-        try {
-            const response = await axios.get(`/api/users/${userId}/total-points`)
-            setUser({ totalPoints: response.data.totalPoints }) // Update the store with new points
-        } catch (error) {
-            console.error('Error fetching total points:', error)
-        }
-    }
-
-    const handleVerify = (task: VerificationTask) => {
+    const handleVerify = async (task: VerificationTask) => {
         const userVerification = userVerificationTasks.find((verification) => verification.verificationTaskId === task.id)
         const isVerified = userVerification && userVerification.verified
         const completedToday = isVerified && isSameDay(new Date(), new Date(userVerification?.completedAt))
@@ -405,61 +339,45 @@ export default function GamesPage() {
             return
         }
 
-        // Verify the task...
-        axios
-            .post('/api/users/complete-task', { taskId: task.id, userId })
-            .then((response) => {
-                setNotificationText(response.data.message)
-                setNotificationOpen(true)
-                fetchTotalPoints()
-                fetchTasks() // Refresh tasks after completion
-            })
-            .catch((error) => {
-                setNotificationText(error.response?.data?.message || 'Verification failed')
-                setNotificationOpen(true)
-            })
+        try {
+            const message = await completeTask(task.id)
+            setNotificationText(message)
+            setNotificationOpen(true)
+        } catch (error) {
+            console.error('Error completing task:', error)
+            setNotificationText('Verification failed')
+            setNotificationOpen(true)
+        }
     }
 
-    const inviteTask = tasks.find((task) => task.verificationMethod === 'INVITE_TELEGRAM_FRIEND')
+    const inviteTask = gameTasks.find((task) => task.verificationMethod === 'INVITE_TELEGRAM_FRIEND')
 
-    const filteredTasks = tasks.filter((task) => {
+    const filteredTasks = gameTasks.filter((task) => {
         if (activeTaskTab === 'onetime') return task.intervalType === 'ONETIME' && task.verificationMethod !== 'INVITE_TELEGRAM_FRIEND'
         if (activeTaskTab === 'repeated') return task.intervalType === 'REPEATED' && task.verificationMethod !== 'INVITE_TELEGRAM_FRIEND'
         return false
     })
 
     // Handle feedback submission
-    const handleSubmitFeedback = () => {
+    const handleSubmitFeedback = async () => {
         if (!selectedTask) return
         const taskId = selectedTask.id
 
-        // Start the task
-        axios
-            .post('/api/users/start-task', { taskId, userId })
-            .then(() => {
-                // Submit the feedback
-                axios
-                    .post('/api/users/submit-task', { taskId, submissionText: feedbackText, userId })
-                    .then((response) => {
-                        setFeedbackDialogOpen(false)
-                        setNotificationText(
-                            'We appreciate your feedback very much! The admins will review your feedback and credit you the points. You can see your points on the Points page under your stats tab.'
-                        )
-                        setNotificationOpen(true)
-                        setFeedbackText('')
-                        setSelectedTask(null)
-                    })
-                    .catch((error) => {
-                        console.error('Error submitting feedback:', error)
-                        setNotificationText('Error submitting feedback. Please try again later.')
-                        setNotificationOpen(true)
-                    })
-            })
-            .catch((error) => {
-                console.error('Error starting task:', error)
-                setNotificationText('Error starting task. Please try again later.')
-                setNotificationOpen(true)
-            })
+        try {
+            await startTask(taskId)
+            await submitTask(taskId, feedbackText)
+            setFeedbackDialogOpen(false)
+            setNotificationText(
+                'We appreciate your feedback very much! The admins will review your feedback and credit you the points. You can see your points on the Points page under your stats tab.'
+            )
+            setNotificationOpen(true)
+            setFeedbackText('')
+            setSelectedTask(null)
+        } catch (error) {
+            console.error('Error submitting feedback:', error)
+            setNotificationText('Error submitting feedback. Please try again later.')
+            setNotificationOpen(true)
+        }
     }
 
     return (
@@ -699,8 +617,7 @@ export default function GamesPage() {
                                 const timerCheck = userVerification && hasTimerPassed(userVerification.createdAt, 1000)
 
                                 // Determine if the "Action" or "Verify" button should be disabled
-                                const shouldDisableButton =
-                                    (task.intervalType === 'ONETIME' && isVerified) || (task.intervalType === 'REPEATED' && completedToday && !timerCheck)
+                                const shouldDisableActionButton = shouldDisableButton(task)
 
                                 return (
                                     <div
@@ -754,7 +671,7 @@ export default function GamesPage() {
                                                     background: 'linear-gradient(to left, #16a34a, #3b82f6)',
                                                     color: '#fff'
                                                 }}
-                                                disabled={shouldDisableButton}
+                                                disabled={shouldDisableActionButton}
                                             >
                                                 {getActionLabel(task.verificationMethod)}
                                             </Button>

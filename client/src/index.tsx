@@ -1,13 +1,14 @@
 // client/src/index.tsx
 
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter as Router } from 'react-router-dom'
 import App from './App'
 import IntroPage from './components/IntroPage'
 import * as serviceWorker from './serviceWorker'
+import { SDKProvider } from '@telegram-apps/sdk-react'
 
-// Change starts here
+// Initialize dark mode settings
 const darkModeSetting = localStorage.getItem('darkMode')
 const darkMode = darkModeSetting !== 'false' // Default to true unless explicitly set to 'false'
 
@@ -16,7 +17,6 @@ if (darkMode) {
 } else {
     document.documentElement.classList.remove('dark')
 }
-// Change ends here
 
 const root = createRoot(document.getElementById('root')!)
 
@@ -30,10 +30,12 @@ const Index = () => {
 
     return (
         <React.StrictMode>
-            <Router>
-                {/* Display IntroPage until the intro is done */}
-                {showIntro ? <IntroPage onComplete={handleIntroComplete} /> : <App />}
-            </Router>
+            <SDKProvider>
+                <Router>
+                    {/* Display IntroPage until the intro is done */}
+                    {showIntro ? <IntroPage onComplete={handleIntroComplete} /> : <App />}
+                </Router>
+            </SDKProvider>
         </React.StrictMode>
     )
 }

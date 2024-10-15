@@ -2,10 +2,12 @@
 
 import React, { useMemo, useState, useEffect, useRef } from 'react'
 import { initUtils } from '@telegram-apps/sdk'
-import axiosInstance from '../api/axiosInstance'
 import { useNavigate } from 'react-router-dom'
 import useAcademiesStore from '../store/useAcademiesStore'
 import useCategoryChainStore from '../store/useCategoryChainStore'
+import useTasksStore from '../store/useTasksStore'
+import useLeaderboardStore from '../store/useLeaderboardStore'
+import useUserVerificationStore from '../store/useUserVerificationStore'
 import Navbar from '../components/common/Navbar'
 import Sidebar from '../components/common/Sidebar'
 import { Page, List, ListInput, Card, Button, Dialog, Searchbar, Notification } from 'konsta/react'
@@ -30,10 +32,9 @@ export default function HomePage() {
     const [activeFilter, setActiveFilter] = useState('all')
     const [bookmarkMessage, setBookmarkMessage] = useState('')
     const [showBookmarkAnimation, setShowBookmarkAnimation] = useState(false)
-    const [tasks, setTasks] = useState([])
     const [referralModalOpen, setReferralModalOpen] = useState(false)
     const [referralLink, setReferralLink] = useState('')
-    const [referralCode, setReferralCode] = useState('')
+    const [referralCodeState, setReferralCodeState] = useState('')
     const [searchQuery, setSearchQuery] = useState('')
     const [loginStreakData, setLoginStreakData] = useState(null)
     const [showLoginStreakDialog, setShowLoginStreakDialog] = useState(false)
@@ -41,7 +42,6 @@ export default function HomePage() {
     const [animationComplete, setAnimationComplete] = useState(false)
     const [notificationOpen, setNotificationOpen] = useState(false)
     const [notificationText, setNotificationText] = useState('')
-    const [leaderboard, setLeaderboard] = useState([])
 
     // Added useRef to ensure the login streak is handled only once
     const loginStreakHandled = useRef(false)
@@ -51,32 +51,55 @@ export default function HomePage() {
     const [feedbackText, setFeedbackText] = useState('')
     const [selectedTask, setSelectedTask] = useState(null)
 
-    const { bookmarks, setBookmarks, userId, roles, totalPoints, points, setUser, referralPointsAwarded, resetReferralPointsAwarded } = useUserStore(
-        (state) => ({
-            bookmarks: state.bookmarks,
-            setBookmarks: state.setBookmarks,
-            userId: state.userId,
-            roles: state.roles,
-            points: state.points,
-            totalPoints: state.totalPoints,
-            setUser: state.setUser,
-            referralPointsAwarded: state.referralPointsAwarded,
-            resetReferralPointsAwarded: state.resetReferralPointsAwarded
-        })
-    )
+    const {
+        bookmarks,
+        userId,
+        totalPoints,
+        points,
+        referralPointsAwarded,
+        resetReferralPointsAwarded,
+        fetchBookmarkedAcademies,
+        referralCode,
+        handleLoginStreak,
+        addBookmark
+    } = useUserStore((state) => ({
+        bookmarks: state.bookmarks,
+        userId: state.userId,
+        points: state.points,
+        totalPoints: state.totalPoints,
+        referralPointsAwarded: state.referralPointsAwarded,
+        resetReferralPointsAwarded: state.resetReferralPointsAwarded,
+        fetchBookmarkedAcademies: state.fetchBookmarkedAcademies,
+        referralCode: state.referralCode,
+        handleLoginStreak: state.handleLoginStreak,
+        addBookmark: state.addBookmark
+    }))
 
     const { telegramUserId } = useSessionStore((state) => ({
         telegramUserId: state.userId
     }))
 
-    const { categories, chains, fetchCategoriesAndChains } = useCategoryChainStore((state) => ({
+    const { categories, chains } = useCategoryChainStore((state) => ({
         categories: state.categories,
-        chains: state.chains,
-        fetchCategoriesAndChains: state.fetchCategoriesAndChains
+        chains: state.chains
     }))
 
     const { academies } = useAcademiesStore((state) => ({
         academies: state.academies
+    }))
+
+    const { homepageTasks } = useTasksStore((state) => ({
+        homepageTasks: state.homepageTasks
+    }))
+
+    const { leaderboard, fetchLeaderboards } = useLeaderboardStore((state) => ({
+        leaderboard: state.leaderboard,
+        fetchLeaderboards: state.fetchLeaderboards
+    }))
+
+    const { startTask, submitTask } = useUserVerificationStore((state) => ({
+        startTask: state.startTask,
+        submitTask: state.submitTask
     }))
 
     const bunnyAnimation = {
@@ -115,21 +138,16 @@ export default function HomePage() {
         }
     }
 
-    const handleLoginStreak = async () => {
+    const handleLoginStreakLocal = async () => {
         try {
-            const response = await axiosInstance.post('/api/users/handle-login-streak')
-            const { userVerification, point } = response.data
-
-            // Update user points
-            setUser((prevState) => ({
-                ...prevState,
-                totalPoints: (prevState.totalPoints || 0) + point.value,
-                points: [...prevState.points, point]
-            }))
-
-            // Show the streak dialog
-            setLoginStreakData(userVerification)
-            setShowLoginStreakDialog(true)
+            const { userVerification, point } = await handleLoginStreak()
+            if (point) {
+                setLoginStreakData({
+                    ...userVerification,
+                    pointsAwarded: point.value
+                })
+                setShowLoginStreakDialog(true)
+            }
         } catch (error) {
             console.error('Error handling login streak:', error)
         }
@@ -144,44 +162,22 @@ export default function HomePage() {
                 setShowReferralPointsDialog(true)
             } else {
                 // Proceed to login streak
-                handleLoginStreak()
+                handleLoginStreakLocal()
             }
         }
     }, [referralPointsAwarded])
 
     useEffect(() => {
-        const fetchHomepageTasks = async () => {
-            try {
-                const response = await axiosInstance.get('/api/verification-tasks/homepage')
-                setTasks(response.data)
-            } catch (error) {
-                console.error('Error fetching homepage tasks:', error)
-            }
-        }
-
-        fetchHomepageTasks()
-    }, [])
-
-    useEffect(() => {
-        fetchCategoriesAndChains()
-    }, [fetchCategoriesAndChains])
-
-    useEffect(() => {
-        const fetchBookmarkedAcademies = async () => {
-            if (userId) {
-                try {
-                    const response = await axiosInstance.get(`/api/users/${userId}/bookmarked-academies`)
-                    setBookmarks(response.data)
-                } catch (error) {
-                    console.error('Error fetching bookmarked academies:', error)
-                }
-            }
-        }
-
         if (userId) {
-            fetchBookmarkedAcademies()
+            fetchBookmarkedAcademies(userId)
         }
-    }, [userId, setBookmarks])
+    }, [userId, fetchBookmarkedAcademies])
+
+    useEffect(() => {
+        if (userId) {
+            fetchLeaderboards()
+        }
+    }, [userId, fetchLeaderboards])
 
     const isBookmarked = (academyId) => {
         return Array.isArray(bookmarks) ? bookmarks.some((bookmark) => bookmark.id === academyId) : false
@@ -193,27 +189,6 @@ export default function HomePage() {
 
     const filteredData = useMemo(() => {
         let data = academies || []
-
-        // Filter academies to include only those with status 'approved'
-        data = data.filter((academy) => academy.status === 'approved')
-
-        // Separate Coinbeats academies from others
-        const coinbeatsAcademies = data.filter((academy) => academy.academyType.name === 'Coinbeats')
-        const otherAcademies = data.filter((academy) => academy.academyType.name !== 'Coinbeats')
-
-        // Shuffle the other academies (Fisher-Yates shuffle algorithm)
-        const shuffleArray = (array) => {
-            const shuffled = [...array]
-            for (let i = shuffled.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1))
-                ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
-            }
-            return shuffled
-        }
-        const shuffledOtherAcademies = shuffleArray(otherAcademies)
-
-        // Combine the Coinbeats academies (always first) with the shuffled non-Coinbeats academies
-        data = [...coinbeatsAcademies, ...shuffledOtherAcademies]
 
         // Apply filters
         if (category) data = data.filter((item) => item.categories.some((cat) => cat.name === category))
@@ -232,12 +207,7 @@ export default function HomePage() {
 
     const handleBookmark = async (academy) => {
         try {
-            await axiosInstance.post('/api/users/interaction', {
-                telegramUserId: telegramUserId,
-                action: 'bookmark',
-                academyId: academy.id
-            })
-            setBookmarks(academy)
+            await addBookmark(academy.id)
             setBookmarkMessage(`Bookmarked!`)
             setShowBookmarkAnimation(true)
             navigate('/saved', { state: { academy } })
@@ -261,24 +231,17 @@ export default function HomePage() {
 
     const handleAction = (task) => {
         if (task.verificationMethod === 'INVITE_TELEGRAM_FRIEND') {
-            axiosInstance
-                .get('/api/users/me')
-                .then((response) => {
-                    const userReferralCode = response.data.referralCode
-                    if (!userReferralCode) {
-                        setNotificationText('Referral code not available.')
-                        setNotificationOpen(true)
-                        return
-                    }
-                    const botUsername = 'CoinbeatsMiniApp_bot/miniapp' // Replace with your bot's username
-                    const referralLink = `https://t.me/${botUsername}?startapp=${userReferralCode}`
-                    setReferralCode(userReferralCode) // Store referralCode for later use
-                    setReferralLink(referralLink)
-                    setReferralModalOpen(true)
-                })
-                .catch((error) => {
-                    console.error('Error fetching user data:', error)
-                })
+            const userReferralCode = referralCode
+            if (!userReferralCode) {
+                setNotificationText('Referral code not available.')
+                setNotificationOpen(true)
+                return
+            }
+            const botUsername = 'CoinbeatsMiniApp_bot/miniapp' // Replace with your bot's username
+            const referralLink = `https://t.me/${botUsername}?startapp=${userReferralCode}`
+            setReferralCodeState(userReferralCode) // Store referralCode for later use
+            setReferralLink(referralLink)
+            setReferralModalOpen(true)
         } else if (task.verificationMethod === 'LEAVE_FEEDBACK') {
             setSelectedTask(task)
             setFeedbackDialogOpen(true)
@@ -288,7 +251,7 @@ export default function HomePage() {
 
     const handleInviteFriend = () => {
         const utils = initUtils()
-        const inviteLink = `https://t.me/CoinbeatsMiniApp_bot/miniapp?startapp=${referralCode}`
+        const inviteLink = `https://t.me/CoinbeatsMiniApp_bot/miniapp?startapp=${referralCodeState}`
         const shareText = `Join me on this awesome app!`
 
         const fullUrl = `https://t.me/share/url?url=${encodeURIComponent(inviteLink)}&text=${encodeURIComponent(shareText)}`
@@ -307,21 +270,6 @@ export default function HomePage() {
             })
     }
 
-    // Fetch leaderboard when userId is available
-    useEffect(() => {
-        if (userId) {
-            const fetchLeaderboard = async () => {
-                try {
-                    const response = await axiosInstance.get('/api/points/leaderboard')
-                    setLeaderboard(response.data)
-                } catch (error) {
-                    console.error('Error fetching leaderboard:', error)
-                }
-            }
-            fetchLeaderboard()
-        }
-    }, [userId])
-
     // Compute userRank
     const userRank = useMemo(() => {
         if (leaderboard && userId) {
@@ -332,7 +280,7 @@ export default function HomePage() {
     }, [leaderboard, userId])
 
     // Implement the handleSubmitFeedback function
-    const handleSubmitFeedback = () => {
+    const handleSubmitFeedback = async () => {
         if (!selectedTask) return
         if (feedbackText.length < 100) {
             setNotificationText('Please enter at least 100 characters.')
@@ -341,33 +289,21 @@ export default function HomePage() {
         }
         const taskId = selectedTask.id
 
-        // Start the task
-        axiosInstance
-            .post('/api/users/start-task', { taskId, userId })
-            .then(() => {
-                // Submit the feedback
-                axiosInstance
-                    .post('/api/users/submit-task', { taskId, submissionText: feedbackText, userId })
-                    .then((response) => {
-                        setFeedbackDialogOpen(false)
-                        setNotificationText(
-                            'We appreciate your feedback very much! The admins will review your feedback and credit you the points. You can see your points on the Points page under your stats tab.'
-                        )
-                        setNotificationOpen(true)
-                        setFeedbackText('')
-                        setSelectedTask(null)
-                    })
-                    .catch((error) => {
-                        console.error('Error submitting feedback:', error)
-                        setNotificationText('Error submitting feedback. Please try again later.')
-                        setNotificationOpen(true)
-                    })
-            })
-            .catch((error) => {
-                console.error('Error starting task:', error)
-                setNotificationText('Error starting task. Please try again later.')
-                setNotificationOpen(true)
-            })
+        try {
+            await startTask(taskId, userId)
+            await submitTask(taskId, feedbackText, userId)
+            setFeedbackDialogOpen(false)
+            setNotificationText(
+                'We appreciate your feedback very much! The admins will review your feedback and credit you the points. You can see your points on the Points page under your stats tab.'
+            )
+            setNotificationOpen(true)
+            setFeedbackText('')
+            setSelectedTask(null)
+        } catch (error) {
+            console.error('Error submitting feedback:', error)
+            setNotificationText('Error submitting feedback. Please try again later.')
+            setNotificationOpen(true)
+        }
     }
 
     return (
@@ -408,8 +344,8 @@ export default function HomePage() {
 
                         {/* Map over tasks to display all task items */}
                         <div className="flex flex-col flex-grow">
-                            {tasks.length > 0 &&
-                                tasks.map((task, index) => (
+                            {homepageTasks.length > 0 &&
+                                homepageTasks.map((task, index) => (
                                     <div
                                         key={index}
                                         className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg py-1 flex flex-row items-center px-1 m-1 border border-gray-300 dark:border-gray-600 h-12 mr-4 justify-between"
@@ -548,7 +484,7 @@ export default function HomePage() {
                             onBackdropClick={() => {
                                 setShowReferralPointsDialog(false)
                                 resetReferralPointsAwarded()
-                                handleLoginStreak()
+                                handleLoginStreakLocal()
                             }}
                             className="!m-0 !p-0 !rounded-2xl !bg-opacity-80"
                         >
@@ -558,7 +494,7 @@ export default function HomePage() {
                                     onClick={() => {
                                         setShowReferralPointsDialog(false)
                                         resetReferralPointsAwarded()
-                                        handleLoginStreak()
+                                        handleLoginStreakLocal()
                                     }}
                                 >
                                     <FaTimes size={20} />
@@ -596,14 +532,16 @@ export default function HomePage() {
                                             <div className="flex items-center text-center justify-center">
                                                 <div className="text-md font-bold text-white">Day</div>
                                             </div>
-                                            <div className="flex items-center justify-center text-white text-2xl font-bold">{loginStreakData.streakCount}</div>
+                                            <div className="flex items-center justify-center text-white text-2xl font-bold">
+                                                {loginStreakData?.streakCount || 1}
+                                            </div>
                                         </div>
                                     </div>
                                     <div className="flex mt-4 mb-2 text-2xl font-bold items-end justify-center">
                                         <span className="mr-1">+</span>
                                         <div className="mr-2">
                                             <AnimatedNumber
-                                                target={loginStreakData.pointsAwarded}
+                                                target={loginStreakData?.pointsAwarded || 100}
                                                 duration={2000}
                                                 onComplete={() => setAnimationComplete(true)}
                                             />

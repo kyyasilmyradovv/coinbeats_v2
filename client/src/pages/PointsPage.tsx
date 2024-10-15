@@ -5,7 +5,6 @@ import { X } from '@mui/icons-material'
 import Navbar from '../components/common/Navbar'
 import Sidebar from '../components/common/Sidebar'
 import BottomTabBar from '../components/BottomTabBar'
-import axiosInstance from '../api/axiosInstance'
 import coinStack from '../images/coin-stack.png'
 import Trophy from '../images/trophy.png'
 import ximage from '../images/x.png'
@@ -18,21 +17,33 @@ import coming from '../images/svgs/coming-soon3.svg'
 import Lottie from 'react-lottie'
 import coinsEarnedAnimationData from '../animations/earned-coins.json'
 import bronzeMedal from '../images/bronze-medal.png'
+import useTasksStore from '~/store/useTasksStore'
+import useLeaderboardStore from '~/store/useLeaderboardStore'
+import axiosInstance from '../api/axiosInstance' // Only if needed
 
 const PointsPage: React.FC = () => {
-    const { userId, totalPoints } = useUserStore((state) => ({
+    const { userId, totalPoints, userPoints, fetchUserPoints } = useUserStore((state) => ({
         userId: state.userId,
         totalPoints: state.totalPoints,
-        userName: state.username
+        userName: state.username,
+        userPoints: state.userPoints,
+        fetchUserPoints: state.fetchUserPoints
     }))
 
-    const [leaderboard, setLeaderboard] = useState<any[]>([])
-    const [weeklyLeaderboard, setWeeklyLeaderboard] = useState<any[]>([])
-    const [userPoints, setUserPoints] = useState<any[]>([])
-    const [tasks, setTasks] = useState([])
+    const { leaderboard, weeklyLeaderboard, fetchLeaderboards } = useLeaderboardStore((state) => ({
+        leaderboard: state.leaderboard,
+        weeklyLeaderboard: state.weeklyLeaderboard,
+        fetchLeaderboards: state.fetchLeaderboards
+    }))
+
+    const { homepageTasks, fetchHomepageTasks } = useTasksStore((state) => ({
+        homepageTasks: state.homepageTasks,
+        fetchHomepageTasks: state.fetchHomepageTasks
+    }))
+
     const [referralModalOpen, setReferralModalOpen] = useState(false)
     const [referralLink, setReferralLink] = useState('')
-    const [referralCode, setReferralCode] = useState('')
+    const [referralCodeState, setReferralCodeState] = useState('')
 
     const [activeTab, setActiveTab] = useState('tab-4') // Set active tab to Points
     const [activeLeaderboardTab, setActiveLeaderboardTab] = useState('weekly') // Set default tab to 'weekly' so Scholarships is active
@@ -42,8 +53,8 @@ const PointsPage: React.FC = () => {
         telegramUserId: state.userId
     }))
 
-    const { setUser } = useUserStore((state) => ({
-        setUser: state.setUser
+    const { referralCode } = useUserStore((state) => ({
+        referralCode: state.referralCode
     }))
 
     const constructImageUrl = (url) => {
@@ -63,7 +74,7 @@ const PointsPage: React.FC = () => {
     }
 
     const platformIcons: { [key: string]: JSX.Element } = {
-        X: <X className="w-5 h-5 text-blue-500" />,
+        X: <img src={ximage} alt="X" className="w-5 h-5" />,
         FACEBOOK: <FaFacebook className="w-5 h-5 text-blue-700" />,
         INSTAGRAM: <FaInstagram className="w-5 h-5 text-pink-500" />,
         TELEGRAM: <FaTelegramPlane className="w-5 h-5 text-blue-400" />,
@@ -72,58 +83,6 @@ const PointsPage: React.FC = () => {
         EMAIL: <FaEnvelope className="w-5 h-5 text-green-500" />
         // Add more platforms if needed
     }
-
-    // Fetch user points breakdown using the new API
-    const fetchUserPoints = async () => {
-        if (!userId) {
-            console.error('User ID is null or undefined, not fetching user points.')
-            return
-        }
-
-        try {
-            const response = await axiosInstance.get(`/api/points/breakdown/${userId}`)
-            console.log('Fetched Points:', response.data)
-            setUserPoints(response.data)
-        } catch (error) {
-            console.error('Error fetching user points:', error)
-        }
-    }
-
-    // Fetch leaderboards when userId is available
-    useEffect(() => {
-        if (userId) {
-            fetchUserPoints()
-            const fetchLeaderboards = async () => {
-                try {
-                    // Fetch overall leaderboard
-                    const overallResponse = await axiosInstance.get('/api/points/leaderboard')
-                    setLeaderboard(overallResponse.data)
-
-                    // Fetch weekly leaderboard
-                    const weeklyResponse = await axiosInstance.get('/api/points/leaderboard?period=weekly')
-                    setWeeklyLeaderboard(weeklyResponse.data)
-                } catch (error) {
-                    console.error('Error fetching leaderboards:', error)
-                }
-            }
-
-            fetchLeaderboards()
-        }
-    }, [userId, totalPoints]) // Only runs when userId changes and is non-null
-
-    // Fetch tasks (for the Invite button)
-    useEffect(() => {
-        const fetchTasks = async () => {
-            try {
-                const response = await axiosInstance.get('/api/verification-tasks/homepage')
-                setTasks(response.data)
-            } catch (error) {
-                console.error('Error fetching tasks:', error)
-            }
-        }
-
-        fetchTasks()
-    }, [])
 
     // Compute start and end of the week
     useEffect(() => {
@@ -146,25 +105,34 @@ const PointsPage: React.FC = () => {
         setEndOfWeek(endOfWeek)
     }, [])
 
+    useEffect(() => {
+        if (userId) {
+            fetchUserPoints(userId)
+        }
+    }, [userId, fetchUserPoints])
+
+    useEffect(() => {
+        if (userId) {
+            fetchLeaderboards()
+        }
+    }, [userId, fetchLeaderboards])
+
+    useEffect(() => {
+        fetchHomepageTasks()
+    }, [fetchHomepageTasks])
+
     const handleAction = (task) => {
         if (task.verificationMethod === 'INVITE_TELEGRAM_FRIEND') {
-            axiosInstance
-                .get('/api/users/me')
-                .then((response) => {
-                    const userReferralCode = response.data.referralCode
-                    if (!userReferralCode) {
-                        alert('Referral code not available.')
-                        return
-                    }
-                    const botUsername = 'CoinbeatsMiniApp_bot/miniapp' // Replace with your bot's username
-                    const referralLink = `https://t.me/${botUsername}?startapp=${userReferralCode}`
-                    setReferralCode(userReferralCode) // Store referralCode for later use
-                    setReferralLink(referralLink)
-                    setReferralModalOpen(true)
-                })
-                .catch((error) => {
-                    console.error('Error fetching user data:', error)
-                })
+            const userReferralCode = referralCode
+            if (!userReferralCode) {
+                alert('Referral code not available.')
+                return
+            }
+            const botUsername = 'CoinbeatsMiniApp_bot/miniapp' // Replace with your bot's username
+            const referralLink = `https://t.me/${botUsername}?startapp=${userReferralCode}`
+            setReferralCodeState(userReferralCode) // Store referralCode for later use
+            setReferralLink(referralLink)
+            setReferralModalOpen(true)
         }
         // ... handle other methods if necessary
     }
@@ -182,7 +150,7 @@ const PointsPage: React.FC = () => {
 
     const handleInviteFriend = () => {
         const utils = initUtils()
-        const inviteLink = `https://t.me/CoinbeatsMiniApp_bot/miniapp?startapp=${referralCode}`
+        const inviteLink = `https://t.me/CoinbeatsMiniApp_bot/miniapp?startapp=${referralCodeState}`
         const shareText = `Join me on this awesome app!`
 
         const fullUrl = `https://t.me/share/url?url=${encodeURIComponent(inviteLink)}&text=${encodeURIComponent(shareText)}`
@@ -209,24 +177,24 @@ const PointsPage: React.FC = () => {
                             </div>
                         </div>
 
-                        {tasks.length > 0 && (
+                        {homepageTasks.length > 0 && (
                             <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg py-1 flex flex-grow flex-row items-center px-1 m-1 border border-gray-300 dark:border-gray-600 h-12 mr-4 justify-between">
                                 {/* Task card */}
                                 <FaTelegramPlane size={30} className="text-blue-400 mx-2" />
                                 <div className="flex flex-col flex-grow ml-2">
-                                    <div className="text-[12px] text-gray-800 dark:text-gray-200 font-semibold mr-2">{tasks[0].name}</div>
+                                    <div className="text-[12px] text-gray-800 dark:text-gray-200 font-semibold mr-2">{homepageTasks[0].name}</div>
                                 </div>
                                 <Button
                                     outline
                                     rounded
-                                    onClick={() => handleAction(tasks[0])}
+                                    onClick={() => handleAction(homepageTasks[0])}
                                     className="!text-2xs !w-28 !h-6 !border-blue-400 !font-bold whitespace-nowrap mr-2 !px-2 !py-0"
                                     style={{
                                         background: 'linear-gradient(to left, #16a34a, #3b82f6)',
                                         color: '#fff'
                                     }}
                                 >
-                                    Invite +{tasks[0].xp}
+                                    Invite +{homepageTasks[0].xp}
                                     <img src={coinStack} className="h-3 w-3 ml-1" alt="coins icon" />
                                 </Button>
                             </div>

@@ -35,7 +35,6 @@ import { BookmarkProvider } from './contexts/BookmarkContext'
 import { useInitData } from '@telegram-apps/sdk-react'
 import useSessionStore from './store/useSessionStore'
 import useUserStore from './store/useUserStore'
-import axios from './api/axiosInstance'
 import RouteGuard from './components/RouteGuard'
 import Spinner from './components/Spinner'
 
@@ -54,13 +53,11 @@ function RootComponent() {
         initializePreferences()
     }, [initializePreferences])
 
-    const startSession = useSessionStore((state) => state.startSession)
-    const endSession = useSessionStore((state) => state.endSession)
-    const setCurrentRoute = useSessionStore((state) => state.setCurrentRoute)
-    const addRouteDuration = useSessionStore((state) => state.addRouteDuration)
-
-    const { setUser } = useUserStore((state) => ({
-        setUser: state.setUser
+    const { startSession, endSession, setCurrentRoute, addRouteDuration } = useSessionStore((state) => ({
+        startSession: state.startSession,
+        endSession: state.endSession,
+        setCurrentRoute: state.setCurrentRoute,
+        addRouteDuration: state.addRouteDuration
     }))
 
     const location = useLocation()
@@ -102,170 +99,8 @@ function RootComponent() {
 
         console.log('This is the init data object', initData)
 
-        const initializeUserSession = async () => {
-            try {
-                if (initData && initData.user) {
-                    const telegramUserId = initData.user.id
-                    const username = initData.user.username || initData.user.firstName || initData.user.lastName || 'Guest'
-
-                    // Get referralCode from initData.startParam
-                    const referralCode = initData.startParam || null
-
-                    // Set telegramUserId in useSessionStore before any axios requests
-                    useSessionStore.setState({ userId: telegramUserId })
-
-                    let userRoles: string[] = ['USER'] // Default roles
-
-                    try {
-                        const response = await axios.get(`/api/users/${telegramUserId}`)
-
-                        if (response.status === 200 && response.data) {
-                            const { id, name, email, roles, points, bookmarkedAcademies, academies, emailConfirmed } = response.data
-                            const hasAcademy = academies && academies.length > 0
-
-                            const totalPoints = points ? points.reduce((sum, point) => sum + point.value, 0) : 0
-
-                            setUser({
-                                userId: id,
-                                username: name,
-                                email: email,
-                                emailConfirmed: emailConfirmed,
-                                roles: roles,
-                                totalPoints: totalPoints,
-                                points: points || [],
-                                bookmarks: bookmarkedAcademies || [],
-                                token: null,
-                                hasAcademy: hasAcademy
-                            })
-
-                            userRoles = roles || ['USER']
-                        } else {
-                            // User not found, register
-                            const registerResponse = await axios.post('/api/auth/register', {
-                                telegramUserId,
-                                username,
-                                referralCode
-                            })
-
-                            const { user: userData, pointsAwardedToUser } = registerResponse.data
-                            const hasAcademy = userData.academies && userData.academies.length > 0
-
-                            const totalPoints = userData.points ? userData.points.reduce((sum, point) => sum + point.value, 0) : 0
-
-                            setUser({
-                                userId: userData.id,
-                                username: userData.name,
-                                email: userData.email,
-                                emailConfirmed: userData.emailConfirmed,
-                                roles: userData.roles,
-                                totalPoints: totalPoints,
-                                points: userData.points || [],
-                                bookmarks: userData.bookmarkedAcademies || [],
-                                token: null,
-                                hasAcademy: hasAcademy,
-                                referralPointsAwarded: pointsAwardedToUser || 0
-                            })
-
-                            userRoles = userData.roles || ['USER']
-                        }
-                    } catch (error) {
-                        if (error.response && error.response.status === 404) {
-                            // User not found, register
-                            const registerResponse = await axios.post('/api/auth/register', {
-                                telegramUserId,
-                                username,
-                                referralCode
-                            })
-
-                            const { user: userData, pointsAwardedToUser } = registerResponse.data
-                            console.log('This is points awarded from Root', pointsAwardedToUser)
-                            const hasAcademy = userData.academies && userData.academies.length > 0
-
-                            const totalPoints = userData.points ? userData.points.reduce((sum, point) => sum + point.value, 0) : 0
-
-                            setUser({
-                                userId: userData.id,
-                                username: userData.name,
-                                email: userData.email,
-                                emailConfirmed: userData.emailConfirmed,
-                                roles: userData.roles,
-                                totalPoints: totalPoints,
-                                points: userData.points || [],
-                                bookmarks: userData.bookmarkedAcademies || [],
-                                token: null,
-                                hasAcademy: hasAcademy,
-                                referralPointsAwarded: pointsAwardedToUser || 0
-                            })
-
-                            userRoles = userData.roles || ['USER']
-                        } else {
-                            console.error('Error fetching user:', error)
-                            // Set default values in case of error
-                            setUser({
-                                userId: null,
-                                username: 'Guest',
-                                email: '',
-                                emailConfirmed: false,
-                                roles: ['USER'],
-                                totalPoints: 0,
-                                points: [],
-                                bookmarks: [],
-                                token: null,
-                                hasAcademy: false
-                            })
-
-                            userRoles = ['USER']
-                        }
-                    }
-
-                    const sessionStartTime = Date.now()
-                    startSession({
-                        sessionStartTime,
-                        userId: telegramUserId,
-                        username: username,
-                        roles: userRoles
-                    })
-
-                    routeStartTime = sessionStartTime
-                    currentRoute = location.pathname
-
-                    updateRouteDuration()
-                } else {
-                    // initData not available, set default user
-                    setUser({
-                        userId: null,
-                        username: 'Guest',
-                        email: '',
-                        emailConfirmed: false,
-                        roles: ['USER'],
-                        totalPoints: 0,
-                        points: [],
-                        bookmarks: [],
-                        token: null,
-                        hasAcademy: false
-                    })
-                }
-            } catch (e) {
-                console.error('Error initializing user session:', e)
-                // Set default user in case of error
-                setUser({
-                    userId: null,
-                    username: 'Guest',
-                    email: '',
-                    emailConfirmed: false,
-                    roles: ['USER'],
-                    totalPoints: 0,
-                    points: [],
-                    bookmarks: [],
-                    token: null,
-                    hasAcademy: false
-                })
-            } finally {
-                setIsLoading(false)
-            }
-        }
-
-        initializeUserSession()
+        // Remove the user session initialization logic
+        setIsLoading(false)
 
         const handleSessionEnd = () => {
             const sessionEndTime = Date.now()
@@ -283,7 +118,7 @@ function RootComponent() {
             window.removeEventListener('beforeunload', handleSessionEnd)
             updateRouteDuration()
         }
-    }, [initData]) // Reduced dependencies to prevent unnecessary re-runs
+    }, [initData]) // Include initData in the dependency array
 
     if (isLoading) {
         return (

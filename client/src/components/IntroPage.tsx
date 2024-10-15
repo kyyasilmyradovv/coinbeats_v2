@@ -1,68 +1,155 @@
 // client/src/components/IntroPage.tsx
 
-import React, { useEffect } from 'react'
+import React, { useEffect, useRef } from 'react'
 import './IntroPage.css' // Styles for the intro page
 import introImage from '../images/intro.webp'
 import coinbeatsText from '../images/coinbeats.png'
 import schoolText from '../images/school.png'
 import useAcademiesStore from '../store/useAcademiesStore'
-import axiosInstance from '../api/axiosInstance'
+import usePointsStore from '../store/usePointsStore'
+import useLeaderboardStore from '../store/useLeaderboardStore'
+import useTasksStore from '../store/useTasksStore'
+import useUserVerificationStore from '../store/useUserVerificationStore'
+import useCategoryChainStore from '../store/useCategoryChainStore'
+import { useInitData } from '@telegram-apps/sdk-react'
+import useSessionStore from '../store/useSessionStore'
+import useUserStore from '../store/useUserStore'
 
 interface IntroPageProps {
     onComplete: () => void // Function to call when the intro is complete
 }
 
 const IntroPage: React.FC<IntroPageProps> = ({ onComplete }) => {
-    const setAcademies = useAcademiesStore((state) => state.setAcademies)
+    const initData = useInitData()
+    const initializedRef = useRef(false) // Add this line
 
-    // Function to remove the initial spinner from the index.html
-    const removeSpinner = () => {
-        const spinner = document.getElementById('initial-spinner')
-        if (spinner) {
-            spinner.remove() // Remove the spinner from the DOM
-        }
-    }
+    const { fetchAcademiesAndPreloadImages } = useAcademiesStore()
+    const { fetchUserPoints } = usePointsStore()
+    const { fetchLeaderboards } = useLeaderboardStore()
+    const { fetchVerificationTasks, fetchGameTasks } = useTasksStore()
+    const { fetchUserVerificationTasks } = useUserVerificationStore()
+    const { fetchCategoriesAndChains } = useCategoryChainStore()
 
-    const constructImageUrl = (url: string) => {
-        return `https://subscribes.lt/${url}`
-    }
+    const { fetchUser, registerUser } = useUserStore()
+    const { startSession } = useSessionStore()
 
     useEffect(() => {
-        removeSpinner() // Remove spinner immediately when IntroPage mounts
+        if (!initData || !initData.user || initializedRef.current) return
+        initializedRef.current = true
 
-        const fetchAcademiesAndPreloadImages = async () => {
-            try {
-                const response = await axiosInstance.get('/api/academies/academies')
-                const academiesData = response.data
-
-                // Filter for approved academies
-                const approvedAcademies = academiesData.filter((academy: any) => academy.status === 'approved')
-
-                // Store academies data in the global store
-                setAcademies(approvedAcademies)
-
-                // Preload images using <link rel="preload">
-                const head = document.head || document.getElementsByTagName('head')[0]
-                approvedAcademies.forEach((academy: any) => {
-                    const link = document.createElement('link')
-                    link.rel = 'preload'
-                    link.as = 'image'
-                    link.href = constructImageUrl(academy.logoUrl)
-                    head.appendChild(link)
-                })
-            } catch (error) {
-                console.error('Error fetching academies:', error)
+        const removeSpinner = () => {
+            const spinner = document.getElementById('initial-spinner')
+            if (spinner) {
+                spinner.remove()
             }
         }
 
-        fetchAcademiesAndPreloadImages()
+        removeSpinner()
 
-        const timer = setTimeout(() => {
-            onComplete() // Run for at least 4 seconds before transitioning
-        }, 4000)
+        const initializeUserSession = async () => {
+            try {
+                const telegramUserId = initData.user.id
+                const username = initData.user.username || initData.user.firstName || initData.user.lastName || 'Guest'
 
-        return () => clearTimeout(timer) // Clean up the timeout when unmounted
-    }, [onComplete, setAcademies])
+                // Get referralCode from initData.startParam
+                const referralCode = initData.startParam || null
+
+                // Set telegramUserId in useSessionStore before any axios requests
+                useSessionStore.setState({ userId: telegramUserId })
+
+                let userRoles: string[] = ['USER'] // Default roles
+
+                try {
+                    // Attempt to fetch existing user data using store method
+                    await fetchUser(telegramUserId)
+
+                    // Access roles from store
+                    const roles = useUserStore.getState().roles
+                    userRoles = roles || ['USER']
+                } catch (error: any) {
+                    if (error.response && error.response.status === 404) {
+                        // User not found, register using store method
+                        await registerUser(telegramUserId, username, referralCode)
+
+                        // Access roles from store
+                        const roles = useUserStore.getState().roles
+                        userRoles = roles || ['USER']
+                    } else {
+                        console.error('Error fetching user:', error)
+                        // Handle other errors if necessary
+                        // Set default values in case of error
+                        useUserStore.setState({
+                            userId: null,
+                            username: 'Guest',
+                            email: '',
+                            emailConfirmed: false,
+                            roles: ['USER'],
+                            totalPoints: 0,
+                            points: [],
+                            bookmarks: [],
+                            authenticated: false,
+                            token: null,
+                            hasAcademy: false,
+                            referralPointsAwarded: 0,
+                            referralCode: null
+                        })
+                        userRoles = ['USER']
+                    }
+                }
+
+                const sessionStartTime = Date.now()
+                startSession({
+                    sessionStartTime,
+                    userId: telegramUserId,
+                    username: username,
+                    roles: userRoles
+                })
+            } catch (e) {
+                console.error('Error initializing user session:', e)
+                // Set default user in case of error
+                useUserStore.setState({
+                    userId: null,
+                    username: 'Guest',
+                    email: '',
+                    emailConfirmed: false,
+                    roles: ['USER'],
+                    totalPoints: 0,
+                    points: [],
+                    bookmarks: [],
+                    authenticated: false,
+                    token: null,
+                    hasAcademy: false,
+                    referralPointsAwarded: 0,
+                    referralCode: null
+                })
+            }
+        }
+
+        const fetchData = async () => {
+            try {
+                await initializeUserSession()
+
+                await Promise.all([
+                    fetchAcademiesAndPreloadImages(),
+                    fetchUserPoints(),
+                    fetchLeaderboards(),
+                    fetchVerificationTasks(),
+                    fetchGameTasks(),
+                    fetchUserVerificationTasks(),
+                    fetchCategoriesAndChains()
+                ])
+            } catch (error) {
+                console.error('Error in fetchData:', error)
+            }
+        }
+
+        fetchData().then(() => {
+            // Ensure the intro runs for at least 4 seconds
+            setTimeout(() => {
+                onComplete()
+            }, 4000)
+        })
+    }, [initData]) // Include initData in the dependency array
 
     return (
         <div className="intro-container">
