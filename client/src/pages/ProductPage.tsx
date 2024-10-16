@@ -6,9 +6,12 @@ import { useLocation } from 'react-router-dom'
 import Navbar from '../components/common/Navbar'
 import Sidebar from '../components/common/Sidebar'
 import BottomTabBar from '../components/BottomTabBar'
-import { Page, Card, Radio, Button, Block, Preloader, Dialog } from 'konsta/react'
+import { Page, Card, Radio, Button, Block, Preloader, Dialog, Notification } from 'konsta/react'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import 'swiper/swiper-bundle.css'
+import { FaTwitter, FaFacebook, FaInstagram, FaTelegramPlane, FaDiscord, FaYoutube, FaEnvelope } from 'react-icons/fa'
+import coinStackIcon from '../images/coin-stack.png'
+import coinbeats from '../images/coinbeats-l.svg' // Make sure this is the correct path
 import axiosInstance from '../api/axiosInstance'
 import { Icon } from '@iconify/react'
 import collected from '../images/collected-coins.png'
@@ -21,6 +24,7 @@ import gecko from '../images/coingecko.svg'
 import coinStack from '../images/coin-stack.png'
 import bunnyImage from '../images/bunny-head.png'
 import useUserStore from '../store/useUserStore'
+import useUserVerificationStore from '../store/useUserVerificationStore'
 import AcademyCompletionSlide from '../components/AcademyCompletionSlide'
 import Linkify from 'react-linkify'
 import { extractYouTubeVideoId } from '../utils/extractYouTubeVideoId'
@@ -33,6 +37,7 @@ import calendar from '../images/calendar.png'
 import handTrophy from '../images/hand-trophy.png'
 import Lottie from 'react-lottie'
 import coinsEarnedAnimationData from '../animations/earned-coins.json'
+import bunnyLogo from '../images/bunny-head.png'
 
 // Import platform logos
 import xLogo from '../images/x.png'
@@ -53,6 +58,30 @@ const platformLogos: { [key: string]: string } = {
     Email: emailLogo
 }
 
+interface VerificationTask {
+    id: number
+    name: string
+    description: string
+    xp: number
+    platform: string
+    verificationMethod: string
+    intervalType: string
+    shortCircuit: boolean
+    shortCircuitTimer: number | null
+}
+
+const platformIcons: { [key: string]: JSX.Element } = {
+    X: <FaTwitter className="w-8 h-8 text-blue-500" />,
+    FACEBOOK: <FaFacebook className="w-8 h-8 text-blue-700" />,
+    INSTAGRAM: <FaInstagram className="w-8 h-8 text-pink-500" />,
+    TELEGRAM: <FaTelegramPlane className="w-8 h-8 text-blue-400" />,
+    DISCORD: <FaDiscord className="w-8 h-8 text-indigo-600" />,
+    YOUTUBE: <FaYoutube className="w-8 h-8 text-red-600" />,
+    EMAIL: <FaEnvelope className="w-8 h-8 text-green-500" />,
+    NONE: <img src={coinbeats} alt="CoinBeats" className="w-8 h-8" />
+    // Add any other platforms as needed
+}
+
 export default function ProductPage() {
     const initData = useInitData()
     const location = useLocation()
@@ -65,9 +94,17 @@ export default function ProductPage() {
     const [currentPoints, setCurrentPoints] = useState(0)
     const [showXPAnimation, setShowXPAnimation] = useState(false)
     const swiperRef = useRef<any>(null)
-    const { userId, setUser } = useUserStore((state) => ({
+    const { userId, setUser, referralCode } = useUserStore((state) => ({
         userId: state.userId,
-        setUser: state.setUser
+        setUser: state.setUser,
+        referralCode: state.referralCode
+    }))
+    const { userVerificationTasks, fetchUserVerificationTasks, startTask, submitTask, completeTask } = useUserVerificationStore((state) => ({
+        userVerificationTasks: state.userVerificationTasks,
+        fetchUserVerificationTasks: state.fetchUserVerificationTasks,
+        startTask: state.startTask,
+        submitTask: state.submitTask,
+        completeTask: state.completeTask
     }))
     const [showArrow, setShowArrow] = useState(true)
     const [userHasResponses, setUserHasResponses] = useState(false)
@@ -112,11 +149,22 @@ export default function ProductPage() {
     const [errorMessage, setErrorMessage] = useState('')
     const [maxAllowedSlide, setMaxAllowedSlide] = useState(1) // Initialize to first quiz slide
     const [pendingActiveFilter, setPendingActiveFilter] = useState<string | null>(null)
+    const [selectedTask, setSelectedTask] = useState<VerificationTask | null>(null)
+    const [taskInputValues, setTaskInputValues] = useState<{ [key: number]: string }>({})
+    const [submittedTasks, setSubmittedTasks] = useState<{ [key: number]: boolean }>({})
     const [showLeaveConfirmation, setShowLeaveConfirmation] = useState(false)
     const activeFilterRef = useRef<string | null>(activeFilter)
+    const [notificationOpen, setNotificationOpen] = useState(false)
+    const [notificationText, setNotificationText] = useState('')
+    const [referralModalOpen, setReferralModalOpen] = useState(false)
+    const [referralLink, setReferralLink] = useState('')
 
     const checkAnswerButtonRefs = useRef<(HTMLDivElement | null)[]>([]) // Updated to an array of refs
     // Ref for the "Check Answer" buttons
+
+    // Feedback handling state variables
+    const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false)
+    const [feedbackText, setFeedbackText] = useState('')
 
     const coinsEarnedAnimation = {
         loop: true,
@@ -125,6 +173,159 @@ export default function ProductPage() {
         rendererSettings: {
             preserveAspectRatio: 'xMidYMid slice'
         }
+    }
+
+    function getActionLabel(verificationMethod: string) {
+        switch (verificationMethod) {
+            case 'TWEET':
+                return 'Tweet'
+            case 'RETWEET':
+                return 'Retweet'
+            case 'FOLLOW_USER':
+                return 'Follow'
+            case 'LIKE_TWEET':
+                return 'Like'
+            case 'COMMENT_ON_TWEET':
+                return 'Comment'
+            case 'JOIN_TELEGRAM_CHANNEL':
+                return 'Join'
+            case 'INVITE_TELEGRAM_FRIEND':
+                return 'Invite'
+            case 'PROVIDE_EMAIL':
+                return 'Submit'
+            case 'WATCH_YOUTUBE_VIDEO':
+                return 'Watch'
+            case 'SUBSCRIBE_YOUTUBE_CHANNEL':
+                return 'Subscribe'
+            case 'ADD_TO_BIO':
+                return 'Add to Bio'
+            case 'LEAVE_FEEDBACK':
+                return 'Feedback'
+            // Add other mappings as needed
+            default:
+                return 'Action'
+        }
+    }
+
+    // Determine if a task requires an input field
+    function requiresInputField(task: VerificationTask): boolean {
+        const methodsRequiringInput = ['SHORT_CIRCUIT', 'PROVIDE_EMAIL', 'ADD_TO_BIO', 'SUBSCRIBE_YOUTUBE_CHANNEL']
+        return methodsRequiringInput.includes(task.verificationMethod)
+    }
+
+    // Get placeholder text based on task name
+    function getInputPlaceholder(task: VerificationTask): string {
+        switch (task.name) {
+            case 'Shill CB in other TG channels':
+                return 'Paste the message URL here'
+            case 'Create and post CoinBeats meme':
+                return 'Paste the link to your meme here'
+            case 'Join our newsletter':
+                return 'Enter your email address here'
+            case '“@CoinBeatsxyz Student” to X bio':
+                return 'Enter your X username here'
+            case 'Subscribe to @CoinBeats Youtube':
+                return 'Paste your YouTube username here'
+            default:
+                return 'Enter your submission here'
+        }
+    }
+
+    const handleAction = async (task: VerificationTask) => {
+        if (requiresInputField(task)) {
+            openNotificationForTask(task)
+        } else if (task.verificationMethod === 'LEAVE_FEEDBACK') {
+            setSelectedTask(task)
+            setFeedbackDialogOpen(true)
+        } else {
+            // Direct the user to the appropriate action
+            switch (task.verificationMethod) {
+                case 'TWEET':
+                    const tweetText = encodeURIComponent(task.description || '')
+                    window.open(`https://twitter.com/intent/tweet?text=${tweetText}`, '_blank')
+                    break
+                case 'RETWEET':
+                    const retweetId = '1843673683413610985' // Replace with actual tweet ID
+                    window.open(`https://twitter.com/intent/retweet?tweet_id=${retweetId}`, '_blank')
+                    break
+                case 'FOLLOW_USER':
+                    const username = 'ClipFinance' // Replace with actual username
+                    window.open(`https://twitter.com/${username}`, '_blank')
+                    break
+                case 'LIKE_TWEET':
+                    const likeTweetId = '1843673683413610985' // Replace with actual tweet ID
+                    window.open(`https://twitter.com/intent/like?tweet_id=${likeTweetId}`, '_blank')
+                    break
+                case 'COMMENT_ON_TWEET':
+                    const commentTweetId = '1843673683413610985' // Replace with actual tweet ID
+                    window.open(`https://twitter.com/intent/tweet?in_reply_to=${commentTweetId}`, '_blank')
+                    break
+                case 'JOIN_TELEGRAM_CHANNEL':
+                    const telegramChannelLink = 'https://t.me/coinbeatsdiscuss' // Replace with your Telegram channel link
+                    window.open(telegramChannelLink, '_blank')
+                    break
+                case 'INVITE_TELEGRAM_FRIEND':
+                    try {
+                        const userReferralCode = referralCode
+                        if (!userReferralCode) {
+                            setNotificationText('Referral code not available.')
+                            setNotificationOpen(true)
+                            return
+                        }
+                        const botUsername = 'CoinbeatsMiniApp_bot/miniapp' // Replace with your bot's username
+                        const referralLink = `https://t.me/${botUsername}?startapp=${userReferralCode}`
+                        setReferralLink(referralLink)
+                        setReferralModalOpen(true)
+                    } catch (error) {
+                        console.error('Error fetching user data:', error)
+                    }
+                    break
+                case 'SUBSCRIBE_YOUTUBE_CHANNEL':
+                    const youtubeChannelUrl = 'https://www.youtube.com/@CoinBeats' // Replace with your YouTube channel URL
+                    window.open(youtubeChannelUrl, '_blank')
+                    break
+                case 'WATCH_YOUTUBE_VIDEO':
+                    const youtubeVideoUrl = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' // Replace with your YouTube video URL
+                    window.open(youtubeVideoUrl, '_blank')
+                    break
+                case 'FOLLOW_INSTAGRAM_USER':
+                    const instagramUsername = 'coinbeatsxyz' // Replace with actual username
+                    window.open(`https://www.instagram.com/${instagramUsername}/`, '_blank')
+                    break
+                case 'JOIN_DISCORD_CHANNEL':
+                    const discordInviteLink = 'https://discord.gg/your-invite-code' // Replace with your Discord invite link
+                    window.open(discordInviteLink, '_blank')
+                    break
+                case 'PROVIDE_EMAIL':
+                    setNotificationText('Please provide your email in the next step.')
+                    setNotificationOpen(true)
+                    break
+                case 'ADD_TO_BIO':
+                    setNotificationText('Please add "CoinBeats Student" to your X bio.')
+                    setNotificationOpen(true)
+                    window.open('https://twitter.com/settings/profile', '_blank')
+                    break
+                case 'SHORT_CIRCUIT':
+                    setNotificationText(task.description)
+                    setNotificationOpen(true)
+                    break
+                default:
+                    break
+            }
+
+            // Start the task in the background
+            try {
+                await startTask(task.id)
+            } catch (error) {
+                console.error('Error starting task:', error)
+            }
+        }
+    }
+
+    const openNotificationForTask = (task: VerificationTask) => {
+        setSelectedTask(task) // Set the task that requires submission
+        setNotificationText(task.description) // Set notification text for the task
+        setNotificationOpen(true) // Open the notification
     }
 
     useEffect(() => {
@@ -903,29 +1104,17 @@ export default function ProductPage() {
         )
     }
 
-    // Handle action button click
-    const handleAction = (quest: any) => {
-        // Implement action based on verification method
-        // For example, redirect to a URL or open a modal
-        console.log('Action clicked for quest:', quest)
-        // Placeholder action
-        alert(`Performing action: ${getActionButtonText(quest.verificationMethod)}`)
-    }
-
     // Handle verify button click
     const handleVerify = async (quest: any) => {
-        // Implement verification logic
-        // For example, make an API call to verify the quest
-        console.log('Verify clicked for quest:', quest)
         try {
-            const response = await axiosInstance.post(`/api/verification-tasks/${quest.id}/verify`, {
-                userId,
-                academyId: academy.id
-            })
-            alert('Verification successful!')
+            const message = await completeTask(quest.id, academy.id)
+            setNotificationText(message)
+            setNotificationOpen(true)
         } catch (error) {
             console.error('Error verifying quest:', error)
-            alert('Verification failed.')
+            const errorMessage = error.response?.data?.message || 'Verification failed.'
+            setNotificationText(errorMessage)
+            setNotificationOpen(true)
         }
     }
 
@@ -971,60 +1160,90 @@ export default function ProductPage() {
                     <Preloader size="w-12 h-12" />
                 </div>
             ) : quests.length > 0 ? (
-                quests.map((quest, index) => (
-                    <Card
-                        key={index}
-                        className="!m-0 !p-0 !rounded-2xl !bg-gray-50 dark:!bg-gray-800 !border !border-gray-200 dark:!border-gray-700 !shadow-sm flex"
-                    >
-                        <div className="flex">
-                            {/* Platform logo */}
-                            <div className="flex-shrink-0">
-                                <img src={platformLogos[quest.platform] || defaultLogo} alt={quest.platform} className="w-12 h-12" />
+                quests.map((quest) => {
+                    // For simplicity, we'll assume quests are not yet verified
+                    // You can adjust this based on your application's logic
+                    const isVerified = false // Replace with actual verification status
+                    return (
+                        <div
+                            key={quest.id}
+                            className="relative bg-white dark:bg-zinc-900 rounded-2xl shadow-lg py-1 flex flex-row items-center px-1 border border-gray-300 dark:border-gray-600 h-16 justify-between w-full mb-2"
+                        >
+                            {/* Platform Icon */}
+                            <div className="w-12 h-16 flex items-center justify-center">
+                                {platformIcons[quest.platform] || <div className="w-8 h-8 text-gray-500">?</div>}
                             </div>
-                            {/* Quest details */}
-                            <div className="flex-grow mx-4">
-                                <h3 className="text-lg font-semibold">{quest.name}</h3>
-                                <p className="text-sm text-gray-600 dark:text-gray-300">{quest.description}</p>
-                                <div className="flex items-center mt-2">
-                                    <span className="text-md font-semibold mr-1">+{quest.xp}</span>
-                                    <img src={coinStack} alt="coin stack" className="w-5 h-5" />
+
+                            {/* Quest Details */}
+                            <div className="flex flex-col flex-grow mx-2 py-1">
+                                {/* Quest Name and Tooltip */}
+                                <h3 className="font-semibold text-left break-words whitespace-normal text-xs flex items-center relative">
+                                    {quest.name}
+                                    <button
+                                        className="ml-2 rounded-full bg-gray-700 text-white text-xs font-bold w-5 h-5 flex items-center justify-center"
+                                        onClick={() => toggleTooltip(quest.id)}
+                                    >
+                                        ?
+                                    </button>
+                                    {visibleTooltip === quest.id && (
+                                        <div className="tooltip absolute bg-gray-700 text-white text-xs rounded-2xl p-4 mt-2 z-20">
+                                            {quest.description}
+                                            <button className="absolute top-0 right-0 text-white text-sm mt-1 mr-1" onClick={() => setVisibleTooltip(null)}>
+                                                &times;
+                                            </button>
+                                        </div>
+                                    )}
+                                </h3>
+
+                                {/* XP and Users Completed */}
+                                <div className="flex items-center mt-1">
+                                    <div className="flex items-center">
+                                        <span className="mx-1 text-sm text-gray-100">+{quest.xp}</span>
+                                        <img src={coinStackIcon} alt="Coin Stack" className="w-4 h-4" />
+                                    </div>
                                 </div>
                             </div>
-                            {/* Action buttons */}
-                            <div className="flex flex-col justify-between">
+
+                            {/* Action Buttons */}
+                            <div className="flex flex-col space-y-1 justify-center mr-2">
+                                {/* Action Button */}
                                 <Button
-                                    small
                                     rounded
-                                    outline
                                     onClick={() => handleAction(quest)}
-                                    className="mb-2"
+                                    className="!text-2xs font-bold shadow-xl !w-20 !h-6"
                                     style={{
-                                        background: 'linear-gradient(to left, #ff0077, #7700ff)',
+                                        background: 'linear-gradient(to left, #16a34a, #3b82f6)',
                                         color: '#fff'
                                     }}
+                                    // You can disable the button based on your logic
+                                    // disabled={shouldDisableActionButton(quest)}
                                 >
-                                    {getActionButtonText(quest.verificationMethod)}
+                                    {getActionLabel(quest.verificationMethod)}
                                 </Button>
-                                <Button
-                                    small
-                                    rounded
-                                    outline
-                                    onClick={() => handleVerify(quest)}
-                                    style={{
-                                        background: 'linear-gradient(to left, #ff0077, #7700ff)',
-                                        color: '#fff'
-                                    }}
-                                >
-                                    Verify
-                                </Button>
+
+                                {/* Verify Button */}
+                                {quest.verificationMethod !== 'LEAVE_FEEDBACK' && (
+                                    <Button
+                                        rounded
+                                        outline
+                                        onClick={() => handleVerify(quest)}
+                                        className="!text-2xs font-bold shadow-xl !w-20 !h-6"
+                                        style={{
+                                            borderColor: isVerified ? '#16a34a' : '#3b82f6',
+                                            backgroundColor: 'transparent',
+                                            color: '#fff'
+                                        }}
+                                        disabled={isVerified}
+                                    >
+                                        {isVerified ? 'Completed' : 'Verify'}
+                                    </Button>
+                                )}
                             </div>
                         </div>
-                    </Card>
-                ))
+                    )
+                })
             ) : (
-                <Card key="no-quests" className="m-2 p-2">
-                    <p className="text-center">No quests available</p>
-                </Card>
+                <div className="text-center text-white mt-4">No quests available.</div>
             )}
         </Block>
     )
@@ -1477,6 +1696,17 @@ export default function ProductPage() {
                     </div>
                 </div>
             </Dialog>
+
+            {/* Notification Component */}
+            <Notification
+                className="fixed !mt-12 top-12 left-0 z-50 border"
+                opened={notificationOpen}
+                icon={<img src={bunnyLogo} alt="Bunny Mascot" className="w-10 h-10" />}
+                title="Message from CoinBeats Bunny"
+                text={notificationText}
+                button={<Button onClick={() => setNotificationOpen(false)}>Close</Button>}
+                onClose={() => setNotificationOpen(false)}
+            />
         </Page>
     )
 }

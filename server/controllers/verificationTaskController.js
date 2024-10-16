@@ -340,3 +340,25 @@ exports.getTasksForAcademypage = async (req, res, next) => {
     next(createError(500, 'Error fetching end of academy tasks'));
   }
 };
+
+exports.getVerificationTasksForAcademy = async (req, res, next) => {
+  const { academyId } = req.params;
+
+  try {
+    if (!academyId) {
+      return next(createError(400, 'academyId is required'));
+    }
+
+    const verificationTasks = await prisma.verificationTask.findMany({
+      where: {
+        taskType: 'ACADEMY_SPECIFIC',
+        academyId: parseInt(academyId, 10),
+      },
+    });
+
+    res.json(verificationTasks);
+  } catch (error) {
+    console.error('Error fetching verification tasks for academy:', error);
+    next(createError(500, 'Error fetching verification tasks for academy'));
+  }
+};

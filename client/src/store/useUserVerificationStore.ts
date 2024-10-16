@@ -9,6 +9,7 @@ interface UserVerificationTask {
     id: number
     userId: number
     verificationTaskId: number
+    academyId?: number
     verified: boolean
     createdAt: string
     completedAt: string | null
@@ -19,7 +20,7 @@ interface UserVerificationState {
     fetchUserVerificationTasks: () => Promise<void>
     startTask: (taskId: number) => Promise<void>
     submitTask: (taskId: number, submissionText: string) => Promise<void>
-    completeTask: (taskId: number) => Promise<string>
+    completeTask: (taskId: number, academyId?: number) => Promise<string>
 }
 
 const useUserVerificationStore = create<UserVerificationState>()(
@@ -67,7 +68,7 @@ const useUserVerificationStore = create<UserVerificationState>()(
                 throw error
             }
         },
-        completeTask: async (taskId) => {
+        completeTask: async (taskId, academyId) => {
             const { userId } = useUserStore.getState()
             if (!userId) {
                 console.error('User not authenticated.')
@@ -75,7 +76,7 @@ const useUserVerificationStore = create<UserVerificationState>()(
             }
 
             try {
-                const response = await axiosInstance.post('/api/users/complete-task', { taskId, userId })
+                const response = await axiosInstance.post('/api/users/complete-task', { taskId, userId, academyId })
                 const { message, point } = response.data
 
                 if (point) {
