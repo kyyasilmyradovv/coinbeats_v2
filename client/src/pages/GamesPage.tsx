@@ -179,7 +179,7 @@ export default function GamesPage() {
                     window.open(`https://twitter.com/intent/tweet?text=${tweetText}`, '_blank')
                     break
                 case 'RETWEET':
-                    const retweetId = '1843673683413610985' // Replace with actual tweet ID
+                    const retweetId = '1846827987741605934' // Replace with actual tweet ID
                     window.open(`https://twitter.com/intent/retweet?tweet_id=${retweetId}`, '_blank')
                     break
                 case 'FOLLOW_USER':
@@ -187,11 +187,11 @@ export default function GamesPage() {
                     window.open(`https://twitter.com/${username}`, '_blank')
                     break
                 case 'LIKE_TWEET':
-                    const likeTweetId = '1843673683413610985' // Replace with actual tweet ID
+                    const likeTweetId = '1846827987741605934' // Replace with actual tweet ID
                     window.open(`https://twitter.com/intent/like?tweet_id=${likeTweetId}`, '_blank')
                     break
                 case 'COMMENT_ON_TWEET':
-                    const commentTweetId = '1843673683413610985' // Replace with actual tweet ID
+                    const commentTweetId = '1846827987741605934' // Replace with actual tweet ID
                     window.open(`https://twitter.com/intent/tweet?in_reply_to=${commentTweetId}`, '_blank')
                     break
                 case 'JOIN_TELEGRAM_CHANNEL':

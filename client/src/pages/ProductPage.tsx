@@ -3,38 +3,32 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useInitData } from '@telegram-apps/sdk-react'
 import { useLocation } from 'react-router-dom'
-import Navbar from '../components/common/Navbar'
-import Sidebar from '../components/common/Sidebar'
-import BottomTabBar from '../components/BottomTabBar'
+import { FaTwitter, FaFacebook, FaInstagram, FaTelegramPlane, FaDiscord, FaYoutube, FaEnvelope } from 'react-icons/fa'
 import { Page, Card, Radio, Button, Block, Preloader, Dialog, Notification } from 'konsta/react'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import 'swiper/swiper-bundle.css'
-import { FaTwitter, FaFacebook, FaInstagram, FaTelegramPlane, FaDiscord, FaYoutube, FaEnvelope } from 'react-icons/fa'
+import Navbar from '../components/common/Navbar'
+import Sidebar from '../components/common/Sidebar'
+import BottomTabBar from '../components/BottomTabBar'
+import TimerBar from '../components/ProductPage/TimerBar'
+import ProgressBar from '../components/ProductPage/ProgressBar'
+import DetailsCard from '../components/ProductPage/DetailsCard'
+import SocialsCard from '../components/ProductPage/SocialsCard'
+import RafflesCard from '../components/ProductPage/RafflesCard'
+import LeaveConfirmationDialog from '../components/ProductPage/LeaveConfirmationDialog'
+import PointsCollectedCard from '../components/ProductPage/PointsCollectedCard'
+import IntroSlide from '../components/ProductPage/IntroSlide'
+import AcademyCompletionSlide from '../components/AcademyCompletionSlide'
+import useUserStore from '../store/useUserStore'
+import useAcademiesStore from '../store/useAcademiesStore'
+import useUserVerificationStore, { VerificationTask } from '../store/useUserVerificationStore'
 import coinStackIcon from '../images/coin-stack.png'
-import coinbeats from '../images/coinbeats-l.svg' // Make sure this is the correct path
-import axiosInstance from '../api/axiosInstance'
+import coinbeats from '../images/coinbeats-l.svg'
 import { Icon } from '@iconify/react'
-import collected from '../images/collected-coins.png'
-import coins from '../images/coins-to-earn.png'
-import ticker from '../images/ticker.png'
-import categories from '../images/categories.png'
-import chains from '../images/chains.png'
-import name from '../images/name.png'
-import gecko from '../images/coingecko.svg'
 import coinStack from '../images/coin-stack.png'
 import bunnyImage from '../images/bunny-head.png'
-import useUserStore from '../store/useUserStore'
-import useUserVerificationStore from '../store/useUserVerificationStore'
-import AcademyCompletionSlide from '../components/AcademyCompletionSlide'
 import Linkify from 'react-linkify'
 import { extractYouTubeVideoId } from '../utils/extractYouTubeVideoId'
-import wallet from '../images/wallet.png'
-import ticket from '../images/ticket.png'
-import moneyBag from '../images/money-bag.png'
-import coming from '../images/svgs/coming-soon3.svg'
-import clock from '../images/clock.png'
-import calendar from '../images/calendar.png'
-import handTrophy from '../images/hand-trophy.png'
 import Lottie from 'react-lottie'
 import coinsEarnedAnimationData from '../animations/earned-coins.json'
 import bunnyLogo from '../images/bunny-head.png'
@@ -58,18 +52,6 @@ const platformLogos: { [key: string]: string } = {
     Email: emailLogo
 }
 
-interface VerificationTask {
-    id: number
-    name: string
-    description: string
-    xp: number
-    platform: string
-    verificationMethod: string
-    intervalType: string
-    shortCircuit: boolean
-    shortCircuitTimer: number | null
-}
-
 const platformIcons: { [key: string]: JSX.Element } = {
     X: <FaTwitter className="w-8 h-8 text-blue-500" />,
     FACEBOOK: <FaFacebook className="w-8 h-8 text-blue-700" />,
@@ -87,10 +69,7 @@ export default function ProductPage() {
     const location = useLocation()
     const { academy } = location.state || {}
     const [activeFilter, setActiveFilter] = useState<string | null>(null)
-    const [initialAnswers, setInitialAnswers] = useState<any[]>([])
-    const [quests, setQuests] = useState<any[]>([])
     const [currentSlideIndex, setCurrentSlideIndex] = useState(0)
-    const [earnedPoints, setEarnedPoints] = useState(0)
     const [currentPoints, setCurrentPoints] = useState(0)
     const [showXPAnimation, setShowXPAnimation] = useState(false)
     const swiperRef = useRef<any>(null)
@@ -99,15 +78,55 @@ export default function ProductPage() {
         setUser: state.setUser,
         referralCode: state.referralCode
     }))
-    const { userVerificationTasks, fetchUserVerificationTasks, startTask, submitTask, completeTask } = useUserVerificationStore((state) => ({
+    const {
+        userVerificationTasks,
+        fetchUserVerificationTasks,
+        startTask,
+        submitTask,
+        completeTask,
+        getActionLabel,
+        requiresInputField,
+        getInputPlaceholder,
+        performAction
+    } = useUserVerificationStore((state) => ({
         userVerificationTasks: state.userVerificationTasks,
         fetchUserVerificationTasks: state.fetchUserVerificationTasks,
         startTask: state.startTask,
         submitTask: state.submitTask,
-        completeTask: state.completeTask
+        completeTask: state.completeTask,
+        getActionLabel: state.getActionLabel,
+        requiresInputField: state.requiresInputField,
+        getInputPlaceholder: state.getInputPlaceholder,
+        performAction: state.performAction
+    }))
+    const {
+        earnedPoints,
+        fetchEarnedPoints,
+        fetchQuestions,
+        fetchUserResponses,
+        fetchQuests,
+        checkAnswer,
+        saveResponse,
+        submitQuiz,
+        fetchUserTotalPoints,
+        questions,
+        quests
+    } = useAcademiesStore((state) => ({
+        earnedPoints: state.earnedPoints,
+        fetchEarnedPoints: state.fetchEarnedPoints,
+        fetchQuestions: state.fetchQuestions,
+        fetchUserResponses: state.fetchUserResponses,
+        fetchQuests: state.fetchQuests,
+        checkAnswer: state.checkAnswer,
+        saveResponse: state.saveResponse,
+        submitQuiz: state.submitQuiz,
+        fetchUserTotalPoints: state.fetchUserTotalPoints,
+        questions: state.questions,
+        quests: state.quests
     }))
     const [showArrow, setShowArrow] = useState(true)
     const [userHasResponses, setUserHasResponses] = useState(false)
+    const [initialAnswers, setInitialAnswers] = useState<Question[]>([])
     const [showIntro, setShowIntro] = useState(false)
     const [loadingQuests, setLoadingQuests] = useState(true)
     const nextRaffleDate = new Date('2024-10-12T14:00:00') // 12th October, 2pm
@@ -158,6 +177,7 @@ export default function ProductPage() {
     const [notificationText, setNotificationText] = useState('')
     const [referralModalOpen, setReferralModalOpen] = useState(false)
     const [referralLink, setReferralLink] = useState('')
+    const [pendingNavigationAction, setPendingNavigationAction] = useState<(() => void) | null>(null)
 
     const checkAnswerButtonRefs = useRef<(HTMLDivElement | null)[]>([]) // Updated to an array of refs
     // Ref for the "Check Answer" buttons
@@ -175,162 +195,45 @@ export default function ProductPage() {
         }
     }
 
-    function getActionLabel(verificationMethod: string) {
-        switch (verificationMethod) {
-            case 'TWEET':
-                return 'Tweet'
-            case 'RETWEET':
-                return 'Retweet'
-            case 'FOLLOW_USER':
-                return 'Follow'
-            case 'LIKE_TWEET':
-                return 'Like'
-            case 'COMMENT_ON_TWEET':
-                return 'Comment'
-            case 'JOIN_TELEGRAM_CHANNEL':
-                return 'Join'
-            case 'INVITE_TELEGRAM_FRIEND':
-                return 'Invite'
-            case 'PROVIDE_EMAIL':
-                return 'Submit'
-            case 'WATCH_YOUTUBE_VIDEO':
-                return 'Watch'
-            case 'SUBSCRIBE_YOUTUBE_CHANNEL':
-                return 'Subscribe'
-            case 'ADD_TO_BIO':
-                return 'Add to Bio'
-            case 'LEAVE_FEEDBACK':
-                return 'Feedback'
-            // Add other mappings as needed
-            default:
-                return 'Action'
+    const handleActionClick = async (task: VerificationTask) => {
+        try {
+            const { notificationText, referralLink } = await performAction(task, referralCode)
+
+            if (notificationText) {
+                setNotificationText(notificationText)
+                setNotificationOpen(true)
+            }
+
+            if (referralLink) {
+                setReferralLink(referralLink)
+                setReferralModalOpen(true)
+            }
+
+            // Handle any additional UI updates as needed
+            if (task.verificationMethod === 'LEAVE_FEEDBACK') {
+                setSelectedTask(task)
+                setFeedbackDialogOpen(true)
+            }
+        } catch (error) {
+            console.error('Error performing action:', error)
         }
     }
 
-    // Determine if a task requires an input field
-    function requiresInputField(task: VerificationTask): boolean {
-        const methodsRequiringInput = ['SHORT_CIRCUIT', 'PROVIDE_EMAIL', 'ADD_TO_BIO', 'SUBSCRIBE_YOUTUBE_CHANNEL']
-        return methodsRequiringInput.includes(task.verificationMethod)
-    }
+    const handleNavigationAttempt = (newFilter: string | null, navigationAction: () => void) => {
+        const currentFilter = activeFilterRef.current
 
-    // Get placeholder text based on task name
-    function getInputPlaceholder(task: VerificationTask): string {
-        switch (task.name) {
-            case 'Shill CB in other TG channels':
-                return 'Paste the message URL here'
-            case 'Create and post CoinBeats meme':
-                return 'Paste the link to your meme here'
-            case 'Join our newsletter':
-                return 'Enter your email address here'
-            case '“@CoinBeatsxyz Student” to X bio':
-                return 'Enter your X username here'
-            case 'Subscribe to @CoinBeats Youtube':
-                return 'Paste your YouTube username here'
-            default:
-                return 'Enter your submission here'
-        }
-    }
-
-    const handleAction = async (task: VerificationTask) => {
-        if (requiresInputField(task)) {
-            openNotificationForTask(task)
-        } else if (task.verificationMethod === 'LEAVE_FEEDBACK') {
-            setSelectedTask(task)
-            setFeedbackDialogOpen(true)
+        if (
+            (currentFilter === 'read' || currentFilter === 'watch') &&
+            newFilter !== 'read' &&
+            newFilter !== 'watch' &&
+            hasAnsweredAtLeastOneQuestion() // Changed from !hasAnsweredAtLeastOneQuestion()
+        ) {
+            setPendingNavigationAction(() => navigationAction)
+            setShowLeaveConfirmation(true)
         } else {
-            // Direct the user to the appropriate action
-            switch (task.verificationMethod) {
-                case 'TWEET':
-                    const tweetText = encodeURIComponent(task.description || '')
-                    window.open(`https://twitter.com/intent/tweet?text=${tweetText}`, '_blank')
-                    break
-                case 'RETWEET':
-                    const retweetId = '1843673683413610985' // Replace with actual tweet ID
-                    window.open(`https://twitter.com/intent/retweet?tweet_id=${retweetId}`, '_blank')
-                    break
-                case 'FOLLOW_USER':
-                    const username = 'ClipFinance' // Replace with actual username
-                    window.open(`https://twitter.com/${username}`, '_blank')
-                    break
-                case 'LIKE_TWEET':
-                    const likeTweetId = '1843673683413610985' // Replace with actual tweet ID
-                    window.open(`https://twitter.com/intent/like?tweet_id=${likeTweetId}`, '_blank')
-                    break
-                case 'COMMENT_ON_TWEET':
-                    const commentTweetId = '1843673683413610985' // Replace with actual tweet ID
-                    window.open(`https://twitter.com/intent/tweet?in_reply_to=${commentTweetId}`, '_blank')
-                    break
-                case 'JOIN_TELEGRAM_CHANNEL':
-                    const telegramChannelLink = 'https://t.me/coinbeatsdiscuss' // Replace with your Telegram channel link
-                    window.open(telegramChannelLink, '_blank')
-                    break
-                case 'INVITE_TELEGRAM_FRIEND':
-                    try {
-                        const userReferralCode = referralCode
-                        if (!userReferralCode) {
-                            setNotificationText('Referral code not available.')
-                            setNotificationOpen(true)
-                            return
-                        }
-                        const botUsername = 'CoinbeatsMiniApp_bot/miniapp' // Replace with your bot's username
-                        const referralLink = `https://t.me/${botUsername}?startapp=${userReferralCode}`
-                        setReferralLink(referralLink)
-                        setReferralModalOpen(true)
-                    } catch (error) {
-                        console.error('Error fetching user data:', error)
-                    }
-                    break
-                case 'SUBSCRIBE_YOUTUBE_CHANNEL':
-                    const youtubeChannelUrl = 'https://www.youtube.com/@CoinBeats' // Replace with your YouTube channel URL
-                    window.open(youtubeChannelUrl, '_blank')
-                    break
-                case 'WATCH_YOUTUBE_VIDEO':
-                    const youtubeVideoUrl = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' // Replace with your YouTube video URL
-                    window.open(youtubeVideoUrl, '_blank')
-                    break
-                case 'FOLLOW_INSTAGRAM_USER':
-                    const instagramUsername = 'coinbeatsxyz' // Replace with actual username
-                    window.open(`https://www.instagram.com/${instagramUsername}/`, '_blank')
-                    break
-                case 'JOIN_DISCORD_CHANNEL':
-                    const discordInviteLink = 'https://discord.gg/your-invite-code' // Replace with your Discord invite link
-                    window.open(discordInviteLink, '_blank')
-                    break
-                case 'PROVIDE_EMAIL':
-                    setNotificationText('Please provide your email in the next step.')
-                    setNotificationOpen(true)
-                    break
-                case 'ADD_TO_BIO':
-                    setNotificationText('Please add "CoinBeats Student" to your X bio.')
-                    setNotificationOpen(true)
-                    window.open('https://twitter.com/settings/profile', '_blank')
-                    break
-                case 'SHORT_CIRCUIT':
-                    setNotificationText(task.description)
-                    setNotificationOpen(true)
-                    break
-                default:
-                    break
-            }
-
-            // Start the task in the background
-            try {
-                await startTask(task.id)
-            } catch (error) {
-                console.error('Error starting task:', error)
-            }
+            navigationAction()
         }
     }
-
-    const openNotificationForTask = (task: VerificationTask) => {
-        setSelectedTask(task) // Set the task that requires submission
-        setNotificationText(task.description) // Set notification text for the task
-        setNotificationOpen(true) // Open the notification
-    }
-
-    useEffect(() => {
-        activeFilterRef.current = activeFilter
-    }, [activeFilter])
 
     // Define handlePrevClick and handleNextClick
     const handlePrevClick = () => {
@@ -339,6 +242,35 @@ export default function ProductPage() {
             setErrorMessage('') // Reset error message when moving back
         }
     }
+
+    useEffect(() => {
+        if (academy) {
+            fetchEarnedPoints(userId, academy.id)
+            fetchQuestions(academy.id)
+            fetchUserResponses(userId, academy.id)
+            fetchQuests(academy.id)
+        }
+    }, [academy])
+
+    useEffect(() => {
+        if (questions.length > 0) {
+            setInitialAnswers(questions)
+            const userHasResponses = questions.some((question) => question.isCorrect !== undefined)
+            setUserHasResponses(userHasResponses)
+            if (userHasResponses) {
+                setShowIntro(false)
+                const answeredSlides = questions.filter((q) => q.isCorrect !== undefined).length * 2 - 1
+                setMaxAllowedSlide(answeredSlides)
+            } else {
+                setShowIntro(true)
+                setMaxAllowedSlide(1)
+            }
+        }
+    }, [questions])
+
+    useEffect(() => {
+        activeFilterRef.current = activeFilter
+    }, [activeFilter])
 
     useEffect(() => {
         const updateTimer = () => {
@@ -405,14 +337,6 @@ export default function ProductPage() {
     }, [])
 
     useEffect(() => {
-        if (academy) {
-            fetchEarnedPoints()
-            fetchQuests()
-            fetchQuestions()
-        }
-    }, [academy])
-
-    useEffect(() => {
         // Only reset maxAllowedSlide when navigating away from 'read' or 'watch' tabs
         if (activeFilter !== 'read' && activeFilter !== 'watch') {
             setCurrentSlideIndex(0)
@@ -433,7 +357,7 @@ export default function ProductPage() {
         if (activeFilter === 'read' && quizStarted && !showIntro) {
             const question = initialAnswers[currentQuestionIndex]
             if (question && !question.timerStarted) {
-                setTimer(45)
+                setTimer(45) // Total time remains 45 seconds
                 startTimer()
                 setInitialAnswers((prevAnswers) => prevAnswers.map((q, qi) => (qi === currentQuestionIndex ? { ...q, timerStarted: true } : q)))
             }
@@ -444,117 +368,8 @@ export default function ProductPage() {
         }
     }, [activeFilter, quizStarted, showIntro, currentQuestionIndex])
 
-    const fetchEarnedPoints = async () => {
-        try {
-            // Fetch points
-            const pointsResponse = await axiosInstance.get(`/api/points/${userId}/${academy.id}`)
-            const points = pointsResponse.data.value || 0
-            setEarnedPoints(points)
-        } catch (error) {
-            console.error('Error fetching earned points:', error.response ? error.response.data : error.message)
-            setEarnedPoints(0)
-        }
-
-        // Fetch questions
-        const questions = await fetchQuestions()
-
-        try {
-            // Fetch user responses
-            const userResponses = await fetchUserResponses(questions)
-            if (userResponses && userResponses.length > 0) {
-                setUserHasResponses(true)
-                setShowIntro(false) // Skip intro if there are existing responses
-                // Update maxAllowedSlide based on answered questions
-                const answeredSlides = userResponses.length * 2 - 1
-                setMaxAllowedSlide(answeredSlides)
-            } else {
-                setUserHasResponses(false)
-                setShowIntro(true) // Show intro if no responses
-                setInitialAnswers(questions)
-            }
-        } catch (error) {
-            console.error('Error fetching user responses:', error.response ? error.response.data : error.message)
-            setUserHasResponses(false)
-            setShowIntro(true)
-            setInitialAnswers(questions)
-        }
-    }
-
-    const fetchQuestions = async () => {
-        try {
-            const response = await axiosInstance.get(`/api/academies/${academy.id}/questions`)
-            const questions = response.data || []
-
-            const mappedQuestions = questions.map((question: any) => ({
-                academyQuestionId: question.id,
-                initialQuestionId: question.initialQuestionId,
-                question: question.question,
-                answer: question.answer,
-                quizQuestion: question.quizQuestion,
-                video: question.video,
-                xp: question.xp,
-                choices: question.choices.filter((choice: any) => choice.text !== ''),
-                selectedChoice: undefined,
-                isCorrect: undefined,
-                timerStarted: false // Track if timer started for the question
-            }))
-
-            // Sort the questions based on initialQuestionId
-            const sortedQuestions = mappedQuestions.sort((a, b) => a.initialQuestionId - b.initialQuestionId)
-
-            console.log('Fetched and mapped questions:', sortedQuestions)
-            return sortedQuestions
-        } catch (error) {
-            console.error('Error fetching questions:', error.response ? error.response.data : error.message)
-            return []
-        }
-    }
-
-    const fetchUserResponses = async (mappedQuestions: any[]) => {
-        try {
-            const response = await axiosInstance.get(`/api/academies/${userId}/${academy.id}`)
-            const userResponses = response.data || []
-
-            // Apply user responses to the questions
-            const questionsWithUserResponses = mappedQuestions.map((question) => {
-                const userResponse = userResponses.find((r: any) => r.choice.academyQuestionId === question.academyQuestionId)
-                if (userResponse) {
-                    question.selectedChoice = question.choices.findIndex((c: any) => c.id === userResponse.choiceId)
-                    question.isCorrect = userResponse.isCorrect
-                }
-                return question
-            })
-
-            // Sort the questions based on initialQuestionId
-            const sortedQuestions = questionsWithUserResponses.sort((a, b) => a.initialQuestionId - b.initialQuestionId)
-
-            console.log('Questions with user responses applied:', sortedQuestions)
-            setInitialAnswers(sortedQuestions)
-
-            return userResponses // Return the user responses
-        } catch (error) {
-            console.error('Error fetching user responses:', error.response ? error.response.data : error.message)
-            // Set initialAnswers to mappedQuestions without user responses
-            setInitialAnswers(mappedQuestions)
-            return null // Return null to indicate failure
-        }
-    }
-
-    // Fetch quests (tasks) when component mounts
-    const fetchQuests = async () => {
-        try {
-            const response = await axiosInstance.get(`/api/verification-tasks/academy/${academy.id}`)
-            setQuests(response.data || [])
-        } catch (error) {
-            console.error('Error fetching quests:', error.response ? error.response.data : error.message)
-            setQuests([])
-        } finally {
-            setLoadingQuests(false)
-        }
-    }
-
     const handleNavigateToDetail = () => {
-        setActiveFilter(null)
+        handleNavigationAttempt(null, () => setActiveFilter(null))
     }
 
     const handleBackToProduct = () => {
@@ -588,14 +403,7 @@ export default function ProductPage() {
                 clearInterval(timerIntervalRef.current)
             }
 
-            const response = await axiosInstance.post(`/api/academies/${academy.id}/check-answer`, {
-                academyId: academy.id,
-                questionId: question.academyQuestionId,
-                choiceId: selectedChoiceId,
-                telegramUserId: initData.user.id
-            })
-
-            const { correct, maxPoints } = response.data
+            const { correct, maxPoints, correctChoiceId } = await checkAnswer(academy.id, question.academyQuestionId, selectedChoiceId, initData.user.id)
 
             let pointsAwarded = 0
 
@@ -603,41 +411,37 @@ export default function ProductPage() {
                 const totalXP = maxPoints
                 const basePoints = Math.floor(totalXP * 0.25)
 
-                if (timer > 30) {
+                if (timer > 25) {
                     pointsAwarded = totalXP
                 } else if (timer > 0) {
                     const remainingPoints = totalXP - basePoints
-                    const elapsedSeconds = 30 - timer
-                    const pointsDeducted = Math.floor((remainingPoints / 30) * elapsedSeconds)
+                    const elapsedSeconds = 25 - timer
+                    const pointsDeducted = Math.floor((remainingPoints / 25) * elapsedSeconds)
                     pointsAwarded = totalXP - pointsDeducted
                 } else {
                     pointsAwarded = basePoints
                 }
 
-                setEarnedPoints((prev) => prev + pointsAwarded)
+                // Update earnedPoints from store
+                fetchEarnedPoints(initData.user.id, academy.id)
+
                 setCurrentPoints(pointsAwarded)
                 triggerXPAnimation()
             }
 
-            await axiosInstance.post(`/api/academies/${academy.id}/save-response`, {
-                academyId: academy.id,
-                questionId: question.academyQuestionId,
-                choiceId: selectedChoiceId,
-                telegramUserId: initData.user.id,
-                isCorrect: correct,
-                pointsAwarded: pointsAwarded
-            })
+            await saveResponse(academy.id, question.academyQuestionId, selectedChoiceId, initData.user.id, correct, pointsAwarded)
 
+            // Update the question with the correct answers
             setInitialAnswers(
                 initialAnswers.map((q, qi) =>
                     qi === questionIndex
                         ? {
                               ...q,
                               isCorrect: correct,
-                              choices: q.choices.map((choice: any, ci: number) => ({
+                              choices: q.choices.map((choice: any) => ({
                                   ...choice,
-                                  isCorrect: choice.isCorrect || (ci === q.selectedChoice && correct),
-                                  isWrong: ci === q.selectedChoice && !correct
+                                  isCorrect: choice.id === correctChoiceId,
+                                  isWrong: choice.id === selectedChoiceId && !correct
                               }))
                           }
                         : q
@@ -648,7 +452,7 @@ export default function ProductPage() {
             setMaxAllowedSlide((prev) => Math.min(prev + 2, initialAnswers.length * 2 - 1))
             setErrorMessage('')
         } catch (error) {
-            console.error('Error checking answer:', error.response ? error.response.data : error.message)
+            console.error('Error checking answer:', error)
         }
     }
 
@@ -668,30 +472,16 @@ export default function ProductPage() {
 
     const handleCompleteAcademy = async () => {
         try {
-            await axiosInstance.post(`/api/academies/${academy.id}/submit-quiz`, {
-                academyId: academy.id,
-                userId
-            })
+            await submitQuiz(academy.id, userId)
 
             // Fetch updated total points from the backend
-            const response = await axiosInstance.get(`/api/points/user/${userId}`)
-            const userPoints = response.data
+            await fetchUserTotalPoints(userId)
 
-            // Calculate the total points
-            const totalPoints = userPoints.reduce((sum: number, point: { value: number }) => sum + point.value, 0)
-            console.log('Total points in product page:', totalPoints)
-
-            // Update the global store
-            setUser((prevState) => ({
-                ...prevState,
-                totalPoints: totalPoints,
-                points: userPoints
-            }))
-
-            fetchEarnedPoints()
+            // Fetch updated earnedPoints
+            fetchEarnedPoints(userId, academy.id)
             setActiveFilter('completion')
         } catch (error) {
-            console.error('Error completing academy:', error.response ? error.response.data : error.message)
+            console.error('Error completing academy:', error)
         }
     }
 
@@ -732,122 +522,26 @@ export default function ProductPage() {
         }
     }
 
-    const renderProgressbarWithArrows = () => {
-        const totalSlides = initialAnswers.length * 2 // Each question has 2 slides
-        const completedSlides = currentSlideIndex
-
-        return (
-            <div className="flex items-center justify-between mb-2 !mx-1 !rounded-2xl !bg-gray-50 dark:!bg-gray-800 !border !border-gray-200 dark:!border-gray-700 !shadow-sm p-2">
-                <div className="p-2 rounded-xl bg-gray-100 dark:bg-gray-700">
-                    <Icon
-                        icon="mdi:arrow-left"
-                        className={`text-gray-600 dark:text-gray-400 w-6 h-6 cursor-pointer ${currentSlideIndex === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
-                        onClick={handlePrevClick}
-                    />
-                </div>
-                <div className="relative flex-grow h-2 mx-2 bg-gray-200 rounded-full overflow-hidden">
-                    <div
-                        className="absolute top-0 left-0 h-full rounded-full"
-                        style={{
-                            width: `${(completedSlides / totalSlides) * 100}%`,
-                            background: 'linear-gradient(to right, #ff0077, #7700ff)'
-                        }}
-                    />
-                </div>
-                <div className="p-2 rounded-xl bg-gray-100 dark:bg-gray-700">
-                    <Icon
-                        icon="mdi:arrow-right"
-                        className={`text-gray-600 dark:text-gray-400 w-6 h-6 cursor-pointer ${
-                            currentSlideIndex >= totalSlides - 1 ? 'opacity-50 cursor-not-allowed' : ''
-                        }`}
-                        onClick={handleNextClick}
-                    />
-                </div>
-            </div>
-        )
-    }
-
-    const renderTimerBar = () => {
-        if (activeFilter !== 'read') return null
-
+    const renderReadTab = () => {
         if (showIntro) {
-            // Do not display timer on intro slide
-            return null
+            return <IntroSlide handleBackToProduct={handleBackToProduct} handleStartQuiz={handleStartQuiz} />
         }
 
         const currentQuestion = initialAnswers[currentQuestionIndex]
+        const totalSlides = initialAnswers.length * 2 // Each question has 2 slides
 
-        // Do not display timer if question is already answered
-        if (currentQuestion && currentQuestion.isCorrect !== undefined) {
-            return null
-        }
-
-        if (timer === 0) {
-            return (
-                <div className="text-center mb-2">
-                    <div className="text-red-600 font-bold">Time is up!</div>
-                    <div className="text-gray-500 text-sm">You now only get 25% if you answer right.</div>
-                </div>
-            )
-        }
-
-        const totalXP = currentQuestion?.xp || 0
-        let displayedPoints = totalXP
-
-        if (timer > 30) {
-            displayedPoints = totalXP
-        } else if (timer > 0) {
-            const basePoints = Math.floor(totalXP * 0.25)
-            const remainingPoints = totalXP - basePoints
-            const elapsedSeconds = 30 - timer // Corrected calculation
-            const pointsDeducted = Math.floor((remainingPoints / 30) * elapsedSeconds)
-            displayedPoints = totalXP - pointsDeducted
-        } else {
-            displayedPoints = Math.floor(totalXP * 0.25)
-        }
-
-        const timePercentage = (timer / 45) * 100
-
-        const getBarColor = () => {
-            if (timer > 30) {
-                return '#00FF00'
-            } else {
-                const progress = (30 - timer) / 30
-                const hue = 120 - progress * 120
-                return `hsl(${hue}, 100%, 50%)`
-            }
-        }
-
-        return (
-            <div className="flex items-center justify-between mb-2 gap-3">
-                <div className="text-gray-900 dark:text-gray-300 text-md font-semibold flex w-8 h-8 items-center justify-center text-center ml-1">
-                    +{displayedPoints} <img src={coinStack} alt="coin stack" className="w-4 h-4 mr-2 ml-2 mb-[4px]" />
-                </div>
-                <div className="relative flex-grow h-2 mx-2 bg-gray-200 rounded-full overflow-hidden">
-                    <div
-                        className="absolute top-0 left-0 h-full rounded-full mx-2"
-                        style={{
-                            width: `${timePercentage}%`,
-                            background: getBarColor()
-                        }}
-                    />
-                </div>
-                <div className="text-gray-900 dark:text-gray-300 dark:bg-slate-800 text-md font-semibold border-2 border-gray-600 rounded-full flex w-8 h-8 items-center justify-center text-center pt-[2px]">
-                    {timer}
-                </div>
-            </div>
-        )
-    }
-
-    const renderReadTab = () => {
-        if (showIntro) {
-            return renderIntroSlide()
-        }
+        // Decide whether to show the timer bar
+        const showTimerBar = activeFilter === 'read' && quizStarted && timer >= 0 && currentQuestion && currentQuestion.isCorrect === undefined
 
         return (
             <>
-                {quizStarted && timer >= 0 && renderTimerBar()}
-                {renderProgressbarWithArrows()}
+                {showTimerBar && <TimerBar currentQuestion={currentQuestion} timer={timer} />}
+                <ProgressBar
+                    totalSlides={totalSlides}
+                    currentSlideIndex={currentSlideIndex}
+                    handlePrevClick={handlePrevClick}
+                    handleNextClick={handleNextClick}
+                />
                 <Swiper
                     pagination={{ clickable: true }}
                     onSlideChange={handleSlideChange}
@@ -869,36 +563,6 @@ export default function ProductPage() {
             </>
         )
     }
-
-    const renderIntroSlide = () => (
-        <div className="p-1 mt-4">
-            <Card className="!m-0 !p-2 text-center !rounded-2xl !bg-gray-50 dark:!bg-gray-800 !border !border-gray-200 dark:!border-gray-700 !shadow-sm">
-                <p>
-                    You have <span className="text-white text-lg font-bold">15</span> ⏳ seconds to read the content and answer, after that the points are
-                    starting to gradually decrease the next 30 seconds! If the bar runs out of time, then you will be rewarded only 25% of the total possible
-                    points. <br />
-                    <br />
-                    <span className="text-lg font-semibold">Are you ready?</span>
-                </p>
-                <div className="flex justify-center mt-4 gap-4">
-                    <Button outline rounded onClick={handleBackToProduct} className="!text-xs">
-                        No, go back
-                    </Button>
-                    <Button
-                        outline
-                        rounded
-                        onClick={handleStartQuiz}
-                        style={{
-                            background: 'linear-gradient(to left, #ff0077, #7700ff)',
-                            color: '#fff'
-                        }}
-                    >
-                        START
-                    </Button>
-                </div>
-            </Card>
-        </div>
-    )
 
     const handleStartQuiz = () => {
         setShowIntro(false)
@@ -1002,27 +666,34 @@ export default function ProductPage() {
                     <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">{question.quizQuestion}</p>
                 </Card>
                 <Card className="!my-4 !mx-1 p-2 !rounded-2xl !bg-gray-50 dark:!bg-gray-800 !border !border-gray-200 dark:!border-gray-700 !shadow-sm">
-                    {question.choices.map((choice: any, choiceIndex: number) => (
-                        <div
-                            key={choiceIndex}
-                            className={`cursor-pointer p-4 rounded-lg flex justify-between items-center dark:bg-gray-700 dark:text-gray-200 ${
-                                question.isCorrect === undefined && question.selectedChoice === choiceIndex ? 'bg-purple-200 border border-purple-500' : ''
-                            } ${
-                                question.isCorrect !== undefined
-                                    ? choice.isCorrect
-                                        ? 'bg-green-200 border border-green-500'
-                                        : choiceIndex === question.selectedChoice
-                                          ? 'bg-red-200 border border-red-500'
-                                          : ''
-                                    : ''
-                            } mb-2`}
-                            onClick={() => handleChoiceClick(questionIndex, choiceIndex)}
-                            style={{ pointerEvents: question.isCorrect !== undefined ? 'none' : 'auto' }}
-                        >
-                            <span className="mr-4">{choice.text}</span>
-                            <Radio checked={question.selectedChoice === choiceIndex} readOnly />
-                        </div>
-                    ))}
+                    {question.choices.map((choice: any, choiceIndex: number) => {
+                        const isSelected = question.selectedChoice === choiceIndex
+                        const isCorrectChoice = choice.isCorrect
+                        const isWrongChoice = choice.isWrong
+
+                        let choiceClass = ''
+                        if (question.isCorrect !== undefined) {
+                            if (isCorrectChoice) {
+                                choiceClass = 'bg-green-200 border border-green-500'
+                            } else if (isWrongChoice) {
+                                choiceClass = 'bg-red-200 border border-red-500'
+                            }
+                        } else if (isSelected) {
+                            choiceClass = 'bg-purple-200 border border-purple-500'
+                        }
+
+                        return (
+                            <div
+                                key={choiceIndex}
+                                className={`cursor-pointer p-4 rounded-lg flex justify-between items-center dark:bg-gray-700 dark:text-gray-200 ${choiceClass} mb-2`}
+                                onClick={() => handleChoiceClick(questionIndex, choiceIndex)}
+                                style={{ pointerEvents: question.isCorrect !== undefined ? 'none' : 'auto' }}
+                            >
+                                <span className="mr-4">{choice.text}</span>
+                                <Radio checked={isSelected} readOnly />
+                            </div>
+                        )
+                    })}
                 </Card>
                 {errorMessage && <p className="text-red-600 text-center mb-4">{errorMessage}</p>}
                 <div
@@ -1058,22 +729,37 @@ export default function ProductPage() {
         )
     }
 
-    const renderWatchTab = () => (
-        <>
-            {renderProgressbarWithArrows()}
-            <Swiper pagination={{ clickable: true }} onSlideChange={handleSlideChange} ref={swiperRef} allowTouchMove={true} initialSlide={currentSlideIndex}>
-                {initialAnswers.length > 0 ? (
-                    initialAnswers.flatMap((question, index) => [renderVideoSlide(index), renderQuizSlide(index)])
-                ) : (
-                    <SwiperSlide key="no-videos">
-                        <Card className="m-2 p-2">
-                            <p className="text-center">No videos available</p>
-                        </Card>
-                    </SwiperSlide>
-                )}
-            </Swiper>
-        </>
-    )
+    const renderWatchTab = () => {
+        const totalSlides = initialAnswers.length * 2 // Each question has 2 slides
+
+        return (
+            <>
+                <ProgressBar
+                    totalSlides={totalSlides}
+                    currentSlideIndex={currentSlideIndex}
+                    handlePrevClick={handlePrevClick}
+                    handleNextClick={handleNextClick}
+                />
+                <Swiper
+                    pagination={{ clickable: true }}
+                    onSlideChange={handleSlideChange}
+                    ref={swiperRef}
+                    allowTouchMove={true}
+                    initialSlide={currentSlideIndex}
+                >
+                    {initialAnswers.length > 0 ? (
+                        initialAnswers.flatMap((question, index) => [renderVideoSlide(index), renderQuizSlide(index)])
+                    ) : (
+                        <SwiperSlide key="no-videos">
+                            <Card className="m-2 p-2">
+                                <p className="text-center">No videos available</p>
+                            </Card>
+                        </SwiperSlide>
+                    )}
+                </Swiper>
+            </>
+        )
+    }
 
     const renderVideoSlide = (questionIndex: number) => {
         const question = initialAnswers[questionIndex]
@@ -1105,7 +791,7 @@ export default function ProductPage() {
     }
 
     // Handle verify button click
-    const handleVerify = async (quest: any) => {
+    const handleVerifyClick = async (quest: VerificationTask) => {
         try {
             const message = await completeTask(quest.id, academy.id)
             setNotificationText(message)
@@ -1118,52 +804,13 @@ export default function ProductPage() {
         }
     }
 
-    // Get action button text based on verification method
-    const getActionButtonText = (verificationMethod: string) => {
-        switch (verificationMethod) {
-            case 'FOLLOW_USER':
-                return 'Follow'
-            case 'TWEET':
-                return 'Post on X'
-            case 'RETWEET':
-                return 'Retweet'
-            case 'LIKE_TWEET':
-                return 'Like Tweet'
-            case 'ADD_TO_BIO':
-                return 'Add to Bio'
-            case 'JOIN_TELEGRAM_CHANNEL':
-                return 'Join Channel'
-            case 'INVITE_TELEGRAM_FRIEND':
-                return 'Invite Friend'
-            case 'SUBSCRIBE_YOUTUBE_CHANNEL':
-                return 'Subscribe'
-            case 'WATCH_YOUTUBE_VIDEO':
-                return 'Watch Video'
-            case 'FOLLOW_INSTAGRAM_USER':
-                return 'Follow'
-            case 'JOIN_DISCORD_CHANNEL':
-                return 'Join Channel'
-            case 'PROVIDE_EMAIL':
-                return 'Provide Email'
-            case 'SHORT_CIRCUIT':
-                return 'Start Task'
-            default:
-                return 'Start Task'
-        }
-    }
-
     // Render Quest Tab
     const renderQuestTab = () => (
         <Block className="!m-0 !p-0">
-            {loadingQuests ? (
-                <div className="flex justify-center items-center mt-4">
-                    <Preloader size="w-12 h-12" />
-                </div>
-            ) : quests.length > 0 ? (
+            {quests.length > 0 ? (
                 quests.map((quest) => {
                     // For simplicity, we'll assume quests are not yet verified
-                    // You can adjust this based on your application's logic
-                    const isVerified = false // Replace with actual verification status
+                    const isVerified = false // Replace with actual verification status if available
                     return (
                         <div
                             key={quest.id}
@@ -1209,14 +856,12 @@ export default function ProductPage() {
                                 {/* Action Button */}
                                 <Button
                                     rounded
-                                    onClick={() => handleAction(quest)}
+                                    onClick={() => handleActionClick(quest)}
                                     className="!text-2xs font-bold shadow-xl !w-20 !h-6"
                                     style={{
                                         background: 'linear-gradient(to left, #16a34a, #3b82f6)',
                                         color: '#fff'
                                     }}
-                                    // You can disable the button based on your logic
-                                    // disabled={shouldDisableActionButton(quest)}
                                 >
                                     {getActionLabel(quest.verificationMethod)}
                                 </Button>
@@ -1226,7 +871,7 @@ export default function ProductPage() {
                                     <Button
                                         rounded
                                         outline
-                                        onClick={() => handleVerify(quest)}
+                                        onClick={() => handleVerifyClick(quest)}
                                         className="!text-2xs font-bold shadow-xl !w-20 !h-6"
                                         style={{
                                             borderColor: isVerified ? '#16a34a' : '#3b82f6',
@@ -1289,22 +934,12 @@ export default function ProductPage() {
     }
 
     const handleTabChange = (newFilter: string) => {
-        const currentFilter = activeFilterRef.current
-        console.log('Current Filter:', currentFilter)
-        console.log('New Filter:', newFilter)
-        console.log('Has Answered At Least One Question:', hasAnsweredAtLeastOneQuestion())
-
-        if ((currentFilter === 'read' || currentFilter === 'watch') && newFilter !== 'read' && newFilter !== 'watch' && !hasAnsweredAtLeastOneQuestion()) {
-            setPendingActiveFilter(newFilter)
-            setShowLeaveConfirmation(true)
-        } else {
-            setActiveFilter(newFilter)
-        }
+        handleNavigationAttempt(newFilter, () => setActiveFilter(newFilter))
     }
 
     return (
         <Page className="bg-white dark:bg-gray-900">
-            <Navbar />
+            <Navbar handleNavigationAttempt={handleNavigationAttempt} />
             <Sidebar />
 
             {academy && (
@@ -1412,236 +1047,15 @@ export default function ProductPage() {
                     <div className="px-4 py-4">
                         {activeFilter === null && (
                             <>
-                                <Card className="!mb-4 !p-0 !rounded-2xl shadow-lg !m-0 relative border border-gray-300 dark:border-gray-600">
-                                    <div className="flex items-center mb-2 text-md text-gray-900 dark:text-gray-200">
-                                        <img src={name} className="h-7 w-7 mr-4" alt="academy name" />
-                                        <span className="text-gray-600 dark:text-gray-400 mr-2">Name:</span>
-                                        <span className="text-black dark:text-gray-200 font-semibold truncate">{academy.name}</span>
-                                    </div>
-                                    <div className="flex items-center mb-2 text-md text-gray-900 dark:text-gray-200">
-                                        <img src={coins} className="h-7 w-7 mr-4" alt="coins to earn" />
-                                        <span className="text-gray-600 dark:text-gray-400 mr-2">Coins to earn:</span>
-                                        <span className="text-black dark:text-gray-200 font-semibold">{academy.xp}</span>
-                                    </div>
-                                    <div className="flex items-center mb-2 text-md text-gray-900 dark:text-gray-200">
-                                        <img src={ticker} className="h-7 w-7 mr-4" alt="academy ticker" />
-                                        <span className="text-gray-600 dark:text-gray-400 mr-2">Ticker:</span>
-                                        <span className="text-black dark:text-gray-200 font-semibold">{academy.ticker}</span>
-                                        {academy.dexScreener && (
-                                            <a href={academy.dexScreener} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">
-                                                <Icon icon="mdi:arrow-right-bold" />
-                                            </a>
-                                        )}
-                                    </div>
-                                    <div className="flex items-center mb-2 text-md text-gray-900 dark:text-gray-200">
-                                        <img src={categories} className="h-7 w-7 mr-4" alt="academy categories" />
-                                        <span className="text-gray-600 dark:text-gray-400 mr-2">Categories:</span>
-                                        <span className="text-black dark:text-gray-200 font-semibold truncate">
-                                            {academy.categories.map((c: any) => c.name).join(', ')}
-                                        </span>
-                                    </div>
-                                    <div className="flex items-center mb-2 text-md text-gray-900 dark:text-gray-200">
-                                        <img src={chains} className="h-7 w-7 mr-4" alt="academy chains" />
-                                        <span className="text-gray-600 dark:text-gray-400 mr-2">Chains:</span>
-                                        <span className="text-black dark:text-gray-200 font-semibold truncate">
-                                            {academy.chains.map((c: any) => c.name).join(', ')}
-                                        </span>
-                                    </div>
-                                </Card>
-
-                                <Card className="!mb-4 !p-0 !rounded-2xl shadow-lg !m-0 relative border border-gray-300 dark:border-gray-600">
-                                    <div className="grid grid-cols-2 gap-4 w-full">
-                                        {academy.webpageUrl && (
-                                            <Button
-                                                clear
-                                                raised
-                                                rounded
-                                                className="flex items-center !justify-start gap-2 w-full dark:text-gray-200 !text-xs bg-gradient-to-r from-gray-100 to-gray-300 dark:from-gray-700 dark:to-gray-900 border border-gray-200 dark:border-gray-700 rounded-full"
-                                                onClick={() => window.open(academy.webpageUrl, '_blank')}
-                                            >
-                                                <Icon icon="mdi:web" color="#6c757d" className="w-5 h-5" />
-                                                WEBSITE
-                                            </Button>
-                                        )}
-                                        {academy.twitter && (
-                                            <Button
-                                                clear
-                                                raised
-                                                rounded
-                                                className="flex items-center !justify-start gap-2 w-full dark:text-gray-200 !text-xs bg-gradient-to-r from-gray-100 to-gray-300 dark:from-gray-700 dark:to-gray-900 border border-gray-200 dark:border-gray-700 rounded-full"
-                                                onClick={() => window.open(academy.twitter, '_blank')}
-                                            >
-                                                <X className="w-6 h-6 text-blue-500 !p-1 !m-0" />X
-                                            </Button>
-                                        )}
-                                        {academy.telegram && (
-                                            <Button
-                                                clear
-                                                raised
-                                                rounded
-                                                className="flex items-center !justify-start gap-2 w-full dark:text-gray-200 !text-xs bg-gradient-to-r from-gray-100 to-gray-300 dark:from-gray-700 dark:to-gray-900 border border-gray-200 dark:border-gray-700 rounded-full"
-                                                onClick={() => window.open(academy.telegram, '_blank')}
-                                            >
-                                                <Icon icon="mdi:telegram" color="#0088cc" className="w-5 h-5" />
-                                                TELEGRAM
-                                            </Button>
-                                        )}
-                                        {academy.discord && (
-                                            <Button
-                                                clear
-                                                raised
-                                                rounded
-                                                className="flex items-center !justify-start gap-2 w-full dark:text-gray-200 !text-xs bg-gradient-to-r from-gray-100 to-gray-300 dark:from-gray-700 dark:to-gray-900 border border-gray-200 dark:border-gray-700 rounded-full"
-                                                onClick={() => window.open(academy.discord, '_blank')}
-                                            >
-                                                <Icon icon="mdi:discord" color="#7289DA" className="w-5 h-5" />
-                                                DISCORD
-                                            </Button>
-                                        )}
-                                        {academy.coingecko && (
-                                            <Button
-                                                clear
-                                                raised
-                                                rounded
-                                                className="flex items-center !justify-start gap-2 w-full dark:text-gray-200 !text-xs bg-gradient-to-r from-gray-100 to-gray-300 dark:from-gray-700 dark:to-gray-900 border border-gray-200 dark:border-gray-700 rounded-full"
-                                                onClick={() => window.open(academy.coingecko, '_blank')}
-                                            >
-                                                <img src={gecko} className="h-5 w-5" alt="Coingecko logo" />
-                                                COINGECKO
-                                            </Button>
-                                        )}
-                                    </div>
-                                </Card>
-
-                                <div className="relative overflow-hidden !rounded-2xl shadow-lg !m-0 tab-background !mb-4">
-                                    <div className="relative z-10 m-[2px] !rounded-2xl tab-content">
-                                        <div
-                                            className="!rounded-2xl p-4 raffles-content relative"
-                                            style={{
-                                                backgroundImage: `url(${wallet})`,
-                                                backgroundRepeat: 'no-repeat',
-                                                backgroundSize: '35%', // Adjusted to 1/3 size
-                                                backgroundPosition: 'right bottom'
-                                            }}
-                                        >
-                                            {/* Content of the Raffles card */}
-                                            {/* Modified Raffles Card */}
-                                            <div className="text-white relative">
-                                                {/* Next Raffle */}
-                                                <div className="mb-2">
-                                                    <div className="flex flex-row justify-between items-center mb-4">
-                                                        <div className="flex items-center !justify-between w-full">
-                                                            <div className="flex flex-row items-center">
-                                                                <img src={ticket} className="h-8 w-8 mr-2" alt="Ticket icon" />
-                                                                <span className="text-md font-semibold">Raffle</span>
-                                                            </div>
-                                                            <div className="flex-grow"></div>
-                                                            <div className="flex flex-row items-center">
-                                                                <span className="text-sm text-gray-300">How to get tickets</span>
-                                                                <button
-                                                                    className="ml-2 rounded-full bg-gray-700 text-white text-xs font-bold w-4 h-4 flex items-center justify-center"
-                                                                    onClick={() => toggleTooltip(0)}
-                                                                >
-                                                                    ?
-                                                                </button>
-                                                                {visibleTooltip === 0 && (
-                                                                    <div className="tooltip absolute bg-gray-700 text-white text-xs rounded-2xl p-2 mt-2 z-20">
-                                                                        When you complete academy quizzes, you earn raffle tickets for future raffles.
-                                                                        <button
-                                                                            className="absolute top-0 right-0 text-white text-sm mt-1 mr-1"
-                                                                            onClick={() => setVisibleTooltip(null)}
-                                                                        >
-                                                                            &times;
-                                                                        </button>
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Next Raffle Date */}
-                                                    <div className="flex justify-between items-center mb-3">
-                                                        <div className="flex items-center">
-                                                            <img src={calendar} className="h-5 w-5 mr-2" alt="Calendar icon" />
-                                                            <span className="text-sm text-gray-300">Next Raffle:</span>
-                                                        </div>
-                                                        <div className="flex items-center bg-gradient-to-r from-green-700 to-blue-800 text-white px-3 py-0 rounded-full shadow-lg">
-                                                            <span className="text-sm font-bold">
-                                                                {raffles[0].date.toLocaleDateString()} at{' '}
-                                                                {raffles[0].date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Reward Pool */}
-                                                    <div className="flex justify-between items-center mb-3">
-                                                        <div className="flex items-center">
-                                                            <img src={moneyBag} className="h-5 w-5 mr-2" alt="Money bag icon" />
-                                                            <span className="text-sm text-gray-300">Reward pool:</span>
-                                                        </div>
-                                                        <div className="text-sm flex items-center bg-gradient-to-r from-green-700 to-blue-800 text-white px-3 py-0 rounded-full shadow-lg">
-                                                            <strong>{raffles[0].reward}</strong>
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Winners */}
-                                                    <div className="flex justify-between items-center mb-3">
-                                                        <div className="flex items-center">
-                                                            <img src={handTrophy} className="h-5 w-5 mr-2" alt="Trophy icon" />
-                                                            <span className="text-sm text-gray-300">Winners:</span>
-                                                        </div>
-                                                        <div className="text-sm flex items-center bg-gradient-to-r from-green-700 to-blue-800 text-white px-3 py-0 rounded-full shadow-lg">
-                                                            <strong>{raffles[0].winners}</strong>
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Time Remaining */}
-                                                    <div className="flex justify-between items-center">
-                                                        <div className="flex items-center">
-                                                            <img src={clock} className="h-5 w-5 mr-2" alt="Clock icon" />
-                                                            <span className="text-sm text-gray-300">Time remaining:</span>
-                                                        </div>
-                                                        <div className="flex items-center bg-gradient-to-r from-green-700 to-blue-800 text-white px-3 py-0 rounded-full shadow-lg">
-                                                            <span className="text-sm font-bold">{timeRemainingList[0]}</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                {/* Future Raffles */}
-                                                <div className="mt-6">
-                                                    <div className="flex flex-row items-center mb-4">
-                                                        <img src={ticket} className="h-8 w-8 mr-2" alt="Ticket icon" />
-                                                        <span className="text-md font-semibold">Future Raffles</span>
-                                                    </div>
-                                                    {raffles.slice(1).map((raffle, index) => (
-                                                        <div key={index} className="mb-2 flex flex-row items-center">
-                                                            <img src={calendar} className="h-5 w-5 mr-2" alt="Calendar icon" />
-                                                            <p className="text-sm text-gray-300">
-                                                                {raffle.date.toLocaleDateString()} at{' '}
-                                                                {raffle.date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                            </p>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="absolute right-0 bottom-12">
-                                            <img src={coming} className="h-16 w-full -rotate-[35deg]" alt="coming icon" />
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="!mb-12 !p-2 bg-white dark:bg-zinc-900 !m-0 !rounded-2xl shadow-lg relative border border-gray-300 dark:border-gray-600">
-                                    <div className="flex flex-row text-gray-900 dark:text-gray-200 items-center">
-                                        <div className="w-13 h-13 mr-2 items-center">
-                                            <Lottie options={coinsEarnedAnimation} height={50} width={50} />
-                                        </div>
-                                        <span className="text-md text-gray-600 dark:text-gray-400 mr-2">Earned Coins:</span>
-                                        <span className="text-md text-black dark:text-gray-200 font-semibold">
-                                            {earnedPoints}/{academy.xp}
-                                        </span>
-                                    </div>
-                                </div>
+                                <DetailsCard academy={academy} />
+                                <SocialsCard academy={academy} />
+                                <RafflesCard
+                                    raffles={raffles}
+                                    timeRemainingList={timeRemainingList}
+                                    toggleTooltip={toggleTooltip}
+                                    visibleTooltip={visibleTooltip}
+                                />
+                                <PointsCollectedCard earnedPoints={earnedPoints} totalPoints={academy.xp} />
                             </>
                         )}
 
@@ -1650,7 +1064,7 @@ export default function ProductPage() {
                 </div>
             )}
 
-            <BottomTabBar activeTab="tab-1" setActiveTab={setActiveFilter} />
+            <BottomTabBar activeTab={activeFilter} setActiveTab={setActiveFilter} handleNavigationAttempt={handleNavigationAttempt} />
 
             {showXPAnimation && (
                 <div className="fixed inset-0 flex flex-col items-center justify-center z-50 animate-bookmark" style={{ pointerEvents: 'none' }}>
@@ -1660,42 +1074,20 @@ export default function ProductPage() {
             )}
 
             {/* Leave confirmation dialog */}
-            <Dialog opened={showLeaveConfirmation} onBackdropClick={() => setShowLeaveConfirmation(false)} className="rounded-2xl p-4">
-                <div className="text-center">
-                    <img src={bunnyImage} alt="Bunny" className="w-16 h-16 mx-auto mb-4" />
-                    <p className="text-lg font-semibold">Are you sure you want to leave? Your points may be lost!</p>
-                    <div className="flex justify-center mt-4 gap-4">
-                        <Button
-                            rounded
-                            outline
-                            onClick={() => {
-                                setShowLeaveConfirmation(false)
-                                // Proceed with tab change
-                                setActiveFilter(pendingActiveFilter)
-                            }}
-                            style={{
-                                background: 'linear-gradient(to left, #ff0077, #7700ff)',
-                                color: '#fff'
-                            }}
-                            className="!text-xs"
-                        >
-                            I'm sure
-                        </Button>
-                        <Button
-                            rounded
-                            outline
-                            onClick={() => setShowLeaveConfirmation(false)}
-                            className="!text-xs"
-                            style={{
-                                background: 'linear-gradient(to left, #ff0077, #7700ff)',
-                                color: '#fff'
-                            }}
-                        >
-                            Let's continue
-                        </Button>
-                    </div>
-                </div>
-            </Dialog>
+            <LeaveConfirmationDialog
+                opened={showLeaveConfirmation}
+                onConfirm={() => {
+                    setShowLeaveConfirmation(false)
+                    if (pendingNavigationAction) {
+                        pendingNavigationAction()
+                        setPendingNavigationAction(null)
+                    }
+                }}
+                onCancel={() => {
+                    setShowLeaveConfirmation(false)
+                    setPendingNavigationAction(null)
+                }}
+            />
 
             {/* Notification Component */}
             <Notification

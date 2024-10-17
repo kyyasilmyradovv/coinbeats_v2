@@ -1077,8 +1077,26 @@ exports.getAcademyQuestions = async (req, res, next) => {
   try {
     const questions = await prisma.academyQuestion.findMany({
       where: { academyId: parseInt(id, 10) },
-      include: {
-        choices: true, // Include the choices associated with the questions
+      select: {
+        id: true,
+        initialQuestionId: true,
+        question: true,
+        answer: true,
+        quizQuestion: true,
+        video: true,
+        xp: true,
+        choices: {
+          where: {
+            text: {
+              not: '',
+            },
+          },
+          select: {
+            id: true,
+            text: true,
+            // Exclude isCorrect to prevent revealing the correct answer
+          },
+        },
         initialQuestion: true, // Include the related initial question
       },
     });
@@ -1234,8 +1252,12 @@ exports.checkAnswer = async (req, res, next) => {
       select: { xp: true },
     });
 
-    // Return the result to the client without saving points
-    res.json({ correct: isCorrect, maxPoints: question.xp });
+    // Return the result to the client with the correctChoiceId
+    res.json({
+      correct: isCorrect,
+      maxPoints: question.xp,
+      correctChoiceId: correctChoice.id,
+    });
   } catch (error) {
     console.error('Failed to check the answer:', error);
     next(createError(500, 'Failed to check the answer.'));
@@ -1340,5 +1362,95 @@ exports.getUserResponses = async (req, res) => {
   } catch (error) {
     console.error('Error fetching user responses:', error);
     return res.status(500).json({ error: 'Error fetching user responses' });
+  }
+};
+
+exports.getCorrectChoicesForAnsweredQuestions = async (req, res, next) => {
+  console.log('getCorrectChoicesForAnsweredQuestions hit');
+  console.log('req.params:', req.params);
+  console.log('req.body:', req.body);
+  console.log('req.user:', req.user); // This will be undefined
+
+  const { academyId } = req.params;
+  let { telegramUserId, questionIds } = req.body;
+
+  if (
+    !telegramUserId ||
+    !academyId ||
+    !questionIds ||
+    !Array.isArray(questionIds)
+  ) {
+    console.log('Missing parameters:', {
+      telegramUserId,
+      academyId,
+      questionIds,
+    });
+    return res
+      .status(400)
+      .json({ message: 'Bad Request: Missing required parameters.' });
+  }
+
+  try {
+    // Convert telegramUserId to BigInt
+    telegramUserId = BigInt(telegramUserId);
+
+    // Find user by telegramUserId
+    const user = await prisma.user.findUnique({
+      where: { telegramUserId: telegramUserId },
+    });
+
+    if (!user) {
+      // User not found
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const userId = user.id;
+
+    // Fetch user responses to ensure they have answered the questions
+    const userResponses = await prisma.userResponse.findMany({
+      where: {
+        userId: userId,
+        choice: {
+          academyQuestionId: {
+            in: questionIds.map((id) => parseInt(id, 10)),
+          },
+        },
+      },
+      select: {
+        choice: {
+          select: {
+            academyQuestionId: true,
+          },
+        },
+      },
+    });
+
+    const answeredQuestionIds = userResponses.map(
+      (response) => response.choice.academyQuestionId
+    );
+
+    // Fetch correct choices for the answered questions
+    const correctChoices = await prisma.choice.findMany({
+      where: {
+        academyQuestionId: {
+          in: answeredQuestionIds,
+        },
+        isCorrect: true,
+      },
+      select: {
+        academyQuestionId: true,
+        id: true,
+      },
+    });
+
+    const correctChoiceMap = {};
+    correctChoices.forEach((choice) => {
+      correctChoiceMap[choice.academyQuestionId] = choice.id;
+    });
+
+    res.json({ correctChoices: correctChoiceMap });
+  } catch (error) {
+    console.error('Failed to get correct choices:', error);
+    next(createError(500, 'Failed to get correct choices.'));
   }
 };

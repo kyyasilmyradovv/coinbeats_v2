@@ -8,26 +8,40 @@ import GamePad from '../images/game-pad.png'
 import Trophy from '../images/trophy.png'
 import useSessionStore from '../store/useSessionStore'
 
-export default function BottomTabBar({ activeTab, setActiveTab }) {
+interface BottomTabBarProps {
+    activeTab: string | null
+    setActiveTab: (tab: string | null) => void
+    handleNavigationAttempt?: (newTab: string | null, navigationAction: () => void) => void
+}
+
+const BottomTabBar: React.FC<BottomTabBarProps> = ({ activeTab, setActiveTab, handleNavigationAttempt }) => {
     const navigate = useNavigate()
 
-    const handleTabClick = (tab) => {
-        setActiveTab(tab)
-        switch (tab) {
-            case 'tab-1':
-                navigate('/')
-                break
-            case 'tab-2':
-                navigate('/saved')
-                break
-            case 'tab-3':
-                navigate('/games')
-                break
-            case 'tab-4':
-                navigate('/points')
-                break
-            default:
-                break
+    const handleTabClick = (tab: string) => {
+        const navigationAction = () => {
+            setActiveTab(tab)
+            switch (tab) {
+                case 'tab-1':
+                    navigate('/')
+                    break
+                case 'tab-2':
+                    navigate('/saved')
+                    break
+                case 'tab-3':
+                    navigate('/games')
+                    break
+                case 'tab-4':
+                    navigate('/points')
+                    break
+                default:
+                    break
+            }
+        }
+
+        if (handleNavigationAttempt) {
+            handleNavigationAttempt(tab, navigationAction)
+        } else {
+            navigationAction()
         }
     }
 
@@ -136,3 +150,5 @@ export default function BottomTabBar({ activeTab, setActiveTab }) {
         </div>
     )
 }
+
+export default BottomTabBar

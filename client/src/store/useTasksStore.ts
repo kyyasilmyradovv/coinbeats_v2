@@ -19,19 +19,24 @@ interface VerificationTask {
 interface TasksState {
     homepageTasks: VerificationTask[]
     gameTasks: VerificationTask[]
+    academyTasks: VerificationTask[]
     setHomepageTasks: (tasks: VerificationTask[]) => void
     setGameTasks: (tasks: VerificationTask[]) => void
+    setAcademyTasks: (tasks: VerificationTask[]) => void
     fetchHomepageTasks: () => Promise<void>
     fetchGameTasks: () => Promise<void>
     fetchVerificationTasks: () => Promise<void>
+    fetchAcademyVerificationTasks: (academyId: number) => Promise<void>
 }
 
 const useTasksStore = create<TasksState>()(
     devtools((set) => ({
         homepageTasks: [],
         gameTasks: [],
+        academyTasks: [],
         setHomepageTasks: (tasks) => set({ homepageTasks: tasks }),
         setGameTasks: (tasks) => set({ gameTasks: tasks }),
+        setAcademyTasks: (tasks) => set({ academyTasks: tasks }),
 
         // Fetches homepage verification tasks
         fetchHomepageTasks: async () => {
@@ -55,12 +60,23 @@ const useTasksStore = create<TasksState>()(
             }
         },
 
+        // Fetches all verification tasks
         fetchVerificationTasks: async () => {
             try {
                 const response = await axiosInstance.get('/api/verification-tasks/homepage')
                 set({ homepageTasks: response.data })
             } catch (error) {
-                console.error('Error fetching homepage tasks:', error)
+                console.error('Error fetching verification tasks:', error)
+            }
+        },
+
+        // Fetches verification tasks for a specific academy
+        fetchAcademyVerificationTasks: async (academyId) => {
+            try {
+                const response = await axiosInstance.get(`/api/verification-tasks/academy/${academyId}`)
+                set({ academyTasks: response.data || [] })
+            } catch (error) {
+                console.error('Error fetching academy verification tasks:', error)
             }
         }
     }))

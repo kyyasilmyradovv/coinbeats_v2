@@ -28,6 +28,7 @@ const {
   saveUserResponse,
   getAllAcademiesSuperadmin,
   getAcademyDetailsSuperadmin,
+  getCorrectChoicesForAnsweredQuestions,
 } = require('../controllers/academyController');
 
 const router = express.Router();
@@ -87,6 +88,10 @@ router.get('/:userId/:academyId', asyncHandler(getUserResponses));
 router.get('/:id/videos', authenticateToken, asyncHandler(getVideoUrls));
 router.post('/:id/submit-quiz', asyncHandler(submitQuizAnswers));
 router.post('/:id/check-answer', asyncHandler(checkAnswer));
+router.post(
+  '/:academyId/correct-choices',
+  asyncHandler(getCorrectChoicesForAnsweredQuestions)
+);
 router.get(
   '/pending',
   authenticateToken,
