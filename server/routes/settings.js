@@ -6,6 +6,8 @@ const asyncHandler = require('express-async-handler');
 const {
   getDefaultAcademyXp,
   setDefaultAcademyXp,
+  getScholarshipText,
+  updateScholarshipText,
 } = require('../controllers/settingsController');
 
 const router = express.Router();
@@ -24,6 +26,17 @@ router.post(
   authenticateToken,
   authorizeRoles('SUPERADMIN'),
   asyncHandler(setDefaultAcademyXp)
+);
+
+// Get the scholarship text (public endpoint)
+router.get('/scholarship-text', asyncHandler(getScholarshipText));
+
+// Update the scholarship text (SUPERADMIN only)
+router.put(
+  '/scholarship-text',
+  authenticateToken,
+  authorizeRoles('SUPERADMIN'),
+  asyncHandler(updateScholarshipText)
 );
 
 module.exports = router;

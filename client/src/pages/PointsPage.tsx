@@ -13,7 +13,6 @@ import useSessionStore from '../store/useSessionStore'
 import treasure from '../images/treasure1.png'
 import bunny from '../images/bunny-head.png'
 import { initUtils } from '@telegram-apps/sdk'
-import coming from '../images/svgs/coming-soon3.svg'
 import Lottie from 'react-lottie'
 import coinsEarnedAnimationData from '../animations/earned-coins.json'
 import bronzeMedal from '../images/bronze-medal.png'
@@ -30,10 +29,12 @@ const PointsPage: React.FC = () => {
         fetchUserPoints: state.fetchUserPoints
     }))
 
-    const { leaderboard, weeklyLeaderboard, fetchLeaderboards } = useLeaderboardStore((state) => ({
+    const { leaderboard, weeklyLeaderboard, fetchLeaderboards, scholarshipText, fetchScholarshipText } = useLeaderboardStore((state) => ({
         leaderboard: state.leaderboard,
         weeklyLeaderboard: state.weeklyLeaderboard,
-        fetchLeaderboards: state.fetchLeaderboards
+        fetchLeaderboards: state.fetchLeaderboards,
+        scholarshipText: state.scholarshipText,
+        fetchScholarshipText: state.fetchScholarshipText
     }))
 
     const { homepageTasks, fetchHomepageTasks } = useTasksStore((state) => ({
@@ -114,8 +115,9 @@ const PointsPage: React.FC = () => {
     useEffect(() => {
         if (userId) {
             fetchLeaderboards()
+            fetchScholarshipText()
         }
-    }, [userId, fetchLeaderboards])
+    }, [userId, fetchLeaderboards, fetchScholarshipText])
 
     useEffect(() => {
         fetchHomepageTasks()
@@ -293,9 +295,8 @@ const PointsPage: React.FC = () => {
                     {/* Scholarships Info */}
                     {activeLeaderboardTab === 'weekly' && (
                         <div className="text-center mt-2">
-                            <img src={coming} alt="Coming Soon" className="h-16 rotate-[3deg] mx-auto" />
                             <p className="text-sm font-bold text-white flex items-center justify-center">
-                                Weekly Scholarships for Top 3: 3x100 USDC
+                                {scholarshipText}
                                 <button
                                     className="ml-2 rounded-full bg-gray-700 text-white text-xs font-bold w-5 h-5 flex items-center justify-center"
                                     onClick={() => setVisibleTooltip(!visibleTooltip)}
@@ -307,7 +308,7 @@ const PointsPage: React.FC = () => {
                                 <div className="tooltip relative bg-gray-700 text-white text-xs rounded-2xl p-4 mt-2 mx-auto w-11/12 max-w-md">
                                     <p>
                                         Weekly Scholarships are won by users who collect the most points during the week. In case of equal points, raffle
-                                        decides who wins the reward. Snapshot is taken every Sunday, 23.00 CET.
+                                        decides who wins the reward. Snapshot is taken every Saturday, 23.00 CET.
                                     </p>
                                     <button className="absolute top-0 right-0 text-white text-sm mt-1 mr-1" onClick={() => setVisibleTooltip(false)}>
                                         &times;

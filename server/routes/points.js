@@ -1,3 +1,5 @@
+// routes/pointsRoutes.js
+
 const express = require('express');
 const asyncHandler = require('express-async-handler');
 const { authenticateToken, authorizeRoles } = require('../middleware/auth');
@@ -6,6 +8,8 @@ const {
   getLeaderboard,
   getUserPoints,
   getUserPointsBreakdown,
+  getWeeklySnapshots,
+  getWeeklyLeaderboardSnapshot,
 } = require('../controllers/pointsController');
 
 const router = express.Router();
@@ -16,20 +20,35 @@ router.get('/leaderboard', asyncHandler(getLeaderboard)); // Leaderboard is publ
 // Protected routes
 router.get(
   '/breakdown/:userId',
-  // authenticateToken,  // Add authentication here if you want to protect this route
+  // authenticateToken,  // Uncomment and configure authentication if needed
   asyncHandler(getUserPointsBreakdown)
 );
 
 router.get(
   '/user/:userId',
-  // authenticateToken,  // Add authentication here if needed
+  // authenticateToken,  // Uncomment and configure authentication if needed
   asyncHandler(getUserPoints)
 );
 
 router.get(
   '/:userId/:academyId',
-  // authenticateToken,  // Add authentication if this is a protected route
+  // authenticateToken,  // Uncomment and configure authentication if needed
   asyncHandler(getPointsByUserAndAcademy)
+);
+
+// SUPERADMIN routes
+router.get(
+  '/weekly_snapshots',
+  authenticateToken,
+  authorizeRoles('SUPERADMIN'),
+  asyncHandler(getWeeklySnapshots)
+);
+
+router.get(
+  '/weekly_leaderboard_snapshot',
+  authenticateToken,
+  authorizeRoles('SUPERADMIN'),
+  asyncHandler(getWeeklyLeaderboardSnapshot)
 );
 
 module.exports = router;

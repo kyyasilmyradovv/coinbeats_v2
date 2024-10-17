@@ -108,6 +108,109 @@ function getLastSunday() {
   return lastSunday;
 }
 
+// Helper function to get the start of the week
+function getStartOfWeek(date) {
+  const dayOfWeek = date.getDay();
+  const start = new Date(date);
+  start.setDate(date.getDate() - dayOfWeek);
+  start.setHours(0, 0, 0, 0);
+  return start;
+}
+
+// Get list of weekly snapshots (SUPERADMIN only)
+exports.getWeeklySnapshots = async (req, res, next) => {
+  console.log('getWeeklySnapshots hit');
+
+  try {
+    const minDateResult = await prisma.point.aggregate({
+      _min: { createdAt: true },
+    });
+
+    const maxDateResult = await prisma.point.aggregate({
+      _max: { createdAt: true },
+    });
+
+    const minDate = minDateResult._min.createdAt;
+    const maxDate = maxDateResult._max.createdAt;
+
+    if (!minDate || !maxDate) {
+      return res.status(200).json({ snapshots: [] });
+    }
+
+    const snapshots = [];
+    let currentWeekStart = getStartOfWeek(minDate);
+    const lastWeekStart = getStartOfWeek(maxDate);
+
+    while (currentWeekStart <= lastWeekStart) {
+      snapshots.push(currentWeekStart.toISOString().split('T')[0]);
+      currentWeekStart.setDate(currentWeekStart.getDate() + 7);
+    }
+
+    res.status(200).json({ snapshots });
+  } catch (error) {
+    console.error('Error fetching weekly snapshots:', error);
+    next(
+      createError(500, 'Internal Server Error: Error fetching weekly snapshots')
+    );
+  }
+};
+
+// Get weekly leaderboard snapshot (SUPERADMIN only)
+exports.getWeeklyLeaderboardSnapshot = async (req, res, next) => {
+  console.log('getWeeklyLeaderboardSnapshot hit');
+
+  const { week } = req.query;
+
+  if (!week) {
+    return next(createError(400, 'Week parameter is required'));
+  }
+
+  let startOfWeek = new Date(week);
+  let endOfWeek = new Date(startOfWeek);
+  endOfWeek.setDate(startOfWeek.getDate() + 6);
+  endOfWeek.setHours(23, 59, 59, 999);
+
+  const dateFilter = {
+    createdAt: {
+      gte: startOfWeek,
+      lte: endOfWeek,
+    },
+  };
+
+  try {
+    const leaderboard = await prisma.point.groupBy({
+      by: ['userId'],
+      where: dateFilter,
+      _sum: { value: true },
+      orderBy: { _sum: { value: 'desc' } },
+      take: 100,
+    });
+
+    const leaderboardData = await Promise.all(
+      leaderboard.map(async (entry) => {
+        const user = await prisma.user.findUnique({
+          where: { id: entry.userId },
+        });
+        return {
+          userId: entry.userId,
+          name: user ? user.name : 'Unknown User',
+          totalPoints: entry._sum.value,
+        };
+      })
+    );
+
+    res.status(200).json(leaderboardData);
+  } catch (error) {
+    console.error('Error fetching weekly leaderboard snapshot:', error);
+    next(
+      createError(
+        500,
+        'Internal Server Error: Error fetching weekly leaderboard snapshot'
+      )
+    );
+  }
+};
+
 // Get user points
 exports.getUserPoints = async (req, res, next) => {
   console.log('getUserPoints hit');

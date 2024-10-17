@@ -40,3 +40,39 @@ exports.setDefaultAcademyXp = async (req, res, next) => {
     next(createError(500, 'Error setting default academy XP'));
   }
 };
+
+// Get the scholarship text
+exports.getScholarshipText = async (req, res, next) => {
+  try {
+    const setting = await prisma.setting.findUnique({
+      where: { key: 'scholarship_text' },
+    });
+
+    res.status(200).json({ value: setting ? setting.value : '' });
+  } catch (error) {
+    console.error('Error fetching scholarship text:', error);
+    next(createError(500, 'Error fetching scholarship text'));
+  }
+};
+
+// Update the scholarship text
+exports.updateScholarshipText = async (req, res, next) => {
+  const { value } = req.body;
+
+  if (typeof value !== 'string') {
+    return next(createError(400, 'Invalid scholarship text value'));
+  }
+
+  try {
+    const setting = await prisma.setting.upsert({
+      where: { key: 'scholarship_text' },
+      update: { value },
+      create: { key: 'scholarship_text', value },
+    });
+
+    res.status(200).json({ value: setting.value });
+  } catch (error) {
+    console.error('Error updating scholarship text:', error);
+    next(createError(500, 'Error updating scholarship text'));
+  }
+};

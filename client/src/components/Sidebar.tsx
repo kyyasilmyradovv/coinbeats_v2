@@ -1,3 +1,5 @@
+// src/components/Sidebar.tsx
+
 import React, { useState, useLayoutEffect } from 'react'
 import { Page, Panel, Block, BlockTitle, List, ListItem, Radio, Toggle, Popover, Link, Button } from 'konsta/react'
 import { TonConnectButton } from '@tonconnect/ui-react'
@@ -57,7 +59,8 @@ const Sidebar: React.FC = () => {
             { label: 'Add Categories and Chains', path: '/add-categories-chains' },
             { label: 'Add Platform Tasks', path: '/add-platform-tasks' },
             { label: 'Inbox', path: '/inbox' },
-            { label: 'Subscription Management', path: '/subscription-management' }
+            { label: 'Subscription Management', path: '/subscription-management' },
+            { label: 'Scholarship Management', path: '/scholarship-management' } // Added this line
         ],
         ADMIN: [
             { label: 'Admin Dashboard', path: '/admin-dashboard' },
@@ -80,7 +83,7 @@ const Sidebar: React.FC = () => {
             return null
         }
 
-        const menuItems = []
+        const menuItems: Array<{ label: string; path: string }> = []
 
         roles.forEach((role) => {
             const items = roleMenuItems[role]

@@ -37,6 +37,7 @@ import useSessionStore from './store/useSessionStore'
 import useUserStore from './store/useUserStore'
 import RouteGuard from './components/RouteGuard'
 import Spinner from './components/Spinner'
+import ScholarshipManagementPage from './pages/ScholarshipManagementPage'
 
 function RootComponent() {
     const [isLoading, setIsLoading] = useState(true)
@@ -205,6 +206,14 @@ function RootComponent() {
                             element={
                                 <RouteGuard requiredRole="SUPERADMIN">
                                     <AddPlatformTasksPage />
+                                </RouteGuard>
+                            }
+                        />
+                        <Route
+                            path="/scholarship-management"
+                            element={
+                                <RouteGuard requiredRole="SUPERADMIN">
+                                    <ScholarshipManagementPage />
                                 </RouteGuard>
                             }
                         />
