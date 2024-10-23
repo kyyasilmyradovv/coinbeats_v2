@@ -43,9 +43,12 @@ interface VerificationTask {
 }
 
 export default function GamesPage() {
-    const { userId, referralCode } = useUserStore((state) => ({
+    const { userId, referralCode, twitterAuthenticated, setTwitterAuthenticated, setTwitterUserData } = useUserStore((state) => ({
         userId: state.userId,
-        referralCode: state.referralCode
+        referralCode: state.referralCode,
+        twitterAuthenticated: state.twitterAuthenticated,
+        setTwitterAuthenticated: state.setTwitterAuthenticated,
+        setTwitterUserData: state.setTwitterUserData
     }))
 
     const { gameTasks, fetchGameTasks } = useTasksStore((state) => ({

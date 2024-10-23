@@ -22,11 +22,6 @@ exports.getPointsByUserAndAcademy = async (req, res, next) => {
       },
     });
 
-    console.log(
-      `Points fetched for User ID ${userId} and Academy ID ${academyId}:`,
-      points
-    );
-
     if (!points || points.length === 0) {
       console.log(
         `No points found for User ID ${userId} and Academy ID ${academyId}`
@@ -228,7 +223,7 @@ exports.getUserPoints = async (req, res, next) => {
       },
     });
 
-    console.log(`Points fetched for User ID ${userId}:`, points);
+    console.log(`Points fetched for User ID ${userId}:`);
 
     res.status(200).json(points);
   } catch (error) {
@@ -262,7 +257,7 @@ exports.getUserPointsBreakdown = async (req, res, next) => {
       },
     });
 
-    console.log(`Points fetched for User ID ${userId}:`, points);
+    console.log(`Points fetched for User ID ${userId}:`);
 
     if (!points || points.length === 0) {
       console.log(`No points found for User ID ${userId}`);

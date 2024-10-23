@@ -866,6 +866,59 @@ exports.checkReferralCompletion = async (req, res) => {
         data: { referralCompletionChecked: true },
       });
 
+      // Fetch the user with referredByUserId
+      const user = await prisma.user.findUnique({
+        where: { id: Number(userId) },
+        select: { referredByUserId: true },
+      });
+
+      if (user && user.referredByUserId) {
+        // Fetch the referring user
+        const referringUserId = user.referredByUserId;
+
+        // Find the verification task
+        const verificationTask = await prisma.verificationTask.findFirst({
+          where: {
+            verificationMethod: 'INVITE_TELEGRAM_FRIEND',
+            taskType: 'PLATFORM_SPECIFIC',
+          },
+        });
+
+        if (verificationTask) {
+          const xpAwarded = verificationTask.xp;
+
+          // Award XP to the referring user
+          await prisma.point.create({
+            data: {
+              userId: referringUserId,
+              value: xpAwarded,
+              verificationTaskId: verificationTask.id,
+            },
+          });
+
+          console.log('Point record created for referring user.');
+
+          // Update UserVerification record for the referring user
+          await prisma.userVerification.updateMany({
+            where: {
+              userId: referringUserId,
+              verificationTaskId: verificationTask.id,
+              verified: false,
+            },
+            data: {
+              verified: true,
+              pointsAwarded: xpAwarded,
+              completedAt: new Date(),
+            },
+          });
+          console.log('UserVerification record updated for referring user.');
+        } else {
+          console.error(
+            'VerificationTask not found for INVITE_TELEGRAM_FRIEND'
+          );
+        }
+      }
+
       return res.json({ isReferralComplete: true });
     } else {
       return res.json({ isReferralComplete: false });

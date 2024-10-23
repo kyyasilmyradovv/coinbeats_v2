@@ -96,24 +96,27 @@ exports.registerUser = async (req, res, next) => {
       const generateReferralCode = () => crypto.randomBytes(8).toString('hex');
       const newReferralCode = generateReferralCode();
 
+      // Initialize referringUser variable
+      let referringUser = null;
+
       // Prepare new user data
       const newUserData = {
         telegramUserId,
         name: username,
         roles: ['USER'], // Initialize roles as ['USER']
         referralCode: newReferralCode,
+        referralCompletionChecked: true, // Default value, may change if referred
       };
-
-      // Initialize referringUser variable
-      let referringUser = null;
 
       // If referral code is provided, find the referring user
       if (referralCode) {
         referringUser = await prisma.user.findUnique({
           where: { referralCode },
         });
+
         if (referringUser) {
           newUserData.referredByUserId = referringUser.id;
+          newUserData.referralCompletionChecked = false; // Set to false when referred
           console.log('Referring user found:', referringUser.id);
         } else {
           console.log('No user found with referral code:', referralCode);
@@ -175,30 +178,22 @@ exports.registerUser = async (req, res, next) => {
           // Set points awarded to user
           pointsAwardedToUser = xpAwarded;
         } else if (referringUser && user.referredByUserId) {
-          // Regular case: award XP to the referring user
+          // Regular case: create UserVerification entry for the referring user, but do not award XP yet
           console.log('Referring user ID:', user.referredByUserId);
 
-          // Create Point record for the referring user
-          await prisma.point.create({
-            data: {
-              userId: user.referredByUserId,
-              value: xpAwarded,
-              verificationTaskId: verificationTask.id,
-            },
-          });
-          console.log('Point record created for referring user.');
-
-          // Create UserVerification record for the referring user
+          // Create UserVerification record for the referring user, with verified = false
           await prisma.userVerification.create({
             data: {
-              userId: user.referredByUserId,
+              userId: referringUser.id,
               verificationTaskId: verificationTask.id,
-              verified: true,
-              pointsAwarded: xpAwarded,
-              completedAt: new Date(),
+              verified: false,
+              pointsAwarded: 0,
+              createdAt: new Date(),
             },
           });
-          console.log('UserVerification record created for referring user.');
+          console.log(
+            'UserVerification record created for referring user, pending verification.'
+          );
         } else {
           console.log('No referring user; no XP will be awarded');
         }

@@ -864,13 +864,6 @@ exports.updateAcademyWithVideos = async (req, res, next) => {
 exports.getVideoUrls = async (req, res, next) => {
   const { id } = req.params; // Academy ID
 
-  // Log the raw academyId to verify it's being received correctly
-  console.log('Raw academyId from request params:', id);
-
-  // Ensure that the ID is properly parsed and is a number
-  const academyId = parseInt(id, 10);
-  console.log('Parsed academyId:', academyId);
-
   if (isNaN(academyId) || academyId <= 0) {
     return res.status(400).json({ error: 'Invalid academyId' });
   }
@@ -884,9 +877,6 @@ exports.getVideoUrls = async (req, res, next) => {
         video: true,
       },
     });
-
-    // Log the fetched questions to verify the query result
-    console.log('Fetched video URLs:', questions);
 
     if (!questions || questions.length === 0) {
       return res
@@ -1366,11 +1356,6 @@ exports.getUserResponses = async (req, res) => {
 };
 
 exports.getCorrectChoicesForAnsweredQuestions = async (req, res, next) => {
-  console.log('getCorrectChoicesForAnsweredQuestions hit');
-  console.log('req.params:', req.params);
-  console.log('req.body:', req.body);
-  console.log('req.user:', req.user); // This will be undefined
-
   const { academyId } = req.params;
   let { telegramUserId, questionIds } = req.body;
 

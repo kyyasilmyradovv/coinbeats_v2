@@ -1,3 +1,5 @@
+// client/src/components/IntroPage.tsx
+
 import React, { useEffect, useRef } from 'react'
 import './IntroPage.css' // Styles for the intro page
 import introImage from '../images/intro.webp'
@@ -28,7 +30,7 @@ const IntroPage: React.FC<IntroPageProps> = ({ onComplete }) => {
     const { fetchUserVerificationTasks } = useUserVerificationStore()
     const { fetchCategoriesAndChains } = useCategoryChainStore()
 
-    const { fetchUser, registerUser, referralCompletionChecked, checkReferralCompletion } = useUserStore()
+    const { fetchUser, registerUser, referralCompletionChecked, checkReferralCompletion, userId } = useUserStore()
     const { startSession } = useSessionStore()
 
     useEffect(() => {
@@ -102,11 +104,6 @@ const IntroPage: React.FC<IntroPageProps> = ({ onComplete }) => {
                     username: username,
                     roles: userRoles
                 })
-
-                // Check if referral completion has been checked
-                if (!referralCompletionChecked) {
-                    await checkReferralCompletion(telegramUserId)
-                }
             } catch (e) {
                 console.error('Error initializing user session:', e)
                 // Set default user in case of error
@@ -152,7 +149,14 @@ const IntroPage: React.FC<IntroPageProps> = ({ onComplete }) => {
                 onComplete()
             }, 4000)
         })
-    }, [initData, referralCompletionChecked, checkReferralCompletion]) // Include referralCompletionChecked and checkReferralCompletion in the dependency array
+    }, [initData]) // Keep initData in the dependency array
+
+    // Referral completion check useEffect
+    useEffect(() => {
+        if (userId && !referralCompletionChecked) {
+            checkReferralCompletion(userId)
+        }
+    }, [userId, referralCompletionChecked, checkReferralCompletion]) // Include referralCompletionChecked and userId in the dependency array
 
     return (
         <div className="intro-container">

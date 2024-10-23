@@ -245,9 +245,15 @@ export default function ProductPage() {
 
     useEffect(() => {
         if (academy) {
-            fetchEarnedPoints(userId, academy.id)
+            if (userId !== null) {
+                if (userId !== null) {
+                    fetchEarnedPoints(userId, academy.id)
+                }
+            }
             fetchQuestions(academy.id)
-            fetchUserResponses(userId, academy.id)
+            if (userId !== null) {
+                fetchUserResponses(userId, academy.id)
+            }
             fetchQuests(academy.id)
         }
     }, [academy])
@@ -423,7 +429,7 @@ export default function ProductPage() {
                 }
 
                 // Update earnedPoints from store
-                fetchEarnedPoints(initData.user.id, academy.id)
+                fetchEarnedPoints(userId, academy.id)
 
                 setCurrentPoints(pointsAwarded)
                 triggerXPAnimation()

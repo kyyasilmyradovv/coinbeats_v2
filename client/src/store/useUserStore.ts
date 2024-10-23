@@ -23,6 +23,9 @@ interface UserState {
     referralPointsAwarded: number
     referralCode: string | null
     loginStreakData: any
+    twitterAuthenticated: boolean
+    twitterUsername: string | null
+    twitterUserId: string | null
 
     setUser: (update: Partial<UserState> | ((state: UserState) => Partial<UserState>)) => void
     setBookmarks: (bookmarks: Array<any>) => void
@@ -45,6 +48,8 @@ interface UserState {
     referralCompletionChecked: boolean
     setUserReferralCompletionChecked: (checked: boolean) => void
     checkReferralCompletion: (userId: number) => Promise<void>
+    setTwitterAuthenticated: (authenticated: boolean) => void
+    setTwitterUserData: (username: string, userId: string) => void
 
     // API methods
     fetchUser: (telegramUserId: number) => Promise<void>
@@ -77,10 +82,17 @@ const useUserStore = create<UserState>()(
         referralCompletionChecked: true,
         referralCode: null,
         loginStreakData: null,
+        twitterAuthenticated: false,
+        twitterUsername: null,
+        twitterUserId: null,
 
         setUser: (update) => set((state) => (typeof update === 'function' ? { ...state, ...update(state) } : { ...state, ...update })),
 
         setBookmarks: (bookmarks) => set({ bookmarks }),
+
+        setTwitterAuthenticated: (authenticated) => set({ twitterAuthenticated: authenticated }),
+
+        setTwitterUserData: (username, userId) => set({ twitterUsername: username, twitterUserId: userId }),
 
         loginUser: ({ userId, username, email, emailConfirmed, roles, totalPoints, points, bookmarks, token, hasAcademy }) =>
             set({
@@ -135,8 +147,9 @@ const useUserStore = create<UserState>()(
         checkReferralCompletion: async (userId) => {
             try {
                 const response = await axiosInstance.get(`/api/users/${userId}/check-referral-completion`)
-                if (response.status === 200 && response.data.isReferralComplete) {
-                    set({ referralCompletionChecked: true })
+                if (response.status === 200) {
+                    const isReferralComplete = response.data.isReferralComplete
+                    set({ referralCompletionChecked: isReferralComplete })
                 }
             } catch (error) {
                 console.error('Error checking referral completion:', error)
@@ -148,7 +161,8 @@ const useUserStore = create<UserState>()(
             try {
                 const response = await axiosInstance.get(`/api/users/${telegramUserId}`)
                 if (response.status === 200 && response.data) {
-                    const { id, name, email, roles, points, bookmarkedAcademies, academies, emailConfirmed, referralCode } = response.data
+                    const { id, name, email, roles, points, bookmarkedAcademies, academies, emailConfirmed, referralCode, referralCompletionChecked } =
+                        response.data
                     const hasAcademy = academies && academies.length > 0
                     const totalPoints = points ? points.reduce((sum: number, point: any) => sum + point.value, 0) : 0
 
@@ -165,7 +179,8 @@ const useUserStore = create<UserState>()(
                         authenticated: true,
                         hasAcademy: hasAcademy,
                         referralCode: referralCode || null,
-                        referralPointsAwarded: 0 // Existing users have 0 referral points awarded on login
+                        referralPointsAwarded: 0, // Existing users have 0 referral points awarded on login
+                        referralCompletionChecked: referralCompletionChecked // Set referralCompletionChecked from API response
                     })
                 }
             } catch (error: any) {
