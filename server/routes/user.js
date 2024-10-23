@@ -19,6 +19,7 @@ const {
   startVerificationTask,
   submitTask,
   getUserVerificationTasks,
+  checkReferralCompletion,
 } = require('../controllers/userController');
 const asyncHandler = require('express-async-handler');
 
@@ -42,6 +43,10 @@ router.get(
   authenticateToken,
   authorizeRoles('ADMIN', 'SUPERADMIN'),
   asyncHandler(getUserDetailsById)
+);
+router.get(
+  '/:userId/check-referral-completion',
+  asyncHandler(checkReferralCompletion)
 );
 router.post(
   '/',

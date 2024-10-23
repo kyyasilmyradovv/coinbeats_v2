@@ -846,3 +846,32 @@ exports.getUserVerificationTasks = async (req, res, next) => {
     next(createError(500, 'Error fetching user verification tasks'));
   }
 };
+
+exports.checkReferralCompletion = async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    // Find a point with academyId for the given user
+    const userAcademyPoints = await prisma.point.findFirst({
+      where: {
+        userId: Number(userId),
+        academyId: { not: null }, // Ensure it has an academyId
+      },
+    });
+
+    if (userAcademyPoints) {
+      // If the user has completed an academy, mark referralCompletionChecked as true
+      await prisma.user.update({
+        where: { id: Number(userId) },
+        data: { referralCompletionChecked: true },
+      });
+
+      return res.json({ isReferralComplete: true });
+    } else {
+      return res.json({ isReferralComplete: false });
+    }
+  } catch (error) {
+    console.error('Error checking referral completion:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+};

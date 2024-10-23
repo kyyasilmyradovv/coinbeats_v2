@@ -1,5 +1,3 @@
-// client/src/components/IntroPage.tsx
-
 import React, { useEffect, useRef } from 'react'
 import './IntroPage.css' // Styles for the intro page
 import introImage from '../images/intro.webp'
@@ -21,7 +19,7 @@ interface IntroPageProps {
 
 const IntroPage: React.FC<IntroPageProps> = ({ onComplete }) => {
     const initData = useInitData()
-    const initializedRef = useRef(false) // Add this line
+    const initializedRef = useRef(false)
 
     const { fetchAcademiesAndPreloadImages } = useAcademiesStore()
     const { fetchUserPoints } = usePointsStore()
@@ -30,7 +28,7 @@ const IntroPage: React.FC<IntroPageProps> = ({ onComplete }) => {
     const { fetchUserVerificationTasks } = useUserVerificationStore()
     const { fetchCategoriesAndChains } = useCategoryChainStore()
 
-    const { fetchUser, registerUser } = useUserStore()
+    const { fetchUser, registerUser, referralCompletionChecked, checkReferralCompletion } = useUserStore()
     const { startSession } = useSessionStore()
 
     useEffect(() => {
@@ -104,6 +102,11 @@ const IntroPage: React.FC<IntroPageProps> = ({ onComplete }) => {
                     username: username,
                     roles: userRoles
                 })
+
+                // Check if referral completion has been checked
+                if (!referralCompletionChecked) {
+                    await checkReferralCompletion(telegramUserId)
+                }
             } catch (e) {
                 console.error('Error initializing user session:', e)
                 // Set default user in case of error
@@ -149,7 +152,7 @@ const IntroPage: React.FC<IntroPageProps> = ({ onComplete }) => {
                 onComplete()
             }, 4000)
         })
-    }, [initData]) // Include initData in the dependency array
+    }, [initData, referralCompletionChecked, checkReferralCompletion]) // Include referralCompletionChecked and checkReferralCompletion in the dependency array
 
     return (
         <div className="intro-container">

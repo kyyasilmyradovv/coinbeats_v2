@@ -76,6 +76,7 @@ model User {
   bookmarkedAcademies    Academy[]          @relation("BookmarkedAcademies")
   referralCode           String?            @unique
   referredByUserId       Int?
+  referralCompletionChecked Boolean         @default(true)
   referredBy             User?              @relation("UserReferrals", fields: [referredByUserId], references: [id])
   referrals              User[]             @relation("UserReferrals")
   allowedAcademyTypes    AcademyType[]      @relation("UserAcademyTypes")

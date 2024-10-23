@@ -42,6 +42,9 @@ interface UserState {
     updateUserRoles: (roles: UserRole[]) => void
     toggleSidebar: () => void
     resetReferralPointsAwarded: () => void
+    referralCompletionChecked: boolean
+    setUserReferralCompletionChecked: (checked: boolean) => void
+    checkReferralCompletion: (userId: number) => Promise<void>
 
     // API methods
     fetchUser: (telegramUserId: number) => Promise<void>
@@ -71,6 +74,7 @@ const useUserStore = create<UserState>()(
         hasAcademy: false,
         sidebarOpened: false,
         referralPointsAwarded: 0,
+        referralCompletionChecked: true,
         referralCode: null,
         loginStreakData: null,
 
@@ -122,6 +126,22 @@ const useUserStore = create<UserState>()(
         toggleSidebar: () => set((state) => ({ sidebarOpened: !state.sidebarOpened })),
 
         resetReferralPointsAwarded: () => set({ referralPointsAwarded: 0 }),
+
+        setUserReferralCompletionChecked: (checked) => {
+            set({ referralCompletionChecked: checked })
+        },
+
+        // API call to check referral completion for a user
+        checkReferralCompletion: async (userId) => {
+            try {
+                const response = await axiosInstance.get(`/api/users/${userId}/check-referral-completion`)
+                if (response.status === 200 && response.data.isReferralComplete) {
+                    set({ referralCompletionChecked: true })
+                }
+            } catch (error) {
+                console.error('Error checking referral completion:', error)
+            }
+        },
 
         // Fetches user data by Telegram user ID
         fetchUser: async (telegramUserId) => {

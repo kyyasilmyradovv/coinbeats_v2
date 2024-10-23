@@ -43,7 +43,7 @@ const useLeaderboardStore = create<LeaderboardState>()(
 
         fetchScholarshipText: async () => {
             try {
-                const response = await axiosInstance.get('/api/settings/scholarship_text')
+                const response = await axiosInstance.get('/api/settings/scholarship-text')
                 set({ scholarshipText: response.data.value })
             } catch (error) {
                 console.error('Error fetching scholarship text:', error)
