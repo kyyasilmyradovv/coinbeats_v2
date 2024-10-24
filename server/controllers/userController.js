@@ -499,29 +499,6 @@ exports.completeVerificationTask = async (req, res, next) => {
       });
     }
 
-    // Handle ONETIME tasks (can only be completed once)
-    if (verificationTask.intervalType === 'ONETIME') {
-      if (userVerification.verified) {
-        return res
-          .status(400)
-          .json({ message: 'This task can only be completed once.' });
-      }
-    }
-
-    // Handle REPEATED tasks (can only be completed once per day)
-    if (verificationTask.intervalType === 'REPEATED') {
-      const now = new Date();
-      const lastCompletionDate = userVerification
-        ? new Date(userVerification.completedAt)
-        : null;
-
-      if (lastCompletionDate && isSameDay(now, lastCompletionDate)) {
-        return res
-          .status(400)
-          .json({ message: 'This task can only be completed once per day.' });
-      }
-    }
-
     // Perform verification logic and mark the task as complete
     const isVerified = await performVerification(verificationTask, user, {
       userVerification,
@@ -553,7 +530,7 @@ exports.completeVerificationTask = async (req, res, next) => {
     } else {
       return res.status(400).json({
         message:
-          'The tasks are manually confirmed. Come back in some time to verify.',
+          'Verification failed. Please ensure you have completed the task.',
       });
     }
   } catch (error) {

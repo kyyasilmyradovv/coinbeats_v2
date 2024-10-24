@@ -19,6 +19,7 @@ exports.createVerificationTask = async (req, res, next) => {
     shortCircuit,
     shortCircuitTimer,
     academyId,
+    parameters, // Include parameters
   } = req.body;
 
   try {
@@ -68,14 +69,17 @@ exports.createVerificationTask = async (req, res, next) => {
         description,
         taskType,
         intervalType,
-        repeatInterval,
+        repeatInterval: repeatInterval ? parseInt(repeatInterval, 10) : null,
         displayLocation,
         platform,
         verificationMethod,
-        xp,
+        xp: xp ? parseInt(xp, 10) : 0,
         shortCircuit,
-        shortCircuitTimer,
-        academyId,
+        shortCircuitTimer: shortCircuitTimer
+          ? parseInt(shortCircuitTimer, 10)
+          : null,
+        academyId: academyId ? parseInt(academyId, 10) : null,
+        parameters, // Include parameters
       },
     });
 
@@ -164,6 +168,7 @@ exports.updateVerificationTask = async (req, res, next) => {
     xp,
     shortCircuit,
     shortCircuitTimer,
+    parameters, // Include parameters
   } = req.body;
 
   try {
@@ -207,13 +212,16 @@ exports.updateVerificationTask = async (req, res, next) => {
         name,
         description,
         intervalType,
-        repeatInterval,
+        repeatInterval: repeatInterval ? parseInt(repeatInterval, 10) : null,
         displayLocation,
         platform,
         verificationMethod,
-        xp,
+        xp: xp ? parseInt(xp, 10) : 0,
         shortCircuit,
-        shortCircuitTimer,
+        shortCircuitTimer: shortCircuitTimer
+          ? parseInt(shortCircuitTimer, 10)
+          : null,
+        parameters, // Include parameters
       },
     });
 

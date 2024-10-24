@@ -7,20 +7,7 @@ import axios from '../api/axiosInstance'
 import Navbar from '../components/common/Navbar'
 import Sidebar from '../components/Sidebar'
 import bunnyLogo from '../images/bunny-mascot.png'
-
-interface VerificationTask {
-    id: number
-    name: string
-    description: string
-    intervalType: string
-    repeatInterval: number | null
-    displayLocation: string
-    platform: string
-    verificationMethod: string
-    xp: number
-    shortCircuit: boolean
-    shortCircuitTimer: number | null
-}
+import { VerificationTask } from '../types'
 
 const AddPlatformTasksPage: React.FC = () => {
     const [formData, setFormData] = useState({
@@ -33,7 +20,8 @@ const AddPlatformTasksPage: React.FC = () => {
         verificationMethod: 'SHORT_CIRCUIT',
         xp: '',
         shortCircuit: false,
-        shortCircuitTimer: ''
+        shortCircuitTimer: '',
+        parameters: {} // Added parameters field
     })
     const [notificationOpen, setNotificationOpen] = useState(false)
     const [notificationText, setNotificationText] = useState('')
@@ -69,6 +57,16 @@ const AddPlatformTasksPage: React.FC = () => {
         }))
     }
 
+    const handleParameterChange = (key: string, value: string) => {
+        setFormData((prev) => ({
+            ...prev,
+            parameters: {
+                ...prev.parameters,
+                [key]: value
+            }
+        }))
+    }
+
     const resetForm = () => {
         setFormData({
             name: '',
@@ -80,7 +78,8 @@ const AddPlatformTasksPage: React.FC = () => {
             verificationMethod: 'SHORT_CIRCUIT',
             xp: '',
             shortCircuit: false,
-            shortCircuitTimer: ''
+            shortCircuitTimer: '',
+            parameters: {} // Reset parameters
         })
         setEditingTask(null)
     }
@@ -93,7 +92,8 @@ const AddPlatformTasksPage: React.FC = () => {
                 xp: formData.xp ? parseInt(formData.xp.toString(), 10) : 0,
                 repeatInterval: formData.repeatInterval ? parseInt(formData.repeatInterval.toString(), 10) : null,
                 shortCircuitTimer: formData.shortCircuitTimer ? parseInt(formData.shortCircuitTimer.toString(), 10) : null,
-                shortCircuit: formData.shortCircuit
+                shortCircuit: formData.shortCircuit,
+                parameters: formData.parameters || {} // Include parameters
             }
 
             if (editingTask) {
@@ -128,7 +128,8 @@ const AddPlatformTasksPage: React.FC = () => {
             verificationMethod: task.verificationMethod || 'SHORT_CIRCUIT',
             xp: task.xp.toString(),
             shortCircuit: task.shortCircuit,
-            shortCircuitTimer: task.shortCircuitTimer?.toString() || ''
+            shortCircuitTimer: task.shortCircuitTimer?.toString() || '',
+            parameters: task.parameters || {} // Set parameters
         })
         window.scrollTo(0, 0)
     }
@@ -255,6 +256,112 @@ const AddPlatformTasksPage: React.FC = () => {
                                 <option value="SHORT_CIRCUIT">Short Circuit</option>
                                 <option value="LEAVE_FEEDBACK">Leave Feedback</option>
                             </ListInput>
+
+                            {/* Conditional Parameters Input Fields */}
+                            {/* For FOLLOW_USER */}
+                            {formData.verificationMethod === 'FOLLOW_USER' && (
+                                <ListInput
+                                    label="Username"
+                                    type="text"
+                                    name="username"
+                                    outline
+                                    value={formData.parameters.username || ''}
+                                    onChange={(e) => handleParameterChange('username', e.target.value)}
+                                    placeholder="Enter username"
+                                    clearButton
+                                />
+                            )}
+                            {/* For RETWEET, LIKE_TWEET, COMMENT_ON_TWEET */}
+                            {['RETWEET', 'LIKE_TWEET', 'COMMENT_ON_TWEET'].includes(formData.verificationMethod) && (
+                                <ListInput
+                                    label="Tweet ID"
+                                    type="text"
+                                    name="tweetId"
+                                    outline
+                                    value={formData.parameters.tweetId || ''}
+                                    onChange={(e) => handleParameterChange('tweetId', e.target.value)}
+                                    placeholder="Enter Tweet ID"
+                                    clearButton
+                                />
+                            )}
+                            {/* For JOIN_TELEGRAM_CHANNEL */}
+                            {formData.verificationMethod === 'JOIN_TELEGRAM_CHANNEL' && (
+                                <ListInput
+                                    label="Channel Link"
+                                    type="text"
+                                    name="channelLink"
+                                    outline
+                                    value={formData.parameters.channelLink || ''}
+                                    onChange={(e) => handleParameterChange('channelLink', e.target.value)}
+                                    placeholder="Enter Telegram Channel Link"
+                                    clearButton
+                                />
+                            )}
+                            {/* For SUBSCRIBE_YOUTUBE_CHANNEL */}
+                            {formData.verificationMethod === 'SUBSCRIBE_YOUTUBE_CHANNEL' && (
+                                <ListInput
+                                    label="Channel URL"
+                                    type="text"
+                                    name="channelUrl"
+                                    outline
+                                    value={formData.parameters.channelUrl || ''}
+                                    onChange={(e) => handleParameterChange('channelUrl', e.target.value)}
+                                    placeholder="Enter YouTube Channel URL"
+                                    clearButton
+                                />
+                            )}
+                            {/* For WATCH_YOUTUBE_VIDEO */}
+                            {formData.verificationMethod === 'WATCH_YOUTUBE_VIDEO' && (
+                                <ListInput
+                                    label="Video URL"
+                                    type="text"
+                                    name="videoUrl"
+                                    outline
+                                    value={formData.parameters.videoUrl || ''}
+                                    onChange={(e) => handleParameterChange('videoUrl', e.target.value)}
+                                    placeholder="Enter YouTube Video URL"
+                                    clearButton
+                                />
+                            )}
+                            {/* For FOLLOW_INSTAGRAM_USER */}
+                            {formData.verificationMethod === 'FOLLOW_INSTAGRAM_USER' && (
+                                <ListInput
+                                    label="Username"
+                                    type="text"
+                                    name="username"
+                                    outline
+                                    value={formData.parameters.username || ''}
+                                    onChange={(e) => handleParameterChange('username', e.target.value)}
+                                    placeholder="Enter Instagram Username"
+                                    clearButton
+                                />
+                            )}
+                            {/* For JOIN_DISCORD_CHANNEL */}
+                            {formData.verificationMethod === 'JOIN_DISCORD_CHANNEL' && (
+                                <ListInput
+                                    label="Invite Link"
+                                    type="text"
+                                    name="inviteLink"
+                                    outline
+                                    value={formData.parameters.inviteLink || ''}
+                                    onChange={(e) => handleParameterChange('inviteLink', e.target.value)}
+                                    placeholder="Enter Discord Invite Link"
+                                    clearButton
+                                />
+                            )}
+                            {/* For TWEET */}
+                            {formData.verificationMethod === 'TWEET' && (
+                                <ListInput
+                                    label="Tweet Text"
+                                    type="text"
+                                    name="tweetText"
+                                    outline
+                                    value={formData.parameters.tweetText || ''}
+                                    onChange={(e) => handleParameterChange('tweetText', e.target.value)}
+                                    placeholder="Enter Tweet Text"
+                                    clearButton
+                                />
+                            )}
                             <ListInput
                                 label="XP Allocation"
                                 type="number"
@@ -325,6 +432,19 @@ const AddPlatformTasksPage: React.FC = () => {
                                         <p className="text-sm mt-1">
                                             XP: {task.xp} | Platform: {task.platform} | Method: {task.verificationMethod}
                                         </p>
+                                        {/* Display parameters */}
+                                        {task.parameters && (
+                                            <div className="mt-2">
+                                                <p className="text-sm font-semibold">Parameters:</p>
+                                                <ul className="list-disc list-inside">
+                                                    {Object.entries(task.parameters).map(([key, value]) => (
+                                                        <li key={key}>
+                                                            {key}: {value}
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        )}
                                     </div>
                                     <div className="flex flex-col items-end">
                                         <Button onClick={() => handleEdit(task)} className="!m-0 !p-0 bg-transparent">

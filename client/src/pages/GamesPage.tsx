@@ -8,6 +8,7 @@ import BottomTabBar from '../components/BottomTabBar'
 import coinStackIcon from '../images/coin-stack.png'
 import bunnyLogo from '../images/bunny-mascot.png'
 import useUserStore from '../store/useUserStore'
+import useSessionStore from '../store/useSessionStore'
 import useTasksStore from '../store/useTasksStore'
 import useUserVerificationStore from '../store/useUserVerificationStore'
 import Lottie from 'react-lottie'
@@ -19,7 +20,8 @@ import {
     requiresInputField,
     getInputPlaceholder,
     handleAction,
-    shouldDisableButton,
+    shouldDisableActionButton,
+    shouldDisableVerifyButton,
     handleSubmitTask
 } from '../utils/actionHandlers'
 import { VerificationTask } from '../types'
@@ -80,7 +82,8 @@ export default function GamesPage() {
             setNotificationText,
             setNotificationOpen,
             setSelectedTask,
-            setFeedbackDialogOpen
+            setFeedbackDialogOpen,
+            twitterAuthenticated
         })
     }
 
@@ -419,7 +422,8 @@ export default function GamesPage() {
                                 const completedToday = isVerified && isSameDay(new Date(), new Date(userVerification?.completedAt))
 
                                 // Determine if the "Action" or "Verify" button should be disabled
-                                const shouldDisableActionButton = shouldDisableButton(task, userVerificationTasks)
+                                const disableActionButton = shouldDisableActionButton(task, userVerificationTasks)
+                                const disableVerifyButton = shouldDisableVerifyButton(task, userVerificationTasks)
 
                                 return (
                                     <div
@@ -473,9 +477,9 @@ export default function GamesPage() {
                                                     background: 'linear-gradient(to left, #16a34a, #3b82f6)',
                                                     color: '#fff'
                                                 }}
-                                                disabled={shouldDisableActionButton}
+                                                disabled={disableActionButton}
                                             >
-                                                {getActionLabel(task.verificationMethod, twitterAuthenticated, isVerified)}
+                                                {getActionLabel(task.verificationMethod, twitterAuthenticated)}
                                             </Button>
 
                                             {/* Verify Button */}
@@ -490,7 +494,7 @@ export default function GamesPage() {
                                                         backgroundColor: 'transparent',
                                                         color: '#fff'
                                                     }}
-                                                    disabled={isVerified}
+                                                    disabled={disableVerifyButton}
                                                 >
                                                     {isVerified ? 'Completed' : 'Verify'}
                                                 </Button>
