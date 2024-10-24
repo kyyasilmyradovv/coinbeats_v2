@@ -6,15 +6,23 @@ import Navbar from '../components/common/Navbar'
 import Sidebar from '../components/common/Sidebar'
 import BottomTabBar from '../components/BottomTabBar'
 import coinStackIcon from '../images/coin-stack.png'
-import { FaTwitter, FaFacebook, FaInstagram, FaTelegramPlane, FaDiscord, FaYoutube, FaEnvelope } from 'react-icons/fa'
-import { initUtils } from '@telegram-apps/sdk'
 import bunnyLogo from '../images/bunny-mascot.png'
-import coinbeats from '../images/coinbeats-l.svg'
 import useUserStore from '../store/useUserStore'
 import useTasksStore from '../store/useTasksStore'
 import useUserVerificationStore from '../store/useUserVerificationStore'
 import Lottie from 'react-lottie'
+import { initUtils } from '@telegram-apps/sdk'
 import bunnyHappyAnimationData from '../animations/bunny-happy.json'
+import {
+    platformIcons,
+    getActionLabel,
+    requiresInputField,
+    getInputPlaceholder,
+    handleAction,
+    shouldDisableButton,
+    handleSubmitTask
+} from '../utils/actionHandlers'
+import { VerificationTask } from '../types'
 
 const bunnyHappyAnimation = {
     loop: true,
@@ -25,30 +33,11 @@ const bunnyHappyAnimation = {
     }
 }
 
-// Utility function to check if two dates are the same day
-const isSameDay = (d1, d2) => {
-    return d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth() && d1.getDate() === d2.getDate()
-}
-
-interface VerificationTask {
-    id: number
-    name: string
-    description: string
-    xp: number
-    platform: string
-    verificationMethod: string
-    intervalType: string
-    shortCircuit: boolean
-    shortCircuitTimer: number | null
-}
-
 export default function GamesPage() {
-    const { userId, referralCode, twitterAuthenticated, setTwitterAuthenticated, setTwitterUserData } = useUserStore((state) => ({
+    const { userId, referralCode, twitterAuthenticated } = useUserStore((state) => ({
         userId: state.userId,
         referralCode: state.referralCode,
-        twitterAuthenticated: state.twitterAuthenticated,
-        setTwitterAuthenticated: state.setTwitterAuthenticated,
-        setTwitterUserData: state.setTwitterUserData
+        twitterAuthenticated: state.twitterAuthenticated
     }))
 
     const { gameTasks, fetchGameTasks } = useTasksStore((state) => ({
@@ -74,8 +63,6 @@ export default function GamesPage() {
     const [selectedTask, setSelectedTask] = useState<VerificationTask | null>(null)
     const [taskInputValues, setTaskInputValues] = useState<{ [key: number]: string }>({})
     const [submittedTasks, setSubmittedTasks] = useState<{ [key: number]: boolean }>({})
-
-    // Feedback handling state variables
     const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false)
     const [feedbackText, setFeedbackText] = useState('')
 
@@ -84,250 +71,30 @@ export default function GamesPage() {
         fetchUserVerificationTasks()
     }, [fetchGameTasks, fetchUserVerificationTasks])
 
-    const hasTimerPassed = (taskCreatedAt: string, timer: number) => {
-        const createdAt = new Date(taskCreatedAt).getTime()
-        const now = Date.now()
-        const timeElapsed = (now - createdAt) / 1000 // Convert milliseconds to seconds
-
-        return timeElapsed > timer // Return true if timer seconds have passed
+    // Handle action button click
+    const onActionClick = async (task: VerificationTask) => {
+        await handleAction(task, {
+            referralCode,
+            setReferralLink,
+            setReferralModalOpen,
+            setNotificationText,
+            setNotificationOpen,
+            setSelectedTask,
+            setFeedbackDialogOpen
+        })
     }
 
-    const toggleTooltip = (tooltipIndex: number) => {
-        if (visibleTooltip === tooltipIndex) {
-            setVisibleTooltip(null)
-        } else {
-            setVisibleTooltip(tooltipIndex)
-        }
-    }
-
-    const platformIcons: { [key: string]: JSX.Element } = {
-        X: <FaTwitter className="w-8 h-8 !mb-3 text-blue-500 !p-0 !m-0" />,
-        FACEBOOK: <FaFacebook className="w-8 h-8 !mb-3 text-blue-700 !p-0 !m-0" />,
-        INSTAGRAM: <FaInstagram className="w-8 h-8 !mb-3 text-pink-500 !p-0 !m-0" />,
-        TELEGRAM: <FaTelegramPlane className="w-8 h-8 !mb-3 text-blue-400 !p-0 !m-0" />,
-        DISCORD: <FaDiscord className="w-8 h-8 !mb-3 text-indigo-600 !p-0 !m-0" />,
-        YOUTUBE: <FaYoutube className="w-8 h-8 !mb-3 text-red-600 !p-0 !m-0" />,
-        EMAIL: <FaEnvelope className="w-8 h-8 !mb-3 text-green-500 !p-0 !m-0" />,
-        NONE: <img src={coinbeats} alt="CoinBeats" className="w-8 h-8 !mb-3" />
-        // Add other platforms as needed
-    }
-
-    function getActionLabel(verificationMethod: string) {
-        switch (verificationMethod) {
-            case 'TWEET':
-                return 'Tweet'
-            case 'RETWEET':
-                return 'Retweet'
-            case 'FOLLOW_USER':
-                return 'Follow'
-            case 'LIKE_TWEET':
-                return 'Like'
-            case 'COMMENT_ON_TWEET':
-                return 'Comment'
-            case 'JOIN_TELEGRAM_CHANNEL':
-                return 'Join'
-            case 'INVITE_TELEGRAM_FRIEND':
-                return 'Invite'
-            case 'PROVIDE_EMAIL':
-                return 'Submit'
-            case 'WATCH_YOUTUBE_VIDEO':
-                return 'Watch'
-            case 'SUBSCRIBE_YOUTUBE_CHANNEL':
-                return 'Subscribe'
-            case 'ADD_TO_BIO':
-                return 'Add to Bio'
-            case 'LEAVE_FEEDBACK':
-                return 'Feedback'
-            // Add other mappings as needed
-            default:
-                return 'Action'
-        }
-    }
-
-    // Determine if a task requires an input field
-    function requiresInputField(task: VerificationTask): boolean {
-        const methodsRequiringInput = ['SHORT_CIRCUIT', 'PROVIDE_EMAIL', 'ADD_TO_BIO', 'SUBSCRIBE_YOUTUBE_CHANNEL']
-        return methodsRequiringInput.includes(task.verificationMethod)
-    }
-
-    // Get placeholder text based on task name
-    function getInputPlaceholder(task: VerificationTask): string {
-        switch (task.name) {
-            case 'Shill CB in other TG channels':
-                return 'Paste the message URL here'
-            case 'Create and post CoinBeats meme':
-                return 'Paste the link to your meme here'
-            case 'Join our newsletter':
-                return 'Enter your email address here'
-            case '“@CoinBeatsxyz Student” to X bio':
-                return 'Enter your X username here'
-            case 'Subscribe to @CoinBeats Youtube':
-                return 'Paste your YouTube username here'
-            default:
-                return 'Enter your submission here'
-        }
-    }
-
-    const handleAction = async (task: VerificationTask) => {
-        if (requiresInputField(task)) {
-            openNotificationForTask(task)
-        } else if (task.verificationMethod === 'LEAVE_FEEDBACK') {
-            setSelectedTask(task)
-            setFeedbackDialogOpen(true)
-        } else {
-            // Direct the user to the appropriate action
-            switch (task.verificationMethod) {
-                case 'TWEET':
-                    const tweetText = encodeURIComponent(task.description || '')
-                    window.open(`https://twitter.com/intent/tweet?text=${tweetText}`, '_blank')
-                    break
-                case 'RETWEET':
-                    const retweetId = '1847151143173951933' // Replace with actual tweet ID
-                    window.open(`https://twitter.com/intent/retweet?tweet_id=${retweetId}`, '_blank')
-                    break
-                case 'FOLLOW_USER':
-                    const username = 'CoinBeatsxyz' // Replace with actual username
-                    window.open(`https://twitter.com/${username}`, '_blank')
-                    break
-                case 'LIKE_TWEET':
-                    const likeTweetId = '1847151143173951933' // Replace with actual tweet ID
-                    window.open(`https://twitter.com/intent/like?tweet_id=${likeTweetId}`, '_blank')
-                    break
-                case 'COMMENT_ON_TWEET':
-                    const commentTweetId = '1847151143173951933' // Replace with actual tweet ID
-                    window.open(`https://twitter.com/intent/tweet?in_reply_to=${commentTweetId}`, '_blank')
-                    break
-                case 'JOIN_TELEGRAM_CHANNEL':
-                    const telegramChannelLink = 'https://t.me/coinbeatsdiscuss' // Replace with your Telegram channel link
-                    window.open(telegramChannelLink, '_blank')
-                    break
-                case 'INVITE_TELEGRAM_FRIEND':
-                    try {
-                        const userReferralCode = referralCode
-                        if (!userReferralCode) {
-                            setNotificationText('Referral code not available.')
-                            setNotificationOpen(true)
-                            return
-                        }
-                        const botUsername = 'CoinbeatsMiniApp_bot/miniapp' // Replace with your bot's username
-                        const referralLink = `https://t.me/${botUsername}?startapp=${userReferralCode}`
-                        setReferralLink(referralLink)
-                        setReferralModalOpen(true)
-                    } catch (error) {
-                        console.error('Error fetching user data:', error)
-                    }
-                    break
-                case 'SUBSCRIBE_YOUTUBE_CHANNEL':
-                    const youtubeChannelUrl = 'https://www.youtube.com/@CoinBeats' // Replace with your YouTube channel URL
-                    window.open(youtubeChannelUrl, '_blank')
-                    break
-                case 'WATCH_YOUTUBE_VIDEO':
-                    const youtubeVideoUrl = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' // Replace with your YouTube video URL
-                    window.open(youtubeVideoUrl, '_blank')
-                    break
-                case 'FOLLOW_INSTAGRAM_USER':
-                    const instagramUsername = 'coinbeatsxyz' // Replace with actual username
-                    window.open(`https://www.instagram.com/${instagramUsername}/`, '_blank')
-                    break
-                case 'JOIN_DISCORD_CHANNEL':
-                    const discordInviteLink = 'https://discord.gg/your-invite-code' // Replace with your Discord invite link
-                    window.open(discordInviteLink, '_blank')
-                    break
-                case 'PROVIDE_EMAIL':
-                    setNotificationText('Please provide your email in the next step.')
-                    setNotificationOpen(true)
-                    break
-                case 'ADD_TO_BIO':
-                    setNotificationText('Please add "CoinBeats Student" to your X bio.')
-                    setNotificationOpen(true)
-                    window.open('https://twitter.com/settings/profile', '_blank')
-                    break
-                case 'SHORT_CIRCUIT':
-                    setNotificationText(task.description)
-                    setNotificationOpen(true)
-                    break
-                default:
-                    break
-            }
-
-            // Start the task in the background
-            try {
-                await startTask(task.id)
-            } catch (error) {
-                console.error('Error starting task:', error)
-            }
-        }
-    }
-
-    const shouldDisableButton = (task: VerificationTask) => {
-        const userVerification = userVerificationTasks.find((verification) => verification.verificationTaskId === task.id)
-
-        if (!userVerification) {
-            return false // Task has not been started by the user yet
-        }
-
-        const isVerified = userVerification.verified
-        const completedToday = isVerified && isSameDay(new Date(), new Date(userVerification.completedAt))
-        const timerCheck = hasTimerPassed(userVerification.createdAt, 1000)
-
-        if (task.intervalType === 'ONETIME' && isVerified) {
-            return true // Disable button for one-time tasks that are already completed
-        }
-
-        if (task.intervalType === 'REPEATED' && completedToday && !timerCheck) {
-            return true // Disable button if the task is repeated but completed today and timer not passed
-        }
-
-        return false
-    }
-
-    const handleSubmitTask = async (task) => {
+    // Handle submit task
+    const onSubmitTask = async (task: VerificationTask) => {
         const submissionText = taskInputValues[task.id]
-
-        if (!submissionText || submissionText.length < 5) {
-            setNotificationText('Please enter at least 5 characters.')
-            setNotificationOpen(true)
-            return
-        }
-
-        try {
-            await startTask(task.id)
-            await submitTask(task.id, submissionText)
-            setNotificationText('Submission successful!')
-            setNotificationOpen(true)
-            setSubmittedTasks({ ...submittedTasks, [task.id]: true })
-        } catch (error) {
-            console.error('Error submitting task:', error)
-            setNotificationText('Submission failed')
-            setNotificationOpen(true)
-        }
-    }
-
-    const openNotificationForTask = (task: VerificationTask) => {
-        setSelectedTask(task) // Set the task that requires submission
-        setNotificationText(task.description) // Set notification text for the task
-        setNotificationOpen(true) // Open the notification
-    }
-
-    const handleInviteFriend = () => {
-        const utils = initUtils()
-        const inviteLink = `https://t.me/CoinbeatsMiniApp_bot/miniapp?startapp=${referralCode}`
-        const shareText = `Join me on this awesome app!`
-
-        const fullUrl = `https://t.me/share/url?url=${encodeURIComponent(inviteLink)}&text=${encodeURIComponent(shareText)}`
-        utils.openTelegramLink(fullUrl)
-    }
-
-    const copyReferralLink = () => {
-        navigator.clipboard
-            .writeText(referralLink)
-            .then(() => {
-                setNotificationText('Referral link copied to clipboard!')
-                setNotificationOpen(true)
-            })
-            .catch((error) => {
-                console.error('Error copying referral link:', error)
-            })
+        await handleSubmitTask(task, submissionText, {
+            setNotificationText,
+            setNotificationOpen,
+            setSubmittedTasks,
+            submittedTasks,
+            setTaskInputValues,
+            taskInputValues
+        })
     }
 
     const handleVerify = async (task: VerificationTask) => {
@@ -353,14 +120,6 @@ export default function GamesPage() {
         }
     }
 
-    const inviteTask = gameTasks.find((task) => task.verificationMethod === 'INVITE_TELEGRAM_FRIEND')
-
-    const filteredTasks = gameTasks.filter((task) => {
-        if (activeTaskTab === 'onetime') return task.intervalType === 'ONETIME' && task.verificationMethod !== 'INVITE_TELEGRAM_FRIEND'
-        if (activeTaskTab === 'repeated') return task.intervalType === 'REPEATED' && task.verificationMethod !== 'INVITE_TELEGRAM_FRIEND'
-        return false
-    })
-
     // Handle feedback submission
     const handleSubmitFeedback = async () => {
         if (!selectedTask) return
@@ -382,6 +141,48 @@ export default function GamesPage() {
             setNotificationOpen(true)
         }
     }
+
+    const handleInviteFriend = () => {
+        const utils = initUtils()
+        const inviteLink = `https://t.me/CoinbeatsMiniApp_bot/miniapp?startapp=${referralCode}`
+        const shareText = `Join me on this awesome app!`
+
+        const fullUrl = `https://t.me/share/url?url=${encodeURIComponent(inviteLink)}&text=${encodeURIComponent(shareText)}`
+        utils.openTelegramLink(fullUrl)
+    }
+
+    const copyReferralLink = () => {
+        navigator.clipboard
+            .writeText(referralLink)
+            .then(() => {
+                setNotificationText('Referral link copied to clipboard!')
+                setNotificationOpen(true)
+            })
+            .catch((error) => {
+                console.error('Error copying referral link:', error)
+            })
+    }
+
+    const toggleTooltip = (tooltipIndex: number) => {
+        if (visibleTooltip === tooltipIndex) {
+            setVisibleTooltip(null)
+        } else {
+            setVisibleTooltip(tooltipIndex)
+        }
+    }
+
+    // Helper functions
+    function isSameDay(d1: Date, d2: Date) {
+        return d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth() && d1.getDate() === d2.getDate()
+    }
+
+    const inviteTask = gameTasks.find((task) => task.verificationMethod === 'INVITE_TELEGRAM_FRIEND')
+
+    const filteredTasks = gameTasks.filter((task) => {
+        if (activeTaskTab === 'onetime') return task.intervalType === 'ONETIME' && task.verificationMethod !== 'INVITE_TELEGRAM_FRIEND'
+        if (activeTaskTab === 'repeated') return task.intervalType === 'REPEATED' && task.verificationMethod !== 'INVITE_TELEGRAM_FRIEND'
+        return false
+    })
 
     return (
         <Page>
@@ -425,7 +226,6 @@ export default function GamesPage() {
                                         color: '#fff'
                                     }}
                                 >
-                                    <FaTelegramPlane className="inline-block mr-2 !h-5 !w-5" />
                                     Invite Friend
                                 </Button>
                             </div>
@@ -500,7 +300,7 @@ export default function GamesPage() {
                                 </List>
                                 <Button
                                     rounded
-                                    onClick={() => handleSubmitTask(selectedTask)}
+                                    onClick={() => onSubmitTask(selectedTask)}
                                     className="!text-2xs font-bold shadow-xl !w-20 !h-6 mt-1 justify-end"
                                     style={{ background: 'linear-gradient(to left, #16a34a, #3b82f6)', color: '#fff' }}
                                 >
@@ -597,7 +397,7 @@ export default function GamesPage() {
                                     {/* Action Button */}
                                     <Button
                                         rounded
-                                        onClick={() => handleAction(inviteTask)}
+                                        onClick={() => onActionClick(inviteTask)}
                                         className="!text-2xs font-bold shadow-xl !w-20 !h-6"
                                         style={{
                                             background: 'linear-gradient(to left, #16a34a, #3b82f6)',
@@ -617,10 +417,9 @@ export default function GamesPage() {
                                 const userVerification = userVerificationTasks.find((verification) => verification.verificationTaskId === task.id)
                                 const isVerified = userVerification?.verified
                                 const completedToday = isVerified && isSameDay(new Date(), new Date(userVerification?.completedAt))
-                                const timerCheck = userVerification && hasTimerPassed(userVerification.createdAt, 1000)
 
                                 // Determine if the "Action" or "Verify" button should be disabled
-                                const shouldDisableActionButton = shouldDisableButton(task)
+                                const shouldDisableActionButton = shouldDisableButton(task, userVerificationTasks)
 
                                 return (
                                     <div
@@ -668,7 +467,7 @@ export default function GamesPage() {
                                             {/* Action Button */}
                                             <Button
                                                 rounded
-                                                onClick={() => handleAction(task)}
+                                                onClick={() => onActionClick(task)}
                                                 className="!text-2xs font-bold shadow-xl !w-20 !h-6"
                                                 style={{
                                                     background: 'linear-gradient(to left, #16a34a, #3b82f6)',
@@ -676,7 +475,7 @@ export default function GamesPage() {
                                                 }}
                                                 disabled={shouldDisableActionButton}
                                             >
-                                                {getActionLabel(task.verificationMethod)}
+                                                {getActionLabel(task.verificationMethod, twitterAuthenticated, isVerified)}
                                             </Button>
 
                                             {/* Verify Button */}
@@ -687,11 +486,11 @@ export default function GamesPage() {
                                                     onClick={() => handleVerify(task)}
                                                     className="!text-2xs font-bold shadow-xl !w-20 !h-6"
                                                     style={{
-                                                        borderColor: isVerified ? '#16a34a' : '#3b82f6', // Green border for completed
-                                                        backgroundColor: 'transparent', // Green background for completed
-                                                        color: '#fff' // White text for completed, blue otherwise
+                                                        borderColor: isVerified ? '#16a34a' : '#3b82f6',
+                                                        backgroundColor: 'transparent',
+                                                        color: '#fff'
                                                     }}
-                                                    disabled={isVerified} // Disable if task is verified
+                                                    disabled={isVerified}
                                                 >
                                                     {isVerified ? 'Completed' : 'Verify'}
                                                 </Button>

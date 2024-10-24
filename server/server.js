@@ -3,6 +3,7 @@
 const path = require('path');
 const dotenv = require('dotenv');
 const express = require('express');
+const session = require('express-session');
 const bigIntMiddleware = require('./middleware/bigIntMiddleware');
 const cors = require('cors');
 const createError = require('http-errors');
@@ -38,6 +39,16 @@ const PORT = process.env.PORT || 4000;
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// **Add Session Middleware Here**
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || 'default_session_secret', // Use a strong secret in production
+    resave: false,
+    saveUninitialized: false,
+    cookie: { secure: false }, // Set to true if your app is served over HTTPS
+  })
+);
 
 // Custom middleware
 app.use(bigIntMiddleware);

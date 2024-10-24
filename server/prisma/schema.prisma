@@ -81,6 +81,12 @@ model User {
   referrals              User[]             @relation("UserReferrals")
   allowedAcademyTypes    AcademyType[]      @relation("UserAcademyTypes")
   userTaskSubmissions UserTaskSubmission[]
+
+  twitterUserId          String?            @unique // Twitter User ID
+  twitterUsername        String?            // Twitter handle
+  twitterAccessToken     String?            // Access token
+  twitterRefreshToken    String?            // Refresh token
+  twitterTokenExpiresAt  DateTime?          // Token expiration time
 }
 
 model Academy {

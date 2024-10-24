@@ -928,3 +928,36 @@ exports.checkReferralCompletion = async (req, res) => {
     return res.status(500).json({ error: 'Internal server error' });
   }
 };
+
+exports.getTwitterAuthStatus = async (req, res, next) => {
+  const telegramUserId = req.headers['x-telegram-user-id'];
+
+  if (!telegramUserId) {
+    return res.status(400).json({ error: 'Telegram user ID is required' });
+  }
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { telegramUserId: BigInt(telegramUserId) },
+      select: {
+        twitterUserId: true,
+        twitterUsername: true,
+      },
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const twitterAuthenticated = !!user.twitterUserId;
+
+    res.json({
+      twitterAuthenticated,
+      twitterUsername: user.twitterUsername,
+      twitterUserId: user.twitterUserId,
+    });
+  } catch (error) {
+    console.error('Error fetching Twitter authentication status:', error);
+    next(createError(500, 'Error fetching Twitter authentication status'));
+  }
+};

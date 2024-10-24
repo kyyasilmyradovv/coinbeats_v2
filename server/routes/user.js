@@ -20,6 +20,7 @@ const {
   submitTask,
   getUserVerificationTasks,
   checkReferralCompletion,
+  getTwitterAuthStatus,
 } = require('../controllers/userController');
 const asyncHandler = require('express-async-handler');
 
@@ -32,6 +33,7 @@ router.post('/start-task', asyncHandler(startVerificationTask)); // No auth midd
 router.post('/submit-task', asyncHandler(submitTask));
 router.post('/complete-task', asyncHandler(completeVerificationTask));
 router.post('/verification-tasks', asyncHandler(getUserVerificationTasks));
+router.get('/twitter/status', asyncHandler(getTwitterAuthStatus));
 router.get(
   '/',
   authenticateToken,

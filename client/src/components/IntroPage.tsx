@@ -30,7 +30,7 @@ const IntroPage: React.FC<IntroPageProps> = ({ onComplete }) => {
     const { fetchUserVerificationTasks } = useUserVerificationStore()
     const { fetchCategoriesAndChains } = useCategoryChainStore()
 
-    const { fetchUser, registerUser, referralCompletionChecked, checkReferralCompletion, userId } = useUserStore()
+    const { fetchUser, registerUser, fetchTwitterAuthStatus, referralCompletionChecked, checkReferralCompletion, userId } = useUserStore()
     const { startSession } = useSessionStore()
 
     useEffect(() => {
@@ -136,7 +136,8 @@ const IntroPage: React.FC<IntroPageProps> = ({ onComplete }) => {
                     fetchVerificationTasks(),
                     fetchGameTasks(),
                     fetchUserVerificationTasks(),
-                    fetchCategoriesAndChains()
+                    fetchCategoriesAndChains(),
+                    fetchTwitterAuthStatus()
                 ])
             } catch (error) {
                 console.error('Error in fetchData:', error)

@@ -59,6 +59,7 @@ interface UserState {
     addBookmark: (academyId: number) => Promise<void>
     fetchBookmarkedAcademies: (userId: number) => Promise<void>
     fetchUserPoints: (userId: number) => Promise<void>
+    fetchTwitterAuthStatus: () => Promise<void>
 
     updateTotalPoints: (points: number) => void
 }
@@ -328,8 +329,24 @@ const useUserStore = create<UserState>()(
                 console.error('Error fetching user points:', error)
             }
         },
+
         updateTotalPoints: (points) => {
             set((state) => ({ totalPoints: state.totalPoints + points }))
+        },
+
+        fetchTwitterAuthStatus: async () => {
+            try {
+                const response = await axiosInstance.get('/api/users/twitter/status')
+                const { twitterAuthenticated, twitterUsername, twitterUserId } = response.data
+
+                set({
+                    twitterAuthenticated,
+                    twitterUsername,
+                    twitterUserId
+                })
+            } catch (error) {
+                console.error('Error fetching Twitter authentication status:', error)
+            }
         }
     }))
 )
