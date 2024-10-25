@@ -94,6 +94,7 @@ export const handleAction = async (task: VerificationTask, options: { [key: stri
     if (task.verificationMethod === 'FOLLOW_USER' && task.platform === 'X') {
         if (!twitterAuthenticated) {
             // Redirect to backend endpoint to initiate OAuth flow
+            // window.location.href = `${import.meta.env.VITE_API_BASE_URL}/api/auth/twitter/start?telegramUserId=${userId}`
             window.location.href = `${import.meta.env.VITE_API_BASE_URL}/api/auth/twitter/start?telegramUserId=${userId}`
         } else {
             // User is authenticated with Twitter, proceed to perform the action

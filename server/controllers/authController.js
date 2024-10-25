@@ -7,6 +7,8 @@ const { generateAccessToken, generateRefreshToken } = require('../utils/jwt');
 const createError = require('http-errors');
 const crypto = require('crypto');
 const axios = require('axios');
+const OAuth = require('oauth').OAuth;
+const { URLSearchParams } = require('url');
 
 const prisma = new PrismaClient();
 const SALT_ROUNDS = 10;
@@ -223,6 +225,309 @@ exports.registerUser = async (req, res, next) => {
   }
 };
 
+// Twitter OAuth2.0 flow widhout the twitter sdk
+// exports.twitterStart = (req, res, next) => {
+//   try {
+//     console.log('--- Twitter Start ---');
+//     const state = crypto.randomBytes(16).toString('hex');
+//     const telegramUserId = req.query.telegramUserId;
+
+//     console.log('Received telegramUserId:', telegramUserId);
+
+//     if (!telegramUserId) {
+//       console.error('Telegram user ID is missing');
+//       return next(createError(400, 'Telegram user ID is required'));
+//     }
+
+//     // Initialize session if it doesn't exist
+//     if (!req.session) {
+//       console.error('Session is undefined');
+//       return next(createError(500, 'Session is not initialized'));
+//     }
+
+//     req.session.state = state;
+//     req.session.telegramUserId = telegramUserId;
+
+//     const codeVerifier = crypto.randomBytes(64).toString('hex');
+//     req.session.codeVerifier = codeVerifier;
+
+//     const codeChallenge = crypto
+//       .createHash('sha256')
+//       .update(codeVerifier)
+//       .digest('base64url');
+
+//     console.log('State:', state);
+//     console.log('Code Verifier:', codeVerifier);
+//     console.log('Code Challenge:', codeChallenge);
+
+//     const params = new URLSearchParams({
+//       response_type: 'code',
+//       client_id: process.env.TWITTER_CLIENT_ID,
+//       redirect_uri: `${process.env.BACKEND_URL}/api/auth/twitter/callback`,
+//       scope: 'tweet.read users.read follows.read offline.access',
+//       state: state,
+//       code_challenge: codeChallenge,
+//       code_challenge_method: 'S256',
+//     });
+
+//     const authorizationUrl = `https://twitter.com/i/oauth2/authorize?${params.toString()}`;
+//     console.log('Redirecting to Twitter OAuth URL:', authorizationUrl);
+
+//     res.redirect(authorizationUrl);
+//   } catch (error) {
+//     console.error('Error in twitterStart:', error);
+//     next(createError(500, 'Error initiating Twitter authentication'));
+//   }
+// };
+
+// exports.twitterCallback = async (req, res, next) => {
+//   try {
+//     console.log('--- Twitter Callback ---');
+//     const { code, state } = req.query;
+//     console.log('Received code:', code);
+//     console.log('Received state:', state);
+
+//     if (!state || !code) {
+//       console.error('State or code is missing in callback');
+//       return next(createError(400, 'State or code parameter is missing'));
+//     }
+
+//     if (state !== req.session.state) {
+//       console.error('State mismatch:', state, req.session.state);
+//       return next(createError(400, 'Invalid state parameter'));
+//     }
+
+//     const codeVerifier = req.session.codeVerifier;
+//     const telegramUserId = req.session.telegramUserId;
+
+//     console.log('Code Verifier from session:', codeVerifier);
+//     console.log('Telegram User ID from session:', telegramUserId);
+
+//     if (!codeVerifier || !telegramUserId) {
+//       console.error('Code verifier or Telegram user ID is missing in session');
+//       return next(createError(400, 'Session data is missing'));
+//     }
+
+//     const params = new URLSearchParams({
+//       grant_type: 'authorization_code',
+//       client_id: process.env.TWITTER_CLIENT_ID,
+//       redirect_uri: `${process.env.BACKEND_URL}/api/auth/twitter/callback`,
+//       code_verifier: codeVerifier,
+//       code: code,
+//     });
+
+//     console.log('Exchanging code for tokens with Twitter API');
+
+//     const tokenResponse = await axios.post(
+//       'https://api.twitter.com/2/oauth2/token',
+//       params.toString(),
+//       {
+//         headers: {
+//           'Content-Type': 'application/x-www-form-urlencoded',
+//         },
+//         auth: {
+//           username: process.env.TWITTER_CLIENT_ID,
+//           password: process.env.TWITTER_CLIENT_SECRET,
+//         },
+//       }
+//     );
+
+//     console.log('Token response data:', );
+
+//     const { access_token, refresh_token, expires_in } = tokenResponse.data;
+
+//     // Fetch user info
+//     console.log('Fetching user info from Twitter API');
+
+//     const userResponse = await axios.get('https://api.twitter.com/2/users/me', {
+//       headers: {
+//         Authorization: `Bearer ${access_token}`,
+//       },
+//       params: {
+//         'user.fields': 'id,username,name',
+//       },
+//     });
+
+//     console.log('User response data:', userResponse.data);
+
+//     const twitterUserId = userResponse.data.data.id;
+//     const twitterUsername = userResponse.data.data.username;
+
+//     console.log('Twitter User ID:', twitterUserId);
+//     console.log('Twitter Username:', twitterUsername);
+
+//     // Save data to database
+//     const user = await prisma.user.findUnique({
+//       where: { telegramUserId: BigInt(telegramUserId) },
+//     });
+
+//     if (!user) {
+//       console.error('User not found with Telegram ID:', telegramUserId);
+//       return next(createError(404, 'User not found'));
+//     }
+
+//     await prisma.user.update({
+//       where: { id: user.id },
+//       data: {
+//         twitterUserId: twitterUserId,
+//         twitterUsername: twitterUsername,
+//         twitterAccessToken: access_token,
+//         twitterRefreshToken: refresh_token,
+//         twitterTokenExpiresAt: new Date(Date.now() + expires_in * 1000),
+//       },
+//     });
+
+//     console.log('User updated with Twitter data:', user.id);
+
+//     // Redirect back to frontend
+//     const redirectUrl = `${process.env.FRONTEND_URL}/games?twitterAuth=success`;
+//     console.log('Redirecting back to frontend URL:', redirectUrl);
+
+//     res.redirect(redirectUrl);
+//   } catch (error) {
+//     console.error(
+//       'Error in twitterCallback:',
+//       error.response?.data || error.message
+//     );
+//     next(createError(500, 'Authentication failed'));
+//   }
+// };
+
+// Twitter OAuth1.0 flow with the twitter sdk
+// exports.twitterOAuthStart = (req, res, next) => {
+//   const oauth = new OAuth(
+//     'https://api.twitter.com/oauth/request_token',
+//     'https://api.twitter.com/oauth/access_token',
+//     process.env.TWITTER_API_KEY,
+//     process.env.TWITTER_API_SECRET_KEY,
+//     '1.0A',
+//     `${process.env.BACKEND_URL}/api/auth/twitter/oauth/callback`,
+//     'HMAC-SHA1'
+//   );
+
+//   oauth.getOAuthRequestToken(
+//     (error, oauth_token, oauth_token_secret, results) => {
+//       if (error) {
+//         console.error('Error getting OAuth request token:', error);
+//         return next(createError(500, 'Error getting OAuth request token'));
+//       } else {
+//         // Store tokens in session
+//         req.session.oauth_token = oauth_token;
+//         req.session.oauth_token_secret = oauth_token_secret;
+
+//         // Store userId in session (ensure user is authenticated and userId is available)
+//         req.session.userId = req.session.userId || req.query.telegramUserId;
+
+//         // Redirect user to Twitter for authorization
+//         const authorizationUrl = `https://api.twitter.com/oauth/authorize?oauth_token=${oauth_token}`;
+//         res.redirect(authorizationUrl);
+//       }
+//     }
+//   );
+// };
+
+// // Handle OAuth 1.0a Callback
+// exports.twitterOAuthCallback = async (req, res, next) => {
+//   try {
+//     console.log('--- Twitter Callback ---');
+//     const { oauth_token, oauth_verifier } = req.query;
+//     console.log('Received code:', oauth_token);
+//     console.log('Received verifier:', oauth_verifier);
+
+//     if (!oauth_token || !oauth_verifier) {
+//       console.error('OAuth token or verifier is missing in callback');
+//       return next(createError(400, 'OAuth token or verifier is missing'));
+//     }
+
+//     const oauth = new OAuth(
+//       'https://api.twitter.com/oauth/request_token',
+//       'https://api.twitter.com/oauth/access_token',
+//       process.env.TWITTER_API_KEY,
+//       process.env.TWITTER_API_SECRET_KEY,
+//       '1.0A',
+//       `${process.env.BACKEND_URL}/api/auth/twitter/oauth/callback`,
+//       'HMAC-SHA1'
+//     );
+
+//     // Retrieve tokens from session
+//     const oauth_token_secret = req.session.oauth_token_secret;
+//     const userId = req.session.userId;
+
+//     if (!userId) {
+//       console.error('User ID is missing in session');
+//       return next(createError(400, 'User ID is required'));
+//     }
+
+//     oauth.getOAuthAccessToken(
+//       oauth_token,
+//       oauth_token_secret,
+//       oauth_verifier,
+//       async (error, access_token, access_token_secret, results) => {
+//         if (error) {
+//           console.error('Error getting OAuth access token:', error);
+//           return next(createError(500, 'Error getting OAuth access token'));
+//         } else {
+//           // Get user info from Twitter
+//           oauth.get(
+//             'https://api.twitter.com/1.1/account/verify_credentials.json',
+//             access_token,
+//             access_token_secret,
+//             async (error, data, response) => {
+//               if (error) {
+//                 console.error('Error verifying credentials:', error);
+//                 return next(createError(500, 'Error verifying credentials'));
+//               } else {
+//                 const userInfo = JSON.parse(data);
+//                 const twitterUserId = userInfo.id_str;
+//                 const twitterUsername = userInfo.screen_name;
+
+//                 // Convert userId to BigInt if necessary
+//                 const telegramUserId = BigInt(userId);
+
+//                 // Find user by telegramUserId
+//                 const user = await prisma.user.findUnique({
+//                   where: { telegramUserId },
+//                 });
+
+//                 if (!user) {
+//                   console.error(
+//                     'User not found with Telegram ID:',
+//                     telegramUserId.toString()
+//                   );
+//                   return next(createError(404, 'User not found'));
+//                 }
+
+//                 // Update the user record
+//                 await prisma.user.update({
+//                   where: { id: user.id },
+//                   data: {
+//                     twitterUserId: twitterUserId,
+//                     twitterUsername: twitterUsername,
+//                     twitterAccessToken: access_token,
+//                     twitterAccessTokenSecret: access_token_secret,
+//                   },
+//                 });
+
+//                 console.log('User updated with Twitter data:', user.id);
+
+//                 // Redirect back to frontend
+//                 const redirectUrl = `${process.env.FRONTEND_URL}/games?twitterAuth=success`;
+//                 console.log('Redirecting back to frontend URL:', redirectUrl);
+
+//                 res.redirect(redirectUrl);
+//               }
+//             }
+//           );
+//         }
+//       }
+//     );
+//   } catch (error) {
+//     console.error('Error in twitterCallback:', error.message || error);
+//     next(createError(500, 'Authentication failed'));
+//   }
+// };
+
+// Start Twitter OAuth 2.0 Flow with twitter sdk
 exports.twitterStart = (req, res, next) => {
   try {
     console.log('--- Twitter Start ---');
@@ -232,14 +537,7 @@ exports.twitterStart = (req, res, next) => {
     console.log('Received telegramUserId:', telegramUserId);
 
     if (!telegramUserId) {
-      console.error('Telegram user ID is missing');
       return next(createError(400, 'Telegram user ID is required'));
-    }
-
-    // Initialize session if it doesn't exist
-    if (!req.session) {
-      console.error('Session is undefined');
-      return next(createError(500, 'Session is not initialized'));
     }
 
     req.session.state = state;
@@ -253,10 +551,6 @@ exports.twitterStart = (req, res, next) => {
       .update(codeVerifier)
       .digest('base64url');
 
-    console.log('State:', state);
-    console.log('Code Verifier:', codeVerifier);
-    console.log('Code Challenge:', codeChallenge);
-
     const params = new URLSearchParams({
       response_type: 'code',
       client_id: process.env.TWITTER_CLIENT_ID,
@@ -268,8 +562,6 @@ exports.twitterStart = (req, res, next) => {
     });
 
     const authorizationUrl = `https://twitter.com/i/oauth2/authorize?${params.toString()}`;
-    console.log('Redirecting to Twitter OAuth URL:', authorizationUrl);
-
     res.redirect(authorizationUrl);
   } catch (error) {
     console.error('Error in twitterStart:', error);
@@ -277,31 +569,19 @@ exports.twitterStart = (req, res, next) => {
   }
 };
 
+// Handle Twitter OAuth 2.0 Callback
 exports.twitterCallback = async (req, res, next) => {
   try {
-    console.log('--- Twitter Callback ---');
     const { code, state } = req.query;
-    console.log('Received code:', code);
-    console.log('Received state:', state);
 
-    if (!state || !code) {
-      console.error('State or code is missing in callback');
-      return next(createError(400, 'State or code parameter is missing'));
-    }
-
-    if (state !== req.session.state) {
-      console.error('State mismatch:', state, req.session.state);
-      return next(createError(400, 'Invalid state parameter'));
+    if (!state || !code || state !== req.session.state) {
+      return next(createError(400, 'Invalid state or code parameter'));
     }
 
     const codeVerifier = req.session.codeVerifier;
     const telegramUserId = req.session.telegramUserId;
 
-    console.log('Code Verifier from session:', codeVerifier);
-    console.log('Telegram User ID from session:', telegramUserId);
-
     if (!codeVerifier || !telegramUserId) {
-      console.error('Code verifier or Telegram user ID is missing in session');
       return next(createError(400, 'Session data is missing'));
     }
 
@@ -312,8 +592,6 @@ exports.twitterCallback = async (req, res, next) => {
       code_verifier: codeVerifier,
       code: code,
     });
-
-    console.log('Exchanging code for tokens with Twitter API');
 
     const tokenResponse = await axios.post(
       'https://api.twitter.com/2/oauth2/token',
@@ -329,13 +607,9 @@ exports.twitterCallback = async (req, res, next) => {
       }
     );
 
-    console.log('Token response data:', tokenResponse.data);
-
     const { access_token, refresh_token, expires_in } = tokenResponse.data;
 
     // Fetch user info
-    console.log('Fetching user info from Twitter API');
-
     const userResponse = await axios.get('https://api.twitter.com/2/users/me', {
       headers: {
         Authorization: `Bearer ${access_token}`,
@@ -345,13 +619,8 @@ exports.twitterCallback = async (req, res, next) => {
       },
     });
 
-    console.log('User response data:', userResponse.data);
-
     const twitterUserId = userResponse.data.data.id;
     const twitterUsername = userResponse.data.data.username;
-
-    console.log('Twitter User ID:', twitterUserId);
-    console.log('Twitter Username:', twitterUsername);
 
     // Save data to database
     const user = await prisma.user.findUnique({
@@ -359,7 +628,6 @@ exports.twitterCallback = async (req, res, next) => {
     });
 
     if (!user) {
-      console.error('User not found with Telegram ID:', telegramUserId);
       return next(createError(404, 'User not found'));
     }
 
@@ -374,12 +642,8 @@ exports.twitterCallback = async (req, res, next) => {
       },
     });
 
-    console.log('User updated with Twitter data:', user.id);
-
     // Redirect back to frontend
     const redirectUrl = `${process.env.FRONTEND_URL}/games?twitterAuth=success`;
-    console.log('Redirecting back to frontend URL:', redirectUrl);
-
     res.redirect(redirectUrl);
   } catch (error) {
     console.error(

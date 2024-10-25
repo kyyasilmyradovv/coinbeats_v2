@@ -85,6 +85,7 @@ model User {
   twitterUserId          String?            @unique // Twitter User ID
   twitterUsername        String?            // Twitter handle
   twitterAccessToken     String?            // Access token
+  twitterAccessTokenSecret String?
   twitterRefreshToken    String?            // Refresh token
   twitterTokenExpiresAt  DateTime?          // Token expiration time
 }
