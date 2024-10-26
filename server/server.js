@@ -33,7 +33,7 @@ const settingsRoutes = require('./routes/settings');
 
 // Initialize Express app
 const app = express();
-const PORT = process.env.PORT || 4004;
+const PORT = process.env.PORT || 4000;
 
 // Middleware
 app.use(cors());

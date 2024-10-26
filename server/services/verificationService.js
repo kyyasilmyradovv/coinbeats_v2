@@ -4,6 +4,8 @@ const axios = require('axios');
 const { Client } = require('twitter-api-sdk');
 const OAuth = require('oauth').OAuth;
 const qs = require('qs'); // For query string formatting
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 
 // Helper function to get Twitter user ID by username
 const getTwitterUserIdByUsername = async (username, client) => {
@@ -436,17 +438,21 @@ const verifyFollowUser = async (verificationTask, user) => {
 
 // Function to refresh access token
 const refreshAccessToken = async (refreshToken, user) => {
-  console.log('Refreshing access token...');
+  console.log('Refreshing access token...', refreshToken, user);
   const tokenUrl = 'https://api.twitter.com/2/oauth2/token';
 
   const params = new URLSearchParams();
   params.append('grant_type', 'refresh_token');
-  params.append('refresh_token', refreshToken);
+  params.append('refresh_token', user.twitterAccessToken);
   params.append('client_id', process.env.TWITTER_CLIENT_ID);
+  const credentials = btoa(
+    `${process.env.TWITTER_CLIENT_ID}:${process.env.TWITTER_CLIENT_SECRET}`
+  );
 
   try {
     const response = await axios.post(tokenUrl, params.toString(), {
       headers: {
+        Authorization: `Basic ${credentials}`,
         'Content-Type': 'application/x-www-form-urlencoded',
       },
     });
