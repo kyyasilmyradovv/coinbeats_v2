@@ -443,7 +443,7 @@ const refreshAccessToken = async (refreshToken, user) => {
 
   const params = new URLSearchParams();
   params.append('grant_type', 'refresh_token');
-  params.append('refresh_token', user.twitterRefreshToken);
+  params.append('refresh_token', user.twitterAccessToken);
   params.append('client_id', process.env.TWITTER_CLIENT_ID);
   const credentials = btoa(
     `${process.env.TWITTER_CLIENT_ID}:${process.env.TWITTER_CLIENT_SECRET}`

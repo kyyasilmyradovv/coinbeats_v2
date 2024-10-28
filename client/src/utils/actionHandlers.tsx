@@ -92,7 +92,8 @@ export const handleAction = async (task: VerificationTask, options: { [key: stri
         setFeedbackDialogOpen,
         twitterAuthenticated,
         academyName,
-        telegramUserId // Ensure telegramUserId is included
+        twitterHandle, // Use twitterHandle here
+        telegramUserId
     } = options
     const { startTask } = useUserVerificationStore.getState()
 
@@ -173,8 +174,7 @@ export const handleAction = async (task: VerificationTask, options: { [key: stri
                         window.open(authUrl, '_blank')
                     }
                 } else {
-                    console.log('User is authenticated with Twitter, proceeding to tweet')
-                    const tweetText = `🎉 I just completed ${academyName} academy on CoinBeats Crypto School @CoinBeatsxyz`
+                    const tweetText = `🎉 I just completed ${academyName} ${twitterHandle} academy on CoinBeats Crypto School @CoinBeatsxyz`
                     window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`, '_blank')
 
                     try {

@@ -7,9 +7,10 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import axiosInstance from '../api/axiosInstance'
 import useUserStore from '~/store/useUserStore'
 import useUserVerificationStore from '~/store/useUserVerificationStore'
-import useAcademiesStore from '~/store/useAcademiesStore'
 import { FaTwitter } from 'react-icons/fa'
 import bunnyLogo from '../images/bunny-mascot.png'
+import Lottie from 'react-lottie'
+import bunnyHappyAnimationData from '../animations/bunny-happy.json'
 import {
     platformIcons,
     getActionLabel,
@@ -20,15 +21,6 @@ import {
     shouldDisableActionButton,
     shouldDisableVerifyButton
 } from '../utils/actionHandlers'
-import Lottie from 'react-lottie'
-import bunnyHappyAnimationData from '../animations/bunny-happy.json'
-
-type AcademyCompletionSlideProps = {
-    earnedPoints: number
-    totalPoints: number
-    academyName: string
-    academyId: number
-}
 
 interface VerificationTask {
     id: number
@@ -41,6 +33,14 @@ interface VerificationTask {
     parameters?: any
 }
 
+type AcademyCompletionSlideProps = {
+    earnedPoints: number
+    totalPoints: number
+    academyName: string
+    academyId: number
+    academyTwitter?: string // Add this line
+}
+
 const bunnyHappyAnimation = {
     loop: true,
     autoplay: true,
@@ -50,16 +50,16 @@ const bunnyHappyAnimation = {
     }
 }
 
-const AcademyCompletionSlide: React.FC<AcademyCompletionSlideProps> = ({ earnedPoints, totalPoints, academyName, academyId }) => {
+const AcademyCompletionSlide: React.FC<AcademyCompletionSlideProps> = ({
+    earnedPoints,
+    totalPoints,
+    academyName,
+    academyId,
+    academyTwitter // Destructure the prop here
+}) => {
     const navigate = useNavigate()
     const [searchParams] = useSearchParams()
-    const {
-        userId,
-        telegramUserId,
-        twitterAuthenticated,
-        referralCode,
-        setTwitterAuthenticated // Add this function to update twitterAuthenticated
-    } = useUserStore((state) => ({
+    const { userId, telegramUserId, twitterAuthenticated, referralCode, setTwitterAuthenticated } = useUserStore((state) => ({
         userId: state.userId,
         telegramUserId: state.telegramUserId,
         twitterAuthenticated: state.twitterAuthenticated,
@@ -82,7 +82,24 @@ const AcademyCompletionSlide: React.FC<AcademyCompletionSlideProps> = ({ earnedP
     const [referralModalOpen, setReferralModalOpen] = useState(false)
     const [referralLink, setReferralLink] = useState('')
     const [visibleTooltip, setVisibleTooltip] = useState<number | null>(null)
-    const { fetchAcademyById } = useAcademiesStore()
+
+    // Extract Twitter handle from academyTwitter prop
+    const [twitterHandle, setTwitterHandle] = useState('')
+
+    useEffect(() => {
+        if (academyTwitter) {
+            const handle = extractTwitterHandle(academyTwitter)
+            setTwitterHandle(handle)
+        }
+    }, [academyTwitter])
+
+    // Function to extract Twitter handle
+    function extractTwitterHandle(url: string): string {
+        if (!url) return ''
+        let handle = url.replace(/https:\/\/(x\.com|twitter\.com)\//, '')
+        handle = handle.replace(/\/$/, '')
+        return '@' + handle
+    }
 
     // Fetch tasks with the 'END_OF_ACADEMY' display location for this academy
     const fetchEndOfAcademyTasks = async () => {
@@ -117,7 +134,6 @@ const AcademyCompletionSlide: React.FC<AcademyCompletionSlideProps> = ({ earnedP
 
     // Handle action button click
     const onActionClick = async (task: VerificationTask) => {
-        console.log('onActionClick: academyId =', academyId)
         await handleAction(
             task,
             {
@@ -130,7 +146,8 @@ const AcademyCompletionSlide: React.FC<AcademyCompletionSlideProps> = ({ earnedP
                 setFeedbackDialogOpen,
                 twitterAuthenticated,
                 academyName,
-                telegramUserId // Add this line
+                twitterHandle, // Pass the extracted Twitter handle here
+                telegramUserId
             },
             academyId
         )
@@ -172,18 +189,6 @@ const AcademyCompletionSlide: React.FC<AcademyCompletionSlideProps> = ({ earnedP
         }
     }
 
-    useEffect(() => {
-        const handleOAuthRedirect = async () => {
-            const twitterAuthStatus = searchParams.get('twitterAuth')
-            if (twitterAuthStatus === 'success') {
-                await setTwitterAuthenticated(true)
-                await fetchAcademyById(academyId)
-                navigate(`/product/${academyId}`)
-            }
-        }
-        handleOAuthRedirect()
-    }, [academyId, navigate, searchParams, setTwitterAuthenticated, fetchAcademyById])
-
     const toggleTooltip = (tooltipIndex: number) => {
         if (visibleTooltip === tooltipIndex) {
             setVisibleTooltip(null)
@@ -196,6 +201,7 @@ const AcademyCompletionSlide: React.FC<AcademyCompletionSlideProps> = ({ earnedP
     function isSameDay(d1: Date, d2: Date) {
         return d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth() && d1.getDate() === d2.getDate()
     }
+
     return (
         <div className="flex flex-col items-center justify-center h-full mb-12">
             <h2 className="text-xl font-bold mb-4">In total you collected:</h2>
@@ -252,7 +258,6 @@ const AcademyCompletionSlide: React.FC<AcademyCompletionSlideProps> = ({ earnedP
                         >
                             Copy Invite Link
                         </Button>
-                        {/* Add any additional buttons if needed */}
                     </div>
                 </div>
             </Dialog>

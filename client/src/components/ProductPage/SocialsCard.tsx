@@ -1,8 +1,11 @@
+// client/src/components/ProductPage/SocialsCard.tsx
+
 import React from 'react'
 import { Card, Button } from 'konsta/react'
 import { Icon } from '@iconify/react'
 import gecko from '../../images/coingecko.svg'
 import { X } from '@mui/icons-material'
+import { FaExchangeAlt } from 'react-icons/fa' // Optional: Import an icon for Trade & Snipe
 
 interface SocialsCardProps {
     academy: any
@@ -71,6 +74,21 @@ const SocialsCard: React.FC<SocialsCardProps> = ({ academy }) => {
                         COINGECKO
                     </Button>
                 )}
+                {/* Updated Trade & Snipe Button */}
+                <Button
+                    rounded
+                    outline
+                    onClick={() => window.open('https://t.me/tirador_bot?start=CoinBeats', '_blank')}
+                    className="flex items-center justify-center gap-2 w-full !text-xs font-bold shadow-xl !border !border-blue-400"
+                    style={{
+                        background: 'linear-gradient(to left, #16a34a, #3b82f6)',
+                        color: '#fff'
+                    }}
+                >
+                    {/* Optional: Add an icon */}
+                    <FaExchangeAlt className="w-4 h-4 text-gray-300" /> {/* Icon from react-icons */}
+                    TRADE & SNIPE
+                </Button>
             </div>
         </Card>
     )

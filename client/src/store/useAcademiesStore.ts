@@ -14,6 +14,7 @@ interface AcademyType {
 interface AcademyData {
     id: number
     name: string
+    twitter: string
     logoUrl: string
     coverPhotoUrl: string
     xp: number

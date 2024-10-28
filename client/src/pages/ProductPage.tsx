@@ -901,7 +901,15 @@ export default function ProductPage() {
 
     const renderContent = () => {
         if (activeFilter === 'completion') {
-            return <AcademyCompletionSlide earnedPoints={earnedPoints} totalPoints={academy.xp} academyName={academy.name} academyId={academy.id} />
+            return (
+                <AcademyCompletionSlide
+                    earnedPoints={earnedPoints}
+                    totalPoints={academy.xp}
+                    academyName={academy.name}
+                    academyId={academy.id}
+                    academyTwitter={academy.twitter}
+                />
+            )
         }
 
         switch (activeFilter) {
