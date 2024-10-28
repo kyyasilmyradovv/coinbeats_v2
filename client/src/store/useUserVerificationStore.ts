@@ -30,7 +30,7 @@ interface VerificationTask {
 interface UserVerificationState {
     userVerificationTasks: UserVerificationTask[]
     fetchUserVerificationTasks: () => Promise<void>
-    startTask: (taskId: number) => Promise<void>
+    startTask: (taskId: number, academyId?: number) => Promise<void>
     submitTask: (taskId: number, submissionText: string) => Promise<void>
     completeTask: (taskId: number, academyId?: number) => Promise<string>
     getActionLabel: (verificationMethod: string) => string
@@ -56,7 +56,7 @@ const useUserVerificationStore = create<UserVerificationState>()(
                 console.error('Error fetching user verification tasks:', error)
             }
         },
-        startTask: async (taskId) => {
+        startTask: async (taskId, academyId) => {
             const { userId } = useUserStore.getState()
             if (!userId) {
                 console.error('User not authenticated.')
@@ -64,7 +64,7 @@ const useUserVerificationStore = create<UserVerificationState>()(
             }
 
             try {
-                await axiosInstance.post('/api/users/start-task', { taskId, userId })
+                await axiosInstance.post('/api/users/start-task', { taskId, userId, academyId })
             } catch (error) {
                 console.error('Error starting task:', error)
                 throw error
@@ -160,8 +160,12 @@ const useUserVerificationStore = create<UserVerificationState>()(
                     return 'Enter your submission here'
             }
         },
-        performAction: async (task: VerificationTask, referralCode?: string): Promise<{ notificationText?: string; referralLink?: string }> => {
-            const { startTask } = get()
+        performAction: async (
+            task: VerificationTask,
+            referralCode?: string,
+            academyId?: number
+        ): Promise<{ notificationText?: string; referralLink?: string }> => {
+            const { startTask, fetchUserVerificationTasks } = get()
             if (get().requiresInputField(task)) {
                 // Task requires input, return notification text
                 return { notificationText: task.description }
@@ -230,7 +234,9 @@ const useUserVerificationStore = create<UserVerificationState>()(
                     }
 
                     // Start the task in the background
-                    await startTask(task.id)
+                    await startTask(task.id, academyId)
+                    // Fetch updated user verification tasks
+                    await fetchUserVerificationTasks()
                 } catch (error) {
                     console.error('Error starting task:', error)
                     throw error

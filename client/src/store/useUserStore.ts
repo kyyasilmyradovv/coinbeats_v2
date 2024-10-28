@@ -8,6 +8,7 @@ type UserRole = 'USER' | 'CREATOR' | 'ADMIN' | 'SUPERADMIN'
 
 interface UserState {
     userId: number | null
+    telegramUserId: bigint | null
     username: string
     email: string
     emailConfirmed: boolean
@@ -67,6 +68,7 @@ interface UserState {
 const useUserStore = create<UserState>()(
     devtools((set, get) => ({
         userId: null,
+        telegramUserId: null,
         username: '',
         email: '',
         emailConfirmed: false,
@@ -169,6 +171,7 @@ const useUserStore = create<UserState>()(
 
                     set({
                         userId: id,
+                        telegramUserId: telegramUserId,
                         username: name,
                         email: email,
                         emailConfirmed: emailConfirmed,
@@ -214,6 +217,7 @@ const useUserStore = create<UserState>()(
                 set((state) => ({
                     ...state,
                     userId: userData.id,
+                    telegramUserId: userData.telegramUserId,
                     username: userData.name,
                     email: userData.email,
                     emailConfirmed: userData.emailConfirmed,

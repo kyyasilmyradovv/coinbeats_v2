@@ -443,7 +443,7 @@ const refreshAccessToken = async (refreshToken, user) => {
 
   const params = new URLSearchParams();
   params.append('grant_type', 'refresh_token');
-  params.append('refresh_token', user.twitterAccessToken);
+  params.append('refresh_token', user.twitterRefreshToken);
   params.append('client_id', process.env.TWITTER_CLIENT_ID);
   const credentials = btoa(
     `${process.env.TWITTER_CLIENT_ID}:${process.env.TWITTER_CLIENT_SECRET}`
@@ -536,6 +536,8 @@ const performVerification = async (verificationTask, user, params) => {
   }
 
   switch (verificationTask.verificationMethod) {
+    case 'TWEET':
+      return await verifyTweet(verificationTask, user, params);
     case 'FOLLOW_USER':
       return await verifyFollowUser(verificationTask, user);
     // Add other methods as needed
@@ -548,7 +550,153 @@ const performVerification = async (verificationTask, user, params) => {
   }
 };
 
+const verifyTweet = async (verificationTask, user, params) => {
+  console.log('Starting verifyTweet...');
+  console.log('Verification Task:', JSON.stringify(verificationTask, null, 2));
+  console.log(
+    'User:',
+    JSON.stringify(
+      user,
+      (key, value) => (typeof value === 'bigint' ? value.toString() : value),
+      2
+    )
+  );
+
+  if (!user.twitterUserId || !user.twitterAccessToken) {
+    throw new Error('User is not authenticated with Twitter');
+  }
+
+  try {
+    // Refresh access token if expired
+    const now = new Date();
+    if (user.twitterTokenExpiresAt && now >= user.twitterTokenExpiresAt) {
+      if (user.twitterRefreshToken) {
+        console.log('Access token expired. Refreshing token...');
+        user.twitterAccessToken = await refreshAccessToken(
+          user.twitterRefreshToken,
+          user
+        );
+      } else {
+        throw new Error('No refresh token available to refresh access token');
+      }
+    }
+
+    // Fetch user's recent tweets
+    const headers = {
+      Authorization: `Bearer ${user.twitterAccessToken}`,
+    };
+
+    const paramsRequest = {
+      'tweet.fields': 'created_at,text,entities',
+      max_results: 100,
+    };
+
+    const url = `https://api.twitter.com/2/users/${user.twitterUserId}/tweets`;
+
+    console.log('Fetching recent tweets with URL:', url);
+    console.log('Headers:', headers);
+    console.log('Params:', paramsRequest);
+
+    const tweetsResponse = await axios.get(url, {
+      headers,
+      params: paramsRequest,
+    });
+
+    const tweets = tweetsResponse.data.data || [];
+
+    // Retrieve expected criteria
+    const userVerificationParameters = params.userVerification.parameters || {};
+    const taskParameters = verificationTask.parameters || {};
+
+    const expectedKeywords = taskParameters.expectedKeywords || [];
+    const expectedKeywordFromUserVerification =
+      userVerificationParameters.expectedKeyword;
+
+    if (expectedKeywordFromUserVerification) {
+      expectedKeywords.push(expectedKeywordFromUserVerification);
+    }
+
+    const expectedMention = taskParameters.expectedMention;
+    const expectedHashtag = taskParameters.expectedHashtag;
+
+    console.log('Expected Keywords:', expectedKeywords);
+    console.log('Expected Mention:', expectedMention);
+    console.log('Expected Hashtag:', expectedHashtag);
+
+    let matchedTweet = null;
+
+    for (const tweet of tweets) {
+      console.log('Evaluating Tweet:', tweet.text);
+
+      let keywordsMatch = expectedKeywords.length > 0 ? false : true;
+      let mentionMatch = expectedMention ? false : true;
+      let hashtagMatch = expectedHashtag ? false : true;
+
+      // Keywords matching
+      if (expectedKeywords.length > 0) {
+        keywordsMatch = expectedKeywords.every((keyword) => {
+          const match = tweet.text
+            .toLowerCase()
+            .includes(keyword.toLowerCase());
+          console.log(`Keyword "${keyword}" match:`, match);
+          return match;
+        });
+      }
+
+      // Mention matching
+      if (expectedMention) {
+        if (tweet.entities?.mentions) {
+          mentionMatch = tweet.entities.mentions.some((mention) => {
+            const match =
+              mention.username.toLowerCase() === expectedMention.toLowerCase();
+            console.log(`Mention "${mention.username}" match:`, match);
+            return match;
+          });
+        } else {
+          mentionMatch = false;
+        }
+      }
+
+      // Hashtag matching
+      if (expectedHashtag) {
+        if (tweet.entities?.hashtags) {
+          hashtagMatch = tweet.entities.hashtags.some((hashtag) => {
+            const match =
+              hashtag.tag.toLowerCase() === expectedHashtag.toLowerCase();
+            console.log(`Hashtag "${hashtag.tag}" match:`, match);
+            return match;
+          });
+        } else {
+          hashtagMatch = false;
+        }
+      }
+
+      console.log('keywordsMatch:', keywordsMatch);
+      console.log('mentionMatch:', mentionMatch);
+      console.log('hashtagMatch:', hashtagMatch);
+
+      if (keywordsMatch && mentionMatch && hashtagMatch) {
+        matchedTweet = tweet;
+        console.log('Matched Tweet:', tweet.text);
+        break;
+      }
+    }
+
+    const isTweeted = !!matchedTweet;
+    console.log('Is Tweeted:', isTweeted);
+
+    return isTweeted;
+  } catch (error) {
+    console.error(
+      'Error verifying tweet:',
+      error.response?.data || error.message || error
+    );
+    throw error;
+  }
+};
+
 // Export the performVerification function
 module.exports = {
   performVerification,
+  verifyTweet,
 };

@@ -464,20 +464,19 @@ const isSameDay = (d1, d2) => {
  * Complete a verification task.
  */
 exports.completeVerificationTask = async (req, res, next) => {
-  const { taskId, userId } = req.body;
+  const { taskId, userId, academyId } = req.body;
 
   if (!userId || !taskId) {
     return next(createError(400, 'User ID and Task ID are required'));
   }
 
   try {
-    // Find user
+    // Fetch user and verification task
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
       return next(createError(404, 'User not found'));
     }
 
-    // Find the verification task
     const verificationTask = await prisma.verificationTask.findUnique({
       where: { id: taskId },
     });
@@ -485,13 +484,16 @@ exports.completeVerificationTask = async (req, res, next) => {
       return next(createError(404, 'Verification task not found'));
     }
 
-    // Check if the user has started this task (userVerification must exist)
+    // Check if user started the task
     const userVerification = await prisma.userVerification.findFirst({
-      where: { userId: user.id, verificationTaskId: taskId },
+      where: {
+        userId: user.id,
+        verificationTaskId: taskId,
+        academyId: academyId || undefined,
+      },
       orderBy: { completedAt: 'desc' },
     });
 
-    // If no userVerification exists, return the message
     if (!userVerification) {
       return res.status(400).json({
         message:
@@ -499,9 +501,20 @@ exports.completeVerificationTask = async (req, res, next) => {
       });
     }
 
-    // Perform verification logic and mark the task as complete
+    // Fetch academy name if needed
+    let academyName = null;
+    if (academyId) {
+      const academy = await prisma.academy.findUnique({
+        where: { id: academyId },
+      });
+      academyName = academy?.name || null;
+    }
+
+    // Perform verification
     const isVerified = await performVerification(verificationTask, user, {
       userVerification,
+      academyId,
+      academyName,
     });
 
     if (isVerified) {
@@ -514,12 +527,13 @@ exports.completeVerificationTask = async (req, res, next) => {
         },
       });
 
-      // Award points to the user
+      // Award points
       await prisma.point.create({
         data: {
           userId: userId,
           value: verificationTask.xp,
           verificationTaskId: taskId,
+          academyId: academyId || null,
         },
       });
 
@@ -705,47 +719,56 @@ exports.handleLoginStreak = async (req, res, next) => {
 };
 
 exports.startVerificationTask = async (req, res, next) => {
-  const { taskId, userId } = req.body; // Get userId from request body
-
-  if (!userId) {
-    return next(createError(400, 'User ID is required'));
-  }
+  const { taskId, userId, academyId } = req.body;
 
   try {
-    const user = await prisma.user.findUnique({
-      where: { id: userId }, // Find user by userId
-    });
-
-    if (!user) {
-      return next(createError(404, 'User not found'));
-    }
-
     const verificationTask = await prisma.verificationTask.findUnique({
       where: { id: taskId },
     });
-
     if (!verificationTask) {
       return next(createError(404, 'Verification task not found'));
     }
 
-    let userVerification = await prisma.userVerification.findFirst({
+    // Adjusted the handling of academyId here
+    const existingVerification = await prisma.userVerification.findFirst({
       where: {
-        userId,
+        userId: userId,
         verificationTaskId: taskId,
-        verified: false,
+        academyId: academyId !== undefined ? academyId : null,
       },
     });
 
-    if (!userVerification) {
-      userVerification = await prisma.userVerification.create({
-        data: {
-          userId,
-          verificationTaskId: taskId,
-          verified: false,
-          createdAt: new Date(),
-        },
-      });
+    if (existingVerification) {
+      return res.status(400).json({ message: 'Task already started' });
     }
+
+    let parameters = {};
+
+    // Fetch academy name
+    let academyName = null;
+    if (academyId) {
+      const academy = await prisma.academy.findUnique({
+        where: { id: academyId },
+      });
+      if (academy) {
+        academyName = academy.name;
+      }
+    }
+
+    // For the TWEET verification method, save academyName as a parameter
+    if (verificationTask.verificationMethod === 'TWEET' && academyName) {
+      parameters.expectedKeyword = academyName; // Save the academy name as expectedKeyword
+    }
+
+    await prisma.userVerification.create({
+      data: {
+        userId: userId,
+        verificationTaskId: taskId,
+        academyId: academyId !== undefined ? academyId : null,
+        parameters: parameters,
+        createdAt: new Date(),
+      },
+    });
 
     res.json({ message: 'Task started successfully' });
   } catch (error) {

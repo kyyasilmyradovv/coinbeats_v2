@@ -2,9 +2,6 @@
 
 import { VerificationTask } from '../types'
 import { FaTwitter, FaFacebook, FaInstagram, FaTelegramPlane, FaDiscord, FaYoutube, FaEnvelope } from 'react-icons/fa'
-import { initUtils } from '@telegram-apps/sdk'
-import useUserStore from '../store/useUserStore'
-import useSessionStore from '../store/useSessionStore'
 import useUserVerificationStore from '../store/useUserVerificationStore'
 
 // Define the platform icons
@@ -23,7 +20,7 @@ export const platformIcons: { [key: string]: JSX.Element } = {
 export function getActionLabel(verificationMethod: string, isAuthenticated?: boolean): string {
     switch (verificationMethod) {
         case 'TWEET':
-            return 'Tweet'
+            return !isAuthenticated ? 'Authenticate' : 'Post to X'
         case 'RETWEET':
             return 'Retweet'
         case 'FOLLOW_USER':
@@ -76,8 +73,15 @@ export function getInputPlaceholder(task: VerificationTask): string {
     }
 }
 
+// Extend the global Window interface to include Telegram WebApp
+declare global {
+    interface Window {
+        Telegram?: any
+    }
+}
+
 // Handle the action based on the task
-export const handleAction = async (task: VerificationTask, options: { [key: string]: any }) => {
+export const handleAction = async (task: VerificationTask, options: { [key: string]: any }, academyId?: number) => {
     const {
         referralCode,
         setReferralLink,
@@ -86,105 +90,171 @@ export const handleAction = async (task: VerificationTask, options: { [key: stri
         setNotificationOpen,
         setSelectedTask,
         setFeedbackDialogOpen,
-        twitterAuthenticated
+        twitterAuthenticated,
+        academyName,
+        telegramUserId // Ensure telegramUserId is included
     } = options
-    const { userId } = useSessionStore.getState()
     const { startTask } = useUserVerificationStore.getState()
 
-    if (task.verificationMethod === 'FOLLOW_USER' && task.platform === 'X') {
-        if (!twitterAuthenticated) {
-            // Redirect to backend endpoint to initiate OAuth flow
-            // window.location.href = `${import.meta.env.VITE_API_BASE_URL}/api/auth/twitter/start?telegramUserId=${userId}`
-            window.location.href = `${import.meta.env.VITE_API_BASE_URL}/api/auth/twitter/start?telegramUserId=${userId}`
-        } else {
-            // User is authenticated with Twitter, proceed to perform the action
-            const username = task.parameters?.username // Get the username from task parameters
-            if (!username) {
-                setNotificationText('Username is not specified for this task.')
-                setNotificationOpen(true)
-                return
-            }
-            window.open(`https://twitter.com/${username}`, '_blank')
+    console.log('handleAction called with task:', task)
+    console.log('twitterAuthenticated:', twitterAuthenticated)
+    console.log('telegramUserId:', telegramUserId)
 
-            // Start the task in the background
-            try {
-                await startTask(task.id, userId)
-            } catch (error) {
-                console.error('Error starting task:', error)
-            }
-        }
-    } else if (requiresInputField(task)) {
+    if (requiresInputField(task)) {
+        console.log('Task requires input field')
         setSelectedTask(task)
         setNotificationText(task.description)
         setNotificationOpen(true)
     } else if (task.verificationMethod === 'LEAVE_FEEDBACK') {
+        console.log('Task is LEAVE_FEEDBACK')
         setSelectedTask(task)
         setFeedbackDialogOpen(true)
     } else {
-        // Direct the user to the appropriate action
+        console.log('Handling action for verificationMethod:', task.verificationMethod)
         switch (task.verificationMethod) {
-            case 'TWEET':
-                const tweetText = encodeURIComponent(task.description || '')
-                window.open(`https://twitter.com/intent/tweet?text=${tweetText}`, '_blank')
-                break
-            case 'RETWEET':
-                const retweetId = task.parameters?.tweetId // Replace with actual tweet ID from task parameters
-                if (!retweetId) {
-                    setNotificationText('Tweet ID is not specified for this task.')
-                    setNotificationOpen(true)
-                    return
-                }
-                window.open(`https://twitter.com/intent/retweet?tweet_id=${retweetId}`, '_blank')
-                break
-
             case 'FOLLOW_USER':
-                if (!twitterAuthenticated) {
-                    window.location.href = `${import.meta.env.VITE_API_BASE_URL}/api/auth/twitter/start?telegramUserId=${userId}`
-                } else {
-                    const username = task.parameters.username // Get the username from task parameters
+                if (task.platform === 'X') {
+                    if (!twitterAuthenticated) {
+                        console.log('User not authenticated with Twitter, starting OAuth flow')
+                        const returnTo = encodeURIComponent(window.location.href) // Current page
+                        const authUrl = `${import.meta.env.VITE_API_BASE_URL}/api/auth/twitter/start?telegramUserId=${telegramUserId}&returnTo=${returnTo}`
+                        console.log('authUrl:', authUrl)
+
+                        // Open the authUrl in external browser using Telegram.WebApp.openLink
+                        if (window.Telegram?.WebApp?.openTelegramLink) {
+                            window.Telegram.WebApp.openTelegramLink(authUrl)
+                        } else {
+                            window.open(authUrl, '_blank')
+                        }
+                    } else {
+                        const username = task.parameters?.username // Get the username from task parameters
+                        if (!username) {
+                            setNotificationText('Username is not specified for this task.')
+                            setNotificationOpen(true)
+                            return
+                        }
+                        window.open(`https://twitter.com/${username}`, '_blank')
+
+                        try {
+                            await startTask(task.id, academyId)
+                        } catch (error) {
+                            console.error('Error starting task:', error)
+                        }
+                    }
+                } else if (task.platform === 'INSTAGRAM') {
+                    const username = task.parameters?.username
                     if (!username) {
-                        setNotificationText('Username is not specified for this task.')
+                        setNotificationText('Instagram username is not specified for this task.')
                         setNotificationOpen(true)
                         return
                     }
-                    window.open(`https://twitter.com/${username}`, '_blank')
+                    window.open(`https://www.instagram.com/${username}/`, '_blank')
 
                     try {
-                        await startTask(task.id)
+                        await startTask(task.id, academyId)
+                    } catch (error) {
+                        console.error('Error starting task:', error)
+                    }
+                }
+                // Add handling for other platforms if needed
+                break
+
+            case 'TWEET':
+                if (!twitterAuthenticated) {
+                    console.log('User not authenticated with Twitter, starting OAuth flow')
+                    const returnTo = encodeURIComponent(window.location.href)
+                    const authUrl = `${import.meta.env.VITE_API_BASE_URL}/api/auth/twitter/start?telegramUserId=${telegramUserId}&returnTo=${returnTo}`
+                    console.log('authUrl:', authUrl)
+
+                    // Open the authUrl in external browser using Telegram.WebApp.openLink
+                    if (window.Telegram?.WebApp?.openTelegramLink) {
+                        window.Telegram.WebApp.openTelegramLink(authUrl)
+                    } else {
+                        window.open(authUrl, '_blank')
+                    }
+                } else {
+                    console.log('User is authenticated with Twitter, proceeding to tweet')
+                    const tweetText = `🎉 I just completed ${academyName} academy on CoinBeats Crypto School @CoinBeatsxyz`
+                    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`, '_blank')
+
+                    try {
+                        await startTask(task.id, academyId)
                     } catch (error) {
                         console.error('Error starting task:', error)
                     }
                 }
                 break
 
+            case 'RETWEET':
+                console.log('Handling RETWEET action')
+                const retweetId = task.parameters?.tweetId
+                if (!retweetId) {
+                    setNotificationText('Tweet ID is not specified for this task.')
+                    setNotificationOpen(true)
+                    return
+                }
+                window.open(`https://twitter.com/intent/retweet?tweet_id=${retweetId}`, '_blank')
+
+                try {
+                    await startTask(task.id, academyId)
+                } catch (error) {
+                    console.error('Error starting task:', error)
+                }
+                break
+
             case 'LIKE_TWEET':
-                const likeTweetId = task.parameters?.tweetId // Replace with actual tweet ID from task parameters
+                console.log('Handling LIKE_TWEET action')
+                const likeTweetId = task.parameters?.tweetId
                 if (!likeTweetId) {
                     setNotificationText('Tweet ID is not specified for this task.')
                     setNotificationOpen(true)
                     return
                 }
                 window.open(`https://twitter.com/intent/like?tweet_id=${likeTweetId}`, '_blank')
+
+                try {
+                    await startTask(task.id, academyId)
+                } catch (error) {
+                    console.error('Error starting task:', error)
+                }
                 break
+
             case 'COMMENT_ON_TWEET':
-                const commentTweetId = task.parameters?.tweetId // Replace with actual tweet ID from task parameters
+                console.log('Handling COMMENT_ON_TWEET action')
+                const commentTweetId = task.parameters?.tweetId
                 if (!commentTweetId) {
                     setNotificationText('Tweet ID is not specified for this task.')
                     setNotificationOpen(true)
                     return
                 }
                 window.open(`https://twitter.com/intent/tweet?in_reply_to=${commentTweetId}`, '_blank')
+
+                try {
+                    await startTask(task.id, academyId)
+                } catch (error) {
+                    console.error('Error starting task:', error)
+                }
                 break
+
             case 'JOIN_TELEGRAM_CHANNEL':
-                const telegramChannelLink = task.parameters?.channelLink // Replace with your Telegram channel link
+                console.log('Handling JOIN_TELEGRAM_CHANNEL action')
+                const telegramChannelLink = task.parameters?.channelLink
                 if (!telegramChannelLink) {
                     setNotificationText('Telegram channel link is not specified for this task.')
                     setNotificationOpen(true)
                     return
                 }
                 window.open(telegramChannelLink, '_blank')
+
+                try {
+                    await startTask(task.id, academyId)
+                } catch (error) {
+                    console.error('Error starting task:', error)
+                }
                 break
+
             case 'INVITE_TELEGRAM_FRIEND':
+                console.log('Handling INVITE_TELEGRAM_FRIEND action')
                 try {
                     const userReferralCode = referralCode
                     if (!userReferralCode) {
@@ -192,7 +262,7 @@ export const handleAction = async (task: VerificationTask, options: { [key: stri
                         setNotificationOpen(true)
                         return
                     }
-                    const botUsername = 'CoinbeatsMiniApp_bot/miniapp' // Replace with your bot's username
+                    const botUsername = 'CoinbeatsMiniApp_bot' // Replace with your actual bot's username
                     const referralLink = `https://t.me/${botUsername}?startapp=${userReferralCode}`
                     setReferralLink(referralLink)
                     setReferralModalOpen(true)
@@ -200,71 +270,89 @@ export const handleAction = async (task: VerificationTask, options: { [key: stri
                     console.error('Error fetching user data:', error)
                 }
                 break
+
             case 'SUBSCRIBE_YOUTUBE_CHANNEL':
-                const youtubeChannelUrl = task.parameters?.channelUrl // Replace with your YouTube channel URL
+                console.log('Handling SUBSCRIBE_YOUTUBE_CHANNEL action')
+                const youtubeChannelUrl = task.parameters?.channelUrl
                 if (!youtubeChannelUrl) {
                     setNotificationText('YouTube channel URL is not specified for this task.')
                     setNotificationOpen(true)
                     return
                 }
                 window.open(youtubeChannelUrl, '_blank')
+
+                try {
+                    await startTask(task.id, academyId)
+                } catch (error) {
+                    console.error('Error starting task:', error)
+                }
                 break
+
             case 'WATCH_YOUTUBE_VIDEO':
-                const youtubeVideoUrl = task.parameters?.videoUrl // Replace with your YouTube video URL
+                console.log('Handling WATCH_YOUTUBE_VIDEO action')
+                const youtubeVideoUrl = task.parameters?.videoUrl
                 if (!youtubeVideoUrl) {
                     setNotificationText('YouTube video URL is not specified for this task.')
                     setNotificationOpen(true)
                     return
                 }
                 window.open(youtubeVideoUrl, '_blank')
-                break
-            case 'FOLLOW_INSTAGRAM_USER':
-                const instagramUsername = task.parameters?.username // Replace with actual username
-                if (!instagramUsername) {
-                    setNotificationText('Instagram username is not specified for this task.')
-                    setNotificationOpen(true)
-                    return
+
+                try {
+                    await startTask(task.id, academyId)
+                } catch (error) {
+                    console.error('Error starting task:', error)
                 }
-                window.open(`https://www.instagram.com/${instagramUsername}/`, '_blank')
                 break
-            case 'JOIN_DISCORD_CHANNEL':
-                const discordInviteLink = task.parameters?.inviteLink // Replace with your Discord invite link
-                if (!discordInviteLink) {
-                    setNotificationText('Discord invite link is not specified for this task.')
-                    setNotificationOpen(true)
-                    return
-                }
-                window.open(discordInviteLink, '_blank')
-                break
+
             case 'PROVIDE_EMAIL':
+                console.log('Handling PROVIDE_EMAIL action')
                 setNotificationText('Please provide your email in the next step.')
                 setNotificationOpen(true)
+
+                try {
+                    await startTask(task.id, academyId)
+                } catch (error) {
+                    console.error('Error starting task:', error)
+                }
                 break
+
             case 'ADD_TO_BIO':
+                console.log('Handling ADD_TO_BIO action')
                 setNotificationText('Please add "CoinBeats Student" to your X bio.')
                 setNotificationOpen(true)
                 window.open('https://twitter.com/settings/profile', '_blank')
+
+                try {
+                    await startTask(task.id, academyId)
+                } catch (error) {
+                    console.error('Error starting task:', error)
+                }
                 break
+
             case 'SHORT_CIRCUIT':
+                console.log('Handling SHORT_CIRCUIT action')
                 setNotificationText(task.description)
                 setNotificationOpen(true)
-                break
-            default:
-                break
-        }
 
-        // Start the task in the background
-        try {
-            await startTask(task.id, userId)
-        } catch (error) {
-            console.error('Error starting task:', error)
+                try {
+                    await startTask(task.id, academyId)
+                } catch (error) {
+                    console.error('Error starting task:', error)
+                }
+                break
+
+            default:
+                setNotificationText('This action is not supported yet.')
+                setNotificationOpen(true)
+                break
         }
     }
 }
 
 // Determine if the action button should be disabled
-export const shouldDisableActionButton = (task: VerificationTask, userVerificationTasks: any[]): boolean => {
-    const userVerification = userVerificationTasks.find((verification) => verification.verificationTaskId === task.id)
+export const shouldDisableActionButton = (task: VerificationTask, userVerificationTasks: any[], academyId?: number): boolean => {
+    const userVerification = userVerificationTasks.find((verification) => verification.verificationTaskId === task.id && verification.academyId === academyId)
 
     if (!userVerification) {
         return false // Task has not been started by the user yet
@@ -272,7 +360,6 @@ export const shouldDisableActionButton = (task: VerificationTask, userVerificati
 
     const isVerified = userVerification.verified
     const completedToday = isVerified && isSameDay(new Date(), new Date(userVerification.completedAt))
-    // const timerCheck = hasTimerPassed(userVerification.createdAt, verificationTask.shortCircuitTimer);
 
     if (task.intervalType === 'ONETIME' && isVerified) {
         return true // Disable button for one-time tasks that are already completed
@@ -286,30 +373,18 @@ export const shouldDisableActionButton = (task: VerificationTask, userVerificati
 }
 
 // Determine if the verify button should be disabled
-export const shouldDisableVerifyButton = (task: VerificationTask, userVerificationTasks: any[]): boolean => {
-    const userVerification = userVerificationTasks.find((verification) => verification.verificationTaskId === task.id)
+export const shouldDisableVerifyButton = (task: VerificationTask, userVerificationTasks: any[], academyId?: number): boolean => {
+    const userVerification = userVerificationTasks.find((verification) => verification.verificationTaskId === task.id && verification.academyId === academyId)
 
-    if (!userVerification) {
-        return true // Disable if task not started
-    }
+    const isVerified = userVerification?.verified || false
 
-    const isVerified = userVerification.verified
-    const completedToday = isVerified && isSameDay(new Date(), new Date(userVerification.completedAt))
-
-    if (task.intervalType === 'ONETIME' && isVerified) {
-        return true // Disable button for one-time tasks that are already completed
-    }
-
-    if (task.intervalType === 'REPEATED' && completedToday) {
-        return true // Disable button if the task is repeated but completed today
-    }
-
-    return false
+    // Disable the button only if the task is completed and verified
+    return isVerified
 }
 
 // Handle task submission
 export const handleSubmitTask = async (task: VerificationTask, submissionText: string, options: { [key: string]: any }) => {
-    const { setNotificationText, setNotificationOpen, setSubmittedTasks, submittedTasks, setTaskInputValues, taskInputValues, userId } = options
+    const { setNotificationText, setNotificationOpen, setSubmittedTasks, submittedTasks, setTaskInputValues, taskInputValues, userId, academyId } = options
     const { startTask, submitTask } = useUserVerificationStore.getState()
 
     if (!submissionText || submissionText.length < 5) {
@@ -319,8 +394,8 @@ export const handleSubmitTask = async (task: VerificationTask, submissionText: s
     }
 
     try {
-        await startTask(task.id, userId)
-        await submitTask(task.id, submissionText, userId)
+        await startTask(task.id, academyId)
+        await submitTask(task.id, submissionText)
         setNotificationText('Submission successful!')
         setNotificationOpen(true)
         setSubmittedTasks({ ...submittedTasks, [task.id]: true })
@@ -333,7 +408,7 @@ export const handleSubmitTask = async (task: VerificationTask, submissionText: s
     }
 }
 
-// Helper functions
-function isSameDay(d1: Date, d2: Date) {
+// Helper function to check if two dates are on the same day
+function isSameDay(d1: Date, d2: Date): boolean {
     return d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth() && d1.getDate() === d2.getDate()
 }

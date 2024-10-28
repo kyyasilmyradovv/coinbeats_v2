@@ -530,33 +530,37 @@ exports.registerUser = async (req, res, next) => {
 // Start Twitter OAuth 2.0 Flow with twitter sdk
 exports.twitterStart = (req, res, next) => {
   try {
-    console.log('--- Twitter Start ---');
-    const state = crypto.randomBytes(16).toString('hex');
+    const codeVerifier = crypto.randomBytes(64).toString('hex');
+    const codeChallenge = crypto
+      .createHash('sha256')
+      .update(codeVerifier)
+      .digest('base64url');
     const telegramUserId = req.query.telegramUserId;
+    const returnTo = req.query.returnTo;
 
-    console.log('Received telegramUserId:', telegramUserId);
+    console.log('This is telegram user', telegramUserId);
 
     if (!telegramUserId) {
       return next(createError(400, 'Telegram user ID is required'));
     }
 
-    req.session.state = state;
-    req.session.telegramUserId = telegramUserId;
+    // Create a payload containing necessary data
+    const payload = {
+      state: crypto.randomBytes(16).toString('hex'),
+      codeVerifier,
+      telegramUserId,
+      returnTo,
+    };
 
-    const codeVerifier = crypto.randomBytes(64).toString('hex');
-    req.session.codeVerifier = codeVerifier;
-
-    const codeChallenge = crypto
-      .createHash('sha256')
-      .update(codeVerifier)
-      .digest('base64url');
+    // Sign the payload to prevent tampering
+    const stateToken = jwt.sign(payload, JWT_SECRET, { expiresIn: '10m' });
 
     const params = new URLSearchParams({
       response_type: 'code',
       client_id: process.env.TWITTER_CLIENT_ID,
       redirect_uri: `${process.env.BACKEND_URL}/api/auth/twitter/callback`,
       scope: 'tweet.read users.read follows.read offline.access',
-      state: state,
+      state: stateToken, // Use the signed token as the state parameter
       code_challenge: codeChallenge,
       code_challenge_method: 'S256',
     });
@@ -574,16 +578,27 @@ exports.twitterCallback = async (req, res, next) => {
   try {
     const { code, state } = req.query;
 
-    if (!state || !code || state !== req.session.state) {
+    if (!state || !code) {
       return next(createError(400, 'Invalid state or code parameter'));
     }
 
-    const codeVerifier = req.session.codeVerifier;
-    const telegramUserId = req.session.telegramUserId;
+    // Verify and decode the state token
+    let payload;
+    try {
+      payload = jwt.verify(state, JWT_SECRET);
+    } catch (err) {
+      console.error('Invalid state token:', err);
+      return next(createError(400, 'Invalid state parameter'));
+    }
+
+    const { codeVerifier, telegramUserId } = payload;
 
     if (!codeVerifier || !telegramUserId) {
-      return next(createError(400, 'Session data is missing'));
+      return next(createError(400, 'Missing codeVerifier or telegramUserId'));
     }
+
+    // Convert telegramUserId to BigInt if necessary
+    const telegramUserIdBigInt = BigInt(telegramUserId);
 
     const params = new URLSearchParams({
       grant_type: 'authorization_code',
@@ -609,7 +624,7 @@ exports.twitterCallback = async (req, res, next) => {
 
     const { access_token, refresh_token, expires_in } = tokenResponse.data;
 
-    // Fetch user info
+    // Fetch user info from Twitter API
     const userResponse = await axios.get('https://api.twitter.com/2/users/me', {
       headers: {
         Authorization: `Bearer ${access_token}`,
@@ -622,15 +637,17 @@ exports.twitterCallback = async (req, res, next) => {
     const twitterUserId = userResponse.data.data.id;
     const twitterUsername = userResponse.data.data.username;
 
-    // Save data to database
+    // Find user in your database using telegramUserId
     const user = await prisma.user.findUnique({
-      where: { telegramUserId: BigInt(telegramUserId) },
+      where: { telegramUserId: telegramUserIdBigInt },
     });
 
     if (!user) {
+      console.error('User not found with Telegram ID:', telegramUserId);
       return next(createError(404, 'User not found'));
     }
 
+    // Update user record with Twitter data
     await prisma.user.update({
       where: { id: user.id },
       data: {
@@ -642,9 +659,17 @@ exports.twitterCallback = async (req, res, next) => {
       },
     });
 
-    // Redirect back to frontend
-    const redirectUrl = `${process.env.FRONTEND_URL}/games?twitterAuth=success`;
-    res.redirect(redirectUrl);
+    console.log('User updated with Twitter data:', user.id);
+
+    // Redirect back to Telegram Mini App using deep link
+    const botUsername = 'CoinBeatsBunny_bot'; // Replace with your bot's username
+    const startAppParam = 'twitterAuthSuccess';
+
+    // URL-encode the parameters if necessary
+    const telegramDeepLink = `https://t.me/${botUsername}?startapp=${encodeURIComponent(
+      startAppParam
+    )}`;
+    res.redirect(telegramDeepLink);
   } catch (error) {
     console.error(
       'Error in twitterCallback:',

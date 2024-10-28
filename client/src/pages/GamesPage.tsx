@@ -8,11 +8,9 @@ import BottomTabBar from '../components/BottomTabBar'
 import coinStackIcon from '../images/coin-stack.png'
 import bunnyLogo from '../images/bunny-mascot.png'
 import useUserStore from '../store/useUserStore'
-import useSessionStore from '../store/useSessionStore'
 import useTasksStore from '../store/useTasksStore'
 import useUserVerificationStore from '../store/useUserVerificationStore'
 import Lottie from 'react-lottie'
-import { initUtils } from '@telegram-apps/sdk'
 import bunnyHappyAnimationData from '../animations/bunny-happy.json'
 import {
     platformIcons,
@@ -36,10 +34,11 @@ const bunnyHappyAnimation = {
 }
 
 export default function GamesPage() {
-    const { userId, referralCode, twitterAuthenticated } = useUserStore((state) => ({
+    const { userId, referralCode, twitterAuthenticated, telegramUserId } = useUserStore((state) => ({
         userId: state.userId,
         referralCode: state.referralCode,
-        twitterAuthenticated: state.twitterAuthenticated
+        twitterAuthenticated: state.twitterAuthenticated,
+        telegramUserId: state.telegramUserId
     }))
 
     const { gameTasks, fetchGameTasks } = useTasksStore((state) => ({
@@ -63,8 +62,12 @@ export default function GamesPage() {
     const [notificationOpen, setNotificationOpen] = useState(false)
     const [notificationText, setNotificationText] = useState('')
     const [selectedTask, setSelectedTask] = useState<VerificationTask | null>(null)
-    const [taskInputValues, setTaskInputValues] = useState<{ [key: number]: string }>({})
-    const [submittedTasks, setSubmittedTasks] = useState<{ [key: number]: boolean }>({})
+    const [taskInputValues, setTaskInputValues] = useState<{
+        [key: number]: string
+    }>({})
+    const [submittedTasks, setSubmittedTasks] = useState<{
+        [key: number]: boolean
+    }>({})
     const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false)
     const [feedbackText, setFeedbackText] = useState('')
 
@@ -75,16 +78,23 @@ export default function GamesPage() {
 
     // Handle action button click
     const onActionClick = async (task: VerificationTask) => {
-        await handleAction(task, {
-            referralCode,
-            setReferralLink,
-            setReferralModalOpen,
-            setNotificationText,
-            setNotificationOpen,
-            setSelectedTask,
-            setFeedbackDialogOpen,
-            twitterAuthenticated
-        })
+        console.log('onActionClick called with task:', task)
+        try {
+            await handleAction(task, {
+                referralCode,
+                setReferralLink,
+                setReferralModalOpen,
+                setNotificationText,
+                setNotificationOpen,
+                setSelectedTask,
+                setFeedbackDialogOpen,
+                twitterAuthenticated,
+                telegramUserId
+            })
+            console.log('onActionClick after handleAction')
+        } catch (error) {
+            console.error('Error in onActionClick:', error)
+        }
     }
 
     // Handle submit task

@@ -71,6 +71,7 @@ interface AcademiesState {
 
     submitQuiz: (academyId: number, userId: number) => Promise<void>
     fetchUserTotalPoints: (userId: number) => Promise<void>
+    fetchAcademyById: (id: number) => Promise<AcademyData>
 }
 
 const useAcademiesStore = create<AcademiesState>()(
@@ -98,6 +99,16 @@ const useAcademiesStore = create<AcademiesState>()(
                 link.href = constructImageUrl(academy.logoUrl)
                 head.appendChild(link)
             })
+        },
+
+        fetchAcademyById: async (id) => {
+            try {
+                const response = await axiosInstance.get(`/api/academies/${id}`)
+                return response.data
+            } catch (error) {
+                console.error('Error fetching academy by ID:', error)
+                throw error
+            }
         },
 
         fetchAcademiesAndPreloadImages: async () => {

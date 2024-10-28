@@ -285,6 +285,7 @@ model UserVerification {
   userId             Int
   verificationTaskId Int
   academyId          Int?
+  parameters         Json?
   verified           Boolean          @default(false)
   createdAt          DateTime         @default(now())
   completedAt        DateTime?

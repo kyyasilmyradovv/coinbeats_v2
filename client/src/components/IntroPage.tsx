@@ -30,7 +30,8 @@ const IntroPage: React.FC<IntroPageProps> = ({ onComplete }) => {
     const { fetchUserVerificationTasks } = useUserVerificationStore()
     const { fetchCategoriesAndChains } = useCategoryChainStore()
 
-    const { fetchUser, registerUser, fetchTwitterAuthStatus, referralCompletionChecked, checkReferralCompletion, userId } = useUserStore()
+    const { fetchUser, registerUser, fetchTwitterAuthStatus, setTwitterAuthenticated, referralCompletionChecked, checkReferralCompletion, userId } =
+        useUserStore()
     const { startSession } = useSessionStore()
 
     useEffect(() => {
@@ -51,8 +52,8 @@ const IntroPage: React.FC<IntroPageProps> = ({ onComplete }) => {
                 const telegramUserId = initData.user.id
                 const username = initData.user.username || initData.user.firstName || initData.user.lastName || 'Guest'
 
-                // Get referralCode from initData.startParam
-                const referralCode = initData.startParam || null
+                // Get startParam from initData
+                const startParam = initData.startParam || null
 
                 // Set telegramUserId in useSessionStore before any axios requests
                 useSessionStore.setState({ userId: telegramUserId })
@@ -69,7 +70,7 @@ const IntroPage: React.FC<IntroPageProps> = ({ onComplete }) => {
                 } catch (error: any) {
                     if (error.response && error.response.status === 404) {
                         // User not found, register using store method
-                        await registerUser(telegramUserId, username, referralCode)
+                        await registerUser(telegramUserId, username, startParam)
 
                         // Access roles from store
                         const roles = useUserStore.getState().roles
@@ -104,6 +105,13 @@ const IntroPage: React.FC<IntroPageProps> = ({ onComplete }) => {
                     username: username,
                     roles: userRoles
                 })
+
+                // Check for startParam indicating Twitter authentication success
+                if (startParam === 'twitterAuthSuccess') {
+                    setTwitterAuthenticated(true)
+                    // Optionally, fetch the latest user data
+                    await fetchTwitterAuthStatus()
+                }
             } catch (e) {
                 console.error('Error initializing user session:', e)
                 // Set default user in case of error
