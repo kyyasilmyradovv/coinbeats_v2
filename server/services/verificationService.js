@@ -6,7 +6,7 @@ const OAuth = require('oauth').OAuth;
 const qs = require('qs'); // For query string formatting
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
-
+const { URLSearchParams } = require('url');
 // Helper function to get Twitter user ID by username
 const getTwitterUserIdByUsername = async (username, client) => {
   try {
@@ -437,50 +437,48 @@ const verifyFollowUser = async (verificationTask, user) => {
 };
 
 // Function to refresh access token
+
 const refreshAccessToken = async (refreshToken, user) => {
-  console.log('Refreshing access token...', refreshToken, user);
-  const tokenUrl = 'https://api.twitter.com/2/oauth2/token';
-
-  const params = new URLSearchParams();
-  params.append('grant_type', 'refresh_token');
-  params.append('refresh_token', user.twitterAccessToken);
-  params.append('client_id', process.env.TWITTER_CLIENT_ID);
-  const credentials = btoa(
-    `${process.env.TWITTER_CLIENT_ID}:${process.env.TWITTER_CLIENT_SECRET}`
-  );
-
   try {
-    const response = await axios.post(tokenUrl, params.toString(), {
-      headers: {
-        Authorization: `Basic ${credentials}`,
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-    });
+    const response = await axios.post(
+      'https://api.twitter.com/2/oauth2/token',
+      new URLSearchParams({
+        grant_type: 'refresh_token',
+        refresh_token: refreshToken,
+        client_id: process.env.TWITTER_CLIENT_ID,
+      }).toString(),
+      {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          Authorization: `Basic ${Buffer.from(
+            `${process.env.TWITTER_CLIENT_ID}:${process.env.TWITTER_CLIENT_SECRET}`
+          ).toString('base64')}`,
+        },
+      }
+    );
 
-    console.log('Token refresh response:', response.data);
+    const { access_token, expires_in } = response.data;
 
-    const newAccessToken = response.data.access_token;
-    const newRefreshToken = response.data.refresh_token;
-    const expiresIn = response.data.expires_in;
+    // Update user with new token and expiration
+    user.twitterAccessToken = access_token;
+    user.twitterTokenExpiresAt = new Date(Date.now() + expires_in * 1000);
 
-    // Update user's tokens and expiration time in the database
+    // Save the updated token information to the database
     await prisma.user.update({
       where: { id: user.id },
       data: {
-        twitterAccessToken: newAccessToken,
-        twitterRefreshToken: newRefreshToken,
-        twitterTokenExpiresAt: new Date(Date.now() + expiresIn * 1000),
+        twitterAccessToken: access_token,
+        twitterTokenExpiresAt: user.twitterTokenExpiresAt,
       },
     });
 
-    console.log('Access token refreshed successfully.');
-    return newAccessToken;
+    return access_token;
   } catch (error) {
     console.error(
       'Error refreshing access token:',
       error.response?.data || error.message
     );
-    throw error;
+    throw new Error('Failed to refresh access token');
   }
 };
 
@@ -517,7 +515,6 @@ const performVerification = async (verificationTask, user, params) => {
   // Check if the task is ONETIME and already completed
   if (verificationTask.intervalType === 'ONETIME') {
     if (userVerification && userVerification.verified) {
-      // Task has already been completed
       throw new Error('This task has already been completed.');
     }
   }
@@ -529,18 +526,23 @@ const performVerification = async (verificationTask, user, params) => {
       ? new Date(userVerification.completedAt)
       : null;
 
-    // If the user has completed the task today, prevent further completion
-    if (lastCompletionDate && isSameDay(now, lastCompletionDate)) {
-      throw new Error('This task has already been completed today.');
+    // Check against repeat interval for REPEATED tasks
+    if (lastCompletionDate) {
+      const intervalMillis = verificationTask.repeatInterval * 60 * 1000; // repeatInterval in minutes
+      if (now - lastCompletionDate < intervalMillis) {
+        throw new Error(
+          'This task has already been completed in the current interval.'
+        );
+      }
     }
   }
 
+  // Proceed with task verification based on method
   switch (verificationTask.verificationMethod) {
     case 'TWEET':
       return await verifyTweet(verificationTask, user, params);
     case 'FOLLOW_USER':
       return await verifyFollowUser(verificationTask, user);
-    // Add other methods as needed
     default:
       if (verificationTask.shortCircuit) {
         return await verifyShortCircuit(verificationTask, userVerification);
@@ -552,15 +554,6 @@ const performVerification = async (verificationTask, user, params) => {
 
 const verifyTweet = async (verificationTask, user, params) => {
   console.log('Starting verifyTweet...');
-  console.log('Verification Task:', JSON.stringify(verificationTask, null, 2));
-  console.log(
-    'User:',
-    JSON.stringify(
-      user,
-      (key, value) => (typeof value === 'bigint' ? value.toString() : value),
-      2
-    )
-  );
 
   if (!user.twitterUserId || !user.twitterAccessToken) {
     throw new Error('User is not authenticated with Twitter');
@@ -581,37 +574,32 @@ const verifyTweet = async (verificationTask, user, params) => {
       }
     }
 
-    // Fetch user's recent tweets
+    // Fetch user's recent tweets from Twitter API
     const headers = {
       Authorization: `Bearer ${user.twitterAccessToken}`,
     };
 
     const paramsRequest = {
       'tweet.fields': 'created_at,text,entities',
-      max_results: 100,
+      max_results: 100, // Adjust as needed
     };
 
     const url = `https://api.twitter.com/2/users/${user.twitterUserId}/tweets`;
-
     console.log('Fetching recent tweets with URL:', url);
-    console.log('Headers:', headers);
-    console.log('Params:', paramsRequest);
 
     const tweetsResponse = await axios.get(url, {
       headers,
       params: paramsRequest,
     });
-
     const tweets = tweetsResponse.data.data || [];
 
-    // Retrieve expected criteria
+    // Retrieve expected criteria from verificationTask and userVerification parameters
     const userVerificationParameters = params.userVerification.parameters || {};
     const taskParameters = verificationTask.parameters || {};
 
     const expectedKeywords = taskParameters.expectedKeywords || [];
     const expectedKeywordFromUserVerification =
       userVerificationParameters.expectedKeyword;
-
     if (expectedKeywordFromUserVerification) {
       expectedKeywords.push(expectedKeywordFromUserVerification);
     }
@@ -632,7 +620,7 @@ const verifyTweet = async (verificationTask, user, params) => {
       let mentionMatch = expectedMention ? false : true;
       let hashtagMatch = expectedHashtag ? false : true;
 
-      // Keywords matching
+      // Check for each condition: keywords, mentions, and hashtags
       if (expectedKeywords.length > 0) {
         keywordsMatch = expectedKeywords.every((keyword) => {
           const match = tweet.text
@@ -643,32 +631,27 @@ const verifyTweet = async (verificationTask, user, params) => {
         });
       }
 
-      // Mention matching
       if (expectedMention) {
-        if (tweet.entities?.mentions) {
-          mentionMatch = tweet.entities.mentions.some((mention) => {
-            const match =
-              mention.username.toLowerCase() === expectedMention.toLowerCase();
-            console.log(`Mention "${mention.username}" match:`, match);
-            return match;
-          });
-        } else {
-          mentionMatch = false;
-        }
+        mentionMatch = tweet.entities?.mentions
+          ? tweet.entities.mentions.some((mention) => {
+              const match =
+                mention.username.toLowerCase() ===
+                expectedMention.toLowerCase();
+              console.log(`Mention "${mention.username}" match:`, match);
+              return match;
+            })
+          : false;
       }
 
-      // Hashtag matching
       if (expectedHashtag) {
-        if (tweet.entities?.hashtags) {
-          hashtagMatch = tweet.entities.hashtags.some((hashtag) => {
-            const match =
-              hashtag.tag.toLowerCase() === expectedHashtag.toLowerCase();
-            console.log(`Hashtag "${hashtag.tag}" match:`, match);
-            return match;
-          });
-        } else {
-          hashtagMatch = false;
-        }
+        hashtagMatch = tweet.entities?.hashtags
+          ? tweet.entities.hashtags.some((hashtag) => {
+              const match =
+                hashtag.tag.toLowerCase() === expectedHashtag.toLowerCase();
+              console.log(`Hashtag "${hashtag.tag}" match:`, match);
+              return match;
+            })
+          : false;
       }
 
       console.log('keywordsMatch:', keywordsMatch);
