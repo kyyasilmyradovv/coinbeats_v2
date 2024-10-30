@@ -21,6 +21,7 @@ const {
   getUserVerificationTasks,
   checkReferralCompletion,
   getTwitterAuthStatus,
+  updateWalletAddresses,
 } = require('../controllers/userController');
 const asyncHandler = require('express-async-handler');
 
@@ -34,6 +35,7 @@ router.post('/submit-task', asyncHandler(submitTask));
 router.post('/complete-task', asyncHandler(completeVerificationTask));
 router.post('/verification-tasks', asyncHandler(getUserVerificationTasks));
 router.get('/twitter/status', asyncHandler(getTwitterAuthStatus));
+router.post('/update-wallet-addresses', asyncHandler(updateWalletAddresses));
 router.get(
   '/',
   authenticateToken,

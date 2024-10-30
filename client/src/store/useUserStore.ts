@@ -3,6 +3,7 @@
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
 import axiosInstance from '../api/axiosInstance'
+import useSessionStore from './useSessionStore'
 
 type UserRole = 'USER' | 'CREATOR' | 'ADMIN' | 'SUPERADMIN'
 
@@ -28,6 +29,10 @@ interface UserState {
     twitterUsername: string | null
     twitterUserId: string | null
 
+    erc20WalletAddress: string | null
+    solanaWalletAddress: string | null
+    tonWalletAddress: string | null
+
     setUser: (update: Partial<UserState> | ((state: UserState) => Partial<UserState>)) => void
     setBookmarks: (bookmarks: Array<any>) => void
     loginUser: (data: {
@@ -41,6 +46,9 @@ interface UserState {
         bookmarks: Array<any>
         token: string
         hasAcademy: boolean
+        erc20WalletAddress?: string | null
+        solanaWalletAddress?: string | null
+        tonWalletAddress?: string | null
     }) => void
     logoutUser: () => void
     updateUserRoles: (roles: UserRole[]) => void
@@ -51,6 +59,8 @@ interface UserState {
     checkReferralCompletion: (userId: number) => Promise<void>
     setTwitterAuthenticated: (authenticated: boolean) => void
     setTwitterUserData: (username: string, userId: string) => void
+
+    updateWalletAddresses: (addresses: { erc20WalletAddress?: string; solanaWalletAddress?: string; tonWalletAddress?: string }) => Promise<void>
 
     // API methods
     fetchUser: (telegramUserId: number) => Promise<void>
@@ -89,6 +99,10 @@ const useUserStore = create<UserState>()(
         twitterUsername: null,
         twitterUserId: null,
 
+        erc20WalletAddress: null,
+        solanaWalletAddress: null,
+        tonWalletAddress: null,
+
         setUser: (update) => set((state) => (typeof update === 'function' ? { ...state, ...update(state) } : { ...state, ...update })),
 
         setBookmarks: (bookmarks) => set({ bookmarks }),
@@ -97,7 +111,21 @@ const useUserStore = create<UserState>()(
 
         setTwitterUserData: (username, userId) => set({ twitterUsername: username, twitterUserId: userId }),
 
-        loginUser: ({ userId, username, email, emailConfirmed, roles, totalPoints, points, bookmarks, token, hasAcademy }) =>
+        loginUser: ({
+            userId,
+            username,
+            email,
+            emailConfirmed,
+            roles,
+            totalPoints,
+            points,
+            bookmarks,
+            token,
+            hasAcademy,
+            erc20WalletAddress,
+            solanaWalletAddress,
+            tonWalletAddress
+        }) =>
             set({
                 userId,
                 username,
@@ -113,7 +141,10 @@ const useUserStore = create<UserState>()(
                 hasAcademy,
                 referralPointsAwarded: 0,
                 referralCode: null,
-                loginStreakData: null
+                loginStreakData: null,
+                erc20WalletAddress: erc20WalletAddress || null,
+                solanaWalletAddress: solanaWalletAddress || null,
+                tonWalletAddress: tonWalletAddress || null
             }),
 
         logoutUser: () =>
@@ -133,7 +164,10 @@ const useUserStore = create<UserState>()(
                 sidebarOpened: false,
                 referralPointsAwarded: 0,
                 referralCode: null,
-                loginStreakData: null
+                loginStreakData: null,
+                erc20WalletAddress: null,
+                solanaWalletAddress: null,
+                tonWalletAddress: null
             }),
 
         updateUserRoles: (roles) => set({ roles: roles.length > 0 ? roles : ['USER'] }),
@@ -164,8 +198,21 @@ const useUserStore = create<UserState>()(
             try {
                 const response = await axiosInstance.get(`/api/users/${telegramUserId}`)
                 if (response.status === 200 && response.data) {
-                    const { id, name, email, roles, points, bookmarkedAcademies, academies, emailConfirmed, referralCode, referralCompletionChecked } =
-                        response.data
+                    const {
+                        id,
+                        name,
+                        email,
+                        roles,
+                        points,
+                        bookmarkedAcademies,
+                        academies,
+                        emailConfirmed,
+                        referralCode,
+                        referralCompletionChecked,
+                        erc20WalletAddress,
+                        solanaWalletAddress,
+                        tonWalletAddress
+                    } = response.data
                     const hasAcademy = academies && academies.length > 0
                     const totalPoints = points ? points.reduce((sum: number, point: any) => sum + point.value, 0) : 0
 
@@ -184,7 +231,10 @@ const useUserStore = create<UserState>()(
                         hasAcademy: hasAcademy,
                         referralCode: referralCode || null,
                         referralPointsAwarded: 0, // Existing users have 0 referral points awarded on login
-                        referralCompletionChecked: referralCompletionChecked // Set referralCompletionChecked from API response
+                        referralCompletionChecked: referralCompletionChecked, // Set referralCompletionChecked from API response
+                        erc20WalletAddress: erc20WalletAddress || null,
+                        solanaWalletAddress: solanaWalletAddress || null,
+                        tonWalletAddress: tonWalletAddress || null
                     })
                 }
             } catch (error: any) {
@@ -229,7 +279,10 @@ const useUserStore = create<UserState>()(
                     authenticated: true,
                     hasAcademy: hasAcademy,
                     referralPointsAwarded: pointsAwardedToUser || 0,
-                    referralCode: userData.referralCode || null
+                    referralCode: userData.referralCode || null,
+                    erc20WalletAddress: userData.erc20WalletAddress || null,
+                    solanaWalletAddress: userData.solanaWalletAddress || null,
+                    tonWalletAddress: userData.tonWalletAddress || null
                 }))
 
                 // Log the updated state
@@ -283,7 +336,10 @@ const useUserStore = create<UserState>()(
                     bookmarks: userData.bookmarkedAcademies || [],
                     authenticated: true,
                     hasAcademy: userData.academies && userData.academies.length > 0,
-                    referralCode: userData.referralCode || null
+                    referralCode: userData.referralCode || null,
+                    erc20WalletAddress: userData.erc20WalletAddress || null,
+                    solanaWalletAddress: userData.solanaWalletAddress || null,
+                    tonWalletAddress: userData.tonWalletAddress || null
                 })
             } catch (error: any) {
                 console.error('Error fetching current user:', error)
@@ -293,7 +349,7 @@ const useUserStore = create<UserState>()(
         // Adds a bookmark to an academy for the user
         addBookmark: async (academyId) => {
             try {
-                const telegramUserId = get().userId
+                const telegramUserId = get().telegramUserId
                 // Endpoint: POST /api/users/interaction (action 'bookmark')
                 await axiosInstance.post('/api/users/interaction', {
                     telegramUserId: telegramUserId,
@@ -310,7 +366,7 @@ const useUserStore = create<UserState>()(
         // Fetches the user's bookmarked academies
         fetchBookmarkedAcademies: async (userId) => {
             try {
-                // Endpoint: GET /api/users/{userId}/bookmarked-academies
+                // Endpoint: GET /api/users/${userId}/bookmarked-academies
                 const response = await axiosInstance.get(`/api/users/${userId}/bookmarked-academies`)
                 set({ bookmarks: response.data })
             } catch (error: any) {
@@ -350,6 +406,38 @@ const useUserStore = create<UserState>()(
                 })
             } catch (error) {
                 console.error('Error fetching Twitter authentication status:', error)
+            }
+        },
+
+        updateWalletAddresses: async (addresses) => {
+            try {
+                const telegramUserId = useSessionStore.getState().userId
+
+                if (!telegramUserId) {
+                    console.error('Telegram User ID is required to update wallet addresses.')
+                    return
+                }
+
+                const response = await axiosInstance.post('/api/users/update-wallet-addresses', addresses, {
+                    headers: {
+                        'X-Telegram-User-Id': telegramUserId
+                    }
+                })
+
+                if (response.status === 200) {
+                    // Update the store with the new addresses
+                    set({
+                        erc20WalletAddress: addresses.erc20WalletAddress || get().erc20WalletAddress,
+                        solanaWalletAddress: addresses.solanaWalletAddress || get().solanaWalletAddress,
+                        tonWalletAddress: addresses.tonWalletAddress || get().tonWalletAddress
+                    })
+                } else if (response.status === 404) {
+                    console.error('Failed to update wallet addresses:', response.data)
+                    // Handle user not found scenario
+                    // Show notification to user if necessary
+                }
+            } catch (error: any) {
+                console.error('Error updating wallet addresses:', error)
             }
         }
     }))

@@ -88,6 +88,11 @@ model User {
   twitterAccessTokenSecret String?
   twitterRefreshToken    String?            // Refresh token
   twitterTokenExpiresAt  DateTime?          // Token expiration time
+
+  // New wallet address fields
+  erc20WalletAddress     String?
+  solanaWalletAddress    String?
+  tonWalletAddress       String?
 }
 
 model Academy {

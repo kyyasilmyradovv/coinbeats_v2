@@ -961,3 +961,49 @@ exports.getTwitterAuthStatus = async (req, res, next) => {
     next(createError(500, 'Error fetching Twitter authentication status'));
   }
 };
+
+exports.updateWalletAddresses = async (req, res, next) => {
+  const { erc20WalletAddress, solanaWalletAddress, tonWalletAddress } =
+    req.body;
+  const telegramUserIdHeader = req.headers['x-telegram-user-id'];
+
+  if (!telegramUserIdHeader) {
+    return res.status(400).json({ error: 'Telegram User ID is required' });
+  }
+
+  try {
+    const telegramUserId = BigInt(telegramUserIdHeader);
+
+    const user = await prisma.user.findUnique({
+      where: { telegramUserId },
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        error: 'User not found. Please complete an academy to register.',
+      });
+    }
+
+    // Update the user's wallet addresses
+    const updatedUser = await prisma.user.update({
+      where: { telegramUserId },
+      data: {
+        erc20WalletAddress,
+        solanaWalletAddress,
+        tonWalletAddress,
+      },
+    });
+
+    res.json({
+      message: 'Wallet addresses updated successfully',
+      walletAddresses: {
+        erc20WalletAddress: updatedUser.erc20WalletAddress,
+        solanaWalletAddress: updatedUser.solanaWalletAddress,
+        tonWalletAddress: updatedUser.tonWalletAddress,
+      },
+    });
+  } catch (error) {
+    console.error('Error updating wallet addresses:', error);
+    next(createError(500, 'Internal Server Error'));
+  }
+};
