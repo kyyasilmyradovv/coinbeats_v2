@@ -71,9 +71,6 @@ importers:
       axios:
         specifier: ^1.7.2
         version: 1.7.3
-      base64url:
-        specifier: ^3.0.1
-        version: 3.0.1
       chart.js:
         specifier: ^4.4.3
         version: 4.4.3
@@ -1529,10 +1526,6 @@ packages:
 
   balanced-match@1.0.2:
     resolution: {integrity: sha512-3oSeUO0TMV67hN1AmbXsK4yaqU7tjiHlbxRDZOpH0KW9+CeX4bRAaX0Anxt0tx2MrpRpWwQaPwIlISEJhYU5Pw==}
-
-  base64url@3.0.1:
-    resolution: {integrity: sha512-ir1UPr3dkwexU7FdV8qBBbNDRUhMmIekYMFZfi+C/sLNnRESKPl23nB9b2pltqfOQNnGzsDdId90AEtG5tCx4A==}
-    engines: {node: '>=6.0.0'}
 
   binary-extensions@2.3.0:
     resolution: {integrity: sha512-Ceh+7ox5qe7LJuLHoY0feh3pHuUDHAcRUeyL2VYghZwfpkNIy/+8Ocg0a3UuSoYzavmylwuLWQOf3hl0jjMMIw==}
@@ -5079,8 +5072,6 @@ snapshots:
       regenerator-runtime: 0.11.1
 
   balanced-match@1.0.2: {}
-
-  base64url@3.0.1: {}
 
   binary-extensions@2.3.0: {}
 

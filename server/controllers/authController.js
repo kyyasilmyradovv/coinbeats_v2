@@ -279,16 +279,19 @@ exports.twitterCallback = async (req, res, next) => {
       return next(createError(400, 'Invalid state or code parameter'));
     }
 
-    // Decode the state parameter
-    const stateString = base64urlDecode(state);
-    const stateData = JSON.parse(stateString);
+    // Verify and decode the state token
+    let payload;
+    try {
+      payload = jwt.verify(state, JWT_SECRET);
+    } catch (err) {
+      console.error('Invalid state token:', err);
+      return next(createError(400, 'Invalid state parameter'));
+    }
 
-    const { codeVerifier, telegramUserId, returnToUrl } = stateData;
+    const { codeVerifier, telegramUserId, returnTo } = payload;
 
     if (!codeVerifier || !telegramUserId) {
-      return next(
-        createError(400, 'Missing codeVerifier or telegramUserId in state')
-      );
+      return next(createError(400, 'Missing codeVerifier or telegramUserId'));
     }
 
     const params = new URLSearchParams({
@@ -373,13 +376,3 @@ exports.twitterCallback = async (req, res, next) => {
     next(createError(500, 'Authentication failed'));
   }
 };
-
-function base64urlDecode(str) {
-  // Replace URL-safe characters with base64 standard characters
-  str = str.replace(/-/g, '+').replace(/_/g, '/');
-  // Pad with '=' to make the length a multiple of 4
-  while (str.length % 4) {
-    str += '=';
-  }
-  return Buffer.from(str, 'base64').toString('utf-8');
-}

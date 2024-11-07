@@ -1,4 +1,5 @@
-// Import necessary modules and types
+// src/utils/actionHandlers.ts
+
 import { VerificationTask } from '../types'
 import { FaFacebook, FaInstagram, FaTelegramPlane, FaDiscord, FaYoutube, FaEnvelope } from 'react-icons/fa'
 import useUserVerificationStore from '../store/useUserVerificationStore'
@@ -80,45 +81,6 @@ declare global {
     }
 }
 
-// Helper functions for PKCE
-
-function generateRandomString(length: number): string {
-    const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-    let result = ''
-    const array = new Uint8Array(length)
-    window.crypto.getRandomValues(array)
-    for (let i = 0; i < array.length; i++) {
-        result += charset[array[i] % charset.length]
-    }
-    return result
-}
-
-async function generateCodeChallenge(codeVerifier: string): Promise<string> {
-    const encoder = new TextEncoder()
-    const data = encoder.encode(codeVerifier)
-    const digest = await window.crypto.subtle.digest('SHA-256', data)
-    return base64urlEncodeArrayBuffer(digest)
-}
-
-function base64urlEncodeArrayBuffer(buffer: ArrayBuffer): string {
-    const bytes = new Uint8Array(buffer)
-    let binary = ''
-    for (let i = 0; i < bytes.byteLength; i++) {
-        binary += String.fromCharCode(bytes[i])
-    }
-    const base64 = window.btoa(binary)
-    return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
-}
-
-function base64urlEncode(str: string): string {
-    // Encode the string as UTF-8
-    const utf8Str = unescape(encodeURIComponent(str))
-    // Convert to base64
-    const base64 = btoa(utf8Str)
-    // Convert base64 to base64url by replacing characters
-    return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
-}
-
 // Handle the action based on the task
 export const handleAction = async (task: VerificationTask, options: { [key: string]: any }, academyId?: number) => {
     const {
@@ -131,9 +93,8 @@ export const handleAction = async (task: VerificationTask, options: { [key: stri
         setFeedbackDialogOpen,
         twitterAuthenticated,
         academyName,
-        twitterHandle,
-        telegramUserId,
-        authenticated
+        twitterHandle, // Use twitterHandle here
+        telegramUserId
     } = options
     const { startTask } = useUserVerificationStore.getState()
 
@@ -157,20 +118,24 @@ export const handleAction = async (task: VerificationTask, options: { [key: stri
                 if (task.platform === 'X') {
                     if (!twitterAuthenticated) {
                         console.log('User not authenticated with Twitter, starting OAuth flow')
-                        if (!authenticated || !telegramUserId) {
-                            setNotificationText('Please log in to authenticate with X.')
-                            setNotificationOpen(true)
-                            return
+                        const returnTo = encodeURIComponent(window.location.href) // Current page
+                        const authUrl = `${import.meta.env.VITE_API_BASE_URL}/api/auth/twitter/start?telegramUserId=${telegramUserId}&returnTo=${returnTo}`
+                        console.log('authUrl:', authUrl)
+
+                        // Open the authUrl in external browser using Telegram.WebApp.openLink
+                        if (window.Telegram?.WebApp?.openTelegramLink) {
+                            window.Telegram.WebApp.openTelegramLink(authUrl)
+                        } else {
+                            window.open(authUrl, '_blank')
                         }
-                        await handleTwitterAuthentication(telegramUserId, { setNotificationText, setNotificationOpen })
                     } else {
-                        const username = task.parameters?.username
+                        const username = task.parameters?.username // Get the username from task parameters
                         if (!username) {
                             setNotificationText('Username is not specified for this task.')
                             setNotificationOpen(true)
                             return
                         }
-                        window.open(`https://x.com/${username}`, '_blank')
+                        window.open(`https://twitter.com/${username}`, '_blank')
 
                         try {
                             await startTask(task.id, academyId)
@@ -199,15 +164,19 @@ export const handleAction = async (task: VerificationTask, options: { [key: stri
             case 'TWEET':
                 if (!twitterAuthenticated) {
                     console.log('User not authenticated with Twitter, starting OAuth flow')
-                    if (!authenticated || !telegramUserId) {
-                        setNotificationText('Please log in to authenticate with X.')
-                        setNotificationOpen(true)
-                        return
+                    const returnTo = encodeURIComponent(window.location.href)
+                    const authUrl = `${import.meta.env.VITE_API_BASE_URL}/api/auth/twitter/start?telegramUserId=${telegramUserId}&returnTo=${returnTo}`
+                    console.log('authUrl:', authUrl)
+
+                    // Open the authUrl in external browser using Telegram.WebApp.openLink
+                    if (window.Telegram?.WebApp?.openTelegramLink) {
+                        window.Telegram.WebApp.openTelegramLink(authUrl)
+                    } else {
+                        window.open(authUrl, '_blank')
                     }
-                    await handleTwitterAuthentication(telegramUserId, { setNotificationText, setNotificationOpen })
                 } else {
                     const tweetText = `🎉 I just completed ${academyName} ${twitterHandle} academy on CoinBeats Crypto School @CoinBeatsxyz`
-                    window.open(`https://x.com/intent/tweet?text=${encodeURIComponent(tweetText)}`, '_blank')
+                    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`, '_blank')
 
                     try {
                         await startTask(task.id, academyId)
@@ -445,53 +414,20 @@ function isSameDay(d1: Date, d2: Date): boolean {
     return d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth() && d1.getDate() === d2.getDate()
 }
 
-// Handle Twitter Authentication
-export const handleTwitterAuthentication = async (
+export const handleTwitterAuthentication = (
     telegramUserId: string,
     options: { setNotificationText: Function; setNotificationOpen: Function },
     returnToUrl?: string
 ) => {
     const { setNotificationText, setNotificationOpen } = options
 
-    // Generate code_verifier
-    const codeVerifier = generateRandomString(128)
-
-    // Generate code_challenge
-    const codeChallenge = await generateCodeChallenge(codeVerifier)
-
-    // Generate state parameter
-    const stateData = {
-        codeVerifier: codeVerifier,
-        telegramUserId: telegramUserId,
-        returnToUrl: returnToUrl || window.location.origin
-    }
-
-    // Convert stateData to JSON string
-    const stateString = JSON.stringify(stateData)
-
-    // Encode state using base64url to make it URL-safe
-    const state = base64urlEncode(stateString)
-
-    const clientId = process.env.REACT_APP_TWITTER_CLIENT_ID
-    const redirectUri = `${process.env.REACT_APP_API_BASE_URL}/api/auth/twitter/callback`
-    const scope = 'tweet.read users.read follows.read offline.access'
-
-    const params = new URLSearchParams({
-        response_type: 'code',
-        client_id: clientId!,
-        redirect_uri: redirectUri,
-        scope: scope,
-        state: state,
-        code_challenge: codeChallenge,
-        code_challenge_method: 'S256'
-    })
-
-    const authorizationUrl = `https://x.com/i/oauth2/authorize?${params.toString()}`
+    const returnTo = encodeURIComponent(returnToUrl || window.location.origin) // Use a shorter URL
+    const authUrl = `${import.meta.env.VITE_API_BASE_URL}/api/auth/twitter/start?telegramUserId=${telegramUserId}&returnTo=${returnTo}`
 
     // Open the authUrl in external browser using Telegram.WebApp.openLink with target 'external'
     if (window.Telegram?.WebApp?.openLink) {
-        window.Telegram.WebApp.openLink(authorizationUrl, { target: 'external' })
+        window.Telegram.WebApp.openLink(authUrl, { target: 'external' })
     } else {
-        window.open(authorizationUrl, '_blank')
+        window.open(authUrl, '_blank')
     }
 }
