@@ -82,17 +82,26 @@ model User {
   allowedAcademyTypes    AcademyType[]      @relation("UserAcademyTypes")
   userTaskSubmissions UserTaskSubmission[]
 
-  twitterUserId          String?            @unique // Twitter User ID
-  twitterUsername        String?            // Twitter handle
-  twitterAccessToken     String?            // Access token
-  twitterAccessTokenSecret String?
-  twitterRefreshToken    String?            // Refresh token
-  twitterTokenExpiresAt  DateTime?          // Token expiration time
-
   // New wallet address fields
   erc20WalletAddress     String?
   solanaWalletAddress    String?
   tonWalletAddress       String?
+
+  twitterAccount TwitterAccount[]
+}
+
+model TwitterAccount {
+  id                    Int       @id @default(autoincrement())
+  user                  User      @relation(fields: [userId], references: [id])
+  userId                Int
+  twitterUserId         String
+  twitterUsername       String
+  twitterAccessToken    String?
+  twitterAccessTokenSecret String?
+  twitterRefreshToken   String?
+  twitterTokenExpiresAt DateTime?
+  connectedAt           DateTime  @default(now())
+  disconnectedAt        DateTime?
 }
 
 model Academy {

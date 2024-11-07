@@ -7,9 +7,10 @@ import useUserStore from '../../store/useUserStore'
 import useSessionStore from '../../store/useSessionStore'
 import Lottie from 'react-lottie'
 import bunnyAnimationData from '../../animations/bunny.json'
-import { TbBrandX } from 'react-icons/tb' // Import the X.com icon
-// Removed axiosInstance import
-// import axiosInstance from '../../api/axiosInstance'
+import { TbBrandX } from 'react-icons/tb'
+
+// Import the handleTwitterAuthentication function
+import { handleTwitterAuthentication } from '../../utils/actionHandlers'
 
 const Sidebar: React.FC = () => {
     const navigate = useNavigate()
@@ -25,7 +26,7 @@ const Sidebar: React.FC = () => {
         fetchTwitterAuthStatus,
         removeTwitterAccount,
         authenticated,
-        telegramUserId // Add this line
+        telegramUserId
     } = useUserStore((state) => ({
         roles: state.roles,
         sidebarOpened: state.sidebarOpened,
@@ -36,8 +37,8 @@ const Sidebar: React.FC = () => {
         setTwitterUserData: state.setTwitterUserData,
         fetchTwitterAuthStatus: state.fetchTwitterAuthStatus,
         removeTwitterAccount: state.removeTwitterAccount,
-        authenticated: state.authenticated, // Add this line
-        telegramUserId: state.telegramUserId?.toString() // Add this line
+        authenticated: state.authenticated,
+        telegramUserId: state.telegramUserId?.toString()
     }))
 
     const { erc20WalletAddress, solanaWalletAddress, tonWalletAddress, updateWalletAddresses } = useUserStore((state) => ({
@@ -195,10 +196,7 @@ const Sidebar: React.FC = () => {
             return
         }
 
-        const returnTo = encodeURIComponent(window.location.href)
-        const authUrl = `${import.meta.env.VITE_API_BASE_URL}/api/auth/twitter/start?returnTo=${returnTo}&telegramUserId=${telegramUserId}`
-
-        window.open(authUrl, '_blank')
+        handleTwitterAuthentication(telegramUserId, { setNotificationText, setNotificationOpen })
         setPopoverOpen(false)
     }
 
@@ -245,8 +243,7 @@ const Sidebar: React.FC = () => {
             <Page className="flex flex-col h-full">
                 <Block className="space-y-4 flex-grow !items-center  !flex !flex-col">
                     <BlockTitle className="!text-center mb-1 !m-0 !p-0">Your Wallet</BlockTitle>
-                    {/* <TonConnectButton className="mx-auto" /> */}
-
+                    {/* Wallet Addresses Section */}
                     <div
                         className="relative overflow-hidden rounded-2xl shadow-lg m-0 tab-background mb-4 cursor-pointer"
                         onClick={() => setWalletDialogOpen(true)}

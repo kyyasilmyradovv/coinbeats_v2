@@ -30,6 +30,7 @@ const pointsRoutes = require('./routes/points');
 const verificationTaskRoutes = require('./routes/verificationTask');
 const academyTypeRoutes = require('./routes/academyType');
 const settingsRoutes = require('./routes/settings');
+const downloadRoutes = require('./routes/downloadRoutes'); // <-- Added this line
 
 // Initialize Express app
 const app = express();
@@ -70,9 +71,14 @@ app.use('/api/points', pointsRoutes);
 app.use('/api/verification-tasks', verificationTaskRoutes);
 app.use('/api/academy-types', academyTypeRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api', downloadRoutes); // <-- Added this line
 
 // Serve static files
 app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
+app.use(
+  '/downloads',
+  express.static(path.join(__dirname, 'public', 'downloads'))
+); // <-- Added this line
 
 // Catch 404 and forward to error handler
 app.use((req, res, next) => {

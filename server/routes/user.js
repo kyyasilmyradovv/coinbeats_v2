@@ -1,4 +1,5 @@
 // server/routes/user.js
+
 const express = require('express');
 const { authenticateToken, authorizeRoles } = require('../middleware/auth');
 const telegramAuth = require('../middleware/telegramAuth');
@@ -9,7 +10,7 @@ const {
   deleteUser,
   getUserDetailsById,
   getUserByTelegramId,
-  updateUserRole,
+  updateUserRoles,
   registerCreator,
   userInteraction,
   confirmEmail,
@@ -21,6 +22,7 @@ const {
   getUserVerificationTasks,
   checkReferralCompletion,
   getTwitterAuthStatus,
+  removeTwitterAccount,
   updateWalletAddresses,
 } = require('../controllers/userController');
 const asyncHandler = require('express-async-handler');
@@ -34,7 +36,12 @@ router.post('/start-task', asyncHandler(startVerificationTask)); // No auth midd
 router.post('/submit-task', asyncHandler(submitTask));
 router.post('/complete-task', asyncHandler(completeVerificationTask));
 router.post('/verification-tasks', asyncHandler(getUserVerificationTasks));
-router.get('/twitter/status', asyncHandler(getTwitterAuthStatus));
+router.get('/twitter/status', telegramAuth, asyncHandler(getTwitterAuthStatus));
+router.post(
+  '/twitter/remove',
+  telegramAuth,
+  asyncHandler(removeTwitterAccount)
+);
 router.post('/update-wallet-addresses', asyncHandler(updateWalletAddresses));
 router.get(
   '/',
@@ -69,7 +76,7 @@ router.post(
   '/update-role',
   authenticateToken,
   authorizeRoles('ADMIN', 'SUPERADMIN'),
-  asyncHandler(updateUserRole)
+  asyncHandler(updateUserRoles)
 );
 router.post('/register-creator', asyncHandler(registerCreator));
 router.post('/interaction', asyncHandler(userInteraction));

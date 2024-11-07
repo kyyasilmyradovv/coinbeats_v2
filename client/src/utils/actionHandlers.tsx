@@ -1,12 +1,13 @@
 // src/utils/actionHandlers.ts
 
 import { VerificationTask } from '../types'
-import { FaTwitter, FaFacebook, FaInstagram, FaTelegramPlane, FaDiscord, FaYoutube, FaEnvelope } from 'react-icons/fa'
+import { FaFacebook, FaInstagram, FaTelegramPlane, FaDiscord, FaYoutube, FaEnvelope } from 'react-icons/fa'
 import useUserVerificationStore from '../store/useUserVerificationStore'
+import { TbBrandX } from 'react-icons/tb'
 
 // Define the platform icons
 export const platformIcons: { [key: string]: JSX.Element } = {
-    X: <FaTwitter className="w-8 h-8 !mb-3 text-blue-500 !p-0 !m-0" />,
+    X: <TbBrandX className="w-8 h-8 !mb-3 text-gray-300 !p-0 !m-0" />,
     FACEBOOK: <FaFacebook className="w-8 h-8 !mb-3 text-blue-700 !p-0 !m-0" />,
     INSTAGRAM: <FaInstagram className="w-8 h-8 !mb-3 text-pink-500 !p-0 !m-0" />,
     TELEGRAM: <FaTelegramPlane className="w-8 h-8 !mb-3 text-blue-400 !p-0 !m-0" />,
@@ -262,7 +263,7 @@ export const handleAction = async (task: VerificationTask, options: { [key: stri
                         setNotificationOpen(true)
                         return
                     }
-                    const botUsername = 'CoinbeatsMiniApp_bot' // Replace with your actual bot's username
+                    const botUsername = 'CoinbeatsMiniApp_bot/miniapp' // Replace with your actual bot's username
                     const referralLink = `https://t.me/${botUsername}?startapp=${userReferralCode}`
                     setReferralLink(referralLink)
                     setReferralModalOpen(true)
@@ -411,4 +412,22 @@ export const handleSubmitTask = async (task: VerificationTask, submissionText: s
 // Helper function to check if two dates are on the same day
 function isSameDay(d1: Date, d2: Date): boolean {
     return d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth() && d1.getDate() === d2.getDate()
+}
+
+export const handleTwitterAuthentication = (
+    telegramUserId: string,
+    options: { setNotificationText: Function; setNotificationOpen: Function },
+    returnToUrl?: string
+) => {
+    const { setNotificationText, setNotificationOpen } = options
+
+    const returnTo = encodeURIComponent(returnToUrl || window.location.origin) // Use a shorter URL
+    const authUrl = `${import.meta.env.VITE_API_BASE_URL}/api/auth/twitter/start?telegramUserId=${telegramUserId}&returnTo=${returnTo}`
+
+    // Open the authUrl in external browser using Telegram.WebApp.openLink with target 'external'
+    if (window.Telegram?.WebApp?.openLink) {
+        window.Telegram.WebApp.openLink(authUrl, { target: 'external' })
+    } else {
+        window.open(authUrl, '_blank')
+    }
 }

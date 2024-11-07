@@ -438,7 +438,7 @@ const verifyFollowUser = async (verificationTask, user) => {
 
 // Function to refresh access token
 
-const refreshAccessToken = async (refreshToken, user) => {
+const refreshAccessToken = async (refreshToken, twitterAccount) => {
   try {
     const response = await axios.post(
       'https://api.twitter.com/2/oauth2/token',
@@ -459,16 +459,18 @@ const refreshAccessToken = async (refreshToken, user) => {
 
     const { access_token, expires_in } = response.data;
 
-    // Update user with new token and expiration
-    user.twitterAccessToken = access_token;
-    user.twitterTokenExpiresAt = new Date(Date.now() + expires_in * 1000);
+    // Update TwitterAccount with new token and expiration
+    twitterAccount.twitterAccessToken = access_token;
+    twitterAccount.twitterTokenExpiresAt = new Date(
+      Date.now() + expires_in * 1000
+    );
 
     // Save the updated token information to the database
-    await prisma.user.update({
-      where: { id: user.id },
+    await prisma.twitterAccount.update({
+      where: { id: twitterAccount.id },
       data: {
         twitterAccessToken: access_token,
-        twitterTokenExpiresAt: user.twitterTokenExpiresAt,
+        twitterTokenExpiresAt: twitterAccount.twitterTokenExpiresAt,
       },
     });
 
@@ -555,19 +557,33 @@ const performVerification = async (verificationTask, user, params) => {
 const verifyTweet = async (verificationTask, user, params) => {
   console.log('Starting verifyTweet...');
 
-  if (!user.twitterUserId || !user.twitterAccessToken) {
+  // Get the user's connected Twitter account
+  const currentTwitterAccount = user.twitterAccounts[0];
+
+  if (
+    !currentTwitterAccount ||
+    !currentTwitterAccount.twitterUserId ||
+    !currentTwitterAccount.twitterAccessToken
+  ) {
     throw new Error('User is not authenticated with Twitter');
   }
+
+  // Use the Twitter account details
+  let twitterUserId = currentTwitterAccount.twitterUserId;
+  let twitterAccessToken = currentTwitterAccount.twitterAccessToken;
+  let twitterAccessTokenSecret = currentTwitterAccount.twitterAccessTokenSecret;
+  let twitterRefreshToken = currentTwitterAccount.twitterRefreshToken;
+  let twitterTokenExpiresAt = currentTwitterAccount.twitterTokenExpiresAt;
 
   try {
     // Refresh access token if expired
     const now = new Date();
-    if (user.twitterTokenExpiresAt && now >= user.twitterTokenExpiresAt) {
-      if (user.twitterRefreshToken) {
+    if (twitterTokenExpiresAt && now >= twitterTokenExpiresAt) {
+      if (twitterRefreshToken) {
         console.log('Access token expired. Refreshing token...');
-        user.twitterAccessToken = await refreshAccessToken(
-          user.twitterRefreshToken,
-          user
+        twitterAccessToken = await refreshAccessToken(
+          twitterRefreshToken,
+          currentTwitterAccount
         );
       } else {
         throw new Error('No refresh token available to refresh access token');
@@ -576,7 +592,7 @@ const verifyTweet = async (verificationTask, user, params) => {
 
     // Fetch user's recent tweets from Twitter API
     const headers = {
-      Authorization: `Bearer ${user.twitterAccessToken}`,
+      Authorization: `Bearer ${twitterAccessToken}`,
     };
 
     const paramsRequest = {
@@ -584,7 +600,7 @@ const verifyTweet = async (verificationTask, user, params) => {
       max_results: 100, // Adjust as needed
     };
 
-    const url = `https://api.twitter.com/2/users/${user.twitterUserId}/tweets`;
+    const url = `https://api.twitter.com/2/users/${twitterUserId}/tweets`;
     console.log('Fetching recent tweets with URL:', url);
 
     const tweetsResponse = await axios.get(url, {

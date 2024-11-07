@@ -71,6 +71,7 @@ interface UserState {
     fetchBookmarkedAcademies: (userId: number) => Promise<void>
     fetchUserPoints: (userId: number) => Promise<void>
     fetchTwitterAuthStatus: () => Promise<void>
+    removeTwitterAccount: () => Promise<string>
 
     updateTotalPoints: (points: number) => void
 }
@@ -113,6 +114,7 @@ const useUserStore = create<UserState>()(
 
         loginUser: ({
             userId,
+            telegramUserId, // Add this line
             username,
             email,
             emailConfirmed,
@@ -128,6 +130,7 @@ const useUserStore = create<UserState>()(
         }) =>
             set({
                 userId,
+                telegramUserId, // Add this line
                 username,
                 email,
                 emailConfirmed,
@@ -230,8 +233,8 @@ const useUserStore = create<UserState>()(
                         authenticated: true,
                         hasAcademy: hasAcademy,
                         referralCode: referralCode || null,
-                        referralPointsAwarded: 0, // Existing users have 0 referral points awarded on login
-                        referralCompletionChecked: referralCompletionChecked, // Set referralCompletionChecked from API response
+                        referralPointsAwarded: 0,
+                        referralCompletionChecked: referralCompletionChecked,
                         erc20WalletAddress: erc20WalletAddress || null,
                         solanaWalletAddress: solanaWalletAddress || null,
                         tonWalletAddress: tonWalletAddress || null
@@ -239,7 +242,7 @@ const useUserStore = create<UserState>()(
                 }
             } catch (error: any) {
                 console.error('Error fetching user:', error)
-                throw error // Throw the error so it can be handled in IntroPage.tsx
+                throw error
             }
         },
 
@@ -289,7 +292,7 @@ const useUserStore = create<UserState>()(
                 console.log('Updated User State:', get())
             } catch (error: any) {
                 console.error('Error registering user:', error)
-                throw error // Throw the error so it can be handled in IntroPage.tsx
+                throw error
             }
         },
 
@@ -326,6 +329,7 @@ const useUserStore = create<UserState>()(
 
                 set({
                     userId: userData.id,
+                    telegramUserId: userData.telegramUserId, // Add this line
                     username: userData.name,
                     email: userData.email,
                     emailConfirmed: userData.emailConfirmed,
@@ -396,7 +400,16 @@ const useUserStore = create<UserState>()(
 
         fetchTwitterAuthStatus: async () => {
             try {
-                const response = await axiosInstance.get('/api/users/twitter/status')
+                const telegramUserId = get().telegramUserId?.toString()
+                if (!telegramUserId) {
+                    console.error('Telegram user ID is not available in the store.')
+                    return
+                }
+                const response = await axiosInstance.get('/api/users/twitter/status', {
+                    headers: {
+                        'X-Telegram-User-Id': telegramUserId
+                    }
+                })
                 const { twitterAuthenticated, twitterUsername, twitterUserId } = response.data
 
                 set({
@@ -409,9 +422,41 @@ const useUserStore = create<UserState>()(
             }
         },
 
+        removeTwitterAccount: async () => {
+            try {
+                const telegramUserId = get().telegramUserId?.toString()
+                if (!telegramUserId) {
+                    console.error('Telegram user ID is not available in the store.')
+                    return 'Telegram user ID is required to remove X account.'
+                }
+                const response = await axiosInstance.post('/api/users/twitter/remove', null, {
+                    // Keep null
+                    headers: {
+                        // 'Content-Type': 'application/json', // Remove this header
+                        'X-Telegram-User-Id': telegramUserId
+                    }
+                })
+
+                if (response.status === 200) {
+                    set({
+                        twitterAuthenticated: false,
+                        twitterUsername: null,
+                        twitterUserId: null
+                    })
+                    return 'X account removed successfully.'
+                } else {
+                    const data = response.data
+                    return data.error || 'Failed to remove X account.'
+                }
+            } catch (error: any) {
+                console.error('Error removing X account:', error)
+                return 'An error occurred while removing X account.'
+            }
+        },
+
         updateWalletAddresses: async (addresses) => {
             try {
-                const telegramUserId = useSessionStore.getState().userId
+                const telegramUserId = get().telegramUserId
 
                 if (!telegramUserId) {
                     console.error('Telegram User ID is required to update wallet addresses.')
@@ -420,7 +465,7 @@ const useUserStore = create<UserState>()(
 
                 const response = await axiosInstance.post('/api/users/update-wallet-addresses', addresses, {
                     headers: {
-                        'X-Telegram-User-Id': telegramUserId
+                        'X-Telegram-User-Id': telegramUserId.toString()
                     }
                 })
 

@@ -3,6 +3,8 @@
 const { PrismaClient } = require('@prisma/client');
 const createError = require('http-errors');
 const prisma = new PrismaClient();
+const { zonedTimeToUtc, utcToZonedTime } = require('date-fns-tz');
+const { format } = require('date-fns');
 
 // Get points by user and academy
 exports.getPointsByUserAndAcademy = async (req, res, next) => {
@@ -113,6 +115,35 @@ function getStartOfWeek(date) {
 }
 
 // Get list of weekly snapshots (SUPERADMIN only)
+function getWeekStartEndCET(date) {
+  const timeZone = 'Europe/Berlin'; // CET timezone
+
+  // Convert date to CET timezone
+  const zonedDate = utcToZonedTime(date, timeZone);
+
+  // Get the previous Saturday
+  let day = zonedDate.getDay(); // 0 (Sunday) to 6 (Saturday)
+  let diff = (day + 1) % 7; // Days since Saturday
+
+  let startOfWeekCET = new Date(zonedDate);
+  startOfWeekCET.setDate(zonedDate.getDate() - diff);
+  startOfWeekCET.setHours(23, 0, 0, 0); // Set to 23:00 CET
+
+  // Adjust to UTC
+  const startOfWeekUTC = zonedTimeToUtc(startOfWeekCET, timeZone);
+
+  // End of week is next Saturday at 22:59:59.999 CET
+  let endOfWeekCET = new Date(startOfWeekCET);
+  endOfWeekCET.setDate(endOfWeekCET.getDate() + 7);
+  endOfWeekCET.setMilliseconds(-1);
+
+  // Adjust to UTC
+  const endOfWeekUTC = zonedTimeToUtc(endOfWeekCET, timeZone);
+
+  return { startOfWeekUTC, endOfWeekUTC };
+}
+
+// Get list of weekly snapshots (SUPERADMIN only)
 exports.getWeeklySnapshots = async (req, res, next) => {
   console.log('getWeeklySnapshots hit');
 
@@ -133,12 +164,23 @@ exports.getWeeklySnapshots = async (req, res, next) => {
     }
 
     const snapshots = [];
-    let currentWeekStart = getStartOfWeek(minDate);
-    const lastWeekStart = getStartOfWeek(maxDate);
+    let { startOfWeekUTC: currentWeekStartUTC } = getWeekStartEndCET(minDate);
+    const { startOfWeekUTC: lastWeekStartUTC } = getWeekStartEndCET(maxDate);
 
-    while (currentWeekStart <= lastWeekStart) {
-      snapshots.push(currentWeekStart.toISOString().split('T')[0]);
-      currentWeekStart.setDate(currentWeekStart.getDate() + 7);
+    while (currentWeekStartUTC <= lastWeekStartUTC) {
+      // Convert currentWeekStartUTC to CET date string
+      const currentWeekStartCET = utcToZonedTime(
+        currentWeekStartUTC,
+        'Europe/Berlin'
+      );
+      const weekLabel = format(currentWeekStartCET, 'yyyy-MM-dd HH:mm:ss');
+
+      snapshots.push(weekLabel);
+
+      // Move to next week
+      currentWeekStartUTC = new Date(
+        currentWeekStartUTC.getTime() + 7 * 24 * 60 * 60 * 1000
+      );
     }
 
     res.status(200).json({ snapshots });
@@ -160,15 +202,16 @@ exports.getWeeklyLeaderboardSnapshot = async (req, res, next) => {
     return next(createError(400, 'Week parameter is required'));
   }
 
-  let startOfWeek = new Date(week);
-  let endOfWeek = new Date(startOfWeek);
-  endOfWeek.setDate(startOfWeek.getDate() + 6);
-  endOfWeek.setHours(23, 59, 59, 999);
+  const timeZone = 'Europe/Berlin';
+  const weekDateCET = new Date(week);
+  const weekDateUTC = zonedTimeToUtc(weekDateCET, timeZone);
+
+  const { startOfWeekUTC, endOfWeekUTC } = getWeekStartEndCET(weekDateUTC);
 
   const dateFilter = {
     createdAt: {
-      gte: startOfWeek,
-      lte: endOfWeek,
+      gte: startOfWeekUTC,
+      lte: endOfWeekUTC,
     },
   };
 
@@ -189,7 +232,11 @@ exports.getWeeklyLeaderboardSnapshot = async (req, res, next) => {
         return {
           userId: entry.userId,
           name: user ? user.name : 'Unknown User',
+          telegramUserId: user ? user.telegramUserId : null,
           totalPoints: entry._sum.value,
+          erc20WalletAddress: user ? user.erc20WalletAddress : '',
+          solanaWalletAddress: user ? user.solanaWalletAddress : '',
+          tonWalletAddress: user ? user.tonWalletAddress : '',
         };
       })
     );

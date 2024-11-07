@@ -471,8 +471,17 @@ exports.completeVerificationTask = async (req, res, next) => {
   }
 
   try {
-    // Fetch user and verification task
-    const user = await prisma.user.findUnique({ where: { id: userId } });
+    // Fetch user and include twitterAccounts
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        twitterAccount: {
+          where: { disconnectedAt: null },
+          orderBy: { connectedAt: 'desc' },
+          take: 1,
+        },
+      },
+    });
     if (!user) {
       return next(createError(404, 'User not found'));
     }
@@ -938,10 +947,19 @@ exports.getTwitterAuthStatus = async (req, res, next) => {
 
   try {
     const user = await prisma.user.findUnique({
-      where: { telegramUserId: BigInt(telegramUserId) },
-      select: {
-        twitterUserId: true,
-        twitterUsername: true,
+      where: {
+        telegramUserId: BigInt(telegramUserId),
+      },
+      include: {
+        twitterAccount: {
+          where: {
+            disconnectedAt: null,
+          },
+          orderBy: {
+            connectedAt: 'desc',
+          },
+          take: 1,
+        },
       },
     });
 
@@ -949,16 +967,68 @@ exports.getTwitterAuthStatus = async (req, res, next) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    const twitterAuthenticated = !!user.twitterUserId;
+    // Check if twitterAccount exists and has at least one entry
+    const currentTwitterAccount = user.twitterAccount?.[0] || null;
+
+    const twitterAuthenticated = !!currentTwitterAccount;
 
     res.json({
       twitterAuthenticated,
-      twitterUsername: user.twitterUsername,
-      twitterUserId: user.twitterUserId,
+      twitterUsername: currentTwitterAccount?.twitterUsername || null,
+      twitterUserId: currentTwitterAccount?.twitterUserId || null,
     });
   } catch (error) {
     console.error('Error fetching Twitter authentication status:', error);
     next(createError(500, 'Error fetching Twitter authentication status'));
+  }
+};
+
+/**
+ * Remove the current Twitter account for the user.
+ */
+exports.removeTwitterAccount = async (req, res, next) => {
+  const telegramUserId = req.headers['x-telegram-user-id'];
+
+  if (!telegramUserId) {
+    return res.status(400).json({ error: 'Telegram user ID is required' });
+  }
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: {
+        telegramUserId: BigInt(telegramUserId),
+      },
+      include: {
+        twitterAccount: {
+          // Changed from TwitterAccount
+          where: {
+            disconnectedAt: null,
+          },
+          orderBy: {
+            connectedAt: 'desc',
+          },
+          take: 1,
+        },
+      },
+    });
+
+    if (!user || user.twitterAccount.length === 0) {
+      return res
+        .status(404)
+        .json({ error: 'No connected Twitter account found' });
+    }
+
+    const currentTwitterAccount = user.twitterAccount[0];
+
+    await prisma.twitterAccount.update({
+      where: { id: currentTwitterAccount.id },
+      data: { disconnectedAt: new Date() },
+    });
+
+    res.json({ message: 'Twitter account disconnected successfully' });
+  } catch (error) {
+    console.error('Error removing Twitter account:', error);
+    next(createError(500, 'Error removing Twitter account'));
   }
 };
 
