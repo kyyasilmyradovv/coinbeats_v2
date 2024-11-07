@@ -35,6 +35,7 @@ import { BookmarkProvider } from './contexts/BookmarkContext'
 import { useInitData } from '@telegram-apps/sdk-react'
 import useSessionStore from './store/useSessionStore'
 import useUserStore from './store/useUserStore'
+import TwitterCallback from './components/TwitterCallback'
 import RouteGuard from './components/RouteGuard'
 import Spinner from './components/Spinner'
 import ScholarshipManagementPage from './pages/ScholarshipManagementPage'
@@ -282,6 +283,7 @@ function RootComponent() {
                                 </RouteGuard>
                             }
                         />
+                        <Route path="/twitter-callback" element={<TwitterCallback />} />
                     </Routes>
                 </BookmarkProvider>
             </KonstaApp>

@@ -9,6 +9,7 @@ const {
   twitterCallback,
   twitterOAuthStart,
   twitterOAuthCallback,
+  twitterTokenExchange,
 } = require('../controllers/authController');
 const asyncHandler = require('express-async-handler');
 
@@ -21,5 +22,6 @@ router.get('/twitter/start', asyncHandler(twitterStart));
 router.get('/twitter/callback', asyncHandler(twitterCallback));
 router.get('/twitter/oauth/start', asyncHandler(twitterOAuthStart));
 router.get('/twitter/oauth/callback', asyncHandler(twitterOAuthCallback));
+router.post('/twitter/token-exchange', asyncHandler(twitterTokenExchange));
 
 module.exports = router;

@@ -189,14 +189,14 @@ const Sidebar: React.FC = () => {
     const popoverTargetRef = useRef<HTMLButtonElement>(null)
 
     // Function to handle authentication
-    const handleAuthenticate = () => {
+    const handleAuthenticate = async () => {
         if (!authenticated || !telegramUserId) {
             setNotificationText('Please log in to authenticate with X.')
             setNotificationOpen(true)
             return
         }
 
-        handleTwitterAuthentication(telegramUserId, { setNotificationText, setNotificationOpen })
+        await handleTwitterAuthentication(telegramUserId, { setNotificationText, setNotificationOpen })
         setPopoverOpen(false)
     }
 
@@ -230,11 +230,11 @@ const Sidebar: React.FC = () => {
             setNotificationText('X authentication successful!')
             setNotificationOpen(true)
             // Remove the query parameter from the URL
-            navigate('', { replace: true })
+            navigate(window.location.pathname, { replace: true })
         } else if (twitterAuthStatus === 'failure') {
             setNotificationText('X authentication failed. Please try again.')
             setNotificationOpen(true)
-            navigate('', { replace: true })
+            navigate(window.location.pathname, { replace: true })
         }
     }, [setTwitterAuthenticated, navigate])
 
