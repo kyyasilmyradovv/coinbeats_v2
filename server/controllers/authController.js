@@ -263,7 +263,7 @@ exports.twitterStart = (req, res, next) => {
       code_challenge_method: 'S256',
     });
 
-    res.redirect(`https://twitter.com/i/oauth2/authorize?${params.toString()}`);
+    res.redirect(`https://x.com/i/oauth2/authorize?${params.toString()}`);
   } catch (error) {
     console.error('Error in twitterStart:', error);
     next(createError(500, 'Error initiating Twitter authentication'));

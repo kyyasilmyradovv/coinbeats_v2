@@ -44,6 +44,7 @@ export function getActionLabel(verificationMethod: string, isAuthenticated?: boo
             return 'Add to Bio'
         case 'LEAVE_FEEDBACK':
             return 'Feedback'
+
         // Add other mappings as needed
         default:
             return 'Action'
@@ -425,9 +426,42 @@ export const handleTwitterAuthentication = (
     const authUrl = `${import.meta.env.VITE_API_BASE_URL}/api/auth/twitter/start?telegramUserId=${telegramUserId}&returnTo=${returnTo}`
 
     // Open the authUrl in external browser using Telegram.WebApp.openLink with target 'external'
-    if (window.Telegram?.WebApp?.openLink) {
-        window.Telegram.WebApp.openLink(authUrl, { target: 'external' })
-    } else {
+    // if (window.Telegram?.WebApp?.openLink) {
+    //     window.Telegram.WebApp.openLink(authUrl, { target: 'external' })
+    // } else {
+    //     window.open(authUrl, '_blank')
+    // }
+
+    // Platform detection using user agent
+    const userAgent = navigator.userAgent || navigator.vendor || ''
+    console.log('User agent:', userAgent)
+
+    const isAndroid = /Android/i.test(userAgent)
+    const isIOS = /iPhone|iPad|iPod/i.test(userAgent)
+    const isDesktop = !isAndroid && !isIOS
+
+    console.log('isAndroid:', isAndroid)
+    console.log('isIOS:', isIOS)
+    console.log('isDesktop:', isDesktop)
+
+    if (isIOS) {
+        console.log('iOS device detected. Using window.location.href')
+        if (window.Telegram?.WebApp?.openLink) {
+            window.Telegram.WebApp.openLink(authUrl, { target: 'external' })
+        } else {
+            window.open(authUrl, '_blank')
+        }
+    } else if (isAndroid) {
+        console.log('Android device detected. Attempting to open link using intent')
+        // Try using intent scheme for Android
         window.open(authUrl, '_blank')
+    } else {
+        console.log('Desktop or unknown device detected. Using alternative methods to open link')
+
+        if (window.Telegram?.WebApp?.openLink) {
+            window.Telegram.WebApp.openLink(authUrl, { target: 'external' })
+        } else {
+            window.open(authUrl, '_blank')
+        }
     }
 }
