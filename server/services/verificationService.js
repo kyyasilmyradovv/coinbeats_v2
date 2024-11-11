@@ -436,8 +436,6 @@ const verifyFollowUser = async (verificationTask, user) => {
   }
 };
 
-// Function to refresh access token
-
 const refreshAccessToken = async (refreshToken, twitterAccount) => {
   try {
     const response = await axios.post(
@@ -457,10 +455,16 @@ const refreshAccessToken = async (refreshToken, twitterAccount) => {
       }
     );
 
-    const { access_token, expires_in } = response.data;
+    const {
+      access_token,
+      expires_in,
+      refresh_token: newRefreshToken,
+    } = response.data;
 
-    // Update TwitterAccount with new token and expiration
+    // Update TwitterAccount with new tokens and expiration
     twitterAccount.twitterAccessToken = access_token;
+    twitterAccount.twitterRefreshToken =
+      newRefreshToken || twitterAccount.twitterRefreshToken;
     twitterAccount.twitterTokenExpiresAt = new Date(
       Date.now() + expires_in * 1000
     );
@@ -470,6 +474,7 @@ const refreshAccessToken = async (refreshToken, twitterAccount) => {
       where: { id: twitterAccount.id },
       data: {
         twitterAccessToken: access_token,
+        twitterRefreshToken: twitterAccount.twitterRefreshToken,
         twitterTokenExpiresAt: twitterAccount.twitterTokenExpiresAt,
       },
     });
@@ -511,54 +516,15 @@ const isSameDay = (d1, d2) => {
   );
 };
 
-const performVerification = async (verificationTask, user, params) => {
-  const { userVerification } = params;
-
-  // Check if the task is ONETIME and already completed
-  if (verificationTask.intervalType === 'ONETIME') {
-    if (userVerification && userVerification.verified) {
-      throw new Error('This task has already been completed.');
-    }
-  }
-
-  // Check if the task is REPEATED and already completed today
-  if (verificationTask.intervalType === 'REPEATED') {
-    const now = new Date();
-    const lastCompletionDate = userVerification
-      ? new Date(userVerification.completedAt)
-      : null;
-
-    // Check against repeat interval for REPEATED tasks
-    if (lastCompletionDate) {
-      const intervalMillis = verificationTask.repeatInterval * 60 * 1000; // repeatInterval in minutes
-      if (now - lastCompletionDate < intervalMillis) {
-        throw new Error(
-          'This task has already been completed in the current interval.'
-        );
-      }
-    }
-  }
-
-  // Proceed with task verification based on method
-  switch (verificationTask.verificationMethod) {
-    case 'TWEET':
-      return await verifyTweet(verificationTask, user, params);
-    case 'FOLLOW_USER':
-      return await verifyFollowUser(verificationTask, user);
-    default:
-      if (verificationTask.shortCircuit) {
-        return await verifyShortCircuit(verificationTask, userVerification);
-      } else {
-        throw new Error('Unsupported verification method');
-      }
-  }
-};
-
 const verifyTweet = async (verificationTask, user, params) => {
   console.log('Starting verifyTweet...');
 
-  // Get the user's connected Twitter account
-  const currentTwitterAccount = user.twitterAccounts[0];
+  // Ensure twitterAccount is included in user data
+  if (!user.twitterAccount || user.twitterAccount.length === 0) {
+    throw new Error('User has no linked Twitter accounts.');
+  }
+
+  const currentTwitterAccount = user.twitterAccount[0];
 
   if (
     !currentTwitterAccount ||
@@ -571,7 +537,6 @@ const verifyTweet = async (verificationTask, user, params) => {
   // Use the Twitter account details
   let twitterUserId = currentTwitterAccount.twitterUserId;
   let twitterAccessToken = currentTwitterAccount.twitterAccessToken;
-  let twitterAccessTokenSecret = currentTwitterAccount.twitterAccessTokenSecret;
   let twitterRefreshToken = currentTwitterAccount.twitterRefreshToken;
   let twitterTokenExpiresAt = currentTwitterAccount.twitterTokenExpiresAt;
 
