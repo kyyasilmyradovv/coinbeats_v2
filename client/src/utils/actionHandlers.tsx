@@ -2,8 +2,9 @@
 
 import { VerificationTask } from '../types'
 import { FaFacebook, FaInstagram, FaTelegramPlane, FaDiscord, FaYoutube, FaEnvelope } from 'react-icons/fa'
-import useUserVerificationStore from '../store/useUserVerificationStore'
 import { TbBrandX } from 'react-icons/tb'
+import useUserVerificationStore from '../store/useUserVerificationStore'
+import { initUtils } from '@telegram-apps/sdk'
 
 // Define the platform icons
 export const platformIcons: { [key: string]: JSX.Element } = {
@@ -15,6 +16,35 @@ export const platformIcons: { [key: string]: JSX.Element } = {
     YOUTUBE: <FaYoutube className="w-8 h-8 !mb-3 text-red-600 !p-0 !m-0" />,
     EMAIL: <FaEnvelope className="w-8 h-8 !mb-3 text-green-500 !p-0 !m-0" />
     // Add other platforms as needed
+}
+
+// Generate referral link to direct users to the bot with a referral code
+export const generateReferralLink = (referralCode: string): string => {
+    const botUsername = 'CoinBeatsBunny_bot' // Use the bot's username
+    return `https://t.me/${botUsername}?start=${referralCode}`
+}
+
+// Handle the Invite Friend action
+export const handleInviteFriend = (referralCode: string) => {
+    const utils = initUtils()
+    const inviteLink = generateReferralLink(referralCode)
+    const shareText = 'Join me on this awesome app!'
+
+    const fullUrl = `https://t.me/share/url?url=${encodeURIComponent(inviteLink)}&text=${encodeURIComponent(shareText)}`
+    utils.openTelegramLink(fullUrl)
+}
+
+// Copy referral link to clipboard
+export const copyReferralLink = (referralLink: string, setNotificationText: Function, setNotificationOpen: Function) => {
+    navigator.clipboard
+        .writeText(referralLink)
+        .then(() => {
+            setNotificationText('Referral link copied to clipboard!')
+            setNotificationOpen(true)
+        })
+        .catch((error) => {
+            console.error('Error copying referral link:', error)
+        })
 }
 
 // Get action label based on verification method
@@ -44,7 +74,6 @@ export function getActionLabel(verificationMethod: string, isAuthenticated?: boo
             return 'Add to Bio'
         case 'LEAVE_FEEDBACK':
             return 'Feedback'
-
         // Add other mappings as needed
         default:
             return 'Action'
@@ -94,7 +123,7 @@ export const handleAction = async (task: VerificationTask, options: { [key: stri
         setFeedbackDialogOpen,
         twitterAuthenticated,
         academyName,
-        twitterHandle, // Use twitterHandle here
+        twitterHandle,
         telegramUserId
     } = options
     const { startTask } = useUserVerificationStore.getState()
@@ -264,12 +293,11 @@ export const handleAction = async (task: VerificationTask, options: { [key: stri
                         setNotificationOpen(true)
                         return
                     }
-                    const botUsername = 'CoinbeatsMiniApp_bot/miniapp' // Replace with your actual bot's username
-                    const referralLink = `https://t.me/${botUsername}?startapp=${userReferralCode}`
+                    const referralLink = generateReferralLink(userReferralCode)
                     setReferralLink(referralLink)
                     setReferralModalOpen(true)
                 } catch (error) {
-                    console.error('Error fetching user data:', error)
+                    console.error('Error generating referral link:', error)
                 }
                 break
 

@@ -150,7 +150,8 @@ exports.registerUser = async (req, res, next) => {
         // Check for special case: if the referring user is user with id 3 or referral code 'P0q6Z2t9'
         if (
           referringUser &&
-          (referringUser.id === 3 || referringUser.referralCode === 'P0q6Z2t9')
+          (referringUser.id === 3 ||
+            referringUser.referralCode === 'f1174622ac83f36c')
         ) {
           console.log(
             'Special case: awarding XP to the new user instead of the referrer.'

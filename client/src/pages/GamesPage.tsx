@@ -20,7 +20,9 @@ import {
     handleAction,
     shouldDisableActionButton,
     shouldDisableVerifyButton,
-    handleSubmitTask
+    handleSubmitTask,
+    copyReferralLink,
+    handleInviteFriend
 } from '../utils/actionHandlers'
 import { VerificationTask } from '../types'
 
@@ -155,27 +157,6 @@ export default function GamesPage() {
         }
     }
 
-    const handleInviteFriend = () => {
-        const utils = initUtils()
-        const inviteLink = `https://t.me/CoinbeatsMiniApp_bot/miniapp?startapp=${referralCode}`
-        const shareText = `Join me on this awesome app!`
-
-        const fullUrl = `https://t.me/share/url?url=${encodeURIComponent(inviteLink)}&text=${encodeURIComponent(shareText)}`
-        utils.openTelegramLink(fullUrl)
-    }
-
-    const copyReferralLink = () => {
-        navigator.clipboard
-            .writeText(referralLink)
-            .then(() => {
-                setNotificationText('Referral link copied to clipboard!')
-                setNotificationOpen(true)
-            })
-            .catch((error) => {
-                console.error('Error copying referral link:', error)
-            })
-    }
-
     const toggleTooltip = (tooltipIndex: number) => {
         if (visibleTooltip === tooltipIndex) {
             setVisibleTooltip(null)
@@ -220,7 +201,7 @@ export default function GamesPage() {
                                 <Button
                                     outline
                                     rounded
-                                    onClick={copyReferralLink}
+                                    onClick={() => copyReferralLink(referralLink, setNotificationText, setNotificationOpen)}
                                     className="!text-xs ml-4 mt-1 font-bold shadow-xl min-w-28 !mx-auto"
                                     style={{
                                         background: 'linear-gradient(to left, #ff0077, #7700ff)',
@@ -232,7 +213,7 @@ export default function GamesPage() {
                                 <Button
                                     outline
                                     rounded
-                                    onClick={handleInviteFriend}
+                                    onClick={() => referralCode && handleInviteFriend(referralCode)}
                                     className="!text-xs ml-4 mt-1 font-bold shadow-xl min-w-28 !mx-auto"
                                     style={{
                                         background: 'linear-gradient(to left, #ff0077, #7700ff)',
@@ -285,6 +266,7 @@ export default function GamesPage() {
                         </Dialog>
                     )}
 
+                    {/* Notification */}
                     <Notification
                         className="fixed !mt-12 top-12 left-0 z-50 border"
                         opened={notificationOpen}

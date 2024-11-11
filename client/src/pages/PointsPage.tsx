@@ -1,4 +1,6 @@
-import React, { useEffect, useState } from 'react'
+// src/pages/PointsPage.tsx
+
+import React, { useEffect, useState, useMemo } from 'react'
 import { Card, Page, Button, Dialog, List, ListInput } from 'konsta/react'
 import { FaTwitter, FaFacebook, FaInstagram, FaTelegramPlane, FaDiscord, FaYoutube, FaEnvelope } from 'react-icons/fa'
 import { X } from '@mui/icons-material'
@@ -12,21 +14,24 @@ import useUserStore from '~/store/useUserStore'
 import useSessionStore from '../store/useSessionStore'
 import treasure from '../images/treasure1.png'
 import bunny from '../images/bunny-head.png'
-import { initUtils } from '@telegram-apps/sdk'
 import Lottie from 'react-lottie'
 import coinsEarnedAnimationData from '../animations/earned-coins.json'
+import bunnyHappyAnimationData from '../animations/bunny-happy.json'
 import bronzeMedal from '../images/bronze-medal.png'
 import useTasksStore from '~/store/useTasksStore'
-import useLeaderboardStore from '~/store/useLeaderboardStore'
+import useLeaderboardStore from '../store/useLeaderboardStore'
 import axiosInstance from '../api/axiosInstance' // Only if needed
+import { handleAction, copyReferralLink, handleInviteFriend, generateReferralLink } from '../utils/actionHandlers' // Import functions
+import { VerificationTask } from '../types'
 
 const PointsPage: React.FC = () => {
-    const { userId, totalPoints, userPoints, fetchUserPoints } = useUserStore((state) => ({
+    const { userId, totalPoints, userPoints, fetchUserPoints, referralCode } = useUserStore((state) => ({
         userId: state.userId,
         totalPoints: state.totalPoints,
         userName: state.username,
         userPoints: state.userPoints,
-        fetchUserPoints: state.fetchUserPoints
+        fetchUserPoints: state.fetchUserPoints,
+        referralCode: state.referralCode
     }))
 
     const { leaderboard, weeklyLeaderboard, fetchLeaderboards, scholarshipText, fetchScholarshipText } = useLeaderboardStore((state) => ({
@@ -37,14 +42,12 @@ const PointsPage: React.FC = () => {
         fetchScholarshipText: state.fetchScholarshipText
     }))
 
-    const { homepageTasks, fetchHomepageTasks } = useTasksStore((state) => ({
-        homepageTasks: state.homepageTasks,
-        fetchHomepageTasks: state.fetchHomepageTasks
+    const { homepageTasks } = useTasksStore((state) => ({
+        homepageTasks: state.homepageTasks
     }))
 
     const [referralModalOpen, setReferralModalOpen] = useState(false)
     const [referralLink, setReferralLink] = useState('')
-    const [referralCodeState, setReferralCodeState] = useState('')
 
     const [activeTab, setActiveTab] = useState('tab-4') // Set active tab to Points
     const [activeLeaderboardTab, setActiveLeaderboardTab] = useState('weekly') // Set default tab to 'weekly' so Scholarships is active
@@ -54,9 +57,8 @@ const PointsPage: React.FC = () => {
         telegramUserId: state.userId
     }))
 
-    const { referralCode } = useUserStore((state) => ({
-        referralCode: state.referralCode
-    }))
+    const [notificationText, setNotificationText] = useState('')
+    const [notificationOpen, setNotificationOpen] = useState(false)
 
     const constructImageUrl = (url) => {
         return `https://subscribes.lt/${url}`
@@ -69,6 +71,15 @@ const PointsPage: React.FC = () => {
         loop: true,
         autoplay: true,
         animationData: coinsEarnedAnimationData,
+        rendererSettings: {
+            preserveAspectRatio: 'xMidYMid slice'
+        }
+    }
+
+    const bunnyHappyAnimation = {
+        loop: true,
+        autoplay: true,
+        animationData: bunnyHappyAnimationData,
         rendererSettings: {
             preserveAspectRatio: 'xMidYMid slice'
         }
@@ -119,45 +130,14 @@ const PointsPage: React.FC = () => {
         }
     }, [userId, fetchLeaderboards, fetchScholarshipText])
 
-    useEffect(() => {
-        fetchHomepageTasks()
-    }, [fetchHomepageTasks])
-
-    const handleAction = (task) => {
-        if (task.verificationMethod === 'INVITE_TELEGRAM_FRIEND') {
-            const userReferralCode = referralCode
-            if (!userReferralCode) {
-                alert('Referral code not available.')
-                return
-            }
-            const botUsername = 'CoinbeatsMiniApp_bot/miniapp' // Replace with your bot's username
-            const referralLink = `https://t.me/${botUsername}?startapp=${userReferralCode}`
-            setReferralCodeState(userReferralCode) // Store referralCode for later use
-            setReferralLink(referralLink)
-            setReferralModalOpen(true)
+    // Compute userRank
+    const userRank = useMemo(() => {
+        if (leaderboard && userId) {
+            const rank = leaderboard.findIndex((user) => user.userId === userId)
+            return rank >= 0 ? rank + 1 : null
         }
-        // ... handle other methods if necessary
-    }
-
-    const copyReferralLink = () => {
-        navigator.clipboard
-            .writeText(referralLink)
-            .then(() => {
-                alert('Referral link copied to clipboard!')
-            })
-            .catch((error) => {
-                console.error('Error copying referral link:', error)
-            })
-    }
-
-    const handleInviteFriend = () => {
-        const utils = initUtils()
-        const inviteLink = `https://t.me/CoinbeatsMiniApp_bot/miniapp?startapp=${referralCodeState}`
-        const shareText = `Join me on this awesome app!`
-
-        const fullUrl = `https://t.me/share/url?url=${encodeURIComponent(inviteLink)}&text=${encodeURIComponent(shareText)}`
-        utils.openTelegramLink(fullUrl)
-    }
+        return null
+    }, [leaderboard, userId])
 
     return (
         <Page>
@@ -167,40 +147,81 @@ const PointsPage: React.FC = () => {
             <div className="relative min-h-screen bg-cosmos-bg bg-fixed bg-center bg-no-repeat bg-cover">
                 <div className="absolute inset-0 bg-black opacity-50 z-0"></div>
                 <div className="relative z-10">
-                    {/* Treasure and Task Cards */}
-                    <div className="flex flex-row justify-center items-center mt-2">
-                        <div className="pr-2 bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-1 flex flex-row items-center px-2 m-2 border border-gray-300 dark:border-gray-600 h-12 ml-4 justify-between">
+                    {/* Header and Tasks */}
+                    <div className="flex flex-row justify-center items-center mb-2 mt-2">
+                        <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-1 flex flex-col items-center px-2 m-2 border border-gray-300 dark:border-gray-600 h-auto ml-4">
                             {/* "Your Coins" card */}
-                            <div className="w-10 h-10">
-                                <Lottie options={coinsEarnedAnimation} height={40} width={40} />
+                            <div className="flex flex-row items-center justify-between w-full">
+                                <div className="w-10 h-10">
+                                    <Lottie options={coinsEarnedAnimation} height={40} width={40} />
+                                </div>
+                                <div className="text-md font-bold text-black dark:text-white flex-grow text-end mr-2 mt-1">{totalPoints}</div>
                             </div>
-                            <div className="mt-1 text-md font-bold text-black dark:text-white flex flex-grow w-full text-end pr-2 items-center">
-                                {totalPoints}
-                            </div>
+                            {/* User Rank */}
+                            {userRank && (
+                                <div className="flex flex-row items-center mt-2 w-full">
+                                    <div className="w-10 h-10 items-center">
+                                        <Lottie options={bunnyHappyAnimation} height={35} width={35} />
+                                    </div>
+                                    <div className="flex flex-col file:text-md font-bold text-black dark:text-white flex-grow text-end mr-2 mt-1">
+                                        <div className="flex flex-row items-center justify-center">
+                                            <span className="text-center">{userRank}</span>
+                                        </div>
+                                        <div className="flex flex-row items-center justify-center">
+                                            <span className="text-xs text-gray-300">Rank</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
-                        {homepageTasks.length > 0 && (
-                            <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg py-1 flex flex-grow flex-row items-center px-1 m-1 border border-gray-300 dark:border-gray-600 h-12 mr-4 justify-between">
-                                {/* Task card */}
-                                <FaTelegramPlane size={30} className="text-blue-400 mx-2" />
-                                <div className="flex flex-col flex-grow ml-2">
-                                    <div className="text-[12px] text-gray-800 dark:text-gray-200 font-semibold mr-2">{homepageTasks[0].name}</div>
-                                </div>
-                                <Button
-                                    outline
-                                    rounded
-                                    onClick={() => handleAction(homepageTasks[0])}
-                                    className="!text-2xs !w-28 !h-6 !border-blue-400 !font-bold whitespace-nowrap mr-2 !px-2 !py-0"
-                                    style={{
-                                        background: 'linear-gradient(to left, #16a34a, #3b82f6)',
-                                        color: '#fff'
-                                    }}
-                                >
-                                    Invite +{homepageTasks[0].xp}
-                                    <img src={coinStack} className="h-3 w-3 ml-1" alt="coins icon" />
-                                </Button>
-                            </div>
-                        )}
+                        {/* Map over tasks to display all task items */}
+                        <div className="flex flex-col flex-grow">
+                            {homepageTasks.length > 0 &&
+                                homepageTasks.map((task, index) => (
+                                    <div
+                                        key={index}
+                                        className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg py-1 flex flex-row items-center px-1 m-1 border border-gray-300 dark:border-gray-600 h-12 mr-4 justify-between"
+                                    >
+                                        {/* Task card */}
+                                        {task.verificationMethod === 'LEAVE_FEEDBACK' ? (
+                                            <div className="text-2xl mx-2">🙏</div>
+                                        ) : (
+                                            <FaTelegramPlane size={30} className="text-blue-400 mx-2" />
+                                        )}
+                                        <div className="flex flex-col flex-grow ml-2">
+                                            <div className="text-[12px] text-gray-800 dark:text-gray-200 font-semibold mr-2">{task.name}</div>
+                                        </div>
+                                        <button
+                                            onClick={() =>
+                                                handleAction(task, {
+                                                    referralCode,
+                                                    setReferralLink,
+                                                    setReferralModalOpen,
+                                                    setNotificationText,
+                                                    setNotificationOpen
+                                                    // Remove referralCodeState and setReferralCodeState
+                                                })
+                                            }
+                                            className={`text-2xs font-bold whitespace-nowrap mr-2 rounded-full flex flex-row h-6 uppercase items-center justify-center ${
+                                                task.verificationMethod === 'LEAVE_FEEDBACK'
+                                                    ? 'border border-orange-400 px-4 w-fit-content min-w-28'
+                                                    : 'border border-blue-400 px-4 w-fit-content  min-w-28'
+                                            }`}
+                                            style={{
+                                                background:
+                                                    task.verificationMethod === 'LEAVE_FEEDBACK'
+                                                        ? 'linear-gradient(to left, #3b82f6, #ff0077)'
+                                                        : 'linear-gradient(to left, #16a34a, #3b82f6)',
+                                                color: '#fff'
+                                            }}
+                                        >
+                                            {task.verificationMethod === 'LEAVE_FEEDBACK' ? 'Feedback' : 'Invite'} +{task.xp}
+                                            <img src={coinStack} className="h-3 w-3 ml-1" alt="coins icon" />
+                                        </button>
+                                    </div>
+                                ))}
+                        </div>
                     </div>
 
                     <Dialog
@@ -218,7 +239,7 @@ const PointsPage: React.FC = () => {
                                 <Button
                                     outline
                                     rounded
-                                    onClick={copyReferralLink}
+                                    onClick={() => copyReferralLink(referralLink, setNotificationText, setNotificationOpen)}
                                     className="!text-xs ml-4 mt-1 font-bold shadow-xl min-w-28 !mx-auto"
                                     style={{
                                         background: 'linear-gradient(to left, #ff0077, #7700ff)',
@@ -230,7 +251,7 @@ const PointsPage: React.FC = () => {
                                 <Button
                                     outline
                                     rounded
-                                    onClick={handleInviteFriend}
+                                    onClick={() => referralCode && handleInviteFriend(referralCode)}
                                     className="!text-xs ml-4 mt-1 font-bold shadow-xl min-w-28 !mx-auto"
                                     style={{
                                         background: 'linear-gradient(to left, #ff0077, #7700ff)',
@@ -440,7 +461,7 @@ const PointsPage: React.FC = () => {
                                             const dateA = new Date(a.createdAt)
                                             const dateB = new Date(b.createdAt)
 
-                                            return dateB - dateA // Sort by newest first
+                                            return dateB.getTime() - dateA.getTime() // Sort by newest first
                                         })
                                         .map((point, index) => (
                                             <div key={index} className="flex items-center mb-4 justify-between">

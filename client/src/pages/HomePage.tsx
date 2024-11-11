@@ -24,6 +24,8 @@ import coinsCreditedAnimationData from '../animations/coins-credited.json'
 import coinsEarnedAnimationData from '../animations/earned-coins.json'
 import bunnyHappyAnimationData from '../animations/bunny-happy.json'
 import bunnyLogo from '../images/bunny-mascot.png'
+import { handleAction, handleInviteFriend, copyReferralLink, generateReferralLink } from '../utils/actionHandlers' // Import functions
+import { VerificationTask } from '../types'
 
 export default function HomePage() {
     const navigate = useNavigate()
@@ -34,7 +36,6 @@ export default function HomePage() {
     const [showBookmarkAnimation, setShowBookmarkAnimation] = useState(false)
     const [referralModalOpen, setReferralModalOpen] = useState(false)
     const [referralLink, setReferralLink] = useState('')
-    const [referralCodeState, setReferralCodeState] = useState('')
     const [searchQuery, setSearchQuery] = useState('')
     const [loginStreakData, setLoginStreakData] = useState(null)
     const [showLoginStreakDialog, setShowLoginStreakDialog] = useState(false)
@@ -229,47 +230,6 @@ export default function HomePage() {
         navigate(`/product/${academy.id}`, { state: { academy } })
     }
 
-    const handleAction = (task) => {
-        if (task.verificationMethod === 'INVITE_TELEGRAM_FRIEND') {
-            const userReferralCode = referralCode
-            if (!userReferralCode) {
-                setNotificationText('Referral code not available.')
-                setNotificationOpen(true)
-                return
-            }
-            const botUsername = 'CoinbeatsMiniApp_bot/miniapp' // Replace with your bot's username
-            const referralLink = `https://t.me/${botUsername}?startapp=${userReferralCode}`
-            setReferralCodeState(userReferralCode) // Store referralCode for later use
-            setReferralLink(referralLink)
-            setReferralModalOpen(true)
-        } else if (task.verificationMethod === 'LEAVE_FEEDBACK') {
-            setSelectedTask(task)
-            setFeedbackDialogOpen(true)
-        }
-        // ... handle other methods if any
-    }
-
-    const handleInviteFriend = () => {
-        const utils = initUtils()
-        const inviteLink = `https://t.me/CoinbeatsMiniApp_bot/miniapp?startapp=${referralCodeState}`
-        const shareText = `Join me on this awesome app!`
-
-        const fullUrl = `https://t.me/share/url?url=${encodeURIComponent(inviteLink)}&text=${encodeURIComponent(shareText)}`
-        utils.openTelegramLink(fullUrl)
-    }
-
-    const copyReferralLink = () => {
-        navigator.clipboard
-            .writeText(referralLink)
-            .then(() => {
-                setNotificationText('Referral link copied to clipboard!')
-                setNotificationOpen(true)
-            })
-            .catch((error) => {
-                console.error('Error copying referral link:', error)
-            })
-    }
-
     // Compute userRank
     const userRank = useMemo(() => {
         if (leaderboard && userId) {
@@ -360,7 +320,17 @@ export default function HomePage() {
                                             <div className="text-[12px] text-gray-800 dark:text-gray-200 font-semibold mr-2">{task.name}</div>
                                         </div>
                                         <button
-                                            onClick={() => handleAction(task)}
+                                            onClick={() =>
+                                                handleAction(task, {
+                                                    referralCode,
+                                                    setReferralLink,
+                                                    setReferralModalOpen,
+                                                    setNotificationText,
+                                                    setNotificationOpen,
+                                                    setSelectedTask,
+                                                    setFeedbackDialogOpen
+                                                })
+                                            }
                                             className={`text-2xs font-bold whitespace-nowrap mr-2 rounded-full flex flex-row h-6 uppercase items-center justify-center ${
                                                 task.verificationMethod === 'LEAVE_FEEDBACK'
                                                     ? 'border border-orange-400 px-4 w-fit-content min-w-28'
@@ -451,7 +421,7 @@ export default function HomePage() {
                                 <Button
                                     outline
                                     rounded
-                                    onClick={copyReferralLink}
+                                    onClick={() => copyReferralLink(referralLink, setNotificationText, setNotificationOpen)}
                                     className="!text-xs ml-4 mt-1 font-bold shadow-xl min-w-28 !mx-auto"
                                     style={{
                                         background: 'linear-gradient(to left, #ff0077, #7700ff)',
@@ -463,7 +433,7 @@ export default function HomePage() {
                                 <Button
                                     outline
                                     rounded
-                                    onClick={handleInviteFriend}
+                                    onClick={() => referralCode && handleInviteFriend(referralCode)}
                                     className="!text-xs ml-4 mt-1 font-bold shadow-xl min-w-28 !mx-auto"
                                     style={{
                                         background: 'linear-gradient(to left, #ff0077, #7700ff)',
