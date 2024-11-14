@@ -139,8 +139,15 @@ export const handleAction = async (task: VerificationTask, options: { [key: stri
         setNotificationOpen(true)
     } else if (task.verificationMethod === 'LEAVE_FEEDBACK') {
         console.log('Task is LEAVE_FEEDBACK')
-        setSelectedTask(task)
-        setFeedbackDialogOpen(true)
+        try {
+            await startTask(task.id, academyId) // Start the task
+            setSelectedTask(task)
+            setFeedbackDialogOpen(true)
+        } catch (error) {
+            console.error('Error starting task:', error)
+            setNotificationText(error.response?.data?.message || 'Error starting task. Please try again later.')
+            setNotificationOpen(true)
+        }
     } else {
         console.log('Handling action for verificationMethod:', task.verificationMethod)
         switch (task.verificationMethod) {
@@ -452,13 +459,6 @@ export const handleTwitterAuthentication = (
 
     const returnTo = encodeURIComponent(returnToUrl || window.location.origin) // Use a shorter URL
     const authUrl = `${import.meta.env.VITE_API_BASE_URL}/api/auth/twitter/start?telegramUserId=${telegramUserId}&returnTo=${returnTo}`
-
-    // Open the authUrl in external browser using Telegram.WebApp.openLink with target 'external'
-    // if (window.Telegram?.WebApp?.openLink) {
-    //     window.Telegram.WebApp.openLink(authUrl, { target: 'external' })
-    // } else {
-    //     window.open(authUrl, '_blank')
-    // }
 
     // Platform detection using user agent
     const userAgent = navigator.userAgent || navigator.vendor || ''

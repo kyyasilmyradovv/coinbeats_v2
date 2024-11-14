@@ -1,9 +1,8 @@
 // src/pages/PointsPage.tsx
 
 import React, { useEffect, useState, useMemo } from 'react'
-import { Card, Page, Button, Dialog, List, ListInput } from 'konsta/react'
-import { FaTwitter, FaFacebook, FaInstagram, FaTelegramPlane, FaDiscord, FaYoutube, FaEnvelope } from 'react-icons/fa'
-import { X } from '@mui/icons-material'
+import { Card, Page, Button, Dialog, List, ListInput, Notification } from 'konsta/react'
+import { FaTwitter, FaFacebook, FaInstagram, FaTelegramPlane, FaDiscord, FaYoutube, FaEnvelope, FaTimes } from 'react-icons/fa'
 import Navbar from '../components/common/Navbar'
 import Sidebar from '../components/common/Sidebar'
 import BottomTabBar from '../components/BottomTabBar'
@@ -11,27 +10,40 @@ import coinStack from '../images/coin-stack.png'
 import Trophy from '../images/trophy.png'
 import ximage from '../images/x.png'
 import useUserStore from '~/store/useUserStore'
-import useSessionStore from '../store/useSessionStore'
 import treasure from '../images/treasure1.png'
 import bunny from '../images/bunny-head.png'
+import bunnyLogo from '../images/bunny-mascot.png' // Import the bunny logo
 import Lottie from 'react-lottie'
 import coinsEarnedAnimationData from '../animations/earned-coins.json'
 import bunnyHappyAnimationData from '../animations/bunny-happy.json'
 import bronzeMedal from '../images/bronze-medal.png'
 import useTasksStore from '~/store/useTasksStore'
 import useLeaderboardStore from '../store/useLeaderboardStore'
-import axiosInstance from '../api/axiosInstance' // Only if needed
-import { handleAction, copyReferralLink, handleInviteFriend, generateReferralLink } from '../utils/actionHandlers' // Import functions
+import { handleAction, copyReferralLink, handleInviteFriend, getActionLabel } from '../utils/actionHandlers' // Import functions
+import useUserVerificationStore from '../store/useUserVerificationStore'
 import { VerificationTask } from '../types'
 
 const PointsPage: React.FC = () => {
-    const { userId, totalPoints, userPoints, fetchUserPoints, referralCode } = useUserStore((state) => ({
+    const { userId, totalPoints, userPoints, fetchUserPoints, referralCode, twitterAuthenticated, telegramUserId } = useUserStore((state) => ({
         userId: state.userId,
         totalPoints: state.totalPoints,
         userName: state.username,
         userPoints: state.userPoints,
         fetchUserPoints: state.fetchUserPoints,
-        referralCode: state.referralCode
+        referralCode: state.referralCode,
+        twitterAuthenticated: state.twitterAuthenticated,
+        telegramUserId: state.telegramUserId
+    }))
+
+    const { homepageTasks } = useTasksStore((state) => ({
+        homepageTasks: state.homepageTasks
+    }))
+
+    const { userVerificationTasks, fetchUserVerificationTasks, submitTask, startTask } = useUserVerificationStore((state) => ({
+        userVerificationTasks: state.userVerificationTasks,
+        fetchUserVerificationTasks: state.fetchUserVerificationTasks,
+        submitTask: state.submitTask,
+        startTask: state.startTask
     }))
 
     const { leaderboard, weeklyLeaderboard, fetchLeaderboards, scholarshipText, fetchScholarshipText } = useLeaderboardStore((state) => ({
@@ -42,10 +54,6 @@ const PointsPage: React.FC = () => {
         fetchScholarshipText: state.fetchScholarshipText
     }))
 
-    const { homepageTasks } = useTasksStore((state) => ({
-        homepageTasks: state.homepageTasks
-    }))
-
     const [referralModalOpen, setReferralModalOpen] = useState(false)
     const [referralLink, setReferralLink] = useState('')
 
@@ -53,12 +61,12 @@ const PointsPage: React.FC = () => {
     const [activeLeaderboardTab, setActiveLeaderboardTab] = useState('weekly') // Set default tab to 'weekly' so Scholarships is active
     const [visibleTooltip, setVisibleTooltip] = useState(false) // State for tooltip visibility
 
-    const { telegramUserId } = useSessionStore((state) => ({
-        telegramUserId: state.userId
-    }))
-
     const [notificationText, setNotificationText] = useState('')
     const [notificationOpen, setNotificationOpen] = useState(false)
+
+    const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false)
+    const [feedbackText, setFeedbackText] = useState('')
+    const [selectedTask, setSelectedTask] = useState<VerificationTask | null>(null)
 
     const constructImageUrl = (url) => {
         return `https://subscribes.lt/${url}`
@@ -130,6 +138,12 @@ const PointsPage: React.FC = () => {
         }
     }, [userId, fetchLeaderboards, fetchScholarshipText])
 
+    useEffect(() => {
+        if (userId) {
+            fetchUserVerificationTasks()
+        }
+    }, [userId, fetchUserVerificationTasks])
+
     // Compute userRank
     const userRank = useMemo(() => {
         if (leaderboard && userId) {
@@ -138,6 +152,88 @@ const PointsPage: React.FC = () => {
         }
         return null
     }, [leaderboard, userId])
+
+    // Function to determine if a task is completed
+    const isTaskCompleted = (task: VerificationTask): boolean => {
+        const userVerification = userVerificationTasks.find((uv) => uv.verificationTaskId === task.id && uv.userId === userId)
+        if (!userVerification || !userVerification.verified) return false
+
+        // If task is REPEATED and repeatInterval is 0, task is always available
+        if (task.intervalType === 'REPEATED' && task.repeatInterval === 0) {
+            return false
+        }
+
+        // Check if repeat interval has passed
+        if (task.intervalType === 'REPEATED' && task.repeatInterval > 0) {
+            const now = new Date()
+            const completedAt = new Date(userVerification.completedAt)
+            const intervalMillis = task.repeatInterval * 24 * 60 * 60 * 1000
+            if (now.getTime() - completedAt.getTime() >= intervalMillis) {
+                return false
+            } else {
+                return true
+            }
+        }
+
+        // For ONETIME tasks, if verified, it's completed
+        if (task.intervalType === 'ONETIME') {
+            return true
+        }
+
+        return false
+    }
+
+    // Implement the handleSubmitFeedback function
+    const handleSubmitFeedback = async () => {
+        if (!selectedTask) return
+        if (feedbackText.length < 100) {
+            setNotificationText('Please enter at least 100 characters.')
+            setNotificationOpen(true)
+            return
+        }
+        const taskId = selectedTask.id
+
+        try {
+            await startTask(taskId)
+            await submitTask(taskId, feedbackText)
+            setFeedbackDialogOpen(false)
+            setNotificationText('We appreciate your feedback very much! You have been awarded points for your feedback.')
+            setNotificationOpen(true)
+            setFeedbackText('')
+            setSelectedTask(null)
+
+            // Refresh user verification tasks
+            await fetchUserVerificationTasks()
+        } catch (error) {
+            console.error('Error submitting feedback:', error)
+            setNotificationText('Error submitting feedback. Please try again later.')
+            setNotificationOpen(true)
+        }
+    }
+
+    // Custom handleAction function
+    const onActionClick = async (task: VerificationTask) => {
+        if (task.verificationMethod === 'LEAVE_FEEDBACK') {
+            // Do not start the task here
+            setSelectedTask(task)
+            setFeedbackDialogOpen(true)
+        } else {
+            // Use existing handleAction function
+            handleAction(task, {
+                referralCode,
+                setReferralLink,
+                setReferralModalOpen,
+                setNotificationText,
+                setNotificationOpen,
+                setSelectedTask,
+                setFeedbackDialogOpen,
+                twitterAuthenticated,
+                academyName: '',
+                twitterHandle: '',
+                telegramUserId
+            })
+        }
+    }
 
     return (
         <Page>
@@ -178,52 +274,107 @@ const PointsPage: React.FC = () => {
                         {/* Map over tasks to display all task items */}
                         <div className="flex flex-col flex-grow">
                             {homepageTasks.length > 0 &&
-                                homepageTasks.map((task, index) => (
-                                    <div
-                                        key={index}
-                                        className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg py-1 flex flex-row items-center px-1 m-1 border border-gray-300 dark:border-gray-600 h-12 mr-4 justify-between"
-                                    >
-                                        {/* Task card */}
-                                        {task.verificationMethod === 'LEAVE_FEEDBACK' ? (
-                                            <div className="text-2xl mx-2">🙏</div>
-                                        ) : (
-                                            <FaTelegramPlane size={30} className="text-blue-400 mx-2" />
-                                        )}
-                                        <div className="flex flex-col flex-grow ml-2">
-                                            <div className="text-[12px] text-gray-800 dark:text-gray-200 font-semibold mr-2">{task.name}</div>
-                                        </div>
-                                        <button
-                                            onClick={() =>
-                                                handleAction(task, {
-                                                    referralCode,
-                                                    setReferralLink,
-                                                    setReferralModalOpen,
-                                                    setNotificationText,
-                                                    setNotificationOpen
-                                                    // Remove referralCodeState and setReferralCodeState
-                                                })
-                                            }
-                                            className={`text-2xs font-bold whitespace-nowrap mr-2 rounded-full flex flex-row h-6 uppercase items-center justify-center ${
-                                                task.verificationMethod === 'LEAVE_FEEDBACK'
-                                                    ? 'border border-orange-400 px-4 w-fit-content min-w-28'
-                                                    : 'border border-blue-400 px-4 w-fit-content  min-w-28'
-                                            }`}
-                                            style={{
-                                                background:
-                                                    task.verificationMethod === 'LEAVE_FEEDBACK'
-                                                        ? 'linear-gradient(to left, #3b82f6, #ff0077)'
-                                                        : 'linear-gradient(to left, #16a34a, #3b82f6)',
-                                                color: '#fff'
-                                            }}
+                                homepageTasks.map((task, index) => {
+                                    const completed = isTaskCompleted(task)
+
+                                    return (
+                                        <div
+                                            key={index}
+                                            className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg py-1 flex flex-row items-center px-1 m-1 border border-gray-300 dark:border-gray-600 h-12 mr-4 justify-between"
                                         >
-                                            {task.verificationMethod === 'LEAVE_FEEDBACK' ? 'Feedback' : 'Invite'} +{task.xp}
-                                            <img src={coinStack} className="h-3 w-3 ml-1" alt="coins icon" />
-                                        </button>
-                                    </div>
-                                ))}
+                                            {/* Task card */}
+                                            {task.verificationMethod === 'LEAVE_FEEDBACK' ? (
+                                                <div className="text-2xl mx-2">🙏</div>
+                                            ) : (
+                                                <FaTelegramPlane size={30} className="text-blue-400 mx-2" />
+                                            )}
+                                            <div className="flex flex-col flex-grow ml-2">
+                                                <div className="text-[12px] text-gray-800 dark:text-gray-200 font-semibold mr-2">{task.name}</div>
+                                            </div>
+                                            <button
+                                                onClick={() => {
+                                                    if (completed) {
+                                                        setNotificationText('You can do the task again when the task resets.')
+                                                        setNotificationOpen(true)
+                                                    } else {
+                                                        onActionClick(task)
+                                                    }
+                                                }}
+                                                className={`text-2xs font-bold whitespace-nowrap mr-2 rounded-full flex flex-row h-6 uppercase items-center justify-center ${
+                                                    completed
+                                                        ? 'border border-green-400 px-4 w-fit-content min-w-28'
+                                                        : 'border border-orange-400 px-4 w-fit-content min-w-28'
+                                                }`}
+                                                style={{
+                                                    background: completed
+                                                        ? 'linear-gradient(to left, #16a34a, #3b82f6)' // Green-blue gradient
+                                                        : 'linear-gradient(to left, #3b82f6, #ff0077)', // Original gradient
+                                                    color: '#fff'
+                                                }}
+                                            >
+                                                {completed ? 'Completed' : getActionLabel(task.verificationMethod, twitterAuthenticated)} +{task.xp}
+                                                <img src={coinStack} className="h-3 w-3 ml-1" alt="coins icon" />
+                                            </button>
+                                        </div>
+                                    )
+                                })}
                         </div>
                     </div>
 
+                    {/* Feedback Dialog */}
+                    <Dialog
+                        opened={feedbackDialogOpen}
+                        onBackdropClick={() => setFeedbackDialogOpen(false)}
+                        title={selectedTask ? selectedTask.name : 'Feedback'}
+                        className="!m-0 !p-0 rounded-2xl !w-80"
+                    >
+                        <div className="p-4 relative">
+                            {/* X Button to Close Dialog */}
+                            <button className="absolute -top-7 right-1 text-gray-500 hover:text-gray-700" onClick={() => setFeedbackDialogOpen(false)}>
+                                <FaTimes size={20} />
+                            </button>
+                            <div className="flex items-center justify-center mb-4">
+                                <Lottie options={bunnyHappyAnimation} height={150} width={150} />
+                            </div>
+                            <p>{selectedTask ? selectedTask.description : ''}</p>
+                            <div className="relative">
+                                <List className="!m-0 !p-0 !ml-0 !mr-0">
+                                    <ListInput
+                                        type="textarea"
+                                        outline
+                                        inputStyle={{ height: '5rem' }}
+                                        placeholder="Enter your feedback here..."
+                                        value={feedbackText}
+                                        onChange={(e) => setFeedbackText(e.target.value)}
+                                        className="w-full !m-0 !p-0 border border-gray-300 rounded mt-2 !ml-0 !mr-0"
+                                    />
+                                </List>
+                                {/* Character Count Display */}
+                                <div className="absolute -top-7 right-2 mt-2 mr-2 text-xs" style={{ color: feedbackText.length >= 100 ? 'green' : 'red' }}>
+                                    {feedbackText.length}/100
+                                </div>
+                            </div>
+                            <Button
+                                rounded
+                                outline
+                                onClick={handleSubmitFeedback}
+                                className="!text-xs mt-4 font-bold shadow-xl min-w-28 !mx-auto !h-7"
+                                style={{
+                                    background:
+                                        feedbackText.length >= 100
+                                            ? 'linear-gradient(to left, #ff0077, #7700ff)'
+                                            : 'linear-gradient(to left, #52525b, #27272a)', // Gray gradient when disabled
+                                    color: '#fff',
+                                    borderColor: '#9c27b0' // Ensure border is visible
+                                }}
+                                disabled={feedbackText.length < 100}
+                            >
+                                Send
+                            </Button>
+                        </div>
+                    </Dialog>
+
+                    {/* Referral Dialog */}
                     <Dialog
                         opened={referralModalOpen}
                         onBackdropClick={() => setReferralModalOpen(false)}
@@ -264,6 +415,19 @@ const PointsPage: React.FC = () => {
                             </div>
                         </div>
                     </Dialog>
+
+                    {/* Notification */}
+                    <Notification
+                        className="fixed !mt-12 top-12 left-0 z-50 border"
+                        opened={notificationOpen}
+                        icon={<img src={bunnyLogo} alt="Bunny Mascot" className="w-10 h-10" />}
+                        title="Message from CoinBeats Bunny"
+                        text={notificationText}
+                        button={<Button onClick={() => setNotificationOpen(false)}>Close</Button>}
+                        onClose={() => setNotificationOpen(false)}
+                    />
+
+                    {/* ... rest of your PointsPage code (leaderboards, etc.) ... */}
 
                     {/* Tabs for Leaderboards */}
                     <div className="flex justify-center gap-2 mt-2 mx-4 relative z-10">

@@ -1,7 +1,6 @@
 // src/pages/HomePage.tsx
 
 import React, { useMemo, useState, useEffect, useRef } from 'react'
-import { initUtils } from '@telegram-apps/sdk'
 import { useNavigate } from 'react-router-dom'
 import useAcademiesStore from '../store/useAcademiesStore'
 import useCategoryChainStore from '../store/useCategoryChainStore'
@@ -13,7 +12,6 @@ import Sidebar from '../components/common/Sidebar'
 import { Page, List, ListInput, Card, Button, Dialog, Searchbar, Notification } from 'konsta/react'
 import { MdBookmarks } from 'react-icons/md'
 import { FaTelegramPlane, FaTimes } from 'react-icons/fa'
-import useSessionStore from '../store/useSessionStore'
 import useUserStore from '../store/useUserStore'
 import coins from '../images/coin-stack.png'
 import NewIcon from '../images/new.png'
@@ -24,7 +22,7 @@ import coinsCreditedAnimationData from '../animations/coins-credited.json'
 import coinsEarnedAnimationData from '../animations/earned-coins.json'
 import bunnyHappyAnimationData from '../animations/bunny-happy.json'
 import bunnyLogo from '../images/bunny-mascot.png'
-import { handleAction, handleInviteFriend, copyReferralLink, generateReferralLink } from '../utils/actionHandlers' // Import functions
+import { handleAction, handleInviteFriend, copyReferralLink, generateReferralLink, getActionLabel } from '../utils/actionHandlers'
 import { VerificationTask } from '../types'
 
 export default function HomePage() {
@@ -62,7 +60,9 @@ export default function HomePage() {
         fetchBookmarkedAcademies,
         referralCode,
         handleLoginStreak,
-        addBookmark
+        addBookmark,
+        twitterAuthenticated,
+        telegramUserId
     } = useUserStore((state) => ({
         bookmarks: state.bookmarks,
         userId: state.userId,
@@ -73,11 +73,9 @@ export default function HomePage() {
         fetchBookmarkedAcademies: state.fetchBookmarkedAcademies,
         referralCode: state.referralCode,
         handleLoginStreak: state.handleLoginStreak,
-        addBookmark: state.addBookmark
-    }))
-
-    const { telegramUserId } = useSessionStore((state) => ({
-        telegramUserId: state.userId
+        addBookmark: state.addBookmark,
+        twitterAuthenticated: state.twitterAuthenticated,
+        telegramUserId: state.telegramUserId
     }))
 
     const { categories, chains } = useCategoryChainStore((state) => ({
@@ -98,9 +96,14 @@ export default function HomePage() {
         fetchLeaderboards: state.fetchLeaderboards
     }))
 
-    const { startTask, submitTask } = useUserVerificationStore((state) => ({
+    const { startTask, submitTask, fetchUserVerificationTasks } = useUserVerificationStore((state) => ({
         startTask: state.startTask,
-        submitTask: state.submitTask
+        submitTask: state.submitTask,
+        fetchUserVerificationTasks: state.fetchUserVerificationTasks
+    }))
+
+    const { userVerificationTasks } = useUserVerificationStore((state) => ({
+        userVerificationTasks: state.userVerificationTasks
     }))
 
     const bunnyAnimation = {
@@ -180,6 +183,12 @@ export default function HomePage() {
         }
     }, [userId, fetchLeaderboards])
 
+    useEffect(() => {
+        if (userId) {
+            fetchUserVerificationTasks()
+        }
+    }, [userId, fetchUserVerificationTasks])
+
     const isBookmarked = (academyId) => {
         return Array.isArray(bookmarks) ? bookmarks.some((bookmark) => bookmark.id === academyId) : false
     }
@@ -239,6 +248,36 @@ export default function HomePage() {
         return null
     }, [leaderboard, userId])
 
+    // Function to determine if a task is completed
+    const isTaskCompleted = (task: VerificationTask): boolean => {
+        const userVerification = userVerificationTasks.find((uv) => uv.verificationTaskId === task.id && uv.userId === userId)
+        if (!userVerification || !userVerification.verified) return false
+
+        // If task is REPEATED and repeatInterval is 0, task is always available
+        if (task.intervalType === 'REPEATED' && task.repeatInterval === 0) {
+            return false
+        }
+
+        // Check if repeat interval has passed
+        if (task.intervalType === 'REPEATED' && task.repeatInterval > 0) {
+            const now = new Date()
+            const completedAt = new Date(userVerification.completedAt)
+            const intervalMillis = task.repeatInterval * 24 * 60 * 60 * 1000
+            if (now.getTime() - completedAt.getTime() >= intervalMillis) {
+                return false
+            } else {
+                return true
+            }
+        }
+
+        // For ONETIME tasks, if verified, it's completed
+        if (task.intervalType === 'ONETIME') {
+            return true
+        }
+
+        return false
+    }
+
     // Implement the handleSubmitFeedback function
     const handleSubmitFeedback = async () => {
         if (!selectedTask) return
@@ -250,19 +289,44 @@ export default function HomePage() {
         const taskId = selectedTask.id
 
         try {
-            await startTask(taskId, userId)
-            await submitTask(taskId, feedbackText, userId)
+            await startTask(taskId)
+            await submitTask(taskId, feedbackText)
             setFeedbackDialogOpen(false)
-            setNotificationText(
-                'We appreciate your feedback very much! The admins will review your feedback and credit you the points. You can see your points on the Points page under your stats tab.'
-            )
+            setNotificationText('We appreciate your feedback very much! You have been awarded points for your feedback.')
             setNotificationOpen(true)
             setFeedbackText('')
             setSelectedTask(null)
+
+            // Refresh user verification tasks
+            await fetchUserVerificationTasks()
         } catch (error) {
             console.error('Error submitting feedback:', error)
             setNotificationText('Error submitting feedback. Please try again later.')
             setNotificationOpen(true)
+        }
+    }
+
+    // Custom handleAction function
+    const onActionClick = async (task: VerificationTask) => {
+        if (task.verificationMethod === 'LEAVE_FEEDBACK') {
+            // Do not start the task here
+            setSelectedTask(task)
+            setFeedbackDialogOpen(true)
+        } else {
+            // Use existing handleAction function
+            handleAction(task, {
+                referralCode,
+                setReferralLink,
+                setReferralModalOpen,
+                setNotificationText,
+                setNotificationOpen,
+                setSelectedTask,
+                setFeedbackDialogOpen,
+                twitterAuthenticated,
+                academyName: '',
+                twitterHandle: '',
+                telegramUserId
+            })
         }
     }
 
@@ -305,50 +369,50 @@ export default function HomePage() {
                         {/* Map over tasks to display all task items */}
                         <div className="flex flex-col flex-grow">
                             {homepageTasks.length > 0 &&
-                                homepageTasks.map((task, index) => (
-                                    <div
-                                        key={index}
-                                        className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg py-1 flex flex-row items-center px-1 m-1 border border-gray-300 dark:border-gray-600 h-12 mr-4 justify-between"
-                                    >
-                                        {/* Task card */}
-                                        {task.verificationMethod === 'LEAVE_FEEDBACK' ? (
-                                            <div className="text-2xl mx-2">🙏</div>
-                                        ) : (
-                                            <FaTelegramPlane size={30} className="text-blue-400 mx-2" />
-                                        )}
-                                        <div className="flex flex-col flex-grow ml-2">
-                                            <div className="text-[12px] text-gray-800 dark:text-gray-200 font-semibold mr-2">{task.name}</div>
-                                        </div>
-                                        <button
-                                            onClick={() =>
-                                                handleAction(task, {
-                                                    referralCode,
-                                                    setReferralLink,
-                                                    setReferralModalOpen,
-                                                    setNotificationText,
-                                                    setNotificationOpen,
-                                                    setSelectedTask,
-                                                    setFeedbackDialogOpen
-                                                })
-                                            }
-                                            className={`text-2xs font-bold whitespace-nowrap mr-2 rounded-full flex flex-row h-6 uppercase items-center justify-center ${
-                                                task.verificationMethod === 'LEAVE_FEEDBACK'
-                                                    ? 'border border-orange-400 px-4 w-fit-content min-w-28'
-                                                    : 'border border-blue-400 px-4 w-fit-content  min-w-28'
-                                            }`}
-                                            style={{
-                                                background:
-                                                    task.verificationMethod === 'LEAVE_FEEDBACK'
-                                                        ? 'linear-gradient(to left, #3b82f6, #ff0077)'
-                                                        : 'linear-gradient(to left, #16a34a, #3b82f6)',
-                                                color: '#fff'
-                                            }}
+                                homepageTasks.map((task, index) => {
+                                    const completed = isTaskCompleted(task)
+
+                                    return (
+                                        <div
+                                            key={index}
+                                            className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg py-1 flex flex-row items-center px-1 m-1 border border-gray-300 dark:border-gray-600 h-12 mr-4 justify-between"
                                         >
-                                            {task.verificationMethod === 'LEAVE_FEEDBACK' ? 'Feedback' : 'Invite'} +{task.xp}
-                                            <img src={coins} className="h-3 w-3 ml-1" alt="coins icon" />
-                                        </button>
-                                    </div>
-                                ))}
+                                            {/* Task card */}
+                                            {task.verificationMethod === 'LEAVE_FEEDBACK' ? (
+                                                <div className="text-2xl mx-2">🙏</div>
+                                            ) : (
+                                                <FaTelegramPlane size={30} className="text-blue-400 mx-2" />
+                                            )}
+                                            <div className="flex flex-col flex-grow ml-2">
+                                                <div className="text-[12px] text-gray-800 dark:text-gray-200 font-semibold mr-2">{task.name}</div>
+                                            </div>
+                                            <button
+                                                onClick={() => {
+                                                    if (completed) {
+                                                        setNotificationText('You can do the task again when the task resets.')
+                                                        setNotificationOpen(true)
+                                                    } else {
+                                                        onActionClick(task)
+                                                    }
+                                                }}
+                                                className={`text-2xs font-bold whitespace-nowrap mr-2 rounded-full flex flex-row h-6 uppercase items-center justify-center ${
+                                                    completed
+                                                        ? 'border border-green-400 px-4 w-fit-content min-w-28'
+                                                        : 'border border-orange-400 px-4 w-fit-content min-w-28'
+                                                }`}
+                                                style={{
+                                                    background: completed
+                                                        ? 'linear-gradient(to left, #16a34a, #3b82f6)' // Green-blue gradient
+                                                        : 'linear-gradient(to left, #3b82f6, #ff0077)', // Original gradient
+                                                    color: '#fff'
+                                                }}
+                                            >
+                                                {completed ? 'Completed' : getActionLabel(task.verificationMethod, twitterAuthenticated)} +{task.xp}
+                                                <img src={coins} className="h-3 w-3 ml-1" alt="coins icon" />
+                                            </button>
+                                        </div>
+                                    )
+                                })}
                         </div>
                     </div>
 

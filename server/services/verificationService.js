@@ -494,13 +494,16 @@ const refreshAccessToken = async (refreshToken, twitterAccount) => {
 const verifyShortCircuit = async (verificationTask, userVerification) => {
   const now = new Date();
   const taskStartTime = new Date(userVerification.createdAt);
-  const elapsedTime = (now - taskStartTime) / 1000; // in seconds
+  const elapsedTimeMillis = now - taskStartTime; // in milliseconds
 
-  const delay = verificationTask.shortCircuitTimer || 0;
+  const delayMillis =
+    (verificationTask.shortCircuitTimer || 0) * 60 * 60 * 1000; // Convert hours to milliseconds
 
-  console.log(`Elapsed time: ${elapsedTime}s, Required delay: ${delay}s`);
+  console.log(
+    `Elapsed time: ${elapsedTimeMillis}ms, Required delay: ${delayMillis}ms`
+  );
 
-  if (elapsedTime >= delay) {
+  if (elapsedTimeMillis >= delayMillis) {
     return true; // Task is verified
   } else {
     return false; // Task is not yet verified
@@ -649,13 +652,102 @@ const verifyTweet = async (verificationTask, user, params) => {
     const isTweeted = !!matchedTweet;
     console.log('Is Tweeted:', isTweeted);
 
+    if (!isTweeted) {
+      throw new Error('Tweet not found matching the required criteria.');
+    }
+
     return isTweeted;
   } catch (error) {
     console.error(
       'Error verifying tweet:',
       error.response?.data || error.message || error
     );
-    throw error;
+
+    if (error.response) {
+      if (error.response.status === 429) {
+        // Twitter API rate limit exceeded
+        throw new Error('Twitter rate limit exceeded. Please try again later.');
+      } else if (
+        error.response.status === 401 ||
+        error.response.status === 403
+      ) {
+        // Unauthorized or Forbidden
+        throw new Error(
+          'Twitter authentication failed. Please reconnect your Twitter account.'
+        );
+      } else {
+        // Other Twitter API errors
+        throw new Error('Twitter API error. Please try again later.');
+      }
+    } else if (
+      error.message.includes('User is not authenticated with Twitter')
+    ) {
+      throw new Error('Please connect your Twitter account to proceed.');
+    } else if (error.message.includes('Tweet not found')) {
+      throw new Error(
+        'Tweet matching the criteria was not found. Please ensure you have tweeted correctly.'
+      );
+    } else {
+      // General error
+      throw new Error('An unexpected error occurred. Please try again later.');
+    }
+  }
+};
+
+const performVerification = async (verificationTask, user, params) => {
+  const { userVerification } = params;
+
+  // Check if the task is ONETIME and already completed
+  if (verificationTask.intervalType === 'ONETIME') {
+    if (userVerification && userVerification.verified) {
+      throw new Error('This task has already been completed.');
+    }
+  }
+
+  // Check if the task is REPEATED and interval has not passed
+  if (verificationTask.intervalType === 'REPEATED') {
+    const now = new Date();
+    const lastCompletionDate = userVerification
+      ? new Date(userVerification.completedAt)
+      : null;
+
+    // Check against repeat interval for REPEATED tasks
+    if (lastCompletionDate) {
+      const intervalMillis =
+        verificationTask.repeatInterval * 24 * 60 * 60 * 1000; // repeatInterval in days
+      if (now - lastCompletionDate < intervalMillis) {
+        throw new Error(
+          'This task has already been completed in the current interval.'
+        );
+      }
+    }
+  }
+
+  // Proceed with task verification based on method
+  switch (verificationTask.verificationMethod) {
+    case 'TWEET':
+      return await verifyTweet(verificationTask, user, params);
+    case 'FOLLOW_USER':
+      return await verifyFollowUser(verificationTask, user);
+    case 'LEAVE_FEEDBACK':
+      // Automatically verify feedback tasks upon submission
+      return true;
+    default:
+      if (verificationTask.shortCircuit) {
+        const isVerified = await verifyShortCircuit(
+          verificationTask,
+          userVerification
+        );
+        if (isVerified) {
+          return true;
+        } else {
+          throw new Error(
+            'These tasks are manually verified, come back in a few hours to verify.'
+          );
+        }
+      } else {
+        throw new Error('Unsupported verification method');
+      }
   }
 };
 

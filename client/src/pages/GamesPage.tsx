@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { Page, Button, Dialog, ListInput, List, Notification } from 'konsta/react'
+import { FaTwitter, FaFacebook, FaInstagram, FaTelegramPlane, FaDiscord, FaYoutube, FaEnvelope, FaTimes } from 'react-icons/fa'
 import Navbar from '../components/common/Navbar'
 import Sidebar from '../components/common/Sidebar'
 import BottomTabBar from '../components/BottomTabBar'
@@ -12,18 +13,8 @@ import useTasksStore from '../store/useTasksStore'
 import useUserVerificationStore from '../store/useUserVerificationStore'
 import Lottie from 'react-lottie'
 import bunnyHappyAnimationData from '../animations/bunny-happy.json'
-import {
-    platformIcons,
-    getActionLabel,
-    requiresInputField,
-    getInputPlaceholder,
-    handleAction,
-    shouldDisableActionButton,
-    shouldDisableVerifyButton,
-    handleSubmitTask,
-    copyReferralLink,
-    handleInviteFriend
-} from '../utils/actionHandlers'
+import coinbeats from '../images/coinbeats-l.svg'
+import { platformIcons, getActionLabel, handleAction, copyReferralLink, handleInviteFriend } from '../utils/actionHandlers'
 import { VerificationTask } from '../types'
 
 const bunnyHappyAnimation = {
@@ -64,12 +55,6 @@ export default function GamesPage() {
     const [notificationOpen, setNotificationOpen] = useState(false)
     const [notificationText, setNotificationText] = useState('')
     const [selectedTask, setSelectedTask] = useState<VerificationTask | null>(null)
-    const [taskInputValues, setTaskInputValues] = useState<{
-        [key: number]: string
-    }>({})
-    const [submittedTasks, setSubmittedTasks] = useState<{
-        [key: number]: boolean
-    }>({})
     const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false)
     const [feedbackText, setFeedbackText] = useState('')
 
@@ -78,81 +63,106 @@ export default function GamesPage() {
         fetchUserVerificationTasks()
     }, [fetchGameTasks, fetchUserVerificationTasks])
 
+    // Function to determine if a task is completed
+    const isTaskCompleted = (task: VerificationTask): boolean => {
+        const userVerification = userVerificationTasks.find((uv) => uv.verificationTaskId === task.id && uv.userId === userId)
+        if (!userVerification || !userVerification.verified) return false
+
+        // If task is REPEATED and repeatInterval is 0, task is always available
+        if (task.intervalType === 'REPEATED' && task.repeatInterval === 0) {
+            return false
+        }
+
+        // Check if repeat interval has passed
+        if (task.intervalType === 'REPEATED' && task.repeatInterval > 0) {
+            const now = new Date()
+            const completedAt = new Date(userVerification.completedAt)
+            const intervalMillis = task.repeatInterval * 24 * 60 * 60 * 1000
+            if (now.getTime() - completedAt.getTime() >= intervalMillis) {
+                return false
+            } else {
+                return true
+            }
+        }
+
+        // For ONETIME tasks, if verified, it's completed
+        if (task.intervalType === 'ONETIME') {
+            return true
+        }
+
+        return false
+    }
+
     // Handle action button click
     const onActionClick = async (task: VerificationTask) => {
-        console.log('onActionClick called with task:', task)
         try {
-            await handleAction(task, {
-                referralCode,
-                setReferralLink,
-                setReferralModalOpen,
-                setNotificationText,
-                setNotificationOpen,
-                setSelectedTask,
-                setFeedbackDialogOpen,
-                twitterAuthenticated,
-                telegramUserId
-            })
-            console.log('onActionClick after handleAction')
+            if (task.verificationMethod === 'LEAVE_FEEDBACK') {
+                const completed = isTaskCompleted(task)
+                if (completed) {
+                    setNotificationText('You can do the task again when the task resets.')
+                    setNotificationOpen(true)
+                } else {
+                    // Handle LEAVE_FEEDBACK task
+                    setSelectedTask(task)
+                    setFeedbackDialogOpen(true)
+                }
+            } else {
+                await handleAction(task, {
+                    referralCode,
+                    setReferralLink,
+                    setReferralModalOpen,
+                    setNotificationText,
+                    setNotificationOpen,
+                    setSelectedTask,
+                    setFeedbackDialogOpen,
+                    twitterAuthenticated,
+                    telegramUserId
+                })
+            }
         } catch (error) {
             console.error('Error in onActionClick:', error)
-        }
-    }
-
-    // Handle submit task
-    const onSubmitTask = async (task: VerificationTask) => {
-        const submissionText = taskInputValues[task.id]
-        await handleSubmitTask(task, submissionText, {
-            setNotificationText,
-            setNotificationOpen,
-            setSubmittedTasks,
-            submittedTasks,
-            setTaskInputValues,
-            taskInputValues
-        })
-    }
-
-    const handleVerify = async (task: VerificationTask) => {
-        const userVerification = userVerificationTasks.find((verification) => verification.verificationTaskId === task.id)
-        const isVerified = userVerification && userVerification.verified
-        const completedToday = isVerified && isSameDay(new Date(), new Date(userVerification?.completedAt))
-
-        // Prevent verification if already done for the day
-        if ((task.intervalType === 'ONETIME' && isVerified) || (task.intervalType === 'REPEATED' && completedToday)) {
-            setNotificationText('You have already completed this task.')
-            setNotificationOpen(true)
-            return
-        }
-
-        try {
-            const message = await completeTask(task.id)
-            setNotificationText(message)
-            setNotificationOpen(true)
-        } catch (error) {
-            console.error('Error completing task:', error)
-            setNotificationText('Verification failed')
-            setNotificationOpen(true)
         }
     }
 
     // Handle feedback submission
     const handleSubmitFeedback = async () => {
         if (!selectedTask) return
+        if (feedbackText.length < 100) {
+            setNotificationText('Please enter at least 100 characters.')
+            setNotificationOpen(true)
+            return
+        }
         const taskId = selectedTask.id
 
         try {
             await startTask(taskId)
             await submitTask(taskId, feedbackText)
             setFeedbackDialogOpen(false)
-            setNotificationText(
-                'We appreciate your feedback very much! The admins will review your feedback and credit you the points. You can see your points on the Points page under your stats tab.'
-            )
+            setNotificationText('We appreciate your feedback very much! You have been awarded points for your feedback.')
             setNotificationOpen(true)
             setFeedbackText('')
             setSelectedTask(null)
+
+            // Refresh user verification tasks
+            await fetchUserVerificationTasks()
         } catch (error) {
             console.error('Error submitting feedback:', error)
-            setNotificationText('Error submitting feedback. Please try again later.')
+            setNotificationText('You can do the task again when the task resets.')
+            setNotificationOpen(true)
+        }
+    }
+
+    const handleVerify = async (task: VerificationTask) => {
+        try {
+            const message = await completeTask(task.id)
+            setNotificationText(message)
+            setNotificationOpen(true)
+
+            // Refresh user verification tasks
+            await fetchUserVerificationTasks()
+        } catch (error) {
+            console.error('Error completing task:', error)
+            setNotificationText('Verification failed')
             setNotificationOpen(true)
         }
     }
@@ -163,11 +173,6 @@ export default function GamesPage() {
         } else {
             setVisibleTooltip(tooltipIndex)
         }
-    }
-
-    // Helper functions
-    function isSameDay(d1: Date, d2: Date) {
-        return d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth() && d1.getDate() === d2.getDate()
     }
 
     const inviteTask = gameTasks.find((task) => task.verificationMethod === 'INVITE_TELEGRAM_FRIEND')
@@ -227,38 +232,53 @@ export default function GamesPage() {
                     </Dialog>
 
                     {/* Feedback Dialog */}
-                    {selectedTask && (
+                    {selectedTask && feedbackDialogOpen && (
                         <Dialog
                             opened={feedbackDialogOpen}
                             onBackdropClick={() => setFeedbackDialogOpen(false)}
                             title={selectedTask ? selectedTask.name : 'Feedback'}
                             className="!m-0 !p-0 rounded-2xl !w-80"
                         >
-                            <div className="p-4">
+                            <div className="p-4 relative">
+                                {/* X Button to Close Dialog */}
+                                <button className="absolute -top-7 right-1 text-gray-500 hover:text-gray-700" onClick={() => setFeedbackDialogOpen(false)}>
+                                    <FaTimes size={20} />
+                                </button>
                                 <div className="flex items-center justify-center mb-4">
                                     <Lottie options={bunnyHappyAnimation} height={150} width={150} />
                                 </div>
                                 <p>{selectedTask ? selectedTask.description : ''}</p>
-                                <List className="!m-0 !p-0 !ml-0 !mr-0">
-                                    <ListInput
-                                        type="textarea"
-                                        outline
-                                        inputStyle={{ height: '5rem', marginLeft: '0', marginRight: '0' }}
-                                        placeholder="Enter your feedback here..."
-                                        value={feedbackText}
-                                        onChange={(e) => setFeedbackText(e.target.value)}
-                                        className="w-full !m-0 !p-0 border border-gray-300 rounded mt-2 !ml-0 !mr-0"
-                                    />
-                                </List>
+                                <div className="relative">
+                                    <List className="!m-0 !p-0 !ml-0 !mr-0">
+                                        <ListInput
+                                            type="textarea"
+                                            outline
+                                            inputStyle={{ height: '5rem' }}
+                                            placeholder="Enter your feedback here..."
+                                            value={feedbackText}
+                                            onChange={(e) => setFeedbackText(e.target.value)}
+                                            className="w-full !m-0 !p-0 border border-gray-300 rounded mt-2 !ml-0 !mr-0"
+                                        />
+                                    </List>
+                                    {/* Character Count Display */}
+                                    <div className="absolute -top-7 right-2 mt-2 mr-2 text-xs" style={{ color: feedbackText.length >= 100 ? 'green' : 'red' }}>
+                                        {feedbackText.length}/100
+                                    </div>
+                                </div>
                                 <Button
                                     rounded
                                     outline
                                     onClick={handleSubmitFeedback}
-                                    className="!text-xs mt-4 font-bold shadow-xl min-w-28 !mx-auto"
+                                    className="!text-xs mt-4 font-bold shadow-xl min-w-28 !mx-auto !h-7"
                                     style={{
-                                        background: 'linear-gradient(to left, #ff0077, #7700ff)',
-                                        color: '#fff'
+                                        background:
+                                            feedbackText.length >= 100
+                                                ? 'linear-gradient(to left, #ff0077, #7700ff)'
+                                                : 'linear-gradient(to left, #52525b, #27272a)', // Gray gradient when disabled
+                                        color: '#fff',
+                                        borderColor: '#9c27b0' // Ensure border is visible
                                     }}
+                                    disabled={feedbackText.length < 100}
                                 >
                                     Send
                                 </Button>
@@ -275,35 +295,7 @@ export default function GamesPage() {
                         text={notificationText}
                         button={<Button onClick={() => setNotificationOpen(false)}>Close</Button>}
                         onClose={() => setNotificationOpen(false)}
-                    >
-                        {selectedTask && requiresInputField(selectedTask) && !submittedTasks[selectedTask.id] && (
-                            <div className="flex flex-row items-center">
-                                <List className="!m-1 !p-1">
-                                    <ListInput
-                                        type="text"
-                                        outline
-                                        value={taskInputValues[selectedTask.id] || ''}
-                                        onChange={(e) =>
-                                            setTaskInputValues({
-                                                ...taskInputValues,
-                                                [selectedTask.id]: e.target.value
-                                            })
-                                        }
-                                        placeholder={getInputPlaceholder(selectedTask)}
-                                        className="border rounded text-xs !m-1 !p-1"
-                                    />
-                                </List>
-                                <Button
-                                    rounded
-                                    onClick={() => onSubmitTask(selectedTask)}
-                                    className="!text-2xs font-bold shadow-xl !w-20 !h-6 mt-1 justify-end"
-                                    style={{ background: 'linear-gradient(to left, #16a34a, #3b82f6)', color: '#fff' }}
-                                >
-                                    Send
-                                </Button>
-                            </div>
-                        )}
-                    </Notification>
+                    />
 
                     <div className="mt-0 px-4 pb-10 pt-4 mb-8">
                         {/* Tabs for Tasks */}
@@ -348,7 +340,11 @@ export default function GamesPage() {
                             >
                                 {/* Platform Icon */}
                                 <div className="w-12 h-16 flex items-center justify-center pb-2">
-                                    {platformIcons[inviteTask.platform] || <div className="w-10 h-10 text-gray-500 p-2">?</div>}
+                                    {platformIcons[inviteTask.platform] ? (
+                                        platformIcons[inviteTask.platform]
+                                    ) : (
+                                        <img src={coinbeats} alt="Default Icon" className="w-10 h-10 pb-2" />
+                                    )}
                                 </div>
 
                                 <div className="flex flex-col flex-grow mx-2">
@@ -388,7 +384,7 @@ export default function GamesPage() {
                                 </div>
 
                                 {/* Buttons */}
-                                <div className="flex flex-col space-y-1 justify-center items-center mr-2">
+                                <div className="flex flex-col space-y-1 justify-center items-center mr-2 my-auto">
                                     {/* Action Button */}
                                     <Button
                                         rounded
@@ -408,14 +404,7 @@ export default function GamesPage() {
                         {/* Display Tasks Based on Active Tab */}
                         {filteredTasks.length > 0 ? (
                             filteredTasks.map((task) => {
-                                // Find user verification for the current task
-                                const userVerification = userVerificationTasks.find((verification) => verification.verificationTaskId === task.id)
-                                const isVerified = userVerification?.verified
-                                const completedToday = isVerified && isSameDay(new Date(), new Date(userVerification?.completedAt))
-
-                                // Determine if the "Action" or "Verify" button should be disabled
-                                const disableActionButton = shouldDisableActionButton(task, userVerificationTasks)
-                                const disableVerifyButton = shouldDisableVerifyButton(task, userVerificationTasks)
+                                const completed = isTaskCompleted(task)
 
                                 return (
                                     <div
@@ -424,7 +413,11 @@ export default function GamesPage() {
                                     >
                                         {/* Platform Icon */}
                                         <div className="w-12 h-16 flex items-center justify-center pt-2">
-                                            {platformIcons[task.platform] || <div className="w-8 h-8 text-gray-500">?</div>}
+                                            {platformIcons[task.platform] ? (
+                                                platformIcons[task.platform]
+                                            ) : (
+                                                <img src={coinbeats} alt="Default Icon" className="w-8 h-8 pb-2" />
+                                            )}
                                         </div>
 
                                         <div className="flex flex-col flex-grow mx-2 py-1">
@@ -467,11 +460,11 @@ export default function GamesPage() {
                                                 className="!text-2xs font-bold shadow-xl !w-20 !h-6"
                                                 style={{
                                                     background: 'linear-gradient(to left, #16a34a, #3b82f6)',
+                                                    borderColor: '#16a34a', // Green border
                                                     color: '#fff'
                                                 }}
-                                                disabled={disableActionButton}
                                             >
-                                                {getActionLabel(task.verificationMethod, twitterAuthenticated)}
+                                                {completed ? 'Completed' : getActionLabel(task.verificationMethod, twitterAuthenticated)}
                                             </Button>
 
                                             {/* Verify Button */}
@@ -482,13 +475,12 @@ export default function GamesPage() {
                                                     onClick={() => handleVerify(task)}
                                                     className="!text-2xs font-bold shadow-xl !w-20 !h-6"
                                                     style={{
-                                                        borderColor: isVerified ? '#16a34a' : '#3b82f6',
+                                                        borderColor: completed ? '#16a34a' : '#3b82f6',
                                                         backgroundColor: 'transparent',
                                                         color: '#fff'
                                                     }}
-                                                    disabled={disableVerifyButton}
                                                 >
-                                                    {isVerified ? 'Completed' : 'Verify'}
+                                                    {completed ? 'Completed' : 'Verify'}
                                                 </Button>
                                             )}
                                         </div>

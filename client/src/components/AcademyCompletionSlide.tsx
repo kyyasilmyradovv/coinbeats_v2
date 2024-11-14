@@ -5,6 +5,7 @@ import { Button, Card, Dialog, ListInput, List, Notification } from 'konsta/reac
 import coinStack from '../images/coin-stack.png'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import axiosInstance from '../api/axiosInstance'
+import axios from 'axios'
 import useUserStore from '~/store/useUserStore'
 import useUserVerificationStore from '~/store/useUserVerificationStore'
 import { FaTwitter } from 'react-icons/fa'
@@ -183,7 +184,23 @@ const AcademyCompletionSlide: React.FC<AcademyCompletionSlideProps> = ({
             await fetchUserVerificationTasks()
         } catch (error) {
             console.error('Error completing task:', error)
-            const errorMessage = error.response?.data?.message || 'Verification failed.'
+
+            let errorMessage = 'Verification failed. Please try again later.'
+            if (axios.isAxiosError(error)) {
+                const status = error.response?.status
+                const backendMessage = error.response?.data?.message
+
+                if (status === 429) {
+                    errorMessage = 'Too many requests. Please try again later.'
+                } else if (status === 401) {
+                    errorMessage = 'Unauthorized. Please connect your Twitter account.'
+                } else if (status === 400 && backendMessage) {
+                    errorMessage = backendMessage
+                } else if (backendMessage) {
+                    errorMessage = backendMessage
+                }
+            }
+
             setNotificationText(errorMessage)
             setNotificationOpen(true)
         }

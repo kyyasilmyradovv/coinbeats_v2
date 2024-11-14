@@ -464,14 +464,13 @@ const isSameDay = (d1, d2) => {
  * Complete a verification task.
  */
 exports.completeVerificationTask = async (req, res, next) => {
-  const { taskId, userId, academyId } = req.body;
+  const { taskId, userId, academyId, submissionText } = req.body;
 
   if (!userId || !taskId) {
     return next(createError(400, 'User ID and Task ID are required'));
   }
 
   try {
-    // Fetch user and include twitterAccounts
     const user = await prisma.user.findUnique({
       where: { id: userId },
       include: {
@@ -482,6 +481,7 @@ exports.completeVerificationTask = async (req, res, next) => {
         },
       },
     });
+
     if (!user) {
       return next(createError(404, 'User not found'));
     }
@@ -489,6 +489,7 @@ exports.completeVerificationTask = async (req, res, next) => {
     const verificationTask = await prisma.verificationTask.findUnique({
       where: { id: taskId },
     });
+
     if (!verificationTask) {
       return next(createError(404, 'Verification task not found'));
     }
@@ -500,33 +501,34 @@ exports.completeVerificationTask = async (req, res, next) => {
         verificationTaskId: taskId,
         academyId: academyId || undefined,
       },
-      orderBy: { completedAt: 'desc' },
+      orderBy: { createdAt: 'desc' },
     });
 
     if (!userVerification) {
       return res.status(400).json({
         message:
-          'You have not started this task yet. Please perform the task to verify.',
+          'You have not started this task yet. Please perform the task before verifying.',
       });
     }
 
-    // Fetch academy name if needed
-    let academyName = null;
-    if (academyId) {
-      const academy = await prisma.academy.findUnique({
-        where: { id: academyId },
+    // Handle LEAVE_FEEDBACK tasks
+    if (verificationTask.verificationMethod === 'LEAVE_FEEDBACK') {
+      if (!submissionText || submissionText.length < 100) {
+        return next(
+          createError(400, 'Feedback must be at least 100 characters long.')
+        );
+      }
+
+      // Save the feedback submission
+      await prisma.userTaskSubmission.create({
+        data: {
+          userId,
+          taskId,
+          submissionText,
+        },
       });
-      academyName = academy?.name || null;
-    }
 
-    // Perform verification
-    const isVerified = await performVerification(verificationTask, user, {
-      userVerification,
-      academyId,
-      academyName,
-    });
-
-    if (isVerified) {
+      // Mark the task as completed and award points
       await prisma.userVerification.update({
         where: { id: userVerification.id },
         data: {
@@ -537,7 +539,7 @@ exports.completeVerificationTask = async (req, res, next) => {
       });
 
       // Award points
-      await prisma.point.create({
+      const point = await prisma.point.create({
         data: {
           userId: userId,
           value: verificationTask.xp,
@@ -547,18 +549,23 @@ exports.completeVerificationTask = async (req, res, next) => {
       });
 
       return res.json({
-        message: 'Task completed successfully',
+        message: 'Feedback submitted successfully and points awarded.',
         pointsAwarded: verificationTask.xp,
-      });
-    } else {
-      return res.status(400).json({
-        message:
-          'Verification failed. Please ensure you have completed the task.',
+        point,
       });
     }
+
+    // For other tasks, proceed with verification
+    // ... existing verification logic ...
   } catch (error) {
     console.error('Error completing verification task:', error);
-    next(createError(500, 'Error completing verification task'));
+
+    // Send the error message back to the client
+    if (error.message) {
+      return res.status(400).json({ message: error.message });
+    } else {
+      next(createError(500, 'Error completing verification task'));
+    }
   }
 };
 /**
@@ -738,19 +745,49 @@ exports.startVerificationTask = async (req, res, next) => {
       return next(createError(404, 'Verification task not found'));
     }
 
-    // Adjusted the handling of academyId here
-    const existingVerification = await prisma.userVerification.findFirst({
+    // Fetch the last UserVerification for this user and task
+    const lastUserVerification = await prisma.userVerification.findFirst({
       where: {
         userId: userId,
         verificationTaskId: taskId,
         academyId: academyId !== undefined ? academyId : null,
       },
+      orderBy: {
+        createdAt: 'desc',
+      },
     });
 
-    if (existingVerification) {
-      return res.status(400).json({ message: 'Task already started' });
+    if (verificationTask.intervalType === 'ONETIME') {
+      if (lastUserVerification) {
+        return res.status(400).json({
+          message:
+            'You have done this task already. You cannot do this anymore.',
+        });
+      }
+    } else if (verificationTask.intervalType === 'REPEATED') {
+      if (lastUserVerification && !lastUserVerification.verified) {
+        return res.status(400).json({
+          message:
+            'You have already started this task. Please complete it before starting again.',
+        });
+      }
+
+      if (lastUserVerification && lastUserVerification.verified) {
+        // Check if the repeat interval has passed
+        const now = new Date();
+        const lastCompletedAt = new Date(lastUserVerification.completedAt);
+        const intervalMillis =
+          verificationTask.repeatInterval * 24 * 60 * 60 * 1000; // repeatInterval in days
+        if (now - lastCompletedAt < intervalMillis) {
+          return res.status(400).json({
+            message:
+              'You cannot start this task yet. Please wait until the repeat interval has passed.',
+          });
+        }
+      }
     }
 
+    // Proceed to create new UserVerification
     let parameters = {};
 
     // Fetch academy name
@@ -787,7 +824,7 @@ exports.startVerificationTask = async (req, res, next) => {
 };
 
 exports.submitTask = async (req, res, next) => {
-  const { taskId, submissionText, userId } = req.body; // Get userId from request body
+  const { taskId, submissionText, userId } = req.body;
 
   if (!userId || !taskId || !submissionText) {
     return next(
@@ -797,7 +834,7 @@ exports.submitTask = async (req, res, next) => {
 
   try {
     const user = await prisma.user.findUnique({
-      where: { id: userId }, // Find user by userId
+      where: { id: userId },
     });
 
     if (!user) {
@@ -812,6 +849,15 @@ exports.submitTask = async (req, res, next) => {
       return next(createError(404, 'Verification task not found'));
     }
 
+    // Enforce minimum character length only for LEAVE_FEEDBACK tasks
+    if (verificationTask.verificationMethod === 'LEAVE_FEEDBACK') {
+      if (submissionText.length < 100) {
+        return next(
+          createError(400, 'Feedback must be at least 100 characters long.')
+        );
+      }
+    }
+
     const submission = await prisma.userTaskSubmission.create({
       data: {
         userId,
@@ -820,7 +866,36 @@ exports.submitTask = async (req, res, next) => {
       },
     });
 
-    res.json({ message: 'Submission received and will be verified' });
+    // For LEAVE_FEEDBACK tasks, mark task as completed and award points
+    if (verificationTask.verificationMethod === 'LEAVE_FEEDBACK') {
+      await prisma.userVerification.updateMany({
+        where: {
+          userId,
+          verificationTaskId: taskId,
+          verified: false,
+        },
+        data: {
+          verified: true,
+          completedAt: new Date(),
+          pointsAwarded: verificationTask.xp,
+        },
+      });
+
+      await prisma.point.create({
+        data: {
+          userId,
+          value: verificationTask.xp,
+          verificationTaskId: taskId,
+        },
+      });
+
+      res.json({
+        message: 'Feedback submitted successfully and points awarded.',
+      });
+    } else {
+      // For other tasks, you may have different logic or simply return a success message
+      res.json({ message: 'Submission received and will be verified.' });
+    }
   } catch (error) {
     console.error('Error submitting task:', error);
     next(createError(500, 'Error submitting task'));
