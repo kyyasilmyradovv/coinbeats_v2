@@ -8,6 +8,7 @@ export interface VerificationTask {
     intervalType: string
     shortCircuit: boolean
     shortCircuitTimer: number | null
+    parameters?: { [key: string]: any }
 }
 
 export interface QuestTabProps {

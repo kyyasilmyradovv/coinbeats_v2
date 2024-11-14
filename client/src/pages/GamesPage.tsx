@@ -119,8 +119,11 @@ export default function GamesPage() {
                     telegramUserId
                 })
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error in onActionClick:', error)
+            const errorMessage = error.response?.data?.message || 'An error occurred. Please try again later.'
+            setNotificationText(errorMessage)
+            setNotificationOpen(true)
         }
     }
 
@@ -145,9 +148,10 @@ export default function GamesPage() {
 
             // Refresh user verification tasks
             await fetchUserVerificationTasks()
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error submitting feedback:', error)
-            setNotificationText('You can do the task again when the task resets.')
+            const errorMessage = error.response?.data?.message || 'Submission failed. Please try again later.'
+            setNotificationText(errorMessage)
             setNotificationOpen(true)
         }
     }
@@ -160,9 +164,10 @@ export default function GamesPage() {
 
             // Refresh user verification tasks
             await fetchUserVerificationTasks()
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error completing task:', error)
-            setNotificationText('Verification failed')
+            const errorMessage = error.response?.data?.message || 'Verification failed. Please try again later.'
+            setNotificationText(errorMessage)
             setNotificationOpen(true)
         }
     }
