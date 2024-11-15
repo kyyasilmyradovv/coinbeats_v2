@@ -28,7 +28,7 @@ if (import.meta.env.DEV) {
                 'user',
                 JSON.stringify({
                     id: 99281932,
-                    first_name: 'Andrew',
+                    first_name: 'Peeter',
                     last_name: 'Rogue',
                     username: '',
                     language_code: 'en',
@@ -38,7 +38,7 @@ if (import.meta.env.DEV) {
             ],
             ['hash', '89d6079ad6762351f38c6dbbc41bb53048019256a9443988af7a48bcad16ba31'],
             ['auth_date', '1716922846'],
-            ['start_param', ''],
+            ['start_param', 'f1174622ac83f36c'],
             ['chat_type', 'sender'],
             ['chat_instance', '8428209589180549439']
         ]).toString()

@@ -794,8 +794,11 @@ exports.startVerificationTask = async (req, res, next) => {
     }
 
     // For the TWEET verification method, save academyName as a parameter
-    if (verificationTask.verificationMethod === 'TWEET' && academyName) {
-      parameters.expectedKeyword = academyName; // Save the academy name as expectedKeyword
+    if (verificationTask.verificationMethod === 'TWEET') {
+      if (academyName) {
+        parameters.expectedKeyword = academyName; // Save the academy name as expectedKeyword
+      }
+      // No need to set parameters for task 4 as it already has tweetText in taskParameters
     }
 
     await prisma.userVerification.create({

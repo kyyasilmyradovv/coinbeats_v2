@@ -212,7 +212,14 @@ export const handleAction = async (task: VerificationTask, options: { [key: stri
                         window.open(authUrl, '_blank')
                     }
                 } else {
-                    const tweetText = `🎉 I just completed ${academyName} ${twitterHandle} academy on CoinBeats Crypto School @CoinBeatsxyz`
+                    let tweetText = ''
+                    if (task.parameters?.tweetText) {
+                        tweetText = task.parameters.tweetText
+                    } else if (academyName && twitterHandle) {
+                        tweetText = `🎉 I just completed ${academyName} ${twitterHandle} academy on CoinBeats Crypto School @CoinBeatsxyz`
+                    } else {
+                        tweetText = 'I just completed an academy on CoinBeats Crypto School @CoinBeatsxyz'
+                    }
                     window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`, '_blank')
 
                     try {

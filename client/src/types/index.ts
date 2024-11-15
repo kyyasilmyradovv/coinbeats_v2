@@ -9,6 +9,7 @@ export interface VerificationTask {
     shortCircuit: boolean
     shortCircuitTimer: number | null
     parameters?: { [key: string]: any }
+    repeatInterval?: number
 }
 
 export interface QuestTabProps {

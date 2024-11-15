@@ -581,7 +581,14 @@ const verifyTweet = async (verificationTask, user, params) => {
     const userVerificationParameters = params.userVerification.parameters || {};
     const taskParameters = verificationTask.parameters || {};
 
-    const expectedKeywords = taskParameters.expectedKeywords || [];
+    const expectedKeywords = [];
+
+    // For tasks with parameters.tweetText, use that as expected keyword
+    if (taskParameters.tweetText) {
+      expectedKeywords.push(taskParameters.tweetText);
+    }
+
+    // Also, include expectedKeyword from userVerification.parameters
     const expectedKeywordFromUserVerification =
       userVerificationParameters.expectedKeyword;
     if (expectedKeywordFromUserVerification) {

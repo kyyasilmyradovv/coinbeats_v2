@@ -14,7 +14,15 @@ import useUserVerificationStore from '../store/useUserVerificationStore'
 import Lottie from 'react-lottie'
 import bunnyHappyAnimationData from '../animations/bunny-happy.json'
 import coinbeats from '../images/coinbeats-l.svg'
-import { platformIcons, getActionLabel, handleAction, copyReferralLink, handleInviteFriend } from '../utils/actionHandlers'
+import {
+    platformIcons,
+    getActionLabel,
+    requiresInputField,
+    getInputPlaceholder,
+    handleAction,
+    copyReferralLink,
+    handleInviteFriend
+} from '../utils/actionHandlers'
 import { VerificationTask } from '../types'
 
 const bunnyHappyAnimation = {
@@ -57,6 +65,10 @@ export default function GamesPage() {
     const [selectedTask, setSelectedTask] = useState<VerificationTask | null>(null)
     const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false)
     const [feedbackText, setFeedbackText] = useState('')
+    const [inputDialogOpen, setInputDialogOpen] = useState(false)
+    const [inputText, setInputText] = useState('')
+    const [taskInputValues, setTaskInputValues] = useState<{ [key: number]: string }>({})
+    const [submittedTasks, setSubmittedTasks] = useState<{ [key: number]: boolean }>({})
 
     useEffect(() => {
         fetchGameTasks()
@@ -106,6 +118,10 @@ export default function GamesPage() {
                     setSelectedTask(task)
                     setFeedbackDialogOpen(true)
                 }
+            } else if (requiresInputField(task)) {
+                // Open input dialog for tasks that require input
+                setSelectedTask(task)
+                setInputDialogOpen(true)
             } else {
                 await handleAction(task, {
                     referralCode,
@@ -116,7 +132,8 @@ export default function GamesPage() {
                     setSelectedTask,
                     setFeedbackDialogOpen,
                     twitterAuthenticated,
-                    telegramUserId
+                    telegramUserId,
+                    userId
                 })
             }
         } catch (error: any) {
@@ -150,6 +167,35 @@ export default function GamesPage() {
             await fetchUserVerificationTasks()
         } catch (error: any) {
             console.error('Error submitting feedback:', error)
+            const errorMessage = error.response?.data?.message || 'Submission failed. Please try again later.'
+            setNotificationText(errorMessage)
+            setNotificationOpen(true)
+        }
+    }
+
+    // Handle input submission for other tasks
+    const handleSubmitInput = async () => {
+        if (!selectedTask) return
+        if (inputText.length < 5) {
+            setNotificationText('Please enter at least 5 characters.')
+            setNotificationOpen(true)
+            return
+        }
+        const taskId = selectedTask.id
+
+        try {
+            await startTask(taskId)
+            await submitTask(taskId, inputText)
+            setInputDialogOpen(false)
+            setNotificationText('Submission successful! You will be notified once it is verified.')
+            setNotificationOpen(true)
+            setInputText('')
+            setSelectedTask(null)
+
+            // Refresh user verification tasks
+            await fetchUserVerificationTasks()
+        } catch (error: any) {
+            console.error('Error submitting input:', error)
             const errorMessage = error.response?.data?.message || 'Submission failed. Please try again later.'
             setNotificationText(errorMessage)
             setNotificationOpen(true)
@@ -291,6 +337,55 @@ export default function GamesPage() {
                         </Dialog>
                     )}
 
+                    {/* Input Dialog for other tasks */}
+                    {selectedTask && inputDialogOpen && (
+                        <Dialog
+                            opened={inputDialogOpen}
+                            onBackdropClick={() => setInputDialogOpen(false)}
+                            title={selectedTask ? selectedTask.name : 'Submit'}
+                            className="!m-0 !p-0 rounded-2xl !w-80"
+                        >
+                            <div className="p-4 relative">
+                                {/* X Button to Close Dialog */}
+                                <button className="absolute -top-7 right-1 text-gray-500 hover:text-gray-700" onClick={() => setInputDialogOpen(false)}>
+                                    <FaTimes size={20} />
+                                </button>
+                                <div className="flex items-center justify-center mb-4">
+                                    <Lottie options={bunnyHappyAnimation} height={150} width={150} />
+                                </div>
+                                <p>{selectedTask ? selectedTask.description : ''}</p>
+                                <div className="relative">
+                                    <List className="!m-0 !p-0 !ml-0 !mr-0">
+                                        <ListInput
+                                            type="textarea"
+                                            outline
+                                            inputStyle={{ height: '5rem' }}
+                                            placeholder={getInputPlaceholder(selectedTask)}
+                                            value={inputText}
+                                            onChange={(e) => setInputText(e.target.value)}
+                                            className="w-full !m-0 !p-0 border border-gray-300 rounded mt-2 !ml-0 !mr-0"
+                                        />
+                                    </List>
+                                </div>
+                                <Button
+                                    rounded
+                                    outline
+                                    onClick={handleSubmitInput}
+                                    className="!text-xs mt-4 font-bold shadow-xl min-w-28 !mx-auto !h-7"
+                                    style={{
+                                        background:
+                                            inputText.length >= 5 ? 'linear-gradient(to left, #ff0077, #7700ff)' : 'linear-gradient(to left, #52525b, #27272a)', // Gray gradient when disabled
+                                        color: '#fff',
+                                        borderColor: '#9c27b0' // Ensure border is visible
+                                    }}
+                                    disabled={inputText.length < 5}
+                                >
+                                    Send
+                                </Button>
+                            </div>
+                        </Dialog>
+                    )}
+
                     {/* Notification */}
                     <Notification
                         className="fixed !mt-12 top-12 left-0 z-50 border"
@@ -397,7 +492,8 @@ export default function GamesPage() {
                                         className="!text-2xs font-bold shadow-xl !w-20 !h-6"
                                         style={{
                                             background: 'linear-gradient(to left, #16a34a, #3b82f6)',
-                                            color: '#fff'
+                                            color: '#fff',
+                                            borderColor: '#16a34a' // Green border
                                         }}
                                     >
                                         {getActionLabel(inviteTask.verificationMethod)}
@@ -465,11 +561,11 @@ export default function GamesPage() {
                                                 className="!text-2xs font-bold shadow-xl !w-20 !h-6"
                                                 style={{
                                                     background: 'linear-gradient(to left, #16a34a, #3b82f6)',
-                                                    borderColor: '#16a34a', // Green border
                                                     color: '#fff'
                                                 }}
+                                                // Remove 'disabled' prop to always enable the action button
                                             >
-                                                {completed ? 'Completed' : getActionLabel(task.verificationMethod, twitterAuthenticated)}
+                                                {getActionLabel(task.verificationMethod, twitterAuthenticated)}
                                             </Button>
 
                                             {/* Verify Button */}
@@ -484,6 +580,7 @@ export default function GamesPage() {
                                                         backgroundColor: 'transparent',
                                                         color: '#fff'
                                                     }}
+                                                    disabled={completed}
                                                 >
                                                     {completed ? 'Completed' : 'Verify'}
                                                 </Button>

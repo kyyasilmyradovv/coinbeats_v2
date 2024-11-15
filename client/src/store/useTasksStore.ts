@@ -14,6 +14,7 @@ interface VerificationTask {
     intervalType: string
     shortCircuit: boolean
     shortCircuitTimer: number | null
+    repeatInterval?: number
 }
 
 interface TasksState {
