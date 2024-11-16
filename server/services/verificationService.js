@@ -701,6 +701,262 @@ const verifyTweet = async (verificationTask, user, params) => {
   }
 };
 
+const verifyComment = async (verificationTask, user, params) => {
+  console.log('Starting verifyComment...');
+
+  // Ensure twitterAccount is included in user data
+  if (!user.twitterAccount || user.twitterAccount.length === 0) {
+    throw new Error('User has no linked Twitter accounts.');
+  }
+
+  const currentTwitterAccount = user.twitterAccount[0];
+
+  if (
+    !currentTwitterAccount ||
+    !currentTwitterAccount.twitterUserId ||
+    !currentTwitterAccount.twitterAccessToken
+  ) {
+    throw new Error('User is not authenticated with Twitter');
+  }
+
+  // Use the Twitter account details
+  let twitterUserId = currentTwitterAccount.twitterUserId;
+  let twitterAccessToken = currentTwitterAccount.twitterAccessToken;
+  let twitterRefreshToken = currentTwitterAccount.twitterRefreshToken;
+  let twitterTokenExpiresAt = currentTwitterAccount.twitterTokenExpiresAt;
+
+  try {
+    // Refresh access token if expired
+    const now = new Date();
+    if (twitterTokenExpiresAt && now >= twitterTokenExpiresAt) {
+      if (twitterRefreshToken) {
+        console.log('Access token expired. Refreshing token...');
+        twitterAccessToken = await refreshAccessToken(
+          twitterRefreshToken,
+          currentTwitterAccount
+        );
+      } else {
+        throw new Error('No refresh token available to refresh access token');
+      }
+    }
+
+    // Fetch user's recent tweets from Twitter API
+    const headers = {
+      Authorization: `Bearer ${twitterAccessToken}`,
+    };
+
+    const paramsRequest = {
+      'tweet.fields': 'referenced_tweets',
+      max_results: 100, // Adjust as needed
+    };
+
+    const url = `https://api.twitter.com/2/users/${twitterUserId}/tweets`;
+    console.log('Fetching recent tweets with URL:', url);
+
+    const tweetsResponse = await axios.get(url, {
+      headers,
+      params: paramsRequest,
+    });
+    const tweets = tweetsResponse.data.data || [];
+
+    // Retrieve the tweetId from task parameters
+    const taskParameters = verificationTask.parameters || {};
+    const targetTweetId = taskParameters.tweetId;
+
+    if (!targetTweetId) {
+      throw new Error('Target tweet ID is not specified in task parameters.');
+    }
+
+    console.log('Target Tweet ID:', targetTweetId);
+
+    let replied = false;
+
+    for (const tweet of tweets) {
+      const referencedTweets = tweet.referenced_tweets || [];
+      for (const refTweet of referencedTweets) {
+        if (refTweet.type === 'replied_to' && refTweet.id === targetTweetId) {
+          console.log('Found a reply to the target tweet:', tweet.text);
+          replied = true;
+          break;
+        }
+      }
+      if (replied) {
+        break;
+      }
+    }
+
+    if (!replied) {
+      throw new Error('Reply to the specified tweet not found.');
+    }
+
+    return replied;
+  } catch (error) {
+    console.error(
+      'Error verifying comment:',
+      error.response?.data || error.message || error
+    );
+
+    if (error.response) {
+      if (error.response.status === 429) {
+        // Twitter API rate limit exceeded
+        throw new Error('Twitter rate limit exceeded. Please try again later.');
+      } else if (
+        error.response.status === 401 ||
+        error.response.status === 403
+      ) {
+        // Unauthorized or Forbidden
+        throw new Error(
+          'Twitter authentication failed. Please reconnect your Twitter account.'
+        );
+      } else {
+        // Other Twitter API errors
+        throw new Error('Twitter API error. Please try again later.');
+      }
+    } else if (
+      error.message.includes('User is not authenticated with Twitter')
+    ) {
+      throw new Error('Please connect your Twitter account to proceed.');
+    } else if (
+      error.message.includes('Reply to the specified tweet not found')
+    ) {
+      throw new Error(
+        'Reply to the specified tweet not found. Please ensure you have replied correctly.'
+      );
+    } else {
+      // General error
+      throw new Error('An unexpected error occurred. Please try again later.');
+    }
+  }
+};
+
+const verifyRetweet = async (verificationTask, user, params) => {
+  console.log('Starting verifyRetweet...');
+
+  // Ensure twitterAccount is included in user data
+  if (!user.twitterAccount || user.twitterAccount.length === 0) {
+    throw new Error('User has no linked Twitter accounts.');
+  }
+
+  const currentTwitterAccount = user.twitterAccount[0];
+
+  if (
+    !currentTwitterAccount ||
+    !currentTwitterAccount.twitterUserId ||
+    !currentTwitterAccount.twitterAccessToken
+  ) {
+    throw new Error('User is not authenticated with Twitter');
+  }
+
+  // Use the Twitter account details
+  let twitterUserId = currentTwitterAccount.twitterUserId;
+  let twitterAccessToken = currentTwitterAccount.twitterAccessToken;
+  let twitterRefreshToken = currentTwitterAccount.twitterRefreshToken;
+  let twitterTokenExpiresAt = currentTwitterAccount.twitterTokenExpiresAt;
+
+  try {
+    // Refresh access token if expired
+    const now = new Date();
+    if (twitterTokenExpiresAt && now >= twitterTokenExpiresAt) {
+      if (twitterRefreshToken) {
+        console.log('Access token expired. Refreshing token...');
+        twitterAccessToken = await refreshAccessToken(
+          twitterRefreshToken,
+          currentTwitterAccount
+        );
+      } else {
+        throw new Error('No refresh token available to refresh access token');
+      }
+    }
+
+    // Fetch user's recent tweets from Twitter API
+    const headers = {
+      Authorization: `Bearer ${twitterAccessToken}`,
+    };
+
+    const paramsRequest = {
+      'tweet.fields': 'referenced_tweets',
+      max_results: 100, // Adjust as needed
+    };
+
+    const url = `https://api.twitter.com/2/users/${twitterUserId}/tweets`;
+    console.log('Fetching recent tweets with URL:', url);
+
+    const tweetsResponse = await axios.get(url, {
+      headers,
+      params: paramsRequest,
+    });
+    const tweets = tweetsResponse.data.data || [];
+
+    // Retrieve the tweetId from task parameters
+    const taskParameters = verificationTask.parameters || {};
+    const targetTweetId = taskParameters.tweetId;
+
+    if (!targetTweetId) {
+      throw new Error('Target tweet ID is not specified in task parameters.');
+    }
+
+    console.log('Target Tweet ID:', targetTweetId);
+
+    let retweeted = false;
+
+    for (const tweet of tweets) {
+      const referencedTweets = tweet.referenced_tweets || [];
+      for (const refTweet of referencedTweets) {
+        if (refTweet.type === 'retweeted' && refTweet.id === targetTweetId) {
+          console.log('Found a retweet of the target tweet:', tweet.text);
+          retweeted = true;
+          break;
+        }
+      }
+      if (retweeted) {
+        break;
+      }
+    }
+
+    if (!retweeted) {
+      throw new Error('Retweet of the specified tweet not found.');
+    }
+
+    return retweeted;
+  } catch (error) {
+    console.error(
+      'Error verifying retweet:',
+      error.response?.data || error.message || error
+    );
+
+    if (error.response) {
+      if (error.response.status === 429) {
+        // Twitter API rate limit exceeded
+        throw new Error('Twitter rate limit exceeded. Please try again later.');
+      } else if (
+        error.response.status === 401 ||
+        error.response.status === 403
+      ) {
+        // Unauthorized or Forbidden
+        throw new Error(
+          'Twitter authentication failed. Please reconnect your Twitter account.'
+        );
+      } else {
+        // Other Twitter API errors
+        throw new Error('Twitter API error. Please try again later.');
+      }
+    } else if (
+      error.message.includes('User is not authenticated with Twitter')
+    ) {
+      throw new Error('Please connect your Twitter account to proceed.');
+    } else if (
+      error.message.includes('Retweet of the specified tweet not found')
+    ) {
+      throw new Error(
+        'Retweet of the specified tweet not found. Please ensure you have retweeted correctly.'
+      );
+    } else {
+      // General error
+      throw new Error('An unexpected error occurred. Please try again later.');
+    }
+  }
+};
+
 const performVerification = async (verificationTask, user, params) => {
   const { userVerification } = params;
 
@@ -736,6 +992,10 @@ const performVerification = async (verificationTask, user, params) => {
       return await verifyTweet(verificationTask, user, params);
     case 'FOLLOW_USER':
       return await verifyFollowUser(verificationTask, user);
+    case 'COMMENT_ON_TWEET':
+      return await verifyComment(verificationTask, user, params);
+    case 'RETWEET':
+      return await verifyRetweet(verificationTask, user, params);
     case 'LEAVE_FEEDBACK':
       // Automatically verify feedback tasks upon submission
       return true;
