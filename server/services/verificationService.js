@@ -957,6 +957,125 @@ const verifyRetweet = async (verificationTask, user, params) => {
   }
 };
 
+const verifyMemeTweet = async (verificationTask, user, params) => {
+  console.log('Starting verifyMemeTweet...');
+
+  // Ensure twitterAccount is included in user data
+  if (!user.twitterAccount || user.twitterAccount.length === 0) {
+    throw new Error('User has no linked Twitter accounts.');
+  }
+
+  const currentTwitterAccount = user.twitterAccount[0];
+
+  if (
+    !currentTwitterAccount ||
+    !currentTwitterAccount.twitterUserId ||
+    !currentTwitterAccount.twitterAccessToken
+  ) {
+    throw new Error('User is not authenticated with Twitter');
+  }
+
+  // Use the Twitter account details
+  let twitterUserId = currentTwitterAccount.twitterUserId;
+  let twitterAccessToken = currentTwitterAccount.twitterAccessToken;
+  let twitterRefreshToken = currentTwitterAccount.twitterRefreshToken;
+  let twitterTokenExpiresAt = currentTwitterAccount.twitterTokenExpiresAt;
+
+  try {
+    // Refresh access token if expired
+    const now = new Date();
+    if (twitterTokenExpiresAt && now >= twitterTokenExpiresAt) {
+      if (twitterRefreshToken) {
+        console.log('Access token expired. Refreshing token...');
+        twitterAccessToken = await refreshAccessToken(
+          twitterRefreshToken,
+          currentTwitterAccount
+        );
+      } else {
+        throw new Error('No refresh token available to refresh access token');
+      }
+    }
+
+    // Fetch user's recent tweets
+    const headers = {
+      Authorization: `Bearer ${twitterAccessToken}`,
+    };
+
+    const paramsRequest = {
+      'tweet.fields': 'text',
+      max_results: 100, // Adjust as needed
+    };
+
+    const url = `https://api.twitter.com/2/users/${twitterUserId}/tweets`;
+    console.log('Fetching recent tweets with URL:', url);
+
+    const tweetsResponse = await axios.get(url, {
+      headers,
+      params: paramsRequest,
+    });
+    const tweets = tweetsResponse.data.data || [];
+
+    // Retrieve the tweetText from task parameters
+    const taskParameters = verificationTask.parameters || {};
+    const targetTweetText = taskParameters.tweetText;
+
+    if (!targetTweetText) {
+      throw new Error('Target tweet text is not specified in task parameters.');
+    }
+
+    console.log('Target Tweet Text:', targetTweetText);
+
+    // Check if any tweet matches the target tweet text
+    const matchingTweet = tweets.find(
+      (tweet) => tweet.text.trim() === targetTweetText.trim()
+    );
+
+    if (!matchingTweet) {
+      throw new Error('Tweet with the specified content not found.');
+    }
+
+    console.log('Matching Tweet Found:', matchingTweet.text);
+
+    return true; // Verification successful
+  } catch (error) {
+    console.error(
+      'Error verifying meme tweet:',
+      error.response?.data || error.message || error
+    );
+
+    if (error.response) {
+      if (error.response.status === 429) {
+        // Twitter API rate limit exceeded
+        throw new Error('Twitter rate limit exceeded. Please try again later.');
+      } else if (
+        error.response.status === 401 ||
+        error.response.status === 403
+      ) {
+        // Unauthorized or Forbidden
+        throw new Error(
+          'Twitter authentication failed. Please reconnect your Twitter account.'
+        );
+      } else {
+        // Other Twitter API errors
+        throw new Error('Twitter API error. Please try again later.');
+      }
+    } else if (
+      error.message.includes('User is not authenticated with Twitter')
+    ) {
+      throw new Error('Please connect your Twitter account to proceed.');
+    } else if (
+      error.message.includes('Tweet with the specified content not found')
+    ) {
+      throw new Error(
+        'The required tweet was not found. Please ensure you posted the correct content and try again.'
+      );
+    } else {
+      // General error
+      throw new Error('An unexpected error occurred. Please try again later.');
+    }
+  }
+};
+
 const performVerification = async (verificationTask, user, params) => {
   const { userVerification } = params;
 
@@ -996,9 +1115,10 @@ const performVerification = async (verificationTask, user, params) => {
       return await verifyComment(verificationTask, user, params);
     case 'RETWEET':
       return await verifyRetweet(verificationTask, user, params);
+    case 'MEME_TWEET':
+      return await verifyMemeTweet(verificationTask, user, params);
     case 'LEAVE_FEEDBACK':
-      // Automatically verify feedback tasks upon submission
-      return true;
+      return true; // Feedback is auto-verified
     default:
       if (verificationTask.shortCircuit) {
         const isVerified = await verifyShortCircuit(
@@ -1009,7 +1129,7 @@ const performVerification = async (verificationTask, user, params) => {
           return true;
         } else {
           throw new Error(
-            'These tasks are manually verified, come back in a few hours to verify.'
+            'These tasks are manually verified. Come back in a few hours to verify.'
           );
         }
       } else {

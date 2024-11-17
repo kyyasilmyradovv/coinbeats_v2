@@ -53,13 +53,13 @@ export function getActionLabel(verificationMethod: string, isAuthenticated?: boo
         case 'TWEET':
             return !isAuthenticated ? 'Authenticate' : 'Post to X'
         case 'RETWEET':
-            return 'Retweet'
+            return !isAuthenticated ? 'Authenticate' : 'Retweet'
         case 'FOLLOW_USER':
             return !isAuthenticated ? 'Authenticate' : 'Follow'
         case 'LIKE_TWEET':
-            return 'Like'
+            return !isAuthenticated ? 'Authenticate' : 'Like tweet'
         case 'COMMENT_ON_TWEET':
-            return 'Comment'
+            return !isAuthenticated ? 'Authenticate' : 'Comment'
         case 'JOIN_TELEGRAM_CHANNEL':
             return 'Join'
         case 'INVITE_TELEGRAM_FRIEND':
@@ -71,9 +71,11 @@ export function getActionLabel(verificationMethod: string, isAuthenticated?: boo
         case 'SUBSCRIBE_YOUTUBE_CHANNEL':
             return 'Subscribe'
         case 'ADD_TO_BIO':
-            return 'Add to Bio'
+            return !isAuthenticated ? 'Authenticate' : 'Add to Bio'
         case 'LEAVE_FEEDBACK':
             return 'Feedback'
+        case 'MEME_TWEET':
+            return !isAuthenticated ? 'Authenticate' : 'Tweet Meme'
         // Add other mappings as needed
         default:
             return 'Action'

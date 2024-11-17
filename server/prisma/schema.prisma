@@ -55,6 +55,7 @@ enum VerificationMethod {
   PROVIDE_EMAIL
   SHORT_CIRCUIT
   LEAVE_FEEDBACK
+  MEME_TWEET
 }
 
 model User {

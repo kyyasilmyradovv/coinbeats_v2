@@ -254,6 +254,7 @@ const AddQuestsPage: React.FC = () => {
                                 <option value="JOIN_DISCORD_CHANNEL">Join Discord Channel</option>
                                 <option value="PROVIDE_EMAIL">Provide Email</option>
                                 <option value="SHORT_CIRCUIT">Short Circuit</option>
+                                <option value="MEME_TWEET">Tweet Meme</option>
                             </ListInput>
                             <ListInput
                                 label="XP Allocation"

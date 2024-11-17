@@ -255,6 +255,7 @@ const AddPlatformTasksPage: React.FC = () => {
                                 <option value="PROVIDE_EMAIL">Provide Email</option>
                                 <option value="SHORT_CIRCUIT">Short Circuit</option>
                                 <option value="LEAVE_FEEDBACK">Leave Feedback</option>
+                                <option value="MEME_TWEET">Tweet Meme</option>
                             </ListInput>
 
                             {/* Conditional Parameters Input Fields */}
