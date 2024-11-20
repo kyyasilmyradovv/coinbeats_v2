@@ -59,50 +59,54 @@ enum VerificationMethod {
 }
 
 model User {
-  id                     Int                @id @default(autoincrement())
-  name                   String
-  email                  String?            @unique
-  password               String?
-  roles                  Role[]             @default([USER])
-  createdAt              DateTime           @default(now())
-  updatedAt              DateTime           @updatedAt
-  telegramUserId         BigInt             @unique
-  emailConfirmationToken String?            @unique
-  emailConfirmed         Boolean            @default(false)
-  academies              Academy[]
-  points                 Point[]
-  sessionLogs            SessionLog[]
-  userResponses          UserResponse[]
-  UserVerification       UserVerification[]
-  bookmarkedAcademies    Academy[]          @relation("BookmarkedAcademies")
-  referralCode           String?            @unique
-  referredByUserId       Int?
-  referralCompletionChecked Boolean         @default(true)
-  referredBy             User?              @relation("UserReferrals", fields: [referredByUserId], references: [id])
-  referrals              User[]             @relation("UserReferrals")
-  allowedAcademyTypes    AcademyType[]      @relation("UserAcademyTypes")
-  userTaskSubmissions UserTaskSubmission[]
+  id                        Int                  @id @default(autoincrement())
+  name                      String
+  email                     String?              @unique
+  password                  String?
+  roles                     Role[]               @default([USER])
+  createdAt                 DateTime             @default(now())
+  updatedAt                 DateTime             @updatedAt
+  telegramUserId            BigInt               @unique
+  emailConfirmationToken    String?              @unique
+  emailConfirmed            Boolean              @default(false)
+  academies                 Academy[]
+  points                    Point[]
+  sessionLogs               SessionLog[]
+  userResponses             UserResponse[]
+  UserVerification          UserVerification[]
+  bookmarkedAcademies       Academy[]            @relation("BookmarkedAcademies")
+  referralCode              String?              @unique
+  referredByUserId          Int?
+  referralCompletionChecked Boolean              @default(true)
+  referredBy                User?                @relation("UserReferrals", fields: [referredByUserId], references: [id])
+  referrals                 User[]               @relation("UserReferrals")
+  allowedAcademyTypes       AcademyType[]        @relation("UserAcademyTypes")
+  userTaskSubmissions       UserTaskSubmission[]
 
   // New wallet address fields
-  erc20WalletAddress     String?
-  solanaWalletAddress    String?
-  tonWalletAddress       String?
+  erc20WalletAddress  String?
+  solanaWalletAddress String?
+  tonWalletAddress    String?
 
   twitterAccount TwitterAccount[]
+
+  // character level
+  characterLevelId Int?
+  characterLevel   CharacterLevel? @relation(fields: [characterLevelId], references: [id])
 }
 
 model TwitterAccount {
-  id                    Int       @id @default(autoincrement())
-  user                  User      @relation(fields: [userId], references: [id])
-  userId                Int
-  twitterUserId         String
-  twitterUsername       String
-  twitterAccessToken    String?
+  id                       Int       @id @default(autoincrement())
+  user                     User      @relation(fields: [userId], references: [id])
+  userId                   Int
+  twitterUserId            String
+  twitterUsername          String
+  twitterAccessToken       String?
   twitterAccessTokenSecret String?
-  twitterRefreshToken   String?
-  twitterTokenExpiresAt DateTime?
-  connectedAt           DateTime  @default(now())
-  disconnectedAt        DateTime?
+  twitterRefreshToken      String?
+  twitterTokenExpiresAt    DateTime?
+  connectedAt              DateTime  @default(now())
+  disconnectedAt           DateTime?
 }
 
 model Academy {
@@ -121,7 +125,7 @@ model Academy {
   webpageUrl       String?
   coverPhotoUrl    String?
   logoUrl          String?
-  xp               Int                
+  xp               Int
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @updatedAt
   sponsored        Boolean            @default(false)
@@ -130,7 +134,7 @@ model Academy {
   dexScreener      String?
   creator          User               @relation(fields: [creatorId], references: [id])
   academyQuestions AcademyQuestion[]
-  points    Point[] @relation("AcademyToPoint")
+  points           Point[]            @relation("AcademyToPoint")
   quests           Quest[]
   raffles          Raffle[]
   subscription     Subscription?
@@ -141,8 +145,8 @@ model Academy {
 
   VerificationTask VerificationTask[]
 
-  academyTypeId    Int?
-  academyType      AcademyType?       @relation(fields: [academyTypeId], references: [id])
+  academyTypeId Int?
+  academyType   AcademyType? @relation(fields: [academyTypeId], references: [id])
 }
 
 model Subscription {
@@ -243,7 +247,7 @@ model Point {
   academyId          Int?
   verificationTaskId Int?
   createdAt          DateTime          @default(now())
-  academy   Academy? @relation("AcademyToPoint", fields: [academyId], references: [id])
+  academy            Academy?          @relation("AcademyToPoint", fields: [academyId], references: [id])
   user               User              @relation(fields: [userId], references: [id])
   verificationTask   VerificationTask? @relation(fields: [verificationTaskId], references: [id])
 }
@@ -273,25 +277,25 @@ model Chain {
 }
 
 model VerificationTask {
-  id                 Int                @id @default(autoincrement())
-  name               String
-  description        String?
-  taskType           TaskType
-  intervalType       IntervalType
-  repeatInterval     Int?
-  displayLocation    DisplayLocation
-  platform           Platform?
-  verificationMethod VerificationMethod?
-  xp                 Int                @default(0)
-  shortCircuit       Boolean            @default(false)
-  shortCircuitTimer  Int?
-  academyId          Int?
-  academy            Academy?           @relation(fields: [academyId], references: [id])
-  parameters         Json?
-  createdAt          DateTime           @default(now())
-  updatedAt          DateTime           @updatedAt
-  Point              Point[]
-  userVerification   UserVerification[]
+  id                  Int                  @id @default(autoincrement())
+  name                String
+  description         String?
+  taskType            TaskType
+  intervalType        IntervalType
+  repeatInterval      Int?
+  displayLocation     DisplayLocation
+  platform            Platform?
+  verificationMethod  VerificationMethod?
+  xp                  Int                  @default(0)
+  shortCircuit        Boolean              @default(false)
+  shortCircuitTimer   Int?
+  academyId           Int?
+  academy             Academy?             @relation(fields: [academyId], references: [id])
+  parameters          Json?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  Point               Point[]
+  userVerification    UserVerification[]
   userTaskSubmissions UserTaskSubmission[]
 }
 
@@ -313,18 +317,30 @@ model UserVerification {
 }
 
 model UserTaskSubmission {
-  id             Int               @id @default(autoincrement())
+  id             Int      @id @default(autoincrement())
   userId         Int
   taskId         Int
   submissionText String
-  createdAt      DateTime          @default(now())
-  processed      Boolean           @default(false) // New field
+  createdAt      DateTime @default(now())
+  processed      Boolean  @default(false) // New field
 
-  user           User              @relation(fields: [userId], references: [id])
-  task           VerificationTask  @relation(fields: [taskId], references: [id])
+  user User             @relation(fields: [userId], references: [id])
+  task VerificationTask @relation(fields: [taskId], references: [id])
 
   @@index([userId])
   @@index([taskId])
+}
+
+model CharacterLevel {
+  id            Int      @id @default(autoincrement())
+  levelName     String
+  minPoints     Int
+  maxPoints     Int
+  rewardPoints  Int // Points awarded when reaching this level
+  lottieFileUrl String? // URL or path to the Lottie animation file
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  User          User[]
 }
 
 model Setting {

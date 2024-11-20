@@ -38,6 +38,7 @@ import useUserStore from './store/useUserStore'
 import RouteGuard from './components/RouteGuard'
 import Spinner from './components/Spinner'
 import ScholarshipManagementPage from './pages/ScholarshipManagementPage'
+import CharacterLevelManagementPage from './pages/CharacterLevelManagementPage'
 
 function RootComponent() {
     const [isLoading, setIsLoading] = useState(true)
@@ -214,6 +215,14 @@ function RootComponent() {
                             element={
                                 <RouteGuard requiredRole="SUPERADMIN">
                                     <ScholarshipManagementPage />
+                                </RouteGuard>
+                            }
+                        />
+                        <Route
+                            path="/character-management"
+                            element={
+                                <RouteGuard requiredRole="SUPERADMIN">
+                                    <CharacterLevelManagementPage />
                                 </RouteGuard>
                             }
                         />

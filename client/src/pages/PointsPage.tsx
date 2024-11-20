@@ -21,7 +21,8 @@ import useTasksStore from '~/store/useTasksStore'
 import useLeaderboardStore from '../store/useLeaderboardStore'
 import { handleAction, copyReferralLink, handleInviteFriend, getActionLabel } from '../utils/actionHandlers' // Import functions
 import useUserVerificationStore from '../store/useUserVerificationStore'
-import { VerificationTask } from '../types'
+import { VerificationTask, CharacterLevel } from '../types'
+import useCharacterLevelStore from '../store/useCharacterLevelStore'
 
 const PointsPage: React.FC = () => {
     const { userId, totalPoints, userPoints, fetchUserPoints, referralCode, twitterAuthenticated, telegramUserId } = useUserStore((state) => ({
@@ -54,6 +55,13 @@ const PointsPage: React.FC = () => {
         fetchScholarshipText: state.fetchScholarshipText
     }))
 
+    const { characterLevels, fetchCharacterLevels } = useCharacterLevelStore()
+
+    const [currentLevel, setCurrentLevel] = useState<CharacterLevel | null>(null)
+    const [nextLevel, setNextLevel] = useState<CharacterLevel | null>(null)
+    const [progressToNextLevel, setProgressToNextLevel] = useState(0)
+    const [lottieAnimationData, setLottieAnimationData] = useState<any>(null)
+
     const [referralModalOpen, setReferralModalOpen] = useState(false)
     const [referralLink, setReferralLink] = useState('')
 
@@ -70,6 +78,10 @@ const PointsPage: React.FC = () => {
 
     const constructImageUrl = (url) => {
         return `https://subscribes.lt/${url}`
+    }
+
+    const constructLottieFileUrl = (url: string) => {
+        return `${process.env.REACT_APP_BACKEND_URL}/${url}`
     }
 
     const [startOfWeek, setStartOfWeek] = useState<Date | null>(null)
@@ -143,6 +155,53 @@ const PointsPage: React.FC = () => {
             fetchUserVerificationTasks()
         }
     }, [userId, fetchUserVerificationTasks])
+
+    useEffect(() => {
+        fetchCharacterLevels()
+    }, [fetchCharacterLevels])
+
+    useEffect(() => {
+        if (characterLevels.length > 0 && totalPoints !== null) {
+            // Sort levels by minPoints
+            const sortedLevels = [...characterLevels].sort((a, b) => a.minPoints - b.minPoints)
+
+            // Find the current level
+            const current = sortedLevels.find((level) => totalPoints >= level.minPoints && totalPoints <= level.maxPoints)
+            setCurrentLevel(current || null)
+
+            // Find the next level
+            const currentIndex = current ? sortedLevels.findIndex((level) => level.id === current.id) : -1
+            if (currentIndex >= 0 && currentIndex < sortedLevels.length - 1) {
+                setNextLevel(sortedLevels[currentIndex + 1])
+            } else {
+                setNextLevel(null) // No next level, user is at max level
+            }
+
+            // Calculate progress towards next level
+            if (current && nextLevel) {
+                const levelRange = nextLevel.minPoints - current.minPoints
+                const pointsIntoLevel = totalPoints - current.minPoints
+                const progress = (pointsIntoLevel / levelRange) * 100
+                setProgressToNextLevel(progress)
+            } else {
+                setProgressToNextLevel(100) // Max level
+            }
+        }
+    }, [characterLevels, totalPoints])
+
+    useEffect(() => {
+        if (currentLevel && currentLevel.lottieFileUrl) {
+            const lottieUrl = constructLottieFileUrl(currentLevel.lottieFileUrl)
+            fetch(lottieUrl)
+                .then((response) => response.json())
+                .then((data) => {
+                    setLottieAnimationData(data)
+                })
+                .catch((error) => {
+                    console.error('Error fetching Lottie animation:', error)
+                })
+        }
+    }, [currentLevel])
 
     // Compute userRank
     const userRank = useMemo(() => {
@@ -271,53 +330,60 @@ const PointsPage: React.FC = () => {
                             )}
                         </div>
 
-                        {/* Map over tasks to display all task items */}
-                        <div className="flex flex-col flex-grow">
-                            {homepageTasks.length > 0 &&
-                                homepageTasks.map((task, index) => {
-                                    const completed = isTaskCompleted(task)
-
-                                    return (
+                        {/* Character Development Card */}
+                        <div className="flex flex-row justify-center items-center mb-2 mt-2 mx-4">
+                            <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-4 flex flex-row items-center w-full border border-gray-300 dark:border-gray-600">
+                                {/* Left side: Progress bar and Levels */}
+                                <div className="w-2/3 flex flex-col justify-center">
+                                    {/* Progress bar */}
+                                    <div className="relative w-full h-6 bg-gray-300 rounded-full overflow-hidden mt-2">
                                         <div
-                                            key={index}
-                                            className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg py-1 flex flex-row items-center px-1 m-1 border border-gray-300 dark:border-gray-600 h-12 mr-4 justify-between"
-                                        >
-                                            {/* Task card */}
-                                            {task.verificationMethod === 'LEAVE_FEEDBACK' ? (
-                                                <div className="text-2xl mx-2">🙏</div>
-                                            ) : (
-                                                <FaTelegramPlane size={30} className="text-blue-400 mx-2" />
-                                            )}
-                                            <div className="flex flex-col flex-grow ml-2">
-                                                <div className="text-[12px] text-gray-800 dark:text-gray-200 font-semibold mr-2">{task.name}</div>
-                                            </div>
-                                            <button
-                                                onClick={() => {
-                                                    if (completed) {
-                                                        setNotificationText('You can do the task again when the task resets.')
-                                                        setNotificationOpen(true)
-                                                    } else {
-                                                        onActionClick(task)
-                                                    }
-                                                }}
-                                                className={`text-2xs font-bold whitespace-nowrap mr-2 rounded-full flex flex-row h-6 uppercase items-center justify-center ${
-                                                    completed
-                                                        ? 'border border-green-400 px-4 w-fit-content min-w-28'
-                                                        : 'border border-orange-400 px-4 w-fit-content min-w-28'
-                                                }`}
+                                            className="absolute top-0 left-0 h-full bg-gradient-to-r from-green-400 to-blue-500"
+                                            style={{ width: `${progressToNextLevel}%` }}
+                                        ></div>
+                                        {/* Level badge at the end of the progress bar */}
+                                        {nextLevel && (
+                                            <div
+                                                className="absolute right-0 top-1/2 transform -translate-y-1/2 translate-x-1/2 bg-gold rounded-full px-2 py-1"
                                                 style={{
-                                                    background: completed
-                                                        ? 'linear-gradient(to left, #16a34a, #3b82f6)' // Green-blue gradient
-                                                        : 'linear-gradient(to left, #3b82f6, #ff0077)', // Original gradient
-                                                    color: '#fff'
+                                                    backgroundColor: 'gold',
+                                                    minWidth: '80px',
+                                                    textAlign: 'center'
                                                 }}
                                             >
-                                                {completed ? 'Completed' : getActionLabel(task.verificationMethod, twitterAuthenticated)} +{task.xp}
-                                                <img src={coinStack} className="h-3 w-3 ml-1" alt="coins icon" />
-                                            </button>
+                                                <span className="text-white font-bold text-sm">{nextLevel.levelName}</span>
+                                                <br />
+                                                <span className="text-yellow-300 text-xs">Bonus XP: {nextLevel.rewardPoints}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                    {/* Current level badge */}
+                                    {currentLevel && (
+                                        <div className="mt-4 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full px-4 py-2 text-center">
+                                            <span className="text-white font-bold text-lg">{currentLevel.levelName}</span>
                                         </div>
-                                    )
-                                })}
+                                    )}
+                                </div>
+                                {/* Right side: Lottie animation */}
+                                <div className="w-1/3 flex justify-center">
+                                    {lottieAnimationData ? (
+                                        <Lottie
+                                            options={{
+                                                loop: true,
+                                                autoplay: true,
+                                                animationData: lottieAnimationData,
+                                                rendererSettings: {
+                                                    preserveAspectRatio: 'xMidYMid slice'
+                                                }
+                                            }}
+                                            height={150}
+                                            width={150}
+                                        />
+                                    ) : (
+                                        <div>Loading animation...</div>
+                                    )}
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -426,8 +492,6 @@ const PointsPage: React.FC = () => {
                         button={<Button onClick={() => setNotificationOpen(false)}>Close</Button>}
                         onClose={() => setNotificationOpen(false)}
                     />
-
-                    {/* ... rest of your PointsPage code (leaderboards, etc.) ... */}
 
                     {/* Tabs for Leaderboards */}
                     <div className="flex justify-center gap-2 mt-2 mx-4 relative z-10">

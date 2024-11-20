@@ -60,7 +60,8 @@ const Sidebar: React.FC = () => {
             { label: 'Add Platform Tasks', path: '/add-platform-tasks' },
             { label: 'Inbox', path: '/inbox' },
             { label: 'Subscription Management', path: '/subscription-management' },
-            { label: 'Scholarship Management', path: '/scholarship-management' } // Added this line
+            { label: 'Scholarship Management', path: '/scholarship-management' },
+            { label: 'Character Management', path: '/character-management' } // Added this line
         ],
         ADMIN: [
             { label: 'Admin Dashboard', path: '/admin-dashboard' },

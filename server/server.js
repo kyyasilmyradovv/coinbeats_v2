@@ -30,6 +30,7 @@ const pointsRoutes = require('./routes/points');
 const verificationTaskRoutes = require('./routes/verificationTask');
 const academyTypeRoutes = require('./routes/academyType');
 const settingsRoutes = require('./routes/settings');
+const characterLevelRoutes = require('./routes/characterLevel');
 const downloadRoutes = require('./routes/downloadRoutes'); // <-- Added this line
 
 // Initialize Express app
@@ -71,6 +72,7 @@ app.use('/api/points', pointsRoutes);
 app.use('/api/verification-tasks', verificationTaskRoutes);
 app.use('/api/academy-types', academyTypeRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/character-levels', characterLevelRoutes);
 app.use('/api', downloadRoutes); // <-- Added this line
 
 // Serve static files
