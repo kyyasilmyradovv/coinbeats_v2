@@ -84,7 +84,7 @@ export function getActionLabel(verificationMethod: string, isAuthenticated?: boo
 
 // Determine if a task requires an input field
 export function requiresInputField(task: VerificationTask): boolean {
-    const methodsRequiringInput = ['SHORT_CIRCUIT', 'PROVIDE_EMAIL', 'ADD_TO_BIO', 'SUBSCRIBE_YOUTUBE_CHANNEL']
+    const methodsRequiringInput = ['SHORT_CIRCUIT', 'PROVIDE_EMAIL', 'SUBSCRIBE_YOUTUBE_CHANNEL']
     return methodsRequiringInput.includes(task.verificationMethod)
 }
 
@@ -365,7 +365,7 @@ export const handleAction = async (task: VerificationTask, options: { [key: stri
 
             case 'ADD_TO_BIO':
                 console.log('Handling ADD_TO_BIO action')
-                setNotificationText('Please add "CoinBeats Student" to your X bio.')
+                setNotificationText('Please add "@CoinBeatsxyz Student" to your X bio.')
                 setNotificationOpen(true)
                 window.open('https://twitter.com/settings/profile', '_blank')
 

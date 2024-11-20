@@ -75,33 +75,76 @@ export default function GamesPage() {
         fetchUserVerificationTasks()
     }, [fetchGameTasks, fetchUserVerificationTasks])
 
-    // Function to determine if a task is completed
     const isTaskCompleted = (task: VerificationTask): boolean => {
-        const userVerification = userVerificationTasks.find((uv) => uv.verificationTaskId === task.id && uv.userId === userId)
-        if (!userVerification || !userVerification.verified) return false
+        // Get all userVerifications for the task
+        const taskUserVerifications = userVerificationTasks.filter((uv) => uv.verificationTaskId === task.id && uv.userId === userId)
+
+        if (taskUserVerifications.length === 0) {
+            console.log('No user verification found. Returning false.')
+            return false
+        }
+
+        // Find the latest userVerification by completedAt or createdAt
+        const userVerification = taskUserVerifications.reduce((latest, uv) => {
+            const uvDate = new Date(uv.completedAt || uv.createdAt)
+            const latestDate = new Date(latest.completedAt || latest.createdAt)
+            return uvDate > latestDate ? uv : latest
+        }, taskUserVerifications[0])
+
+        console.log('Task:', task)
+        console.log('UserVerification:', userVerification)
+
+        if (!userVerification || !userVerification.verified) {
+            console.log('No user verification or not verified. Returning false.')
+            return false
+        }
 
         // If task is REPEATED and repeatInterval is 0, task is always available
         if (task.intervalType === 'REPEATED' && task.repeatInterval === 0) {
+            console.log('Repeated task with interval 0. Returning false.')
             return false
         }
 
         // Check if repeat interval has passed
         if (task.intervalType === 'REPEATED' && task.repeatInterval > 0) {
             const now = new Date()
+            console.log('Now:', now)
+
+            if (!userVerification.completedAt) {
+                console.log('CompletedAt is null or undefined. Returning false.')
+                return false
+            }
+
+            console.log('userVerification.completedAt:', userVerification.completedAt)
+
             const completedAt = new Date(userVerification.completedAt)
+            if (isNaN(completedAt.getTime())) {
+                console.error('Invalid completedAt date:', userVerification.completedAt)
+                return false // Or handle the error as needed
+            }
+
             const intervalMillis = task.repeatInterval * 24 * 60 * 60 * 1000
-            if (now.getTime() - completedAt.getTime() >= intervalMillis) {
+            console.log('IntervalMillis:', intervalMillis)
+
+            const timeDiff = now.getTime() - completedAt.getTime()
+            console.log('Time difference:', timeDiff)
+
+            if (timeDiff >= intervalMillis) {
+                console.log('Repeat interval has passed. Returning false.')
                 return false
             } else {
+                console.log('Repeat interval has not passed yet. Returning true.')
                 return true
             }
         }
 
         // For ONETIME tasks, if verified, it's completed
         if (task.intervalType === 'ONETIME') {
+            console.log('One-time task and verified. Returning true.')
             return true
         }
 
+        console.log('Default case. Returning false.')
         return false
     }
 
@@ -186,8 +229,16 @@ export default function GamesPage() {
         try {
             await startTask(taskId)
             await submitTask(taskId, inputText)
+
+            // For PROVIDE_EMAIL task, immediately complete the task
+            if (selectedTask.verificationMethod === 'PROVIDE_EMAIL') {
+                await completeTask(taskId)
+                setNotificationText('Thank you! Your email has been submitted and the task is completed.')
+            } else {
+                setNotificationText('Submission successful! You will be notified once it is verified.')
+            }
+
             setInputDialogOpen(false)
-            setNotificationText('Submission successful! You will be notified once it is verified.')
             setNotificationOpen(true)
             setInputText('')
             setSelectedTask(null)
@@ -215,6 +266,16 @@ export default function GamesPage() {
             const errorMessage = error.response?.data?.message || 'Verification failed. Please try again later.'
             setNotificationText(errorMessage)
             setNotificationOpen(true)
+        }
+    }
+
+    const onVerifyClick = async (task: VerificationTask) => {
+        const completed = isTaskCompleted(task)
+        if (completed) {
+            setNotificationText('This task is already completed, wait for it to reset.')
+            setNotificationOpen(true)
+        } else {
+            await handleVerify(task)
         }
     }
 
@@ -569,18 +630,17 @@ export default function GamesPage() {
                                             </Button>
 
                                             {/* Verify Button */}
-                                            {task.verificationMethod !== 'LEAVE_FEEDBACK' && (
+                                            {task.verificationMethod !== 'LEAVE_FEEDBACK' && task.verificationMethod !== 'PROVIDE_EMAIL' && (
                                                 <Button
                                                     rounded
                                                     outline
-                                                    onClick={() => handleVerify(task)}
+                                                    onClick={() => onVerifyClick(task)}
                                                     className="!text-2xs font-bold shadow-xl !w-20 !h-6"
                                                     style={{
                                                         borderColor: completed ? '#16a34a' : '#3b82f6',
                                                         backgroundColor: 'transparent',
                                                         color: '#fff'
                                                     }}
-                                                    disabled={completed}
                                                 >
                                                     {completed ? 'Completed' : 'Verify'}
                                                 </Button>

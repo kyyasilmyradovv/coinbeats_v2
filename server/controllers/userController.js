@@ -767,19 +767,53 @@ exports.startVerificationTask = async (req, res, next) => {
       return next(createError(404, 'Verification task not found'));
     }
 
-    // Adjusted the handling of academyId here
+    // Fetch the most recent user verification for this task and user
     const existingVerification = await prisma.userVerification.findFirst({
       where: {
         userId: userId,
         verificationTaskId: taskId,
         academyId: academyId !== undefined ? academyId : null,
       },
+      orderBy: {
+        createdAt: 'desc',
+      },
     });
 
+    // Initialize variable to decide if a new task can be started
+    let canStartNewVerification = true;
+
     if (existingVerification) {
-      return res.status(400).json({ message: 'Task already started' });
+      if (verificationTask.intervalType === 'ONETIME') {
+        // For ONETIME tasks, do not allow starting again if verified
+        if (existingVerification.verified) {
+          canStartNewVerification = false;
+        }
+      } else if (verificationTask.intervalType === 'REPEATED') {
+        const now = new Date();
+        const lastCompletionDate = existingVerification.completedAt
+          ? new Date(existingVerification.completedAt)
+          : null;
+
+        if (lastCompletionDate && existingVerification.verified) {
+          const intervalMillis =
+            verificationTask.repeatInterval * 24 * 60 * 60 * 1000; // repeatInterval in days
+          if (now - lastCompletionDate < intervalMillis) {
+            canStartNewVerification = false;
+          }
+        } else if (!existingVerification.verified) {
+          // Task was started but not completed
+          canStartNewVerification = false;
+        }
+      }
     }
 
+    if (!canStartNewVerification) {
+      return res
+        .status(400)
+        .json({ message: 'Task already started or not yet available.' });
+    }
+
+    // Proceed to create a new UserVerification entry
     let parameters = {};
 
     // Fetch academy name
@@ -862,7 +896,18 @@ exports.submitTask = async (req, res, next) => {
       },
     });
 
-    if (verificationTask.verificationMethod === 'LEAVE_FEEDBACK') {
+    // Handle tasks that can be verified immediately
+    const immediateVerificationMethods = [
+      'LEAVE_FEEDBACK',
+      // 'PROVIDE_EMAIL',
+      // 'ADD_TO_BIO',
+      // 'SHORT_CIRCUIT',
+      // Add any other methods that can be verified immediately
+    ];
+
+    if (
+      immediateVerificationMethods.includes(verificationTask.verificationMethod)
+    ) {
       // Check if the user has started the task
       const userVerification = await prisma.userVerification.findFirst({
         where: {
@@ -876,7 +921,7 @@ exports.submitTask = async (req, res, next) => {
       if (!userVerification) {
         return res.status(400).json({
           message:
-            'You have not started this task yet. Please start the task before submitting feedback.',
+            'You have not started this task yet. Please start the task before submitting.',
         });
       }
 
@@ -900,7 +945,7 @@ exports.submitTask = async (req, res, next) => {
       });
 
       return res.json({
-        message: 'Feedback submitted successfully and points awarded.',
+        message: 'Submission received and points awarded.',
       });
     }
 
@@ -934,7 +979,28 @@ exports.getUserVerificationTasks = async (req, res, next) => {
         .json({ message: 'No verification tasks found for this user.' });
     }
 
-    res.json(userVerificationTasks);
+    // Map over the tasks to convert DateTime fields to ISO strings
+    const serializedTasks = userVerificationTasks.map((task) => ({
+      ...task,
+      completedAt: task.completedAt ? task.completedAt.toISOString() : null,
+      createdAt: task.createdAt ? task.createdAt.toISOString() : null,
+      lastLoginDate: task.lastLoginDate
+        ? task.lastLoginDate.toISOString()
+        : null,
+      verificationTask: {
+        ...task.verificationTask,
+        createdAt: task.verificationTask.createdAt
+          ? task.verificationTask.createdAt.toISOString()
+          : null,
+        updatedAt: task.verificationTask.updatedAt
+          ? task.verificationTask.updatedAt.toISOString()
+          : null,
+        // If verificationTask has DateTime fields
+      },
+      // If there are any other nested objects with DateTime fields, serialize them too
+    }));
+
+    res.json(serializedTasks);
   } catch (error) {
     console.error('Error fetching user verification tasks:', error);
     next(createError(500, 'Error fetching user verification tasks'));

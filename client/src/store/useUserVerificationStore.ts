@@ -226,7 +226,7 @@ const useUserVerificationStore = create<UserVerificationState>()(
                         case 'PROVIDE_EMAIL':
                             return { notificationText: 'Please provide your email in the next step.' }
                         case 'ADD_TO_BIO':
-                            return { notificationText: 'Please add "CoinBeats Student" to your X bio.' }
+                            return { notificationText: 'Please add "@CoinBeatsxyz Student" to your X bio.' }
                         case 'SHORT_CIRCUIT':
                             return { notificationText: task.description }
                         default:

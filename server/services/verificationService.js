@@ -309,19 +309,26 @@ const verifyFollowUser = async (verificationTask, user) => {
   console.log('Starting verifyFollowUser...');
   console.log('Verification Task:', JSON.stringify(verificationTask, null, 2));
 
-  // Handle BigInt serialization for the user object
-  console.log(
-    'User:',
-    JSON.stringify(
-      user,
-      (key, value) => (typeof value === 'bigint' ? value.toString() : value),
-      2
-    )
-  );
+  // Ensure twitterAccount is included in user data
+  if (!user.twitterAccount || user.twitterAccount.length === 0) {
+    throw new Error('User has no linked Twitter accounts.');
+  }
 
-  if (!user.twitterUserId || !user.twitterAccessToken) {
+  const currentTwitterAccount = user.twitterAccount[0];
+
+  if (
+    !currentTwitterAccount ||
+    !currentTwitterAccount.twitterUserId ||
+    !currentTwitterAccount.twitterAccessToken
+  ) {
     throw new Error('User is not authenticated with Twitter');
   }
+
+  // Use the Twitter account details
+  let twitterUserId = currentTwitterAccount.twitterUserId;
+  let twitterAccessToken = currentTwitterAccount.twitterAccessToken;
+  let twitterRefreshToken = currentTwitterAccount.twitterRefreshToken;
+  let twitterTokenExpiresAt = currentTwitterAccount.twitterTokenExpiresAt;
 
   const usernameToFollow = verificationTask.parameters?.username;
   console.log('Username to follow:', usernameToFollow);
@@ -333,13 +340,12 @@ const verifyFollowUser = async (verificationTask, user) => {
   try {
     // Check if access token is expired
     const now = new Date();
-    if (user.twitterTokenExpiresAt && now >= user.twitterTokenExpiresAt) {
-      if (user.twitterRefreshToken) {
-        // Refresh the access token
+    if (twitterTokenExpiresAt && now >= twitterTokenExpiresAt) {
+      if (twitterRefreshToken) {
         console.log('Access token expired. Refreshing token...');
-        user.twitterAccessToken = await refreshAccessToken(
-          user.twitterRefreshToken,
-          user
+        twitterAccessToken = await refreshAccessToken(
+          twitterRefreshToken,
+          currentTwitterAccount
         );
       } else {
         throw new Error('No refresh token available to refresh access token');
@@ -353,7 +359,7 @@ const verifyFollowUser = async (verificationTask, user) => {
     // Prepare the request to get the target user's ID
     let url = `https://api.twitter.com/2/users/by/username/${targetUsername}`;
     let headers = {
-      Authorization: `Bearer ${user.twitterAccessToken}`,
+      Authorization: `Bearer ${twitterAccessToken}`,
     };
     let params = {
       'user.fields': 'id',
@@ -377,8 +383,7 @@ const verifyFollowUser = async (verificationTask, user) => {
       throw new Error('Invalid username to follow');
     }
 
-    const sourceUserId = user.twitterUserId;
-    console.log('Source User ID:', sourceUserId);
+    console.log('Source User ID:', twitterUserId);
 
     // Fetch the list of users the source user is following
     let isFollowing = false;
@@ -387,9 +392,9 @@ const verifyFollowUser = async (verificationTask, user) => {
 
     console.log('Starting to fetch following list...');
     do {
-      url = `https://api.twitter.com/2/users/${sourceUserId}/following`;
+      url = `https://api.twitter.com/2/users/${twitterUserId}/following`;
       headers = {
-        Authorization: `Bearer ${user.twitterAccessToken}`,
+        Authorization: `Bearer ${twitterAccessToken}`,
       };
       params = {
         max_results: maxResults,
@@ -1076,6 +1081,126 @@ const verifyMemeTweet = async (verificationTask, user, params) => {
   }
 };
 
+const verifyAddToBio = async (verificationTask, user) => {
+  console.log('Starting verifyAddToBio...');
+
+  // Ensure twitterAccount is included in user data
+  if (!user.twitterAccount || user.twitterAccount.length === 0) {
+    throw new Error('User has no linked Twitter accounts.');
+  }
+
+  const currentTwitterAccount = user.twitterAccount[0];
+
+  if (
+    !currentTwitterAccount ||
+    !currentTwitterAccount.twitterUserId ||
+    !currentTwitterAccount.twitterAccessToken
+  ) {
+    throw new Error('User is not authenticated with Twitter');
+  }
+
+  // Use the Twitter account details
+  let twitterAccessToken = currentTwitterAccount.twitterAccessToken;
+  let twitterRefreshToken = currentTwitterAccount.twitterRefreshToken;
+  let twitterTokenExpiresAt = currentTwitterAccount.twitterTokenExpiresAt;
+
+  try {
+    // Refresh access token if expired
+    const now = new Date();
+    if (twitterTokenExpiresAt && now >= twitterTokenExpiresAt) {
+      if (twitterRefreshToken) {
+        console.log('Access token expired. Refreshing token...');
+        twitterAccessToken = await refreshAccessToken(
+          twitterRefreshToken,
+          currentTwitterAccount
+        );
+      } else {
+        throw new Error('No refresh token available to refresh access token');
+      }
+    }
+
+    // Fetch user's profile from Twitter API
+    const headers = {
+      Authorization: `Bearer ${twitterAccessToken}`,
+    };
+
+    const paramsRequest = {
+      'user.fields': 'description',
+    };
+
+    const url = `https://api.twitter.com/2/users/me`;
+    console.log('Fetching user profile with URL:', url);
+
+    const profileResponse = await axios.get(url, {
+      headers,
+      params: paramsRequest,
+    });
+    const userData = profileResponse.data.data;
+
+    if (!userData || !userData.description) {
+      throw new Error('Unable to retrieve user bio.');
+    }
+
+    const userBio = userData.description;
+    console.log('User Bio:', userBio);
+
+    // Retrieve the expected bio text from task parameters
+    const taskParameters = verificationTask.parameters || {};
+    const expectedBioText =
+      taskParameters.expectedBioText || '@CoinBeatsxyz Student';
+
+    console.log('Expected Bio Text:', expectedBioText);
+
+    // Check if the user bio contains the expected text
+    const bioContainsExpectedText = userBio
+      .toLowerCase()
+      .includes(expectedBioText.toLowerCase());
+
+    if (!bioContainsExpectedText) {
+      throw new Error(
+        'The required bio text was not found. Please update your bio accordingly.'
+      );
+    }
+
+    console.log('Bio verification successful.');
+    return true; // Verification successful
+  } catch (error) {
+    console.error(
+      'Error verifying bio:',
+      error.response?.data || error.message || error
+    );
+
+    if (error.response) {
+      if (error.response.status === 429) {
+        // Twitter API rate limit exceeded
+        throw new Error('Twitter rate limit exceeded. Please try again later.');
+      } else if (
+        error.response.status === 401 ||
+        error.response.status === 403
+      ) {
+        // Unauthorized or Forbidden
+        throw new Error(
+          'Twitter authentication failed. Please reconnect your Twitter account.'
+        );
+      } else {
+        // Other Twitter API errors
+        throw new Error('Twitter API error. Please try again later.');
+      }
+    } else if (
+      error.message.includes('User is not authenticated with Twitter')
+    ) {
+      throw new Error('Please connect your Twitter account to proceed.');
+    } else if (error.message.includes('The required bio text was not found')) {
+      throw new Error(
+        'The required bio text was not found. Please update your bio accordingly.'
+      );
+    } else {
+      // General error
+      throw new Error('An unexpected error occurred. Please try again later.');
+    }
+  }
+};
+
 const performVerification = async (verificationTask, user, params) => {
   const { userVerification } = params;
 
@@ -1105,6 +1230,21 @@ const performVerification = async (verificationTask, user, params) => {
     }
   }
 
+  // **Check `shortCircuit` before proceeding**
+  if (verificationTask.shortCircuit) {
+    const isVerified = await verifyShortCircuit(
+      verificationTask,
+      userVerification
+    );
+    if (isVerified) {
+      return true;
+    } else {
+      throw new Error(
+        'These tasks are manually verified. Come back in a few hours to verify.'
+      );
+    }
+  }
+
   // Proceed with task verification based on method
   switch (verificationTask.verificationMethod) {
     case 'TWEET':
@@ -1117,24 +1257,12 @@ const performVerification = async (verificationTask, user, params) => {
       return await verifyRetweet(verificationTask, user, params);
     case 'MEME_TWEET':
       return await verifyMemeTweet(verificationTask, user, params);
+    case 'ADD_TO_BIO':
+      return await verifyAddToBio(verificationTask, user);
     case 'LEAVE_FEEDBACK':
       return true; // Feedback is auto-verified
     default:
-      if (verificationTask.shortCircuit) {
-        const isVerified = await verifyShortCircuit(
-          verificationTask,
-          userVerification
-        );
-        if (isVerified) {
-          return true;
-        } else {
-          throw new Error(
-            'These tasks are manually verified. Come back in a few hours to verify.'
-          );
-        }
-      } else {
-        throw new Error('Unsupported verification method');
-      }
+      throw new Error('Unsupported verification method');
   }
 };
 
