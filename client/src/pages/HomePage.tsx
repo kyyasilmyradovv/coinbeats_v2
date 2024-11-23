@@ -205,8 +205,27 @@ export default function HomePage() {
         if (chain) data = data.filter((item) => item.chains.some((ch) => ch.name === chain))
         if (searchQuery) data = data.filter((item) => item.name.toLowerCase().includes(searchQuery.toLowerCase()))
         if (activeFilter === 'yetToDo') data = data.filter((item) => !hasCompletedAcademy(item.id))
-        if (activeFilter === 'new') data = data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-        if (activeFilter === 'topRated') data = data.sort((a, b) => b.xp - a.xp)
+
+        // Now sort data to put 'Coinbeats x Tirador' first, followed by 'Coinbeats'
+        data.sort((a, b) => {
+            const getRank = (academy) => {
+                if (academy.academyType.name === 'Coinbeats x Tirador') return 1
+                if (academy.academyType.name === 'Coinbeats') return 2
+                return 3
+            }
+
+            const rankA = getRank(a)
+            const rankB = getRank(b)
+
+            if (rankA !== rankB) return rankA - rankB
+
+            // If activeFilter is 'new' or 'topRated', we can continue to sort accordingly
+            if (activeFilter === 'new') return new Date(b.createdAt) - new Date(a.createdAt)
+            if (activeFilter === 'topRated') return b.xp - a.xp
+
+            // Default to no change
+            return 0
+        })
 
         return data
     }, [academies, category, chain, searchQuery, activeFilter, points])
@@ -597,7 +616,6 @@ export default function HomePage() {
                         button={<Button onClick={() => setNotificationOpen(false)}>Close</Button>}
                         onClose={() => setNotificationOpen(false)}
                     />
-
                     {/* Filters */}
                     <div className="flex flex-col justify-between bg-white dark:bg-zinc-900 rounded-2xl mx-2 shadow-lg p-0 py-0">
                         <div className="flex flex-row w-full mt-1 items-center ml-4">
@@ -746,7 +764,7 @@ export default function HomePage() {
                     <div className="grid grid-cols-3 gap-0 px-2 pt-1 pb-16">
                         {filteredData.map((academy) => {
                             const isCompleted = hasCompletedAcademy(academy.id)
-                            const isCoinbeats = academy.academyType.name === 'Coinbeats'
+                            const isCoinbeats = academy.academyType.name === 'Coinbeats' || academy.academyType.name === 'Coinbeats x Tirador'
 
                             return (
                                 <div key={academy.id} className="relative">

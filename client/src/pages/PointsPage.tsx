@@ -12,14 +12,14 @@ import ximage from '../images/x.png'
 import useUserStore from '~/store/useUserStore'
 import treasure from '../images/treasure1.png'
 import bunny from '../images/bunny-head.png'
-import bunnyLogo from '../images/bunny-mascot.png' // Import the bunny logo
+import bunnyLogo from '../images/bunny-mascot.png'
 import Lottie from 'react-lottie'
 import coinsEarnedAnimationData from '../animations/earned-coins.json'
 import bunnyHappyAnimationData from '../animations/bunny-happy.json'
 import bronzeMedal from '../images/bronze-medal.png'
 import useTasksStore from '~/store/useTasksStore'
 import useLeaderboardStore from '../store/useLeaderboardStore'
-import { handleAction, copyReferralLink, handleInviteFriend, getActionLabel } from '../utils/actionHandlers' // Import functions
+import { handleAction, copyReferralLink, handleInviteFriend, getActionLabel } from '../utils/actionHandlers'
 import useUserVerificationStore from '../store/useUserVerificationStore'
 import { VerificationTask, CharacterLevel } from '../types'
 import useCharacterLevelStore from '../store/useCharacterLevelStore'
@@ -76,12 +76,13 @@ const PointsPage: React.FC = () => {
     const [feedbackText, setFeedbackText] = useState('')
     const [selectedTask, setSelectedTask] = useState<VerificationTask | null>(null)
 
-    const constructImageUrl = (url) => {
+    const constructImageUrl = (url: string) => {
         return `https://subscribes.lt/${url}`
     }
 
+    // Updated constructLottieFileUrl function
     const constructLottieFileUrl = (url: string) => {
-        return `${process.env.REACT_APP_BACKEND_URL}/${url}`
+        return `${process.env.REACT_APP_API_BASE_URL}/${url}`
     }
 
     const [startOfWeek, setStartOfWeek] = useState<Date | null>(null)
@@ -187,11 +188,12 @@ const PointsPage: React.FC = () => {
                 setProgressToNextLevel(100) // Max level
             }
         }
-    }, [characterLevels, totalPoints])
+    }, [characterLevels, totalPoints, nextLevel])
 
     useEffect(() => {
         if (currentLevel && currentLevel.lottieFileUrl) {
             const lottieUrl = constructLottieFileUrl(currentLevel.lottieFileUrl)
+            console.log('Fetching Lottie animation from:', lottieUrl)
             fetch(lottieUrl)
                 .then((response) => response.json())
                 .then((data) => {
@@ -302,87 +304,62 @@ const PointsPage: React.FC = () => {
             <div className="relative min-h-screen bg-cosmos-bg bg-fixed bg-center bg-no-repeat bg-cover">
                 <div className="absolute inset-0 bg-black opacity-50 z-0"></div>
                 <div className="relative z-10">
-                    {/* Header and Tasks */}
+                    {/* Header and Character Development Card */}
                     <div className="flex flex-row justify-center items-center mb-2 mt-2">
-                        <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-1 flex flex-col items-center px-2 m-2 border border-gray-300 dark:border-gray-600 h-auto ml-4">
-                            {/* "Your Coins" card */}
-                            <div className="flex flex-row items-center justify-between w-full">
-                                <div className="w-10 h-10">
-                                    <Lottie options={coinsEarnedAnimation} height={40} width={40} />
-                                </div>
-                                <div className="text-md font-bold text-black dark:text-white flex-grow text-end mr-2 mt-1">{totalPoints}</div>
-                            </div>
-                            {/* User Rank */}
-                            {userRank && (
-                                <div className="flex flex-row items-center mt-2 w-full">
-                                    <div className="w-10 h-10 items-center">
-                                        <Lottie options={bunnyHappyAnimation} height={35} width={35} />
-                                    </div>
-                                    <div className="flex flex-col file:text-md font-bold text-black dark:text-white flex-grow text-end mr-2 mt-1">
-                                        <div className="flex flex-row items-center justify-center">
-                                            <span className="text-center">{userRank}</span>
-                                        </div>
-                                        <div className="flex flex-row items-center justify-center">
-                                            <span className="text-xs text-gray-300">Rank</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-
                         {/* Character Development Card */}
-                        <div className="flex flex-row justify-center items-center mb-2 mt-2 mx-4">
-                            <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-4 flex flex-row items-center w-full border border-gray-300 dark:border-gray-600">
-                                {/* Left side: Progress bar and Levels */}
-                                <div className="w-2/3 flex flex-col justify-center">
-                                    {/* Progress bar */}
-                                    <div className="relative w-full h-6 bg-gray-300 rounded-full overflow-hidden mt-2">
-                                        <div
-                                            className="absolute top-0 left-0 h-full bg-gradient-to-r from-green-400 to-blue-500"
-                                            style={{ width: `${progressToNextLevel}%` }}
-                                        ></div>
-                                        {/* Level badge at the end of the progress bar */}
-                                        {nextLevel && (
-                                            <div
-                                                className="absolute right-0 top-1/2 transform -translate-y-1/2 translate-x-1/2 bg-gold rounded-full px-2 py-1"
-                                                style={{
-                                                    backgroundColor: 'gold',
-                                                    minWidth: '80px',
-                                                    textAlign: 'center'
-                                                }}
-                                            >
-                                                <span className="text-white font-bold text-sm">{nextLevel.levelName}</span>
-                                                <br />
-                                                <span className="text-yellow-300 text-xs">Bonus XP: {nextLevel.rewardPoints}</span>
-                                            </div>
-                                        )}
-                                    </div>
-                                    {/* Current level badge */}
-                                    {currentLevel && (
-                                        <div className="mt-4 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full px-4 py-2 text-center">
-                                            <span className="text-white font-bold text-lg">{currentLevel.levelName}</span>
+                        <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-2 flex flex-row items-center mx-4 border border-gray-300 dark:border-gray-600 w-full">
+                            {/* Left side: Progress bar and Levels */}
+                            <div className="w-2/3 flex flex-col justify-center">
+                                {/* Progress bar */}
+                                <div className="relative w-full h-2 bg-gray-500 rounded-full overflow-hidden mt-2">
+                                    <div
+                                        className="absolute top-0 left-0 h-full bg-gradient-to-r from-green-400 to-blue-500"
+                                        style={{ width: `${progressToNextLevel}%` }}
+                                    ></div>
+                                </div>
+                                {/* Total Points and Next Level Info */}
+                                <div className="flex justify-between mt-1">
+                                    {/* Total Points */}
+                                    <div className="text-sm font-bold text-black dark:text-white">{totalPoints} coins</div>
+                                    {/* Next Level Info */}
+                                    {nextLevel && (
+                                        <div className="text-right">
+                                            <div className="text-2xs text-gray-100">Next level</div>
+                                            <div className="text-xs font-bold text-white">{nextLevel.levelName}</div>
+                                            <div className="text-xs text-white">Bonus coins: {nextLevel.rewardPoints}</div>
                                         </div>
                                     )}
                                 </div>
-                                {/* Right side: Lottie animation */}
-                                <div className="w-1/3 flex justify-center">
-                                    {lottieAnimationData ? (
-                                        <Lottie
-                                            options={{
-                                                loop: true,
-                                                autoplay: true,
-                                                animationData: lottieAnimationData,
-                                                rendererSettings: {
-                                                    preserveAspectRatio: 'xMidYMid slice'
-                                                }
-                                            }}
-                                            height={150}
-                                            width={150}
-                                        />
-                                    ) : (
-                                        <div>Loading animation...</div>
+                                {/* Rank and Current Level */}
+                                <div className="flex items-center mt-1 justify-between">
+                                    {/* Current Level */}
+                                    {currentLevel && (
+                                        <div className="bg-gradient-to-r from-purple-500 to-blue-500 rounded-full px-2 text-center items-center justify-center pb-[2px]">
+                                            <span className="text-white font-bold text-xs">{currentLevel.levelName}</span>
+                                        </div>
                                     )}
+                                    {/* Rank */}
+                                    <div>{userRank && <div className="bg-gray-800 text-white rounded-full px-2 py-1 text-xs">Rank {userRank}</div>}</div>
                                 </div>
+                            </div>
+                            {/* Right side: Lottie animation */}
+                            <div className="w-1/3 flex justify-center">
+                                {lottieAnimationData ? (
+                                    <Lottie
+                                        options={{
+                                            loop: true,
+                                            autoplay: true,
+                                            animationData: lottieAnimationData,
+                                            rendererSettings: {
+                                                preserveAspectRatio: 'xMidYMid slice'
+                                            }
+                                        }}
+                                        height={90}
+                                        width={80}
+                                    />
+                                ) : (
+                                    <div className="text-xs">Loading animation...</div>
+                                )}
                             </div>
                         </div>
                     </div>

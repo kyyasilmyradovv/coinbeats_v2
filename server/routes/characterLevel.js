@@ -24,12 +24,7 @@ router.post(
 );
 
 // Get all character levels
-router.get(
-  '/',
-  authenticateToken,
-  authorizeRoles('SUPERADMIN'),
-  asyncHandler(getCharacterLevels)
-);
+router.get('/', asyncHandler(getCharacterLevels));
 
 // Update a character level
 router.put(
