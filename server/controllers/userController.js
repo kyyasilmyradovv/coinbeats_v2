@@ -7,6 +7,7 @@ const createError = require('http-errors');
 const crypto = require('crypto');
 const sendEmail = require('../utils/sendEmail');
 const { performVerification } = require('../services/verificationService');
+const { checkAndApplyLevelUp } = require('../services/levelService');
 
 const prisma = new PrismaClient();
 const SALT_ROUNDS = 10;
@@ -471,6 +472,8 @@ exports.completeVerificationTask = async (req, res, next) => {
   }
 
   try {
+    console.log(`User ${userId} is completing verification task ${taskId}`);
+
     // Fetch user and include twitterAccounts
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -504,6 +507,7 @@ exports.completeVerificationTask = async (req, res, next) => {
     });
 
     if (!userVerification) {
+      console.log(`User ${userId} has not started task ${taskId}`);
       return res.status(400).json({
         message:
           'You have not started this task yet. Please perform the task before verifying.',
@@ -521,6 +525,9 @@ exports.completeVerificationTask = async (req, res, next) => {
       });
 
       if (!feedbackSubmission) {
+        console.log(
+          `User ${userId} has not submitted feedback for task ${taskId}`
+        );
         return res.status(400).json({
           message: 'You have not submitted feedback yet.',
         });
@@ -558,6 +565,7 @@ exports.completeVerificationTask = async (req, res, next) => {
           pointsAwarded: verificationTask.xp,
         },
       });
+      console.log(`User ${userId} successfully verified task ${taskId}`);
 
       // Award points
       await prisma.point.create({
@@ -568,12 +576,21 @@ exports.completeVerificationTask = async (req, res, next) => {
           academyId: academyId || null,
         },
       });
+      console.log(
+        `Awarded ${verificationTask.xp} points to user ${userId} for task ${taskId}`
+      );
+
+      // Call checkAndApplyLevelUp to handle level up and notifications
+      console.log(`Calling checkAndApplyLevelUp for user ${userId}`);
+      await checkAndApplyLevelUp(userId);
+      console.log(`Completed checkAndApplyLevelUp for user ${userId}`);
 
       return res.json({
         message: 'Task completed successfully',
         pointsAwarded: verificationTask.xp,
       });
     } else {
+      console.log(`Verification failed for user ${userId} on task ${taskId}`);
       return res.status(400).json({
         message:
           'Verification failed. Please ensure you have completed the task.',
@@ -639,6 +656,8 @@ exports.handleLoginStreak = async (req, res, next) => {
 
     const userId = user.id;
 
+    console.log(`Handling login streak for user ${userId}`);
+
     // Find the Daily Login Streak task
     const verificationTask = await prisma.verificationTask.findFirst({
       where: {
@@ -695,12 +714,16 @@ exports.handleLoginStreak = async (req, res, next) => {
               lastLoginDate: today,
             },
           });
+          console.log(
+            `User ${userId} continued login streak. New streak count: ${newStreakCount}`
+          );
         } else if (
           lastLogin.getFullYear() === today.getFullYear() &&
           lastLogin.getMonth() === today.getMonth() &&
           lastLogin.getDate() === today.getDate()
         ) {
           // Already logged in today
+          console.log(`User ${userId} already logged in today`);
           return res.json({
             message: 'Already logged in today',
             userVerification,
@@ -715,6 +738,7 @@ exports.handleLoginStreak = async (req, res, next) => {
               lastLoginDate: today,
             },
           });
+          console.log(`User ${userId} streak reset`);
         }
       } else {
         // No lastLoginDate, reset streak
@@ -726,6 +750,7 @@ exports.handleLoginStreak = async (req, res, next) => {
             lastLoginDate: today,
           },
         });
+        console.log(`User ${userId} lastLoginDate not found, streak reset`);
       }
     } else {
       // Create new UserVerification
@@ -738,6 +763,7 @@ exports.handleLoginStreak = async (req, res, next) => {
           lastLoginDate: today,
         },
       });
+      console.log(`User ${userId} started new login streak`);
     }
 
     // Create a new Point record
@@ -748,6 +774,14 @@ exports.handleLoginStreak = async (req, res, next) => {
         verificationTaskId: verificationTask.id,
       },
     });
+    console.log(
+      `Awarded ${userVerification.pointsAwarded} points to user ${userId} for login streak`
+    );
+
+    // Call checkAndApplyLevelUp to handle level up and notifications
+    console.log(`Calling checkAndApplyLevelUp for user ${userId}`);
+    await checkAndApplyLevelUp(userId);
+    console.log(`Completed checkAndApplyLevelUp for user ${userId}`);
 
     res.json({ userVerification, point });
   } catch (error) {

@@ -14,6 +14,7 @@ import useCategoryChainStore from '../store/useCategoryChainStore'
 import { useInitData } from '@telegram-apps/sdk-react'
 import useSessionStore from '../store/useSessionStore'
 import useUserStore from '../store/useUserStore'
+import useNotificationStore from '../store/useNotificationStore'
 
 interface IntroPageProps {
     onComplete: () => void // Function to call when the intro is complete
@@ -30,8 +31,16 @@ const IntroPage: React.FC<IntroPageProps> = ({ onComplete }) => {
     const { fetchUserVerificationTasks } = useUserVerificationStore()
     const { fetchCategoriesAndChains } = useCategoryChainStore()
 
-    const { fetchUser, registerUser, fetchTwitterAuthStatus, setTwitterAuthenticated, referralCompletionChecked, checkReferralCompletion, userId } =
-        useUserStore()
+    const {
+        fetchUser,
+        registerUser,
+        fetchTwitterAuthStatus,
+        setTwitterAuthenticated,
+        referralCompletionChecked,
+        checkReferralCompletion,
+        userId,
+        fetchUserLevel // Added to fetch user level
+    } = useUserStore()
     const { startSession } = useSessionStore()
 
     useEffect(() => {
@@ -112,6 +121,9 @@ const IntroPage: React.FC<IntroPageProps> = ({ onComplete }) => {
                     // Optionally, fetch the latest user data
                     await fetchTwitterAuthStatus()
                 }
+
+                // Fetch user level after initializing session
+                await fetchUserLevel()
             } catch (e) {
                 console.error('Error initializing user session:', e)
                 // Set default user in case of error
@@ -145,7 +157,8 @@ const IntroPage: React.FC<IntroPageProps> = ({ onComplete }) => {
                     fetchGameTasks(),
                     fetchUserVerificationTasks(),
                     fetchCategoriesAndChains(),
-                    fetchTwitterAuthStatus()
+                    fetchTwitterAuthStatus(),
+                    fetchUserLevel() // Ensure user level is fetched
                 ])
             } catch (error) {
                 console.error('Error in fetchData:', error)
@@ -159,6 +172,31 @@ const IntroPage: React.FC<IntroPageProps> = ({ onComplete }) => {
             }, 4000)
         })
     }, [initData]) // Keep initData in the dependency array
+
+    const { addNotifications } = useNotificationStore()
+
+    useEffect(() => {
+        const fetchNotifications = async () => {
+            try {
+                const response = await axios.get(`/api/notifications/${userId}`)
+                const notifications = response.data.map((notif) => ({
+                    id: notif.id,
+                    text: notif.message,
+                    title: notif.type === 'LEVEL_UP' ? 'Level Up!' : 'Notification',
+                    icon: null, // Optionally set an icon based on the type
+                    type: notif.type,
+                    read: notif.read
+                }))
+                addNotifications(notifications)
+            } catch (error) {
+                console.error('Error fetching notifications:', error)
+            }
+        }
+
+        if (userId) {
+            fetchNotifications()
+        }
+    }, [userId])
 
     // Referral completion check useEffect
     useEffect(() => {

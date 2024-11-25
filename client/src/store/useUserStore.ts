@@ -33,10 +33,15 @@ interface UserState {
     solanaWalletAddress: string | null
     tonWalletAddress: string | null
 
+    // New properties for level-up functionality
+    characterLevelId: number | null
+    characterLevelName: string | null
+
     setUser: (update: Partial<UserState> | ((state: UserState) => Partial<UserState>)) => void
     setBookmarks: (bookmarks: Array<any>) => void
     loginUser: (data: {
         userId: number
+        telegramUserId: bigint
         username: string
         email: string
         emailConfirmed: boolean
@@ -49,6 +54,8 @@ interface UserState {
         erc20WalletAddress?: string | null
         solanaWalletAddress?: string | null
         tonWalletAddress?: string | null
+        characterLevelId?: number | null
+        characterLevelName?: string | null
     }) => void
     logoutUser: () => void
     updateUserRoles: (roles: UserRole[]) => void
@@ -72,6 +79,8 @@ interface UserState {
     fetchUserPoints: (userId: number) => Promise<void>
     fetchTwitterAuthStatus: () => Promise<void>
     removeTwitterAccount: () => Promise<string>
+
+    fetchUserLevel: () => Promise<void> // New method to fetch user level
 
     updateTotalPoints: (points: number) => void
 }
@@ -104,6 +113,9 @@ const useUserStore = create<UserState>()(
         solanaWalletAddress: null,
         tonWalletAddress: null,
 
+        characterLevelId: null, // New property
+        characterLevelName: null, // New property
+
         setUser: (update) => set((state) => (typeof update === 'function' ? { ...state, ...update(state) } : { ...state, ...update })),
 
         setBookmarks: (bookmarks) => set({ bookmarks }),
@@ -114,7 +126,7 @@ const useUserStore = create<UserState>()(
 
         loginUser: ({
             userId,
-            telegramUserId, // Add this line
+            telegramUserId,
             username,
             email,
             emailConfirmed,
@@ -126,11 +138,13 @@ const useUserStore = create<UserState>()(
             hasAcademy,
             erc20WalletAddress,
             solanaWalletAddress,
-            tonWalletAddress
+            tonWalletAddress,
+            characterLevelId,
+            characterLevelName
         }) =>
             set({
                 userId,
-                telegramUserId, // Add this line
+                telegramUserId,
                 username,
                 email,
                 emailConfirmed,
@@ -147,7 +161,9 @@ const useUserStore = create<UserState>()(
                 loginStreakData: null,
                 erc20WalletAddress: erc20WalletAddress || null,
                 solanaWalletAddress: solanaWalletAddress || null,
-                tonWalletAddress: tonWalletAddress || null
+                tonWalletAddress: tonWalletAddress || null,
+                characterLevelId: characterLevelId || null,
+                characterLevelName: characterLevelName || null
             }),
 
         logoutUser: () =>
@@ -170,7 +186,9 @@ const useUserStore = create<UserState>()(
                 loginStreakData: null,
                 erc20WalletAddress: null,
                 solanaWalletAddress: null,
-                tonWalletAddress: null
+                tonWalletAddress: null,
+                characterLevelId: null,
+                characterLevelName: null
             }),
 
         updateUserRoles: (roles) => set({ roles: roles.length > 0 ? roles : ['USER'] }),
@@ -214,7 +232,8 @@ const useUserStore = create<UserState>()(
                         referralCompletionChecked,
                         erc20WalletAddress,
                         solanaWalletAddress,
-                        tonWalletAddress
+                        tonWalletAddress,
+                        characterLevel // Include character level
                     } = response.data
                     const hasAcademy = academies && academies.length > 0
                     const totalPoints = points ? points.reduce((sum: number, point: any) => sum + point.value, 0) : 0
@@ -237,7 +256,9 @@ const useUserStore = create<UserState>()(
                         referralCompletionChecked: referralCompletionChecked,
                         erc20WalletAddress: erc20WalletAddress || null,
                         solanaWalletAddress: solanaWalletAddress || null,
-                        tonWalletAddress: tonWalletAddress || null
+                        tonWalletAddress: tonWalletAddress || null,
+                        characterLevelId: characterLevel?.id || null,
+                        characterLevelName: characterLevel?.levelName || null
                     })
                 }
             } catch (error: any) {
@@ -285,7 +306,9 @@ const useUserStore = create<UserState>()(
                     referralCode: userData.referralCode || null,
                     erc20WalletAddress: userData.erc20WalletAddress || null,
                     solanaWalletAddress: userData.solanaWalletAddress || null,
-                    tonWalletAddress: userData.tonWalletAddress || null
+                    tonWalletAddress: userData.tonWalletAddress || null,
+                    characterLevelId: userData.characterLevel?.id || null,
+                    characterLevelName: userData.characterLevel?.levelName || null
                 }))
 
                 // Log the updated state
@@ -311,6 +334,9 @@ const useUserStore = create<UserState>()(
                         points: [...currentPoints, point],
                         loginStreakData: userVerification // Store login streak data if needed
                     })
+
+                    // Fetch updated user level after awarding points
+                    await get().fetchUserLevel()
                 }
 
                 // Return userVerification and point so the component can use them
@@ -329,7 +355,7 @@ const useUserStore = create<UserState>()(
 
                 set({
                     userId: userData.id,
-                    telegramUserId: userData.telegramUserId, // Add this line
+                    telegramUserId: userData.telegramUserId,
                     username: userData.name,
                     email: userData.email,
                     emailConfirmed: userData.emailConfirmed,
@@ -343,7 +369,9 @@ const useUserStore = create<UserState>()(
                     referralCode: userData.referralCode || null,
                     erc20WalletAddress: userData.erc20WalletAddress || null,
                     solanaWalletAddress: userData.solanaWalletAddress || null,
-                    tonWalletAddress: userData.tonWalletAddress || null
+                    tonWalletAddress: userData.tonWalletAddress || null,
+                    characterLevelId: userData.characterLevel?.id || null,
+                    characterLevelName: userData.characterLevel?.levelName || null
                 })
             } catch (error: any) {
                 console.error('Error fetching current user:', error)
@@ -430,9 +458,7 @@ const useUserStore = create<UserState>()(
                     return 'Telegram user ID is required to remove X account.'
                 }
                 const response = await axiosInstance.post('/api/users/twitter/remove', null, {
-                    // Keep null
                     headers: {
-                        // 'Content-Type': 'application/json', // Remove this header
                         'X-Telegram-User-Id': telegramUserId
                     }
                 })
@@ -483,6 +509,28 @@ const useUserStore = create<UserState>()(
                 }
             } catch (error: any) {
                 console.error('Error updating wallet addresses:', error)
+            }
+        },
+
+        // New method to fetch user level
+        fetchUserLevel: async () => {
+            try {
+                const telegramUserId = get().telegramUserId
+                if (!telegramUserId) {
+                    console.error('Telegram User ID is required to fetch user level.')
+                    return
+                }
+
+                const response = await axiosInstance.get(`/api/users/${telegramUserId}`)
+                if (response.status === 200 && response.data) {
+                    const { characterLevel } = response.data
+                    set({
+                        characterLevelId: characterLevel?.id || null,
+                        characterLevelName: characterLevel?.levelName || null
+                    })
+                }
+            } catch (error) {
+                console.error('Error fetching user level:', error)
             }
         }
     }))

@@ -40,6 +40,10 @@ import Spinner from './components/Spinner'
 import ScholarshipManagementPage from './pages/ScholarshipManagementPage'
 import CharacterLevelManagementPage from './pages/CharacterLevelManagementPage'
 
+// Import the NotificationDialog component and the notification store
+import NotificationDialog from './components/NotificationDialog'
+import useNotificationStore from './store/useNotificationStore'
+
 function RootComponent() {
     const [isLoading, setIsLoading] = useState(true)
     const initData = useInitData()
@@ -122,6 +126,19 @@ function RootComponent() {
         }
     }, [initData]) // Include initData in the dependency array
 
+    // Import the telegramUserId from the session store
+    const telegramUserId = useSessionStore((state) => state.userId)
+
+    // Access notification store functions and state
+    const { fetchNotifications } = useNotificationStore()
+
+    // Fetch notifications when the component mounts
+    useEffect(() => {
+        if (telegramUserId) {
+            fetchNotifications()
+        }
+    }, [telegramUserId, fetchNotifications])
+
     if (isLoading) {
         return (
             <div className="flex justify-center items-center h-screen">
@@ -133,6 +150,9 @@ function RootComponent() {
     return (
         <KonstaProvider theme={theme}>
             <KonstaApp theme={theme} safeAreas={!inIFrame}>
+                {/* Include the NotificationDialog component */}
+                <NotificationDialog />
+
                 <BookmarkProvider>
                     <Routes>
                         <Route path="*" element={<NotFoundPage />} />

@@ -128,6 +128,9 @@ importers:
       react-router-dom:
         specifier: ^6.22.3
         version: 6.26.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      react-select:
+        specifier: ^5.8.3
+        version: 5.8.3(@types/react@18.3.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react-window:
         specifier: ^1.8.10
         version: 1.8.10(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -2622,6 +2625,9 @@ packages:
   memoize-one@5.2.1:
     resolution: {integrity: sha512-zYiwtZUcYyXKo/np96AGZAckk+FWWsUdJ3cHGGmld7+AhvcWmQyGCYUh1hc4Q/pkOhb65dQR/pqCyK0cOaHz4Q==}
 
+  memoize-one@6.0.0:
+    resolution: {integrity: sha512-rkpe71W0N0c0Xz6QD0eJETuWAJGnJ9afsl1srmwPrI+yBCkge5EycXXbYRyvL29zZVUWQCY7InPRCv3GDXuZNw==}
+
   merge-stream@2.0.0:
     resolution: {integrity: sha512-abv/qOcuPfk3URPfDzmZU1LKmuw8kT+0nIHvKrKgFrwifol/doWcdA4ZqsWQ8ENrFKkd67Mfpo/LovbIUsbt3w==}
 
@@ -3008,6 +3014,12 @@ packages:
     engines: {node: '>=14.0.0'}
     peerDependencies:
       react: '>=16.8'
+
+  react-select@5.8.3:
+    resolution: {integrity: sha512-lVswnIq8/iTj1db7XCG74M/3fbGB6ZaluCzvwPGT5ZOjCdL/k0CLWhEK0vCBLuU5bHTEf6Gj8jtSvi+3v+tO1w==}
+    peerDependencies:
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0
+      react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0
 
   react-style-singleton@2.2.1:
     resolution: {integrity: sha512-ZWj0fHEMyWkHzKYUr2Bs/4zU6XLmq9HsgBURm7g5pAVfyn49DgUiNgY2d4lXRlYSiCif9YBGpQleewkcqddc7g==}
@@ -3414,6 +3426,15 @@ packages:
     engines: {node: '>=10'}
     peerDependencies:
       '@types/react': ^16.8.0 || ^17.0.0 || ^18.0.0
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+
+  use-isomorphic-layout-effect@1.1.2:
+    resolution: {integrity: sha512-49L8yCO3iGT/ZF9QttjwLF/ZD9Iwto5LnH5LmEdk/6cFmXddqi2ulF0edxTwjj+7mqvpVVGQWvbXZdn32wRSHA==}
+    peerDependencies:
+      '@types/react': '*'
       react: ^16.8.0 || ^17.0.0 || ^18.0.0
     peerDependenciesMeta:
       '@types/react':
@@ -6366,6 +6387,8 @@ snapshots:
 
   memoize-one@5.2.1: {}
 
+  memoize-one@6.0.0: {}
+
   merge-stream@2.0.0: {}
 
   merge2@1.4.1: {}
@@ -6702,6 +6725,23 @@ snapshots:
     dependencies:
       '@remix-run/router': 1.19.0
       react: 18.3.1
+
+  react-select@5.8.3(@types/react@18.3.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
+    dependencies:
+      '@babel/runtime': 7.25.0
+      '@emotion/cache': 11.13.1
+      '@emotion/react': 11.13.0(@types/react@18.3.3)(react@18.3.1)
+      '@floating-ui/dom': 1.6.8
+      '@types/react-transition-group': 4.4.10
+      memoize-one: 6.0.0
+      prop-types: 15.8.1
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+      react-transition-group: 4.4.5(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      use-isomorphic-layout-effect: 1.1.2(@types/react@18.3.3)(react@18.3.1)
+    transitivePeerDependencies:
+      - '@types/react'
+      - supports-color
 
   react-style-singleton@2.2.1(@types/react@18.3.3)(react@18.3.1):
     dependencies:
@@ -7084,6 +7124,12 @@ snapshots:
     dependencies:
       react: 18.3.1
       tslib: 2.6.3
+    optionalDependencies:
+      '@types/react': 18.3.3
+
+  use-isomorphic-layout-effect@1.1.2(@types/react@18.3.3)(react@18.3.1):
+    dependencies:
+      react: 18.3.1
     optionalDependencies:
       '@types/react': 18.3.3
 

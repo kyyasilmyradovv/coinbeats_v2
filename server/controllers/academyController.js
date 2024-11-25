@@ -4,6 +4,7 @@ const { PrismaClient } = require('@prisma/client');
 const createError = require('http-errors');
 const prisma = new PrismaClient();
 const { saveFile } = require('../uploadConfig'); // Reuse the saveFile function from the uploadConfig.js
+const { checkAndApplyLevelUp } = require('../services/levelService');
 
 // Helper function to handle file uploads
 const handleFileUpload = (files, fieldName) => {
@@ -1118,6 +1119,10 @@ exports.submitQuizAnswers = async (req, res, next) => {
     return res.status(400).json({ message: 'User ID is required.' });
   }
 
+  console.log(
+    `User ${userId} is submitting quiz answers for academy ${academyId}`
+  );
+
   try {
     // Find all user responses for the given academy
     const userResponses = await prisma.userResponse.findMany({
@@ -1137,6 +1142,10 @@ exports.submitQuizAnswers = async (req, res, next) => {
       0
     );
 
+    console.log(
+      `User ${userId} earned ${totalPoints} points for academy ${academyId}`
+    );
+
     // Save the total points to the Points table
     const existingPoints = await prisma.point.findFirst({
       where: {
@@ -1151,6 +1160,9 @@ exports.submitQuizAnswers = async (req, res, next) => {
         where: { id: existingPoints.id },
         data: { value: totalPoints },
       });
+      console.log(
+        `Updated existing points record for user ${userId} and academy ${academyId}`
+      );
     } else {
       // Otherwise, create a new record
       await prisma.point.create({
@@ -1160,7 +1172,15 @@ exports.submitQuizAnswers = async (req, res, next) => {
           value: totalPoints,
         },
       });
+      console.log(
+        `Created new points record for user ${userId} and academy ${academyId}`
+      );
     }
+
+    // Call checkAndApplyLevelUp to handle level up and notifications
+    console.log(`Calling checkAndApplyLevelUp for user ${userId}`);
+    await checkAndApplyLevelUp(userId);
+    console.log(`Completed checkAndApplyLevelUp for user ${userId}`);
 
     res.json({ message: `Congratulations! You've earned ${totalPoints} XP.` });
   } catch (error) {

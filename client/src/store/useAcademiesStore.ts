@@ -5,6 +5,7 @@ import { devtools } from 'zustand/middleware'
 import axiosInstance from '../api/axiosInstance'
 import useUserStore from './useUserStore' // Import useUserStore to update user points
 import useSessionStore from './useSessionStore'
+import useNotificationStore from './useNotificationStore'
 
 interface AcademyType {
     id: number
@@ -268,12 +269,19 @@ const useAcademiesStore = create<AcademiesState>()(
             }
         },
 
-        submitQuiz: async (academyId, userId) => {
+        submitQuiz: async (academyId: number, userId: number) => {
             try {
                 await axiosInstance.post(`/api/academies/${academyId}/submit-quiz`, {
                     academyId,
                     userId
                 })
+
+                // Fetch notifications after submitting the quiz
+                const { fetchNotifications } = useNotificationStore.getState()
+                await fetchNotifications()
+
+                // Optionally, fetch user total points if needed
+                await get().fetchUserTotalPoints(userId)
             } catch (error) {
                 console.error('Error submitting quiz:', error)
                 throw error

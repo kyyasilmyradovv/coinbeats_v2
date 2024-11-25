@@ -8,6 +8,7 @@ import { Person, School, Assessment, AttachMoney, Group } from '@mui/icons-mater
 import Navbar from '../components/common/Navbar'
 import Sidebar from '../components/Sidebar'
 import axios from '../api/axiosInstance'
+import Select from 'react-select'
 
 const SuperAdminDashboardPage: React.FC = () => {
     // Dashboard statistics state
@@ -22,11 +23,15 @@ const SuperAdminDashboardPage: React.FC = () => {
     // Subscription management state
     const [subscriptionEnabled, setSubscriptionEnabled] = useState(false)
     const [subscriptionFee, setSubscriptionFee] = useState(0)
-    const [rightPanelOpened, setRightPanelOpened] = useState(false)
-    const [darkMode, setDarkMode] = useState(false)
 
     // Default Academy XP state
     const [defaultAcademyXp, setDefaultAcademyXp] = useState(0)
+
+    // Notification broadcast state
+    const [notificationMessage, setNotificationMessage] = useState('')
+    const [isTargeted, setIsTargeted] = useState(false)
+    const [selectedUsers, setSelectedUsers] = useState([])
+    const [allUsers, setAllUsers] = useState([])
 
     // Fetch statistics data
     const fetchData = async () => {
@@ -70,9 +75,24 @@ const SuperAdminDashboardPage: React.FC = () => {
         }
     }
 
+    // Fetch all users and store them in memory
+    const fetchAllUsers = async () => {
+        try {
+            const response = await axios.get('/api/users')
+            const usersData = response.data.map((user) => ({
+                label: `${user.name} (${user.email})`,
+                value: user.id
+            }))
+            setAllUsers(usersData)
+        } catch (error) {
+            console.error('Error fetching users:', error)
+        }
+    }
+
     useEffect(() => {
         fetchData()
         fetchDefaultAcademyXp()
+        fetchAllUsers()
     }, [])
 
     // Handle the toggle change
@@ -129,8 +149,60 @@ const SuperAdminDashboardPage: React.FC = () => {
         ]
     }
 
-    const toggleSidebar = () => {
-        setRightPanelOpened(!rightPanelOpened)
+    // Notification broadcast handlers
+    const handleNotificationSubmit = async () => {
+        try {
+            await axios.post('/api/notifications', {
+                userIds: isTargeted ? selectedUsers.map((user) => user.value) : [],
+                message: notificationMessage,
+                type: 'ADMIN_BROADCAST'
+            })
+            alert('Notification sent successfully')
+            setNotificationMessage('')
+            setSelectedUsers([])
+        } catch (error) {
+            console.error('Error sending notification:', error)
+            alert('An error occurred while sending the notification.')
+        }
+    }
+
+    const customStyles = {
+        control: (provided, state) => ({
+            ...provided,
+            backgroundColor: '#fff',
+            borderColor: state.isFocused ? '#9c27b0' : '#d1d5db',
+            '&:hover': {
+                borderColor: '#9c27b0'
+            },
+            borderRadius: '0.75rem', // Rounded
+            minHeight: '2.5rem'
+        }),
+        menu: (provided) => ({
+            ...provided,
+            zIndex: 9999, // Ensure the menu appears above other elements
+            backgroundColor: '#fff'
+        }),
+        option: (provided, state) => ({
+            ...provided,
+            backgroundColor: state.isFocused ? '#9c27b0' : '#fff',
+            color: state.isFocused ? '#fff' : '#000',
+            '&:active': {
+                backgroundColor: '#9c27b0',
+                color: '#fff'
+            }
+        }),
+        multiValue: (provided) => ({
+            ...provided,
+            backgroundColor: '#e0e7ff'
+        }),
+        multiValueLabel: (provided) => ({
+            ...provided,
+            color: '#1e3a8a'
+        }),
+        placeholder: (provided) => ({
+            ...provided,
+            color: '#6b7280'
+        })
     }
 
     return (
@@ -140,7 +212,7 @@ const SuperAdminDashboardPage: React.FC = () => {
 
             <Block className="space-y-4">
                 {/* First Card: General Stats */}
-                <Card className="!mb-2 !p-0 !rounded-2xl shadow-lg !mx-2 relative border border-gray-300 dark:border-gray-600">
+                <Card className="!mb-2 !p-4 !rounded-2xl shadow-lg !mx-2 relative border border-gray-300 dark:border-gray-600">
                     <BlockTitle className="text-center mb-4 !mt-0">Dashboard Statistics</BlockTitle>
                     <Block className="flex justify-around items-center !my-0">
                         <div className="flex flex-col items-center">
@@ -162,7 +234,7 @@ const SuperAdminDashboardPage: React.FC = () => {
                 </Card>
 
                 {/* Second Card: Subscription and Income Stats */}
-                <Card className="!mb-2 !p-0 !rounded-2xl shadow-lg !mx-2 relative border border-gray-300 dark:border-gray-600">
+                <Card className="!mb-2 !p-4 !rounded-2xl shadow-lg !mx-2 relative border border-gray-300 dark:border-gray-600">
                     <BlockTitle className="text-center mb-2 !mt-0">Financial Overview</BlockTitle>
                     <Block className="flex justify-around items-center !my-0">
                         <div className="flex flex-col items-center">
@@ -182,7 +254,7 @@ const SuperAdminDashboardPage: React.FC = () => {
                 </Card>
 
                 {/* Third Card: Subscription Management */}
-                <Card className="!mb-2 !p-0 !rounded-2xl shadow-lg !mx-2 relative border border-gray-300 dark:border-gray-600">
+                <Card className="!mb-2 !p-4 !rounded-2xl shadow-lg !mx-2 relative border border-gray-300 dark:border-gray-600">
                     <BlockTitle className="text-center !m-0 !p-0 !mb-4">Subscription Management</BlockTitle>
                     <Block className="flex flex-col md:flex-row justify-around items-center !m-0 !p-0">
                         <div className="flex flex-col items-center mb-4">
@@ -209,14 +281,23 @@ const SuperAdminDashboardPage: React.FC = () => {
                                 />
                             </List>
                         </div>
-                        <Button outline rounded onClick={applySubscriptionFee}>
+                        <Button
+                            outline
+                            rounded
+                            onClick={applySubscriptionFee}
+                            className="mt-4 md:mt-0"
+                            style={{
+                                background: 'linear-gradient(to left, #ff0077, #7700ff)',
+                                color: '#fff'
+                            }}
+                        >
                             Apply Fee
                         </Button>
                     </Block>
                 </Card>
 
                 {/* Fourth Card: Default Academy XP */}
-                <Card className="!mb-2 !p-0 !rounded-2xl shadow-lg !mx-2 relative border border-gray-300 dark:border-gray-600">
+                <Card className="!mb-2 !p-4 !rounded-2xl shadow-lg !mx-2 relative border border-gray-300 dark:border-gray-600">
                     <BlockTitle className="text-center !m-0 !p-0">Academy XP Management</BlockTitle>
                     <Block className="flex flex-col md:flex-row justify-around items-center !m-0 !p-0">
                         <div className="flex flex-col items-center">
@@ -232,10 +313,70 @@ const SuperAdminDashboardPage: React.FC = () => {
                                 />
                             </List>
                         </div>
-                        <Button outline rounded onClick={applyDefaultAcademyXp}>
+                        <Button
+                            outline
+                            rounded
+                            onClick={applyDefaultAcademyXp}
+                            className="mt-4 md:mt-0"
+                            style={{
+                                background: 'linear-gradient(to left, #ff0077, #7700ff)',
+                                color: '#fff'
+                            }}
+                        >
                             Apply
                         </Button>
                     </Block>
+                </Card>
+
+                {/* New Card: Notification Broadcast */}
+                <Card className="!mb-2 !p-4 !rounded-2xl shadow-lg !mx-2 relative border border-gray-300 dark:border-gray-600">
+                    <BlockTitle className="text-center mb-4 !mt-0">Create Notification</BlockTitle>
+                    <List>
+                        <ListInput
+                            type="textarea"
+                            label="Notification Message"
+                            value={notificationMessage}
+                            onChange={(e) => setNotificationMessage(e.target.value)}
+                            placeholder="Enter the message to broadcast"
+                            outline
+                            className="!rounded-xl"
+                        />
+                        <div className="flex items-center mt-4">
+                            <label className="mr-2">Target Specific Users:</label>
+                            <input
+                                type="checkbox"
+                                checked={isTargeted}
+                                onChange={() => setIsTargeted(!isTargeted)}
+                                className="form-checkbox h-4 w-4 text-purple-600"
+                            />
+                        </div>
+                        {isTargeted && (
+                            <div className="mt-4 z-50">
+                                <Select
+                                    isMulti
+                                    options={allUsers}
+                                    value={selectedUsers}
+                                    onChange={setSelectedUsers}
+                                    styles={customStyles}
+                                    placeholder="Select users..."
+                                    className="react-select-container"
+                                    classNamePrefix="react-select"
+                                />
+                            </div>
+                        )}
+                        <Button
+                            outline
+                            rounded
+                            onClick={handleNotificationSubmit}
+                            className="mt-4"
+                            style={{
+                                background: 'linear-gradient(to left, #ff0077, #7700ff)',
+                                color: '#fff'
+                            }}
+                        >
+                            Broadcast
+                        </Button>
+                    </List>
                 </Card>
             </Block>
         </Page>

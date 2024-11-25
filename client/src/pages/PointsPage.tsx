@@ -82,7 +82,7 @@ const PointsPage: React.FC = () => {
 
     // Updated constructLottieFileUrl function
     const constructLottieFileUrl = (url: string) => {
-        return `${process.env.REACT_APP_API_BASE_URL}/${url}`
+        return `https://subscribes.lt/${url}`
     }
 
     const [startOfWeek, setStartOfWeek] = useState<Date | null>(null)
@@ -683,6 +683,8 @@ const PointsPage: React.FC = () => {
                                                         <img src={bunny} alt="Coins" className="h-5 w-5" />
                                                     ) : point.verificationTask?.verificationMethod === 'INVITE_TELEGRAM_FRIEND' ? (
                                                         <img src={bunny} alt="Bunny" className="h-5 w-5" />
+                                                    ) : point.description ? (
+                                                        <img src={Trophy} alt="Level Up" className="h-5 w-5" /> // Use a trophy or level-up icon
                                                     ) : (
                                                         <img src={bunny} alt="Coins" className="h-5 w-5" />
                                                     )}
@@ -690,7 +692,11 @@ const PointsPage: React.FC = () => {
                                                 <div className="flex flex-col w-full">
                                                     <div className="flex justify-between items-center">
                                                         <p className="text-sm font-semibold dark:text-gray-100">
-                                                            {point.academy ? point.academy.name : point.verificationTask?.name}
+                                                            {point.academy
+                                                                ? point.academy.name
+                                                                : point.verificationTask?.name ||
+                                                                  point.description || // Display description if available
+                                                                  'Level Up Reward'}{' '}
                                                         </p>
                                                         <div className="flex items-center w-20 justify-end">
                                                             <p className="text-sm font-semibold dark:text-gray-100">+{point.value}</p>

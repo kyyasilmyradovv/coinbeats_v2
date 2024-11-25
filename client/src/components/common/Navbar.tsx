@@ -9,6 +9,7 @@ import logoDark from '../../images/coinbeats-dark.svg'
 import avatar from '../../images/bunny-head.png'
 import useUserStore from '../../store/useUserStore'
 import useSessionStore from '../../store/useSessionStore'
+import NotificationBell from '../NotificationBell'
 
 interface NavbarProps {
     handleNavigationAttempt?: (newFilter: string | null, navigationAction: () => void) => void

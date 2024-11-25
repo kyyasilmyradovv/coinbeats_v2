@@ -93,6 +93,7 @@ model User {
   // character level
   characterLevelId Int?
   characterLevel   CharacterLevel? @relation(fields: [characterLevelId], references: [id])
+  Notification     Notification[]
 }
 
 model TwitterAccount {
@@ -246,6 +247,7 @@ model Point {
   userId             Int
   academyId          Int?
   verificationTaskId Int?
+  description        String?
   createdAt          DateTime          @default(now())
   academy            Academy?          @relation("AcademyToPoint", fields: [academyId], references: [id])
   user               User              @relation(fields: [userId], references: [id])
@@ -341,6 +343,19 @@ model CharacterLevel {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   User          User[]
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  type      String
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
 }
 
 model Setting {
