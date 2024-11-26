@@ -8,6 +8,7 @@ import useLeaderboardStore from '../store/useLeaderboardStore'
 import axiosInstance from '../api/axiosInstance'
 import { format } from 'date-fns'
 import { utcToZonedTime } from 'date-fns-tz'
+import useUserStore from '../store/useUserStore'
 
 const ScholarshipManagementPage: React.FC = () => {
     const [scholarshipText, setScholarshipText] = useState('')
@@ -24,6 +25,8 @@ const ScholarshipManagementPage: React.FC = () => {
     const fetchScholarshipText = useLeaderboardStore((state) => state.fetchScholarshipText)
     const storedScholarshipText = useLeaderboardStore((state) => state.scholarshipText)
     const setStoreScholarshipText = useLeaderboardStore((state) => state.setScholarshipText)
+
+    const { user } = useUserStore((state) => ({ user: state.user }))
 
     useEffect(() => {
         const fetchData = async () => {
@@ -154,79 +157,40 @@ const ScholarshipManagementPage: React.FC = () => {
         return { startOfWeekCET, endOfWeekCET }
     }
 
-    const handleDownloadCSV = async () => {
-        if (!weeklyLeaderboard || weeklyLeaderboard.length === 0) {
-            alert('No data to download.')
+    const handleSendCSVEmail = async (dataType: string) => {
+        let data = []
+        let fileName = ''
+        if (dataType === 'leaderboard') {
+            if (!weeklyLeaderboard || weeklyLeaderboard.length === 0) {
+                alert('No data to send.')
+                return
+            }
+            data = weeklyLeaderboard
+            fileName = `${selectedWeek?.replace(/[: ]/g, '_')}_snapshot.csv`
+        } else if (dataType === 'referrers') {
+            if (!weeklyTopReferrers || weeklyTopReferrers.length === 0) {
+                alert('No data to send.')
+                return
+            }
+            data = weeklyTopReferrers
+            fileName = `${selectedWeek?.replace(/[: ]/g, '_')}_top_referrers.csv`
+        } else {
+            alert('Invalid data type.')
             return
         }
 
         try {
-            const response = await axiosInstance.post(
-                '/api/download-csv',
-                {
-                    dataType: 'leaderboard',
-                    data: weeklyLeaderboard,
-                    selectedWalletType,
-                    fileName: `${selectedWeek?.replace(/[: ]/g, '_')}_snapshot.csv`
-                },
-                {
-                    responseType: 'blob'
-                }
-            )
+            const response = await axiosInstance.post('/api/download-csv-email', {
+                dataType,
+                data,
+                selectedWalletType,
+                fileName
+            })
 
-            // Create a Blob from the response data
-            const blob = new Blob([response.data], { type: 'text/csv;charset=utf-8;' })
-
-            // Initiate the download
-            const url = URL.createObjectURL(blob)
-            const link = document.createElement('a')
-            link.href = url
-            link.setAttribute('download', `${selectedWeek?.replace(/[: ]/g, '_')}_snapshot.csv`)
-            document.body.appendChild(link)
-            link.click()
-            document.body.removeChild(link)
-            URL.revokeObjectURL(url)
+            alert('CSV file has been sent to your email.')
         } catch (error) {
-            console.error('Error downloading CSV:', error)
-            alert('Failed to download CSV.')
-        }
-    }
-
-    const handleDownloadReferrersCSV = async () => {
-        if (!weeklyTopReferrers || weeklyTopReferrers.length === 0) {
-            alert('No data to download.')
-            return
-        }
-
-        try {
-            const response = await axiosInstance.post(
-                '/api/download-csv',
-                {
-                    dataType: 'referrers',
-                    data: weeklyTopReferrers,
-                    selectedWalletType,
-                    fileName: `${selectedWeek?.replace(/[: ]/g, '_')}_top_referrers.csv`
-                },
-                {
-                    responseType: 'blob'
-                }
-            )
-
-            // Create a Blob from the response data
-            const blob = new Blob([response.data], { type: 'text/csv;charset=utf-8;' })
-
-            // Initiate the download
-            const url = URL.createObjectURL(blob)
-            const link = document.createElement('a')
-            link.href = url
-            link.setAttribute('download', `${selectedWeek?.replace(/[: ]/g, '_')}_top_referrers.csv`)
-            document.body.appendChild(link)
-            link.click()
-            document.body.removeChild(link)
-            URL.revokeObjectURL(url)
-        } catch (error) {
-            console.error('Error downloading CSV:', error)
-            alert('Failed to download CSV.')
+            console.error('Error sending CSV file via email:', error)
+            alert('Failed to send CSV via email.')
         }
     }
 
@@ -292,8 +256,8 @@ const ScholarshipManagementPage: React.FC = () => {
                                     <option value="tonWalletAddress">TON Wallet Address</option>
                                 </ListInput>
                             </List>
-                            <Button large rounded onClick={handleDownloadCSV} className="!w-[90%] !mx-auto">
-                                Download .csv
+                            <Button large rounded onClick={() => handleSendCSVEmail('leaderboard')} className="!w-[90%] !mx-auto">
+                                Send CSV to Email
                             </Button>
                             <List strong inset>
                                 {weeklyLeaderboard.map((user, index) => (
@@ -325,8 +289,8 @@ const ScholarshipManagementPage: React.FC = () => {
                                     <option value="tonWalletAddress">TON Wallet Address</option>
                                 </ListInput>
                             </List>
-                            <Button large rounded onClick={handleDownloadReferrersCSV} className="!w-[90%] !mx-auto">
-                                Download Referrers .csv
+                            <Button large rounded onClick={() => handleSendCSVEmail('referrers')} className="!w-[90%] !mx-auto">
+                                Send CSV to Email
                             </Button>
                         </Card>
                     </>
