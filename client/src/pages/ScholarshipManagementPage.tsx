@@ -8,13 +8,13 @@ import useLeaderboardStore from '../store/useLeaderboardStore'
 import axiosInstance from '../api/axiosInstance'
 import { format } from 'date-fns'
 import { utcToZonedTime } from 'date-fns-tz'
-import { useInitData } from '@telegram-apps/sdk-react' // Import for Telegram SDK
 
 const ScholarshipManagementPage: React.FC = () => {
     const [scholarshipText, setScholarshipText] = useState('')
     const [weeklySnapshots, setWeeklySnapshots] = useState<string[]>([])
     const [selectedWeek, setSelectedWeek] = useState<string | null>(null)
     const [weeklyLeaderboard, setWeeklyLeaderboard] = useState<any[]>([])
+    const [weeklyTopReferrers, setWeeklyTopReferrers] = useState<any[]>([])
     const [startOfWeek, setStartOfWeek] = useState<string | null>(null)
     const [endOfWeek, setEndOfWeek] = useState<string | null>(null)
     const [currentCETTime, setCurrentCETTime] = useState<Date>(new Date())
@@ -24,8 +24,6 @@ const ScholarshipManagementPage: React.FC = () => {
     const fetchScholarshipText = useLeaderboardStore((state) => state.fetchScholarshipText)
     const storedScholarshipText = useLeaderboardStore((state) => state.scholarshipText)
     const setStoreScholarshipText = useLeaderboardStore((state) => state.setScholarshipText)
-
-    const initData = useInitData() // Initialize Telegram Web App data
 
     useEffect(() => {
         const fetchData = async () => {
@@ -125,10 +123,13 @@ const ScholarshipManagementPage: React.FC = () => {
         setEndOfWeek(format(endOfWeekCET, 'yyyy-MM-dd HH:mm:ss'))
 
         try {
-            const response = await axiosInstance.get(`/api/points/weekly_leaderboard_snapshot?week=${encodeURIComponent(weekDate)}`)
-            setWeeklyLeaderboard(response.data)
+            const leaderboardResponse = await axiosInstance.get(`/api/points/weekly_leaderboard_snapshot?week=${encodeURIComponent(weekDate)}`)
+            setWeeklyLeaderboard(leaderboardResponse.data)
+
+            const referrersResponse = await axiosInstance.get(`/api/points/weekly_top_referrers_snapshot?week=${encodeURIComponent(weekDate)}`)
+            setWeeklyTopReferrers(referrersResponse.data)
         } catch (error) {
-            console.error('Error fetching leaderboard for the week:', error)
+            console.error('Error fetching data for the week:', error)
         }
     }
 
@@ -159,35 +160,70 @@ const ScholarshipManagementPage: React.FC = () => {
             return
         }
 
-        const csvData = weeklyLeaderboard.map((user, index) => ({
-            Rank: index + 1,
-            username: user.name,
-            userId: user.userId,
-            telegramUserId: user.telegramUserId,
-            walletAddress: user[selectedWalletType] || ''
-        }))
+        try {
+            const response = await axiosInstance.post(
+                '/api/download-csv',
+                {
+                    dataType: 'leaderboard',
+                    data: weeklyLeaderboard,
+                    selectedWalletType,
+                    fileName: `${selectedWeek?.replace(/[: ]/g, '_')}_snapshot.csv`
+                },
+                {
+                    responseType: 'blob'
+                }
+            )
 
-        const csvContent = [
-            'Rank,Username,UserId,TelegramUserId,WalletAddress',
-            ...csvData.map((row) => `${row.Rank},${row.username},${row.userId},${row.telegramUserId},${row.walletAddress}`)
-        ].join('\n')
+            // Create a Blob from the response data
+            const blob = new Blob([response.data], { type: 'text/csv;charset=utf-8;' })
+
+            // Initiate the download
+            const url = URL.createObjectURL(blob)
+            const link = document.createElement('a')
+            link.href = url
+            link.setAttribute('download', `${selectedWeek?.replace(/[: ]/g, '_')}_snapshot.csv`)
+            document.body.appendChild(link)
+            link.click()
+            document.body.removeChild(link)
+            URL.revokeObjectURL(url)
+        } catch (error) {
+            console.error('Error downloading CSV:', error)
+            alert('Failed to download CSV.')
+        }
+    }
+
+    const handleDownloadReferrersCSV = async () => {
+        if (!weeklyTopReferrers || weeklyTopReferrers.length === 0) {
+            alert('No data to download.')
+            return
+        }
 
         try {
-            // Send CSV data to the server
-            const response = await axiosInstance.post('/api/download-csv', {
-                csvContent,
-                fileName: `${selectedWeek?.replace(/[: ]/g, '_')}_snapshot.csv`
-            })
+            const response = await axiosInstance.post(
+                '/api/download-csv',
+                {
+                    dataType: 'referrers',
+                    data: weeklyTopReferrers,
+                    selectedWalletType,
+                    fileName: `${selectedWeek?.replace(/[: ]/g, '_')}_top_referrers.csv`
+                },
+                {
+                    responseType: 'blob'
+                }
+            )
 
-            const { downloadUrl } = response.data
+            // Create a Blob from the response data
+            const blob = new Blob([response.data], { type: 'text/csv;charset=utf-8;' })
 
-            // Use Telegram SDK to open the link in an external browser
-            if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.openLink) {
-                window.Telegram.WebApp.openLink(downloadUrl)
-            } else {
-                // Fallback if Telegram SDK is not available
-                window.open(downloadUrl, '_blank')
-            }
+            // Initiate the download
+            const url = URL.createObjectURL(blob)
+            const link = document.createElement('a')
+            link.href = url
+            link.setAttribute('download', `${selectedWeek?.replace(/[: ]/g, '_')}_top_referrers.csv`)
+            document.body.appendChild(link)
+            link.click()
+            document.body.removeChild(link)
+            URL.revokeObjectURL(url)
         } catch (error) {
             console.error('Error downloading CSV:', error)
             alert('Failed to download CSV.')
@@ -220,50 +256,80 @@ const ScholarshipManagementPage: React.FC = () => {
                     ))}
                 </List>
                 {selectedWeek && (
-                    <Card className="mt-4">
-                        <div className="flex justify-between items-center">
-                            <h2 className="text-xs text-gray-300">Leaderboard for week starting:</h2>
-                            <h2 className="text-md text-white"> {selectedWeek}</h2>
-                        </div>
-                        <div className="flex justify-between items-center">
-                            <p className="text-xs text-gray-300">Start:</p>
-                            <p className="text-md text-white">{startOfWeek}</p>
-                        </div>
-                        <div className="flex justify-between items-center">
-                            <p className="text-xs text-gray-300">End:</p>
-                            <p className="text-md text-white">{endOfWeek}</p>
-                        </div>
-                        <div className="flex justify-between items-center">
-                            <p className="text-xs text-gray-300">Current CET Time:</p>
-                            <p className="text-md text-white">{format(currentCETTime, 'yyyy-MM-dd HH:mm:ss')} CET</p>
-                        </div>
-                        <div className="flex justify-between items-center">
-                            <p className="text-xs text-gray-300">Countdown to next snapshot:</p>
-                            <p className="text-md text-white">{countdown}</p>
-                        </div>
-                        <List strong inset className="!m-0 !p-0">
-                            <ListInput
-                                outline
-                                label="Select Wallet"
-                                type="select"
-                                className="!m-0 !p-0"
-                                value={selectedWalletType}
-                                onChange={(e) => setSelectedWalletType(e.target.value)}
-                            >
-                                <option value="erc20WalletAddress">ERC20 Wallet Address</option>
-                                <option value="solanaWalletAddress">Solana Wallet Address</option>
-                                <option value="tonWalletAddress">TON Wallet Address</option>
-                            </ListInput>
-                        </List>
-                        <Button large rounded onClick={handleDownloadCSV} className="!w-[90%] !mx-auto">
-                            Download .csv
-                        </Button>
-                        <List strong inset>
-                            {weeklyLeaderboard.map((user, index) => (
-                                <ListItem key={user.userId} title={`${index + 1}. ${user.name} - ${user.totalPoints}`} />
-                            ))}
-                        </List>
-                    </Card>
+                    <>
+                        <Card className="mt-4">
+                            <div className="flex justify-between items-center">
+                                <h2 className="text-xs text-gray-300">Leaderboard for week starting:</h2>
+                                <h2 className="text-md text-white"> {selectedWeek}</h2>
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <p className="text-xs text-gray-300">Start:</p>
+                                <p className="text-md text-white">{startOfWeek}</p>
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <p className="text-xs text-gray-300">End:</p>
+                                <p className="text-md text-white">{endOfWeek}</p>
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <p className="text-xs text-gray-300">Current CET Time:</p>
+                                <p className="text-md text-white">{format(currentCETTime, 'yyyy-MM-dd HH:mm:ss')} CET</p>
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <p className="text-xs text-gray-300">Countdown to next snapshot:</p>
+                                <p className="text-md text-white">{countdown}</p>
+                            </div>
+                            <List strong inset className="!m-0 !p-0">
+                                <ListInput
+                                    outline
+                                    label="Select Wallet"
+                                    type="select"
+                                    className="!m-0 !p-0"
+                                    value={selectedWalletType}
+                                    onChange={(e) => setSelectedWalletType(e.target.value)}
+                                >
+                                    <option value="erc20WalletAddress">ERC20 Wallet Address</option>
+                                    <option value="solanaWalletAddress">Solana Wallet Address</option>
+                                    <option value="tonWalletAddress">TON Wallet Address</option>
+                                </ListInput>
+                            </List>
+                            <Button large rounded onClick={handleDownloadCSV} className="!w-[90%] !mx-auto">
+                                Download .csv
+                            </Button>
+                            <List strong inset>
+                                {weeklyLeaderboard.map((user, index) => (
+                                    <ListItem key={user.userId} title={`${index + 1}. ${user.name} - ${user.totalPoints}`} />
+                                ))}
+                            </List>
+                        </Card>
+
+                        {/* New Card for Top Referrers */}
+                        <Card className="mt-4">
+                            <h2 className="text-md font-bold mb-2">Top 10 Referrers for {selectedWeek}</h2>
+                            <List strong inset>
+                                {weeklyTopReferrers.map((user, index) => (
+                                    <ListItem key={user.userId} title={`${index + 1}. ${user.name} - ${user.referralCount} referrals`} />
+                                ))}
+                            </List>
+
+                            <List strong inset className="!m-0 !p-0">
+                                <ListInput
+                                    outline
+                                    label="Select Wallet"
+                                    type="select"
+                                    className="!m-0 !p-0"
+                                    value={selectedWalletType}
+                                    onChange={(e) => setSelectedWalletType(e.target.value)}
+                                >
+                                    <option value="erc20WalletAddress">ERC20 Wallet Address</option>
+                                    <option value="solanaWalletAddress">Solana Wallet Address</option>
+                                    <option value="tonWalletAddress">TON Wallet Address</option>
+                                </ListInput>
+                            </List>
+                            <Button large rounded onClick={handleDownloadReferrersCSV} className="!w-[90%] !mx-auto">
+                                Download Referrers .csv
+                            </Button>
+                        </Card>
+                    </>
                 )}
             </div>
         </Page>

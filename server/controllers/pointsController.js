@@ -319,3 +319,84 @@ exports.getUserPointsBreakdown = async (req, res, next) => {
     return next(createError(500, 'Internal Server Error'));
   }
 };
+
+// Add this new method
+exports.getWeeklyTopReferrersSnapshot = async (req, res, next) => {
+  console.log('getWeeklyTopReferrersSnapshot hit');
+
+  const { week } = req.query;
+
+  if (!week) {
+    return next(createError(400, 'Week parameter is required'));
+  }
+
+  const timeZone = 'Europe/Berlin';
+  const weekDateCET = new Date(week);
+  const weekDateUTC = zonedTimeToUtc(weekDateCET, timeZone);
+
+  const { startOfWeekUTC, endOfWeekUTC } = getWeekStartEndCET(weekDateUTC);
+
+  try {
+    // Find users who were referred in the given week
+    const referredUsers = await prisma.user.findMany({
+      where: {
+        referredByUserId: { not: null },
+        createdAt: {
+          gte: startOfWeekUTC,
+          lte: endOfWeekUTC,
+        },
+      },
+      select: {
+        id: true,
+        referredByUserId: true,
+      },
+    });
+
+    // Count the number of referrals per user
+    const referralCounts = {};
+
+    referredUsers.forEach((user) => {
+      const referrerId = user.referredByUserId;
+      if (referrerId) {
+        if (!referralCounts[referrerId]) {
+          referralCounts[referrerId] = 0;
+        }
+        referralCounts[referrerId]++;
+      }
+    });
+
+    // Convert to array and sort
+    const sortedReferrers = Object.entries(referralCounts)
+      .map(([userId, count]) => ({ userId: parseInt(userId), count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10); // Get top 10
+
+    // Fetch user data for the top referrers
+    const referrerData = await Promise.all(
+      sortedReferrers.map(async (entry) => {
+        const user = await prisma.user.findUnique({
+          where: { id: entry.userId },
+        });
+        return {
+          userId: entry.userId,
+          name: user ? user.name : 'Unknown User',
+          telegramUserId: user ? user.telegramUserId : null,
+          referralCount: entry.count,
+          erc20WalletAddress: user ? user.erc20WalletAddress : '',
+          solanaWalletAddress: user ? user.solanaWalletAddress : '',
+          tonWalletAddress: user ? user.tonWalletAddress : '',
+        };
+      })
+    );
+
+    res.status(200).json(referrerData);
+  } catch (error) {
+    console.error('Error fetching weekly top referrers snapshot:', error);
+    next(
+      createError(
+        500,
+        'Internal Server Error: Error fetching weekly top referrers snapshot'
+      )
+    );
+  }
+};

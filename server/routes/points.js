@@ -10,6 +10,7 @@ const {
   getUserPointsBreakdown,
   getWeeklySnapshots,
   getWeeklyLeaderboardSnapshot,
+  getWeeklyTopReferrersSnapshot,
 } = require('../controllers/pointsController');
 
 const router = express.Router();
@@ -49,6 +50,13 @@ router.get(
   authenticateToken,
   authorizeRoles('SUPERADMIN'),
   asyncHandler(getWeeklyLeaderboardSnapshot)
+);
+
+router.get(
+  '/weekly_top_referrers_snapshot',
+  authenticateToken,
+  authorizeRoles('SUPERADMIN'),
+  asyncHandler(getWeeklyTopReferrersSnapshot)
 );
 
 module.exports = router;

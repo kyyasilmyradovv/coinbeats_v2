@@ -2,41 +2,52 @@
 
 const express = require('express');
 const router = express.Router();
-const fs = require('fs');
-const path = require('path');
-const { v4: uuidv4 } = require('uuid');
 
 // POST /api/download-csv
 router.post('/download-csv', async (req, res) => {
   try {
-    const { csvContent, fileName } = req.body;
+    const { dataType, data, selectedWalletType, fileName } = req.body;
 
-    // Generate a unique filename to prevent conflicts
-    const uniqueFileName = `${uuidv4()}_${fileName}`;
-    const filePath = path.join(
-      __dirname,
-      '..',
-      'public',
-      'downloads',
-      uniqueFileName
-    );
+    let csvContent = '';
+    if (dataType === 'leaderboard') {
+      csvContent = generateLeaderboardCSV(data, selectedWalletType);
+    } else if (dataType === 'referrers') {
+      csvContent = generateReferrersCSV(data, selectedWalletType);
+    } else {
+      return res.status(400).json({ error: 'Invalid data type' });
+    }
 
-    // Ensure the 'downloads' directory exists
-    fs.mkdirSync(path.dirname(filePath), { recursive: true });
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
 
-    // Save the CSV content to the file
-    fs.writeFileSync(filePath, csvContent);
-
-    // Generate the download URL
-    const serverUrl =
-      process.env.BACKEND_URL || `http://localhost:${process.env.PORT || 4000}`;
-    const downloadUrl = `${serverUrl}/downloads/${uniqueFileName}`;
-
-    res.json({ downloadUrl });
+    res.send(csvContent);
   } catch (error) {
-    console.error('Error saving CSV file:', error);
-    res.status(500).json({ error: 'Failed to save CSV file' });
+    console.error('Error generating CSV file:', error);
+    res.status(500).json({ error: 'Failed to generate CSV file' });
   }
 });
+
+const generateLeaderboardCSV = (data, selectedWalletType) => {
+  const header = 'Rank,Username,UserId,TelegramUserId,WalletAddress';
+  const rows = data.map((user, index) => {
+    const walletAddress = user[selectedWalletType] || '';
+    return `${index + 1},${user.name},${user.userId},${
+      user.telegramUserId
+    },${walletAddress}`;
+  });
+  return [header, ...rows].join('\n');
+};
+
+const generateReferrersCSV = (data, selectedWalletType) => {
+  const header =
+    'Rank,Username,UserId,TelegramUserId,ReferralCount,WalletAddress';
+  const rows = data.map((user, index) => {
+    const walletAddress = user[selectedWalletType] || '';
+    return `${index + 1},${user.name},${user.userId},${user.telegramUserId},${
+      user.referralCount
+    },${walletAddress}`;
+  });
+  return [header, ...rows].join('\n');
+};
 
 module.exports = router;
