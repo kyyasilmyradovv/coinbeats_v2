@@ -7,6 +7,7 @@ import HomePage from './HomePage'
 import BookmarksPage from './BookmarksPage'
 import GamesPage from './GamesPage'
 import PointsPage from './PointsPage'
+import DiscoverPage from './DiscoverPage'
 import BottomTabBar from '../components/BottomTabBar'
 
 export default function MainPage() {
@@ -29,6 +30,9 @@ export default function MainPage() {
             case 'tab-4':
                 navigate('/points')
                 break
+            case 'tab-5':
+                navigate('/discover')
+                break
             default:
                 navigate('/')
         }
@@ -40,6 +44,7 @@ export default function MainPage() {
             {activeTab === 'tab-2' && <BookmarksPage academy={location.state?.academy} />} {/* Pass academy prop */}
             {activeTab === 'tab-3' && <GamesPage />}
             {activeTab === 'tab-4' && <PointsPage />}
+            {activeTab === 'tab-5' && <DiscoverPage />}
             <BottomTabBar activeTab={activeTab} setActiveTab={handleTabChange} />
         </div>
     )

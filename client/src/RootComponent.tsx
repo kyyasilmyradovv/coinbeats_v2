@@ -9,6 +9,7 @@ import ProductPage from './pages/ProductPage'
 import BookmarksPage from './pages/BookmarksPage'
 import GamesPage from './pages/GamesPage'
 import PointsPage from './pages/PointsPage'
+import DiscoverPage from './pages/DiscoverPage'
 import RegisterCreatorPage from './pages/RegisterCreatorPage'
 import LoginPage from './pages/LoginPage'
 import SessionAnalysisPage from './pages/SessionAnalysisPage'
@@ -161,6 +162,7 @@ function RootComponent() {
                         <Route path="/saved" element={<BookmarksPage />} />
                         <Route path="/games" element={<GamesPage />} />
                         <Route path="/points" element={<PointsPage />} />
+                        <Route path="/discover" element={<DiscoverPage />} />
                         <Route path="/register-creator" element={<RegisterCreatorPage />} />
                         <Route path="/login" element={<LoginPage />} />
                         <Route path="/session-analyses" element={<SessionAnalysisPage />} />

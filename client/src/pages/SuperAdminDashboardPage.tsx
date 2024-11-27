@@ -13,9 +13,9 @@ import Select from 'react-select'
 const SuperAdminDashboardPage: React.FC = () => {
     // Dashboard statistics state
     const [stats, setStats] = useState({
-        sessions: 0,
-        users: 0,
-        academies: 0,
+        usersToday: 0,
+        totalUsers: 0,
+        activeUsers: 0,
         subscriptions: 0,
         monthlyIncome: 0
     })
@@ -36,9 +36,14 @@ const SuperAdminDashboardPage: React.FC = () => {
     // Fetch statistics data
     const fetchData = async () => {
         try {
-            const response = await axios.get('/api/superadmin/stats') // Adjust the endpoint as needed
+            const response = await axios.get('/api/superadmin/stats')
             const data = response.data
-            setStats(data)
+            setStats((prevStats) => ({
+                ...prevStats,
+                usersToday: data.usersToday,
+                totalUsers: data.totalUsers,
+                activeUsers: data.activeUsers
+            }))
         } catch (error) {
             console.error('Error fetching dashboard stats:', error)
         }
@@ -216,19 +221,19 @@ const SuperAdminDashboardPage: React.FC = () => {
                     <BlockTitle className="text-center mb-4 !mt-0">Dashboard Statistics</BlockTitle>
                     <Block className="flex justify-around items-center !my-0">
                         <div className="flex flex-col items-center">
-                            <Assessment fontSize="large" style={{ color: 'blue' }} />
-                            <div className="text-xl font-bold">{stats.sessions}</div>
-                            <span className="text-sm text-center">Total Sessions</span>
+                            <Person fontSize="large" style={{ color: 'green' }} />
+                            <div className="text-xl font-bold">{stats.usersToday}</div>
+                            <span className="text-sm text-center">Users Today</span>
                         </div>
                         <div className="flex flex-col items-center">
-                            <Person fontSize="large" style={{ color: 'green' }} />
-                            <div className="text-xl font-bold">{stats.users}</div>
+                            <Group fontSize="large" style={{ color: 'blue' }} />
+                            <div className="text-xl font-bold">{stats.totalUsers}</div>
                             <span className="text-sm text-center">Total Users</span>
                         </div>
                         <div className="flex flex-col items-center">
-                            <School fontSize="large" style={{ color: 'red' }} />
-                            <div className="text-xl font-bold">{stats.academies}</div>
-                            <span className="text-sm text-center">Total Academies</span>
+                            <Assessment fontSize="large" style={{ color: 'purple' }} />
+                            <div className="text-xl font-bold">{stats.activeUsers}</div>
+                            <span className="text-sm text-center">Currently Active Users</span>
                         </div>
                     </Block>
                 </Card>

@@ -266,10 +266,65 @@ model SessionLog {
   user           User?    @relation(fields: [userId], references: [id])
 }
 
+model Educator {
+  id          Int        @id @default(autoincrement())
+  name        String
+  bio         String?
+  avatarUrl   String?
+  youtubeUrl  String?
+  twitterUrl  String?
+  telegramUrl String?
+  discordUrl  String?
+  lessons     Lesson[]   @relation("EducatorLessons")
+}
+
+model Lesson {
+  id          Int         @id @default(autoincrement())
+  title       String
+  contentUrl  String
+  type        LessonType
+  xp          Int         @default(0)
+  educatorId  Int
+  educator    Educator    @relation("EducatorLessons", fields: [educatorId], references: [id])
+}
+
+model Podcast {
+  id          Int        @id @default(autoincrement())
+  name        String
+  description String?
+  spotifyUrl  String?
+  appleUrl    String?
+  youtubeUrl  String?
+}
+
+model Tutorial {
+  id          Int         @id @default(autoincrement())
+  title       String
+  contentUrl  String
+  type        TutorialType
+  xp          Int         @default(0)
+  categories  Category[]  @relation("TutorialCategories")
+}
+
+enum LessonType {
+  YOUTUBE_VIDEO
+  TWITTER_THREAD
+  ARTICLE
+}
+
+enum TutorialType {
+  WALLET_SETUP
+  CEX_TUTORIAL
+  APP_TUTORIAL
+  RESEARCH_TUTORIAL
+  OTHER
+}
+
 model Category {
   id        Int       @id @default(autoincrement())
   name      String    @unique
   academies Academy[] @relation("AcademyToCategory")
+  tutorials  Tutorial[]  @relation("TutorialCategories")
 }
 
 model Chain {
@@ -313,6 +368,7 @@ model UserVerification {
   pointsAwarded      Int              @default(0)
   lastLoginDate      DateTime?
   streakCount        Int              @default(1)
+  shortCircuit       Boolean          @default(false) // Add this line
   academy            Academy?         @relation(fields: [academyId], references: [id])
   user               User             @relation(fields: [userId], references: [id])
   verificationTask   VerificationTask @relation(fields: [verificationTaskId], references: [id])

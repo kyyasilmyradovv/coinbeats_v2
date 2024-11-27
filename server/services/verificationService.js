@@ -26,285 +26,6 @@ const getTwitterUserIdByUsername = async (username, client) => {
   }
 };
 
-// const verifyFollowUser = async (verificationTask, user) => {
-//   console.log('Starting verifyFollowUser...');
-//   console.log('Verification Task:', verificationTask);
-//   console.log('User:', user);
-
-//   if (!user.twitterUserId || !user.twitterAccessToken) {
-//     throw new Error('User is not authenticated with Twitter');
-//   }
-
-//   const usernameToFollow = verificationTask.parameters?.username;
-//   console.log('Username to follow:', usernameToFollow);
-
-//   if (!usernameToFollow) {
-//     throw new Error('Username to follow is not specified');
-//   }
-
-//   try {
-//     // Initialize the Twitter API client with the user's access token
-//     console.log('Initializing Twitter Client with user access token...');
-//     const client = new Client(user.twitterAccessToken);
-
-//     // Step 1: Get the target user's ID by username
-//     const targetUsername = usernameToFollow.replace('@', '');
-//     console.log(`Fetching target user ID for username: ${targetUsername}`);
-//     const targetUserResponse = await client.users.findUserByUsername(
-//       targetUsername,
-//       {
-//         'user.fields': ['id'],
-//       }
-//     );
-//     console.log('Target User Response:', targetUserResponse);
-
-//     const targetUserId = targetUserResponse.data.id;
-//     console.log('Target User ID:', targetUserId);
-
-//     if (!targetUserId) {
-//       throw new Error('Invalid username to follow');
-//     }
-
-//     const sourceUserId = user.twitterUserId;
-//     console.log('Source User ID:', sourceUserId);
-
-//     // Step 2: Fetch the source user's following list
-//     let isFollowing = false;
-//     let paginationToken = undefined;
-//     let pageCount = 0;
-
-//     console.log('Starting to fetch following list...');
-//     do {
-//       console.log(`Fetching following page ${++pageCount}...`);
-//       const followingResponse = await client.users.usersIdFollowing(
-//         sourceUserId,
-//         {
-//           max_results: 1000,
-//           pagination_token: paginationToken,
-//           'user.fields': ['id'],
-//         }
-//       );
-//       console.log('Following Response:', followingResponse);
-
-//       const followingUsers = followingResponse.data || [];
-//       console.log(`Number of users fetched: ${followingUsers.length}`);
-
-//       // Check if the target user is in the current page of following users
-//       if (followingUsers.some((u) => u.id === targetUserId)) {
-//         console.log('Target user is being followed.');
-//         isFollowing = true;
-//         break;
-//       }
-
-//       // Update pagination token for next loop iteration
-//       paginationToken = followingResponse.meta?.next_token;
-//       console.log('Next Pagination Token:', paginationToken);
-//     } while (paginationToken);
-
-//     console.log('Is Following:', isFollowing);
-//     return isFollowing;
-//   } catch (error) {
-//     console.error(
-//       'Error verifying follow user:',
-//       error.response?.data || error.message || error
-//     );
-//     throw error;
-//   }
-// };
-
-// Twitter v1.1 endpoint with twitter sdk
-// const verifyFollowUser = async (verificationTask, user) => {
-//   console.log('Starting verifyFollowUser...');
-//   console.log('Verification Task:', verificationTask);
-//   console.log('User:', user);
-
-//   const client = new Client(process.env.BEARER_TOKEN);
-
-//   const response = await client.users.usersIdFollowers('1452634632936099841', {
-//     max_results: 1000,
-//     'user.fields': ['name'],
-//   });
-
-//   console.log('response', JSON.stringify(response, null, 2));
-
-//   if (
-//     !user.twitterUserId ||
-//     !user.twitterAccessToken ||
-//     !user.twitterAccessTokenSecret
-//   ) {
-//     throw new Error('User is not authenticated with Twitter');
-//   }
-
-//   const usernameToFollow = verificationTask.parameters?.username;
-//   console.log('Username to follow:', usernameToFollow);
-
-//   if (!usernameToFollow) {
-//     throw new Error('Username to follow is not specified');
-//   }
-
-//   try {
-//     // Initialize OAuth
-//     const oauth = new OAuth(
-//       'https://api.twitter.com/oauth/request_token',
-//       'https://api.twitter.com/oauth/access_token',
-//       process.env.TWITTER_API_KEY,
-//       process.env.TWITTER_API_SECRET_KEY,
-//       '1.0A',
-//       null,
-//       'HMAC-SHA1'
-//     );
-
-//     // Prepare parameters
-//     const source_screen_name = user.twitterUsername;
-//     const target_screen_name = usernameToFollow.replace('@', '');
-
-//     // Make API call to friendships/show.json
-//     const url = `https://api.twitter.com/1.1/friendships/show.json?source_screen_name=${encodeURIComponent(
-//       source_screen_name
-//     )}&target_screen_name=${encodeURIComponent(target_screen_name)}`;
-
-//     return new Promise((resolve, reject) => {
-//       oauth.get(
-//         url,
-//         user.twitterAccessToken,
-//         user.twitterAccessTokenSecret,
-//         (error, data, response) => {
-//           if (error) {
-//             console.error('Error calling friendships/show:', error);
-//             reject(new Error('Error verifying follow user'));
-//           } else {
-//             const friendship = JSON.parse(data);
-//             const isFollowing = friendship.relationship.source.following;
-//             console.log('Is Following:', isFollowing);
-//             resolve(isFollowing);
-//           }
-//         }
-//       );
-//     });
-//   } catch (error) {
-//     console.error('Error verifying follow user:', error.message || error);
-//     throw error;
-//   }
-// };
-
-// twitter v2 flow with twitter sdk
-// const verifyFollowUser = async (verificationTask, user) => {
-//   if (!user.twitterUserId || !user.twitterAccessToken) {
-//     throw new Error('User is not authenticated with Twitter');
-//   }
-
-//   const usernameToFollow = verificationTask.parameters?.username;
-//   if (!usernameToFollow) {
-//     throw new Error('Username to follow is not specified');
-//   }
-
-//   try {
-//     // Check if access token is expired
-//     const now = new Date();
-//     if (user.twitterTokenExpiresAt && now >= user.twitterTokenExpiresAt) {
-//       if (user.twitterRefreshToken) {
-//         // Refresh the access token
-//         user.twitterAccessToken = await refreshAccessToken(
-//           user.twitterRefreshToken,
-//           user
-//         );
-//       } else {
-//         throw new Error('No refresh token available to refresh access token');
-//       }
-//     }
-
-//     const client = new Client(user.twitterAccessToken);
-
-//     // Get the target user's ID
-//     const targetUsername = usernameToFollow.replace('@', '');
-//     const targetUserResponse = await client.users.findUserByUsername(
-//       targetUsername,
-//       {
-//         'user.fields': ['id'],
-//       }
-//     );
-//     const targetUserId = targetUserResponse.data.id;
-
-//     if (!targetUserId) {
-//       throw new Error('Invalid username to follow');
-//     }
-
-//     const sourceUserId = user.twitterUserId;
-
-//     // Fetch the list of users the source user is following
-//     let isFollowing = false;
-//     let paginationToken = undefined;
-
-//     do {
-//       const followingResponse = await client.users.usersIdFollowing(
-//         sourceUserId,
-//         {
-//           max_results: 1000,
-//           pagination_token: paginationToken,
-//           'user.fields': ['id'],
-//         }
-//       );
-
-//       const followingUsers = followingResponse.data || [];
-
-//       if (followingUsers.some((u) => u.id === targetUserId)) {
-//         isFollowing = true;
-//         break;
-//       }
-
-//       paginationToken = followingResponse.meta?.next_token;
-//     } while (paginationToken);
-
-//     return isFollowing;
-//   } catch (error) {
-//     console.error(
-//       'Error verifying follow user:',
-//       error.response?.data || error.message || error
-//     );
-//     throw error;
-//   }
-// };
-
-// // Function to refresh access token
-// const refreshAccessToken = async (refreshToken, user) => {
-//   const tokenUrl = 'https://api.twitter.com/2/oauth2/token';
-
-//   const params = new URLSearchParams();
-//   params.append('grant_type', 'refresh_token');
-//   params.append('refresh_token', refreshToken);
-//   params.append('client_id', process.env.TWITTER_CLIENT_ID);
-
-//   try {
-//     const response = await axios.post(tokenUrl, params.toString(), {
-//       headers: {
-//         'Content-Type': 'application/x-www-form-urlencoded',
-//       },
-//     });
-
-//     const newAccessToken = response.data.access_token;
-//     const newRefreshToken = response.data.refresh_token;
-//     const expiresIn = response.data.expires_in;
-
-//     // Update user's tokens and expiration time in the database
-//     await prisma.user.update({
-//       where: { id: user.id },
-//       data: {
-//         twitterAccessToken: newAccessToken,
-//         twitterRefreshToken: newRefreshToken,
-//         twitterTokenExpiresAt: new Date(Date.now() + expiresIn * 1000),
-//       },
-//     });
-
-//     return newAccessToken;
-//   } catch (error) {
-//     console.error(
-//       'Error refreshing access token:',
-//       error.response?.data || error.message
-//     );
-//     throw error;
-//   }
-// };
-
 const verifyFollowUser = async (verificationTask, user) => {
   console.log('Starting verifyFollowUser...');
   console.log('Verification Task:', JSON.stringify(verificationTask, null, 2));
@@ -494,9 +215,13 @@ const refreshAccessToken = async (refreshToken, twitterAccount) => {
   }
 };
 
-// Add other verification methods as needed
-
 const verifyShortCircuit = async (verificationTask, userVerification) => {
+  if (userVerification.shortCircuit) {
+    // If the userVerification is set to shortCircuit, verify immediately
+    return true;
+  }
+
+  // Existing logic for tasks with a global shortCircuit and timer
   const now = new Date();
   const taskStartTime = new Date(userVerification.createdAt);
   const elapsedTimeMillis = now - taskStartTime; // in milliseconds
@@ -1219,7 +944,7 @@ const performVerification = async (verificationTask, user, params) => {
       : null;
 
     // Check against repeat interval for REPEATED tasks
-    if (lastCompletionDate) {
+    if (lastCompletionDate && userVerification.verified) {
       const intervalMillis =
         verificationTask.repeatInterval * 24 * 60 * 60 * 1000; // repeatInterval in days
       if (now - lastCompletionDate < intervalMillis) {
@@ -1231,7 +956,7 @@ const performVerification = async (verificationTask, user, params) => {
   }
 
   // **Check `shortCircuit` before proceeding**
-  if (verificationTask.shortCircuit) {
+  if (verificationTask.shortCircuit || userVerification.shortCircuit) {
     const isVerified = await verifyShortCircuit(
       verificationTask,
       userVerification

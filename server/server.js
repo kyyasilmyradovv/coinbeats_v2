@@ -32,6 +32,8 @@ const academyTypeRoutes = require('./routes/academyType');
 const settingsRoutes = require('./routes/settings');
 const characterLevelRoutes = require('./routes/characterLevel');
 const notificationRoutes = require('./routes/notificationRoutes');
+const superadminRoutes = require('./routes/superadmin');
+const discoverRoutes = require('./routes/discover');
 const downloadRoutes = require('./routes/downloadRoutes'); // <-- Added this line
 
 // Initialize Express app
@@ -75,6 +77,8 @@ app.use('/api/academy-types', academyTypeRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/character-levels', characterLevelRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/superadmin', superadminRoutes);
+app.use('/api/discover', discoverRoutes);
 app.use('/api', downloadRoutes); // <-- Added this line
 
 // Serve static files

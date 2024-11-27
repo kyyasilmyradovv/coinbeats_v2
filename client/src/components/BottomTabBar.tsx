@@ -6,6 +6,7 @@ import GraduationHat from '../images/graduation-hat.png'
 import Bookmark from '../images/raffles.png'
 import GamePad from '../images/game-pad.png'
 import Trophy from '../images/trophy.png'
+import Discover from '../images/discover.png'
 import useSessionStore from '../store/useSessionStore'
 
 interface BottomTabBarProps {
@@ -32,6 +33,9 @@ const BottomTabBar: React.FC<BottomTabBarProps> = ({ activeTab, setActiveTab, ha
                     break
                 case 'tab-4':
                     navigate('/points')
+                    break
+                case 'tab-5':
+                    navigate('/discover')
                     break
                 default:
                     break
@@ -63,7 +67,7 @@ const BottomTabBar: React.FC<BottomTabBarProps> = ({ activeTab, setActiveTab, ha
                                     <div className="h-10 py-1">
                                         <img src={GraduationHat} alt="Learn" className="w-full h-full object-contain" />
                                     </div>
-                                    <span className="tab-label text-xs">Learn</span>
+                                    <span className="tab-label text-xs">Protocols</span>
                                 </div>
                             </div>
                         </div>
@@ -72,6 +76,29 @@ const BottomTabBar: React.FC<BottomTabBarProps> = ({ activeTab, setActiveTab, ha
                         <div className={`flex flex-col items-center justify-center ${activeTab === 'tab-1' ? 'tab-content' : ''}`}>
                             <div className="h-10 py-1">
                                 <img src={GraduationHat} alt="Learn" className="w-full h-full object-contain" />
+                            </div>
+                            <span className="tab-label text-xs">Protocols</span>
+                        </div>
+                    </div>
+                </div>
+                {/* Tab 5 */}
+                <div className="relative flex-1" onClick={() => handleTabClick('tab-5')}>
+                    {activeTab === 'tab-5' && (
+                        <div className="absolute inset-0 rounded-xl tab-background m-1">
+                            <div className={`relative m-[1px] rounded-xl overflow-hidden`}>
+                                <div className={`flex flex-col items-center justify-center ${activeTab === 'tab-5' ? 'tab-content' : ''}`}>
+                                    <div className="h-10 py-2">
+                                        <img src={Discover} alt="Discover" className="w-full h-full object-contain" />
+                                    </div>
+                                    <span className="tab-label text-xs">Learn</span>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    <div className={`relative m-1 rounded-xl overflow-hidden border border-gray-600`}>
+                        <div className={`flex flex-col items-center justify-center ${activeTab === 'tab-5' ? 'tab-content' : ''}`}>
+                            <div className="h-10 py-2">
+                                <img src={Discover} alt="Discover" className="w-full h-full object-contain" />
                             </div>
                             <span className="tab-label text-xs">Learn</span>
                         </div>

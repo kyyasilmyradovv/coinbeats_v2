@@ -497,7 +497,7 @@ exports.completeVerificationTask = async (req, res, next) => {
     }
 
     // Check if user started the task
-    const userVerification = await prisma.userVerification.findFirst({
+    let userVerification = await prisma.userVerification.findFirst({
       where: {
         userId: user.id,
         verificationTaskId: taskId,
@@ -550,61 +550,124 @@ exports.completeVerificationTask = async (req, res, next) => {
     }
 
     // Perform verification
-    const isVerified = await performVerification(verificationTask, user, {
-      userVerification,
-      academyId,
-      academyName,
-    });
+    try {
+      const isVerified = await performVerification(verificationTask, user, {
+        userVerification,
+        academyId,
+        academyName,
+      });
 
-    if (isVerified) {
-      await prisma.userVerification.update({
-        where: { id: userVerification.id },
-        data: {
-          verified: true,
-          completedAt: new Date(),
+      if (isVerified) {
+        await prisma.userVerification.update({
+          where: { id: userVerification.id },
+          data: {
+            verified: true,
+            completedAt: new Date(),
+            pointsAwarded: verificationTask.xp,
+          },
+        });
+        console.log(`User ${userId} successfully verified task ${taskId}`);
+
+        // Award points
+        await prisma.point.create({
+          data: {
+            userId,
+            value: verificationTask.xp,
+            verificationTaskId: taskId,
+            academyId: academyId || null,
+          },
+        });
+        console.log(
+          `Awarded ${verificationTask.xp} points to user ${userId} for task ${taskId}`
+        );
+
+        // Call checkAndApplyLevelUp to handle level up and notifications
+        console.log(`Calling checkAndApplyLevelUp for user ${userId}`);
+        await checkAndApplyLevelUp(userId);
+        console.log(`Completed checkAndApplyLevelUp for user ${userId}`);
+
+        return res.json({
+          message: 'Task completed successfully',
           pointsAwarded: verificationTask.xp,
-        },
-      });
-      console.log(`User ${userId} successfully verified task ${taskId}`);
+        });
+      } else {
+        console.log(`Verification failed for user ${userId} on task ${taskId}`);
+        return res.status(400).json({
+          message:
+            'Verification failed. Please ensure you have completed the task.',
+        });
+      }
+    } catch (error) {
+      console.error('Error during verification:', error);
 
-      // Award points
-      await prisma.point.create({
-        data: {
-          userId,
-          value: verificationTask.xp,
-          verificationTaskId: taskId,
-          academyId: academyId || null,
-        },
-      });
-      console.log(
-        `Awarded ${verificationTask.xp} points to user ${userId} for task ${taskId}`
-      );
+      // Log the error and switch to short-circuit verification
+      try {
+        await prisma.userVerification.update({
+          where: { id: userVerification.id },
+          data: {
+            shortCircuit: true,
+          },
+        });
+        console.log(
+          `Set shortCircuit for userVerification ${userVerification.id}`
+        );
 
-      // Call checkAndApplyLevelUp to handle level up and notifications
-      console.log(`Calling checkAndApplyLevelUp for user ${userId}`);
-      await checkAndApplyLevelUp(userId);
-      console.log(`Completed checkAndApplyLevelUp for user ${userId}`);
+        // Update the userVerification object in memory
+        userVerification.shortCircuit = true;
 
-      return res.json({
-        message: 'Task completed successfully',
-        pointsAwarded: verificationTask.xp,
-      });
-    } else {
-      console.log(`Verification failed for user ${userId} on task ${taskId}`);
-      return res.status(400).json({
-        message:
-          'Verification failed. Please ensure you have completed the task.',
-      });
+        // Retry verification with short-circuit
+        const isVerified = await performVerification(verificationTask, user, {
+          userVerification,
+          academyId,
+          academyName,
+        });
+
+        if (isVerified) {
+          await prisma.userVerification.update({
+            where: { id: userVerification.id },
+            data: {
+              verified: true,
+              completedAt: new Date(),
+              pointsAwarded: verificationTask.xp,
+            },
+          });
+          console.log(
+            `User ${userId} successfully verified task ${taskId} via shortCircuit`
+          );
+
+          // Award points
+          await prisma.point.create({
+            data: {
+              userId,
+              value: verificationTask.xp,
+              verificationTaskId: taskId,
+              academyId: academyId || null,
+            },
+          });
+
+          // Call checkAndApplyLevelUp
+          await checkAndApplyLevelUp(userId);
+
+          return res.json({
+            message: 'Task completed successfully',
+            pointsAwarded: verificationTask.xp,
+          });
+        } else {
+          // If still not verified, send error to client
+          return res.status(400).json({
+            message: 'Verification failed. Please try again later.',
+          });
+        }
+      } catch (err) {
+        console.error('Error during short-circuit verification:', err);
+        return res
+          .status(500)
+          .json({ message: 'Error completing verification task' });
+      }
     }
   } catch (error) {
     console.error('Error completing verification task:', error);
-
-    // Send the error message back to the client
-    if (error.message) {
-      return res.status(400).json({ message: error.message });
-    } else {
-      next(createError(500, 'Error completing verification task'));
-    }
+    next(createError(500, 'Error completing verification task'));
   }
 };
 /**
