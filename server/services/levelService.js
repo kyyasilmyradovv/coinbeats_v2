@@ -19,7 +19,6 @@ const checkAndApplyLevelUp = async (userId) => {
     const characterLevels = await prisma.characterLevel.findMany({
       orderBy: { minPoints: 'asc' },
     });
-    console.log('Character Levels:', characterLevels);
 
     // Find the highest level the user qualifies for
     let newLevel = null;

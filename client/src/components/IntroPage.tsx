@@ -15,6 +15,7 @@ import { useInitData } from '@telegram-apps/sdk-react'
 import useSessionStore from '../store/useSessionStore'
 import useUserStore from '../store/useUserStore'
 import useNotificationStore from '../store/useNotificationStore'
+import axiosInstance from '~/api/axiosInstance'
 
 interface IntroPageProps {
     onComplete: () => void // Function to call when the intro is complete
@@ -178,8 +179,8 @@ const IntroPage: React.FC<IntroPageProps> = ({ onComplete }) => {
     useEffect(() => {
         const fetchNotifications = async () => {
             try {
-                const response = await axios.get(`/api/notifications/${userId}`)
-                const notifications = response.data.map((notif) => ({
+                const response = await axiosInstance.get(`/api/notifications/${userId}`)
+                const notifications = response.data.map((notif: any) => ({
                     id: notif.id,
                     text: notif.message,
                     title: notif.type === 'LEVEL_UP' ? 'Level Up!' : 'Notification',
