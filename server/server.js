@@ -35,6 +35,7 @@ const notificationRoutes = require('./routes/notificationRoutes');
 const superadminRoutes = require('./routes/superadmin');
 const discoverRoutes = require('./routes/discover');
 const contentRoutes = require('./routes/content');
+const surpriseBoxRoutes = require('./routes/surpriseBox');
 const downloadRoutes = require('./routes/downloadRoutes'); // <-- Added this line
 
 // Initialize Express app
@@ -81,6 +82,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/superadmin', superadminRoutes);
 app.use('/api/discover', discoverRoutes);
 app.use('/api/content', contentRoutes);
+app.use('/api/surprise-box', surpriseBoxRoutes);
 app.use('/api', downloadRoutes); // <-- Added this line
 
 // Serve static files

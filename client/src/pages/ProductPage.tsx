@@ -22,6 +22,7 @@ import AcademyCompletionSlide from '../components/AcademyCompletionSlide'
 import useUserStore from '../store/useUserStore'
 import useAcademiesStore from '../store/useAcademiesStore'
 import useUserVerificationStore, { VerificationTask } from '../store/useUserVerificationStore'
+import useSurpriseBoxStore from '~/store/useSurpriseBoxStore'
 import coinStackIcon from '../images/coin-stack.png'
 import coinbeats from '../images/coinbeats-l.svg'
 import { Icon } from '@iconify/react'
@@ -476,6 +477,16 @@ export default function ProductPage() {
         }
     }
 
+    const { loadSurpriseBoxData, setNextBox } = useSurpriseBoxStore()
+    const { completedAcademies, nextBox } = useSurpriseBoxStore()
+    const [surprisePoint, setSurprisePoint] = useState(0)
+
+    useEffect(() => {
+        if (userId) {
+            loadSurpriseBoxData(userId)
+        }
+    }, [userId])
+
     const handleCompleteAcademy = async () => {
         try {
             await submitQuiz(academy.id, userId)
@@ -485,6 +496,22 @@ export default function ProductPage() {
 
             // Fetch updated earnedPoints
             fetchEarnedPoints(userId, academy.id)
+
+            // Update the store with the new completed academies count
+            const { increaseCompletedAcademies } = useSurpriseBoxStore.getState()
+            increaseCompletedAcademies(userId)
+
+            if (completedAcademies + 1 === nextBox) {
+                let randomSurprisePoint = (Math.floor(Math.random() * 10) + 1) * 500
+
+                setSurprisePoint(randomSurprisePoint)
+                setNextBox(userId, randomSurprisePoint)
+
+                // update user state total points
+                const { totalPoints } = useUserStore.getState()
+                useUserStore.setState({ totalPoints: totalPoints + randomSurprisePoint })
+            }
+
             setActiveFilter('completion')
         } catch (error) {
             console.error('Error completing academy:', error)
@@ -908,6 +935,7 @@ export default function ProductPage() {
                     academyName={academy.name}
                     academyId={academy.id}
                     academyTwitter={academy.twitter}
+                    surprisePoint={surprisePoint}
                 />
             )
         }

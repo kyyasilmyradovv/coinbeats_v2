@@ -23,6 +23,31 @@ import {
     shouldDisableVerifyButton
 } from '../utils/actionHandlers'
 
+// Kyyas imports
+import bunnyAnimationData from '../animations/bunny.json'
+import coinsCreditedAnimationData from '../animations/coins-credited.json'
+import AnimatedNumber from '../components/AnimatedNumber'
+import { FaTimes } from 'react-icons/fa'
+
+const coinsCreditedAnimation = {
+    loop: true,
+    autoplay: true,
+    animationData: coinsCreditedAnimationData,
+    rendererSettings: {
+        preserveAspectRatio: 'xMidYMid slice'
+    }
+}
+
+const bunnyAnimation = {
+    loop: true,
+    autoplay: true,
+    animationData: bunnyAnimationData,
+    rendererSettings: {
+        preserveAspectRatio: 'xMidYMid slice'
+    }
+}
+// Kyyas end
+
 interface VerificationTask {
     id: number
     name: string
@@ -40,6 +65,7 @@ type AcademyCompletionSlideProps = {
     academyName: string
     academyId: number
     academyTwitter?: string // Add this line
+    surprisePoint: number
 }
 
 const bunnyHappyAnimation = {
@@ -56,7 +82,8 @@ const AcademyCompletionSlide: React.FC<AcademyCompletionSlideProps> = ({
     totalPoints,
     academyName,
     academyId,
-    academyTwitter // Destructure the prop here
+    academyTwitter, // Destructure the prop here
+    surprisePoint
 }) => {
     const navigate = useNavigate()
     const [searchParams] = useSearchParams()
@@ -219,6 +246,8 @@ const AcademyCompletionSlide: React.FC<AcademyCompletionSlideProps> = ({
         return d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth() && d1.getDate() === d2.getDate()
     }
 
+    const [showSurpriseBoxDialog, setShowSurpriseBoxDialog] = useState(surprisePoint > 0)
+
     return (
         <div className="flex flex-col items-center justify-center h-full mb-12">
             <h2 className="text-xl font-bold mb-4">In total you collected:</h2>
@@ -250,6 +279,28 @@ const AcademyCompletionSlide: React.FC<AcademyCompletionSlideProps> = ({
             >
                 Explore more academies
             </Button>
+
+            {/* Surprise Box  */}
+            {showSurpriseBoxDialog && (
+                <Dialog opened={true} onBackdropClick={() => setShowSurpriseBoxDialog(false)} className="!m-0 !p-0 !rounded-2xl !bg-opacity-80">
+                    <div className="p-0 relative">
+                        <button className="absolute right-1 text-gray-500 hover:text-gray-700" onClick={() => setShowSurpriseBoxDialog(false)}>
+                            <FaTimes size={20} />
+                        </button>
+                        <div className="text-md font-bold text-center mt-4">Black Box</div>
+                        <Lottie options={bunnyAnimation} height={200} width={200} />
+                        <div className="flex flex-col items-center">
+                            <div className="flex mt-4 mb-2 text-2xl font-bold items-end justify-center">
+                                <span className="mr-1">+</span>
+                                <div className="mr-2">
+                                    <AnimatedNumber target={surprisePoint} duration={2000} />
+                                </div>
+                                <Lottie options={coinsCreditedAnimation} height={60} width={60} />
+                            </div>
+                        </div>
+                    </div>
+                </Dialog>
+            )}
 
             {/* Referral Dialog */}
             <Dialog opened={referralModalOpen} onBackdropClick={() => setReferralModalOpen(false)} title="Invite a Friend" className="!m-0 !p-0 rounded-2xl">

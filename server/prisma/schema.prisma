@@ -5,57 +5,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
-
-enum TaskType {
-  PLATFORM_SPECIFIC
-  ACADEMY_SPECIFIC
-}
-
-enum IntervalType {
-  ONETIME
-  REPEATED
-}
-
-enum DisplayLocation {
-  QUEST_TAB
-  END_OF_ACADEMY
-  GAMES_PAGE
-  HOME_PAGE
-  POINTS_PAGE
-  OTHER
-}
-
-enum Platform {
-  X
-  YOUTUBE
-  FACEBOOK
-  INSTAGRAM
-  TELEGRAM
-  DISCORD
-  EMAIL
-  NONE
-}
-
-enum VerificationMethod {
-  FOLLOW_USER
-  TWEET
-  RETWEET
-  LIKE_TWEET
-  COMMENT_ON_TWEET
-  ADD_TO_BIO
-  JOIN_TELEGRAM_CHANNEL
-  INVITE_TELEGRAM_FRIEND
-  INVITE_WITH_REFERRAL
-  SUBSCRIBE_YOUTUBE_CHANNEL
-  WATCH_YOUTUBE_VIDEO
-  FOLLOW_INSTAGRAM_USER
-  JOIN_DISCORD_CHANNEL
-  PROVIDE_EMAIL
-  SHORT_CIRCUIT
-  LEAVE_FEEDBACK
-  MEME_TWEET
+  url      = "postgresql://coinbeats_prod_user:Onamission%23007@37.27.84.251:5433/coinbeats_development_3"
 }
 
 model User {
@@ -63,42 +13,37 @@ model User {
   name                      String
   email                     String?              @unique
   password                  String?
-  roles                     Role[]               @default([USER])
   createdAt                 DateTime             @default(now())
   updatedAt                 DateTime             @updatedAt
   telegramUserId            BigInt               @unique
   emailConfirmationToken    String?              @unique
   emailConfirmed            Boolean              @default(false)
-  academies                 Academy[]
-  points                    Point[]
-  sessionLogs               SessionLog[]
-  userResponses             UserResponse[]
-  UserVerification          UserVerification[]
-  bookmarkedAcademies       Academy[]            @relation("BookmarkedAcademies")
   referralCode              String?              @unique
   referredByUserId          Int?
+  roles                     Role[]               @default([USER])
   referralCompletionChecked Boolean              @default(true)
+  erc20WalletAddress        String?
+  solanaWalletAddress       String?
+  tonWalletAddress          String?
+  characterLevelId          Int?
+  academies                 Academy[]
+  Notification              Notification[]
+  points                    Point[]
+  sessionLogs               SessionLog[]
+  surpriseBoxes             SurpriseBox[]
+  twitterAccount            TwitterAccount[]
+  characterLevel            CharacterLevel?      @relation(fields: [characterLevelId], references: [id])
   referredBy                User?                @relation("UserReferrals", fields: [referredByUserId], references: [id])
   referrals                 User[]               @relation("UserReferrals")
-  allowedAcademyTypes       AcademyType[]        @relation("UserAcademyTypes")
+  userResponses             UserResponse[]
   userTaskSubmissions       UserTaskSubmission[]
-
-  // New wallet address fields
-  erc20WalletAddress  String?
-  solanaWalletAddress String?
-  tonWalletAddress    String?
-
-  twitterAccount TwitterAccount[]
-
-  // character level
-  characterLevelId Int?
-  characterLevel   CharacterLevel? @relation(fields: [characterLevelId], references: [id])
-  Notification     Notification[]
+  UserVerification          UserVerification[]
+  bookmarkedAcademies       Academy[]            @relation("BookmarkedAcademies")
+  allowedAcademyTypes       AcademyType[]        @relation("UserAcademyTypes")
 }
 
 model TwitterAccount {
   id                       Int       @id @default(autoincrement())
-  user                     User      @relation(fields: [userId], references: [id])
   userId                   Int
   twitterUserId            String
   twitterUsername          String
@@ -108,6 +53,7 @@ model TwitterAccount {
   twitterTokenExpiresAt    DateTime?
   connectedAt              DateTime  @default(now())
   disconnectedAt           DateTime?
+  user                     User      @relation(fields: [userId], references: [id])
 }
 
 model Academy {
@@ -133,6 +79,8 @@ model Academy {
   contractAddress  String?
   tokenomics       Json?
   dexScreener      String?
+  academyTypeId    Int?
+  academyType      AcademyType?       @relation(fields: [academyTypeId], references: [id])
   creator          User               @relation(fields: [creatorId], references: [id])
   academyQuestions AcademyQuestion[]
   points           Point[]            @relation("AcademyToPoint")
@@ -140,14 +88,10 @@ model Academy {
   raffles          Raffle[]
   subscription     Subscription?
   UserVerification UserVerification[]
+  VerificationTask VerificationTask[]
   categories       Category[]         @relation("AcademyToCategory")
   chains           Chain[]            @relation("AcademyToChain")
   bookmarkedBy     User[]             @relation("BookmarkedAcademies")
-
-  VerificationTask VerificationTask[]
-
-  academyTypeId Int?
-  academyType   AcademyType? @relation(fields: [academyTypeId], references: [id])
 }
 
 model Subscription {
@@ -170,11 +114,11 @@ model AcademyType {
   id               Int               @id @default(autoincrement())
   name             String            @unique
   description      String?
-  restricted       Boolean           @default(false)
   createdAt        DateTime          @default(now()) @db.Timestamp(6)
   updatedAt        DateTime          @default(now()) @updatedAt @db.Timestamp(6)
-  initialQuestions InitialQuestion[] @relation("AcademyTypeQuestions")
+  restricted       Boolean           @default(false)
   academies        Academy[]
+  initialQuestions InitialQuestion[] @relation("AcademyTypeQuestions")
   allowedUsers     User[]            @relation("UserAcademyTypes")
 }
 
@@ -247,8 +191,8 @@ model Point {
   userId             Int
   academyId          Int?
   verificationTaskId Int?
-  description        String?
   createdAt          DateTime          @default(now())
+  description        String?
   academy            Academy?          @relation("AcademyToPoint", fields: [academyId], references: [id])
   user               User              @relation(fields: [userId], references: [id])
   verificationTask   VerificationTask? @relation(fields: [verificationTaskId], references: [id])
@@ -285,13 +229,13 @@ model Educator {
 }
 
 model Lesson {
-  id          Int         @id @default(autoincrement())
-  title       String
-  contentUrl  String
-  type        LessonType
-  xp          Int         @default(0)
-  educatorId  Int
-  educator    Educator    @relation("EducatorLessons", fields: [educatorId], references: [id])
+  id         Int        @id @default(autoincrement())
+  title      String
+  contentUrl String
+  type       LessonType
+  xp         Int        @default(0)
+  educatorId Int
+  educator   Educator   @relation("EducatorLessons", fields: [educatorId], references: [id])
 }
 
 model Podcast {
@@ -324,20 +268,6 @@ model Tutorial {
   chains        Chain[]      @relation("TutorialChains")
 }
 
-enum LessonType {
-  YOUTUBE_VIDEO
-  TWITTER_THREAD
-  ARTICLE
-}
-
-enum TutorialType {
-  WALLET_SETUP
-  CEX_TUTORIAL
-  APP_TUTORIAL
-  RESEARCH_TUTORIAL
-  OTHER
-}
-
 model Category {
   id        Int        @id @default(autoincrement())
   name      String     @unique
@@ -357,25 +287,25 @@ model Chain {
 }
 model VerificationTask {
   id                  Int                  @id @default(autoincrement())
-  name                String
   description         String?
-  taskType            TaskType
-  intervalType        IntervalType
-  repeatInterval      Int?
+  createdAt           DateTime             @default(now())
+  academyId           Int?
   displayLocation     DisplayLocation
-  platform            Platform?
-  verificationMethod  VerificationMethod?
-  xp                  Int                  @default(0)
+  intervalType        IntervalType
+  name                String
+  repeatInterval      Int?
   shortCircuit        Boolean              @default(false)
   shortCircuitTimer   Int?
-  academyId           Int?
-  academy             Academy?             @relation(fields: [academyId], references: [id])
-  parameters          Json?
-  createdAt           DateTime             @default(now())
+  taskType            TaskType
   updatedAt           DateTime             @updatedAt
+  verificationMethod  VerificationMethod?
+  xp                  Int                  @default(0)
+  platform            Platform?
+  parameters          Json?
   Point               Point[]
-  userVerification    UserVerification[]
   userTaskSubmissions UserTaskSubmission[]
+  userVerification    UserVerification[]
+  academy             Academy?             @relation(fields: [academyId], references: [id])
 }
 
 model UserVerification {
@@ -383,29 +313,28 @@ model UserVerification {
   userId             Int
   verificationTaskId Int
   academyId          Int?
-  parameters         Json?
   verified           Boolean          @default(false)
   createdAt          DateTime         @default(now())
-  completedAt        DateTime?
   pointsAwarded      Int              @default(0)
+  completedAt        DateTime?
   lastLoginDate      DateTime?
   streakCount        Int              @default(1)
-  shortCircuit       Boolean          @default(false) // Add this line
+  parameters         Json?
+  shortCircuit       Boolean          @default(false)
   academy            Academy?         @relation(fields: [academyId], references: [id])
   user               User             @relation(fields: [userId], references: [id])
   verificationTask   VerificationTask @relation(fields: [verificationTaskId], references: [id])
 }
 
 model UserTaskSubmission {
-  id             Int      @id @default(autoincrement())
+  id             Int              @id @default(autoincrement())
   userId         Int
   taskId         Int
   submissionText String
-  createdAt      DateTime @default(now())
-  processed      Boolean  @default(false) // New field
-
-  user User             @relation(fields: [userId], references: [id])
-  task VerificationTask @relation(fields: [taskId], references: [id])
+  createdAt      DateTime         @default(now())
+  processed      Boolean          @default(false)
+  task           VerificationTask @relation(fields: [taskId], references: [id])
+  user           User             @relation(fields: [userId], references: [id])
 
   @@index([userId])
   @@index([taskId])
@@ -416,10 +345,10 @@ model CharacterLevel {
   levelName     String
   minPoints     Int
   maxPoints     Int
-  rewardPoints  Int // Points awarded when reaching this level
-  lottieFileUrl String? // URL or path to the Lottie animation file
+  rewardPoints  Int
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  lottieFileUrl String?
   User          User[]
 }
 
@@ -430,8 +359,7 @@ model Notification {
   message   String
   read      Boolean  @default(false)
   createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
 
   @@index([userId])
 }
@@ -440,6 +368,79 @@ model Setting {
   id    Int     @id @default(autoincrement())
   key   String  @unique
   value String?
+}
+
+model SurpriseBox {
+  id                 Int  @id @default(autoincrement())
+  userId             Int
+  completedAcademies Int  @default(0)
+  lastBox            Int  @default(0)
+  nextBox            Int  @default(3)
+  user               User @relation(fields: [userId], references: [id])
+}
+
+enum TaskType {
+  PLATFORM_SPECIFIC
+  ACADEMY_SPECIFIC
+}
+
+enum IntervalType {
+  ONETIME
+  REPEATED
+}
+
+enum DisplayLocation {
+  QUEST_TAB
+  END_OF_ACADEMY
+  OTHER
+  GAMES_PAGE
+  HOME_PAGE
+  POINTS_PAGE
+}
+
+enum Platform {
+  X
+  YOUTUBE
+  FACEBOOK
+  INSTAGRAM
+  TELEGRAM
+  DISCORD
+  EMAIL
+  NONE
+}
+
+enum VerificationMethod {
+  FOLLOW_USER
+  TWEET
+  RETWEET
+  LIKE_TWEET
+  ADD_TO_BIO
+  JOIN_TELEGRAM_CHANNEL
+  INVITE_TELEGRAM_FRIEND
+  INVITE_WITH_REFERRAL
+  SUBSCRIBE_YOUTUBE_CHANNEL
+  WATCH_YOUTUBE_VIDEO
+  FOLLOW_INSTAGRAM_USER
+  JOIN_DISCORD_CHANNEL
+  PROVIDE_EMAIL
+  SHORT_CIRCUIT
+  COMMENT_ON_TWEET
+  LEAVE_FEEDBACK
+  MEME_TWEET
+}
+
+enum LessonType {
+  YOUTUBE_VIDEO
+  TWITTER_THREAD
+  ARTICLE
+}
+
+enum TutorialType {
+  WALLET_SETUP
+  CEX_TUTORIAL
+  APP_TUTORIAL
+  RESEARCH_TUTORIAL
+  OTHER
 }
 
 enum Role {
