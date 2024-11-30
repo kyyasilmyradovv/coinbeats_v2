@@ -211,6 +211,7 @@ export default function HomePage() {
             const getRank = (academy) => {
                 if (academy.academyType.name === 'Coinbeats x Tirador') return 1
                 if (academy.academyType.name === 'Coinbeats') return 2
+                if (academy.academyType.name === 'Meme') return 4 // Place Meme academies with default academies
                 return 3
             }
 
@@ -219,7 +220,7 @@ export default function HomePage() {
 
             if (rankA !== rankB) return rankA - rankB
 
-            // If activeFilter is 'new' or 'topRated', we can continue to sort accordingly
+            // Sort further based on active filter
             if (activeFilter === 'new') return new Date(b.createdAt) - new Date(a.createdAt)
             if (activeFilter === 'topRated') return b.xp - a.xp
 
@@ -765,6 +766,7 @@ export default function HomePage() {
                         {filteredData.map((academy) => {
                             const isCompleted = hasCompletedAcademy(academy.id)
                             const isCoinbeats = academy.academyType.name === 'Coinbeats' || academy.academyType.name === 'Coinbeats x Tirador'
+                            const isMeme = academy.academyType.name === 'Meme'
 
                             return (
                                 <div key={academy.id} className="relative">

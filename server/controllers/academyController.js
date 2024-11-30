@@ -355,10 +355,13 @@ exports.updateAcademy = async (req, res, next) => {
     creatorEmail, // For transferring ownership
     categories,
     chains,
+    ticker,
     twitter,
     telegram,
     discord,
     coingecko,
+    dexScreener, // Changed to dexScreener
+    contractAddress,
     initialAnswers,
     tokenomics,
     teamBackground,
@@ -367,13 +370,11 @@ exports.updateAcademy = async (req, res, next) => {
     raffles,
     quests,
     webpageUrl,
-    coingeckoLink,
-    dexScreenerLink,
-    contractAddress,
     academyTypeId,
   } = req.body;
 
   try {
+    // Parse JSON fields if they exist
     const parsedCategories = categories ? JSON.parse(categories) : undefined;
     const parsedChains = chains ? JSON.parse(chains) : undefined;
     const parsedInitialAnswers = initialAnswers
@@ -381,21 +382,14 @@ exports.updateAcademy = async (req, res, next) => {
       : undefined;
     const parsedRaffles = raffles ? JSON.parse(raffles) : undefined;
     const parsedQuests = quests ? JSON.parse(quests) : undefined;
-    const parsedTokenomics = tokenomics ? JSON.parse(tokenomics) : {};
-
-    // Process tokenomics data
-    const tokenomicsData = {
-      ...parsedTokenomics,
-      coingecko: parsedTokenomics.coingecko || coingeckoLink,
-      dexScreener: parsedTokenomics.dexScreener || dexScreenerLink,
-      contractAddress: parsedTokenomics.contractAddress || contractAddress,
-    };
+    const parsedTokenomics = tokenomics ? JSON.parse(tokenomics) : undefined;
 
     // Prepare data for update
     const dataToUpdate = {};
 
     // Update basic fields
     if (name !== undefined) dataToUpdate.name = name;
+    if (ticker !== undefined) dataToUpdate.ticker = ticker;
     if (xp !== undefined) dataToUpdate.xp = parseInt(xp, 10);
     if (sponsored !== undefined) dataToUpdate.sponsored = sponsored;
     if (status !== undefined) dataToUpdate.status = status;
@@ -405,17 +399,16 @@ exports.updateAcademy = async (req, res, next) => {
     if (telegram !== undefined) dataToUpdate.telegram = telegram;
     if (discord !== undefined) dataToUpdate.discord = discord;
     if (coingecko !== undefined) dataToUpdate.coingecko = coingecko;
+    if (dexScreener !== undefined) dataToUpdate.dexScreener = dexScreener;
+    if (contractAddress !== undefined)
+      dataToUpdate.contractAddress = contractAddress;
     if (webpageUrl !== undefined) dataToUpdate.webpageUrl = webpageUrl;
     if (teamBackground !== undefined)
       dataToUpdate.teamBackground = teamBackground;
     if (congratsVideo !== undefined) dataToUpdate.congratsVideo = congratsVideo;
     if (getStarted !== undefined) dataToUpdate.getStarted = getStarted;
-    if (tokenomicsData && Object.keys(tokenomicsData).length)
-      dataToUpdate.tokenomics = tokenomicsData;
-    if (contractAddress !== undefined)
-      dataToUpdate.contractAddress = contractAddress;
-    if (dexScreenerLink !== undefined)
-      dataToUpdate.dexScreener = dexScreenerLink;
+    if (parsedTokenomics !== undefined)
+      dataToUpdate.tokenomics = parsedTokenomics;
 
     // Handle creatorEmail for transferring ownership
     if (creatorEmail) {
@@ -439,7 +432,7 @@ exports.updateAcademy = async (req, res, next) => {
     }
 
     // Update categories
-    if (parsedCategories && parsedCategories.length) {
+    if (parsedCategories) {
       const categoryRecords = await Promise.all(
         parsedCategories.map(async (categoryName) => {
           const category = await prisma.category.findUnique({
@@ -457,7 +450,7 @@ exports.updateAcademy = async (req, res, next) => {
     }
 
     // Update chains
-    if (parsedChains && parsedChains.length) {
+    if (parsedChains) {
       const chainRecords = await Promise.all(
         parsedChains.map(async (chainName) => {
           const chain = await prisma.chain.findUnique({

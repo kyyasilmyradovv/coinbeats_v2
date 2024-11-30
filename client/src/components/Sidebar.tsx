@@ -71,6 +71,7 @@ const Sidebar: React.FC = () => {
         CREATOR: [
             { label: 'Creator Dashboard', path: '/creator-dashboard' },
             { label: 'Create Academy', path: '/create-academy' },
+            { label: 'Create Content', path: '/create-content' },
             { label: 'My Academies', path: '/my-academies' },
             { label: 'User Profile', path: '/user-profile' },
             { label: 'Academy Statistics', path: '/academy-statistics' },

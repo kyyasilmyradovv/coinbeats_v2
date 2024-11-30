@@ -25,6 +25,8 @@ const EditAcademyPage: React.FC = () => {
         telegram,
         discord,
         coingecko,
+        dexScreener, // Added dexScreener
+        contractAddress, // Added contractAddress
         logo,
         coverPhoto,
         webpageUrl,
@@ -39,14 +41,16 @@ const EditAcademyPage: React.FC = () => {
         removeRaffle,
         addQuest,
         removeQuest,
-        submitAcademy,
         setPrefilledAcademyData,
-        resetAcademyData
+        resetAcademyData,
+        academyTypeId // Added to get the academy type
     } = useAcademyStore()
 
     const [loading, setLoading] = useState(true)
     const [logoFile, setLogoFile] = useState<File | null>(null) // Local state for file handling
     const [coverPhotoFile, setCoverPhotoFile] = useState<File | null>(null) // Local state for file handling
+    const [academyTypes, setAcademyTypes] = useState<any[]>([]) // State for academy types
+    const [selectedAcademyType, setSelectedAcademyType] = useState<any>(null) // State for selected academy type
 
     useEffect(() => {
         const fetchAcademyData = async () => {
@@ -70,12 +74,31 @@ const EditAcademyPage: React.FC = () => {
         }
 
         fetchAcademyData()
+        fetchCategoriesAndChains()
+        fetchAcademyTypes()
 
         return () => {
             resetAcademyData()
             console.log('Academy store reset after leaving EditAcademyPage.')
         }
-    }, [id, setPrefilledAcademyData, resetAcademyData])
+    }, [id])
+
+    const fetchAcademyTypes = async () => {
+        try {
+            const response = await axios.get('/api/academy-types')
+            setAcademyTypes(response.data)
+        } catch (error) {
+            console.error('Error fetching academy types:', error)
+        }
+    }
+
+    useEffect(() => {
+        // After academyTypes and academyTypeId are loaded, set the selectedAcademyType
+        if (academyTypes.length > 0 && academyTypeId) {
+            const type = academyTypes.find((type: any) => type.id === academyTypeId)
+            setSelectedAcademyType(type)
+        }
+    }, [academyTypes, academyTypeId])
 
     if (loading) {
         return (
@@ -116,6 +139,20 @@ const EditAcademyPage: React.FC = () => {
         e.target.style.height = `${e.target.scrollHeight}px`
     }
 
+    const removeCategory = (index: number) => {
+        setField(
+            'categories',
+            categories.filter((_, i) => i !== index)
+        )
+    }
+
+    const removeChain = (index: number) => {
+        setField(
+            'chains',
+            chains.filter((_, i) => i !== index)
+        )
+    }
+
     const renderInitialQuestionSlide = (questionIndex: number) => {
         const question = initialAnswers[questionIndex]
         if (!question) return null
@@ -138,10 +175,6 @@ const EditAcademyPage: React.FC = () => {
                             value={tokenomics.totalSupply || ''}
                             onChange={(e) => setInitialAnswer(questionIndex, 'answer', JSON.stringify({ ...tokenomics, totalSupply: e.target.value }))}
                             outline
-                            colors={{
-                                bgIos: 'bg-black', // iOS theme background color inside the input
-                                bgMaterial: 'bg-black' // Material theme background color inside the input
-                            }}
                         />
                         <ListInput
                             label="Utility"
@@ -157,28 +190,39 @@ const EditAcademyPage: React.FC = () => {
                             onChange={(e) => setInitialAnswer(questionIndex, 'answer', JSON.stringify({ ...tokenomics, logic: e.target.value }))}
                             outline
                         />
+                        {/* CoinGecko Link */}
                         <ListInput
-                            label="CoinGecko"
-                            type="text"
+                            label="CoinGecko Link"
+                            type="url"
+                            outline
                             value={tokenomics.coingecko || ''}
                             onChange={(e) => setInitialAnswer(questionIndex, 'answer', JSON.stringify({ ...tokenomics, coingecko: e.target.value }))}
-                            outline
                         />
+                        {/* DexScreener Link */}
                         <ListInput
-                            label="Dex Screener"
-                            type="text"
+                            label="DexScreener Link"
+                            type="url"
+                            outline
                             value={tokenomics.dexScreener || ''}
                             onChange={(e) => setInitialAnswer(questionIndex, 'answer', JSON.stringify({ ...tokenomics, dexScreener: e.target.value }))}
-                            outline
                         />
+                        {/* Contract Address */}
                         <ListInput
                             label="Contract Address"
                             type="text"
+                            outline
                             value={tokenomics.contractAddress || ''}
                             onChange={(e) => setInitialAnswer(questionIndex, 'answer', JSON.stringify({ ...tokenomics, contractAddress: e.target.value }))}
-                            outline
                         />
-                        <ListInput label="Add Chain" type="select" onChange={(e) => setField('chains', [...chains, e.target.value])} value="" outline>
+                        {/* Chain Selection */}
+                        <ListInput
+                            label="Add Chain"
+                            inputClassName="!bg-gray-800 !text-white"
+                            type="select"
+                            onChange={(e) => setField('chains', [...chains, e.target.value])}
+                            value=""
+                            outline
+                        >
                             <option value="">Select Chain</option>
                             {chainList.map((chain) => (
                                 <option key={chain.id} value={chain.name}>
@@ -189,20 +233,13 @@ const EditAcademyPage: React.FC = () => {
                         <div className="flex flex-wrap gap-2 mb-4">
                             {chains.map((chain, index) => (
                                 <div key={index} className="relative">
-                                    <span
-                                        onClick={() =>
-                                            setField(
-                                                'chains',
-                                                chains.filter((_, i) => i !== index)
-                                            )
-                                        }
-                                        className="bg-green-200 dark:bg-green-600 px-2 py-1 rounded-lg"
-                                    >
+                                    <span onClick={() => removeChain(index)} className="bg-green-200 dark:bg-green-600 px-2 py-1 rounded-lg">
                                         {chain}
                                     </span>
                                 </div>
                             ))}
                         </div>
+                        {/* Rest of the fields */}
                         <ListInput
                             label={`Quiz Question ${questionIndex + 1}`}
                             type="textarea"
@@ -334,115 +371,6 @@ const EditAcademyPage: React.FC = () => {
         )
     }
 
-    const renderRaffleSlide = () => (
-        <Card key="raffle-slide" className="!mb-2 !p-0 !rounded-2xl shadow-lg !mx-4 relative border border-gray-300 dark:border-gray-600">
-            <h2 className="text-lg font-bold mb-4">Raffles</h2>
-            {Array.isArray(raffles) && raffles.length > 0 ? (
-                raffles.map((raffle, index) => (
-                    <div key={index} className="mb-4 p-4 border rounded-lg shadow-sm relative">
-                        <List>
-                            <ListInput
-                                label="Amount"
-                                type="number"
-                                value={raffle.amount}
-                                onChange={(e) => setField('raffles', { ...raffles, [index]: { ...raffles[index], amount: e.target.value } })}
-                                outline
-                            />
-                            <ListInput
-                                label="Reward"
-                                type="text"
-                                value={raffle.reward}
-                                onChange={(e) => setField('raffles', { ...raffles, [index]: { ...raffles[index], reward: e.target.value } })}
-                                outline
-                            />
-                            <ListInput
-                                label="Currency"
-                                type="text"
-                                value={raffle.currency}
-                                onChange={(e) => setField('raffles', { ...raffles, [index]: { ...raffles[index], currency: e.target.value } })}
-                                outline
-                            />
-                            <ListInput
-                                label="Chain"
-                                type="text"
-                                value={raffle.chain}
-                                onChange={(e) => setField('raffles', { ...raffles, [index]: { ...raffles[index], chain: e.target.value } })}
-                                outline
-                            />
-                            <ListInput
-                                label="Dates"
-                                type="text"
-                                value={raffle.dates}
-                                onChange={(e) => setField('raffles', { ...raffles, [index]: { ...raffles[index], dates: e.target.value } })}
-                                outline
-                            />
-                            <ListInput
-                                label="Total Pool"
-                                type="number"
-                                value={raffle.totalPool}
-                                onChange={(e) => setField('raffles', { ...raffles, [index]: { ...raffles[index], totalPool: e.target.value } })}
-                                outline
-                            />
-                        </List>
-                        <button className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-full" onClick={() => removeRaffle(index)}>
-                            &times;
-                        </button>
-                    </div>
-                ))
-            ) : (
-                <p>No raffles available</p>
-            )}
-            <Button onClick={addRaffle} large outline className="w-full rounded-full mt-2">
-                Add Raffle
-            </Button>
-        </Card>
-    )
-
-    const renderQuestSlide = () => (
-        <Card key="quest-slide" className="!mb-2 !p-0 !rounded-2xl shadow-lg !mx-4 relative border border-gray-300 dark:border-gray-600">
-            <h2 className="text-lg font-bold mb-4">Quests</h2>
-            {Array.isArray(quests) && quests.length > 0 ? (
-                quests.map((quest, index) => (
-                    <div key={index} className="mb-4 p-4 border rounded-lg shadow-sm relative">
-                        <List>
-                            <ListInput
-                                label="Quest Name"
-                                type="text"
-                                value={quest.name}
-                                onChange={(e) => setField('quests', { ...quests, [index]: { ...quests[index], name: e.target.value } })}
-                                outline
-                            />
-                            <ListInput
-                                label="Quest Link"
-                                type="url"
-                                value={quest.link}
-                                onChange={(e) => setField('quests', { ...quests, [index]: { ...quests[index], link: e.target.value } })}
-                                outline
-                            />
-                            <ListInput
-                                label="Platform"
-                                type="select"
-                                value={quest.platform}
-                                onChange={(e) => setField('quests', { ...quests, [index]: { ...quests[index], platform: e.target.value } })}
-                                outline
-                            >
-                                <option value="">Select Platform</option>
-                                <option value="facebook">Facebook</option>
-                                <option value="linkedin">LinkedIn</option>
-                                <option value="twitter">Twitter</option>
-                            </ListInput>
-                        </List>
-                    </div>
-                ))
-            ) : (
-                <p>No quests available</p>
-            )}
-            <Button onClick={addQuest} large outline className="w-full border rounded-full mt-2">
-                Add Quest
-            </Button>
-        </Card>
-    )
-
     const renderAcademyDetailsSlide = () => (
         <Card key="academy-details-slide" className="!mb-2 !p-0 !rounded-2xl shadow-lg !mx-4 relative border border-gray-300 dark:border-gray-600">
             <h2 className="text-lg font-bold mb-4">Academy Details</h2>
@@ -450,12 +378,77 @@ const EditAcademyPage: React.FC = () => {
                 <ListInput label="Protocol Name" type="text" value={name} onChange={(e) => setField('name', e.target.value)} outline />
                 <ListInput label="Ticker" type="text" value={ticker} onChange={(e) => setField('ticker', e.target.value)} outline />
                 <ListInput label="Webpage URL" type="url" value={webpageUrl} onChange={(e) => setField('webpageUrl', e.target.value)} outline />
+
+                {/* Conditional fields for 'Meme' type */}
+                {selectedAcademyType && selectedAcademyType.name === 'Meme' && (
+                    <>
+                        {/* Chain Selection */}
+                        <ListInput
+                            label="Add Chain"
+                            type="select"
+                            outline
+                            onChange={(e) => {
+                                if (e.target.value) {
+                                    setField('chains', [...(chains || []), e.target.value])
+                                }
+                            }}
+                            value=""
+                            placeholder="Select Chain"
+                            inputClassName="!bg-[#1c1c1d] !text-white !m-1"
+                        >
+                            <option value="" className="!text-black">
+                                Select Chain
+                            </option>
+                            {(chainList || []).map((chain) => (
+                                <option key={chain.id} value={chain.name}>
+                                    {chain.name}
+                                </option>
+                            ))}
+                        </ListInput>
+                        <div className="flex flex-wrap gap-2 mb-4">
+                            {(chains || []).map((chain, index) => (
+                                <div key={index} className="relative">
+                                    <span onClick={() => removeChain(index)} className="bg-green-200 dark:bg-green-600 px-2 py-1 rounded-lg cursor-pointer">
+                                        {chain}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                        {/* DexScreener Link */}
+                        <ListInput
+                            label="DexScreener Link"
+                            type="url"
+                            outline
+                            placeholder="Enter DexScreener Link"
+                            value={dexScreener}
+                            onChange={(e) => {
+                                setField('dexScreener', e.target.value)
+                            }}
+                        />
+                        {/* Contract Address */}
+                        <ListInput
+                            label="Contract Address"
+                            type="text"
+                            outline
+                            placeholder="Enter Contract Address"
+                            value={contractAddress}
+                            onChange={(e) => {
+                                setField('contractAddress', e.target.value)
+                            }}
+                        />
+                    </>
+                )}
+
                 <div className="relative mb-4">
                     <label className="block font-medium mb-2">Upload Logo</label>
                     <input type="file" accept="image/*" onChange={(e) => handleFileChange('logo', e.target.files ? e.target.files[0] : null)} />
                     {logo && (
                         <div className="relative mt-2">
-                            <img src={constructImageUrl(logo)} alt="Logo Preview" className="w-32 h-32 object-cover rounded-full" />
+                            <img
+                                src={logoFile ? URL.createObjectURL(logoFile) : constructImageUrl(logo)}
+                                alt="Logo Preview"
+                                className="w-32 h-32 object-cover rounded-full"
+                            />
                             <Button className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-full !w-7 !m-1" onClick={() => setField('logo', null)}>
                                 &times;
                             </Button>
@@ -467,7 +460,11 @@ const EditAcademyPage: React.FC = () => {
                     <input type="file" accept="image/*" onChange={(e) => handleFileChange('coverPhoto', e.target.files ? e.target.files[0] : null)} />
                     {coverPhoto && (
                         <div className="relative mt-2 !rounded-2xl">
-                            <img src={constructImageUrl(coverPhoto)} alt="Cover Photo Preview" className="w-full h-48 object-cover rounded-2xl" />
+                            <img
+                                src={coverPhotoFile ? URL.createObjectURL(coverPhotoFile) : constructImageUrl(coverPhoto)}
+                                alt="Cover Photo Preview"
+                                className="w-full h-48 object-cover rounded-2xl"
+                            />
                             <Button
                                 className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-full !w-7 !m-1"
                                 onClick={() => setField('coverPhoto', null)}
@@ -477,7 +474,14 @@ const EditAcademyPage: React.FC = () => {
                         </div>
                     )}
                 </div>
-                <ListInput label="Add Category" type="select" onChange={(e) => setField('categories', [...categories, e.target.value])} value="" outline>
+                <ListInput
+                    label="Add Category"
+                    type="select"
+                    onChange={(e) => setField('categories', [...categories, e.target.value])}
+                    value=""
+                    placeholder="Select Category"
+                    outline
+                >
                     <option value="">Select Category</option>
                     {categoryList.map((category) => (
                         <option key={category.id} value={category.name}>
@@ -488,15 +492,7 @@ const EditAcademyPage: React.FC = () => {
                 <div className="flex flex-wrap gap-2 mb-4">
                     {categories.map((category, index) => (
                         <div key={index} className="relative">
-                            <span
-                                onClick={() =>
-                                    setField(
-                                        'categories',
-                                        categories.filter((_, i) => i !== index)
-                                    )
-                                }
-                                className="bg-blue-200 dark:bg-blue-600 px-2 py-1 rounded-lg"
-                            >
+                            <span onClick={() => removeCategory(index)} className="bg-blue-200 dark:bg-blue-600 px-2 py-1 rounded-lg">
                                 {category}
                             </span>
                         </div>
@@ -522,9 +518,8 @@ const EditAcademyPage: React.FC = () => {
     const slides = [
         renderAcademyDetailsSlide(),
         renderSocialLinksSlide(),
-        ...initialAnswers.map((_, index) => renderInitialQuestionSlide(index)), // Ensure all questions are rendered
-        renderRaffleSlide(),
-        renderQuestSlide()
+        ...initialAnswers.map((_, index) => renderInitialQuestionSlide(index)) // Ensure all questions are rendered
+        // Other slides like raffles and quests can be added here if needed
     ]
 
     return (

@@ -267,15 +267,21 @@ model SessionLog {
 }
 
 model Educator {
-  id          Int        @id @default(autoincrement())
-  name        String
-  bio         String?
-  avatarUrl   String?
-  youtubeUrl  String?
-  twitterUrl  String?
-  telegramUrl String?
-  discordUrl  String?
-  lessons     Lesson[]   @relation("EducatorLessons")
+  id            Int        @id @default(autoincrement())
+  name          String
+  bio           String?
+  avatarUrl     String?
+  logoUrl       String?
+  coverPhotoUrl String?
+  youtubeUrl    String?
+  twitterUrl    String?
+  telegramUrl   String?
+  discordUrl    String?
+  lessons       Lesson[]   @relation("EducatorLessons")
+
+  // Add these lines
+  categories    Category[] @relation("EducatorCategories")
+  chains        Chain[]    @relation("EducatorChains")
 }
 
 model Lesson {
@@ -289,21 +295,33 @@ model Lesson {
 }
 
 model Podcast {
-  id          Int        @id @default(autoincrement())
-  name        String
-  description String?
-  spotifyUrl  String?
-  appleUrl    String?
-  youtubeUrl  String?
+  id            Int        @id @default(autoincrement())
+  name          String
+  description   String?
+  logoUrl       String?
+  coverPhotoUrl String?
+  spotifyUrl    String?
+  appleUrl      String?
+  youtubeUrl    String?
+
+  // Add these lines
+  categories    Category[] @relation("PodcastCategories")
+  chains        Chain[]    @relation("PodcastChains")
 }
 
 model Tutorial {
-  id          Int         @id @default(autoincrement())
-  title       String
-  contentUrl  String
-  type        TutorialType
-  xp          Int         @default(0)
-  categories  Category[]  @relation("TutorialCategories")
+  id            Int          @id @default(autoincrement())
+  title         String
+  description   String?
+  contentUrl    String
+  logoUrl       String?
+  coverPhotoUrl String?
+  type          TutorialType
+  xp            Int          @default(0)
+  categories    Category[]   @relation("TutorialCategories")
+
+  // Add this line
+  chains        Chain[]      @relation("TutorialChains")
 }
 
 enum LessonType {
@@ -321,18 +339,22 @@ enum TutorialType {
 }
 
 model Category {
-  id        Int       @id @default(autoincrement())
-  name      String    @unique
-  academies Academy[] @relation("AcademyToCategory")
-  tutorials  Tutorial[]  @relation("TutorialCategories")
+  id        Int        @id @default(autoincrement())
+  name      String     @unique
+  academies Academy[]  @relation("AcademyToCategory")
+  tutorials Tutorial[] @relation("TutorialCategories")
+  podcasts  Podcast[]  @relation("PodcastCategories")
+  educators Educator[] @relation("EducatorCategories")
 }
 
 model Chain {
-  id        Int       @id @default(autoincrement())
-  name      String    @unique
-  academies Academy[] @relation("AcademyToChain")
+  id        Int        @id @default(autoincrement())
+  name      String     @unique
+  academies Academy[]  @relation("AcademyToChain")
+  podcasts  Podcast[]  @relation("PodcastChains")
+  educators Educator[] @relation("EducatorChains")
+  tutorials Tutorial[] @relation("TutorialChains")
 }
-
 model VerificationTask {
   id                  Int                  @id @default(autoincrement())
   name                String

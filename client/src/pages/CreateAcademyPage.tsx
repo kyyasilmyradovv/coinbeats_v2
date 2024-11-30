@@ -1,7 +1,7 @@
 // client/src/pages/CreateAcademyPage.tsx
 
 import React, { useState, useEffect } from 'react'
-import { Page, Block, List, ListInput, Button, Notification, Card } from 'konsta/react'
+import { Page, List, ListInput, Button, Notification, Card } from 'konsta/react'
 import { useNavigate } from 'react-router-dom'
 import Navbar from '../components/common/Navbar'
 import Sidebar from '../components/Sidebar'
@@ -26,6 +26,8 @@ const CreateAcademyPage: React.FC = () => {
         telegram,
         discord,
         coingecko,
+        dexScreener, // Added dexScreener
+        contractAddress, // Added contractAddress
         logo,
         webpageUrl,
         coverPhoto,
@@ -88,6 +90,8 @@ const CreateAcademyPage: React.FC = () => {
             | 'telegram'
             | 'discord'
             | 'coingecko'
+            | 'dexScreener' // Added dexScreener
+            | 'contractAddress' // Added contractAddress
             | 'logo'
             | 'coverPhoto'
             | 'webpageUrl'
@@ -107,6 +111,8 @@ const CreateAcademyPage: React.FC = () => {
     const handleImagePreview = (file: File | null) => {
         if (file instanceof File) {
             return URL.createObjectURL(file)
+        } else if (typeof file === 'string') {
+            return file // URL string
         }
         return null
     }
@@ -173,6 +179,9 @@ const CreateAcademyPage: React.FC = () => {
         }
     }
 
+    // Get the selected academy type
+    const selectedAcademyType = academyTypes.find((type: any) => type.id === academyTypeId)
+
     const renderIntroSlide = () => (
         <Card key="slide-intro" className="!mb-2 !p-0 !rounded-2xl shadow-lg !mx-4 relative border border-gray-300 dark:border-gray-600">
             <h2 className="text-lg font-bold mb-4 text-center">Great, you have created the content part of the academy!</h2>
@@ -188,6 +197,11 @@ const CreateAcademyPage: React.FC = () => {
 
     const renderInitialQuestionSlide = (questionIndex: number) => {
         const answerLimit = 1000
+
+        // For 'Meme' type, there are only 3 questions, so skip rendering the fourth question
+        if (selectedAcademyType && selectedAcademyType.name === 'Meme' && questionIndex >= 3) {
+            return null
+        }
 
         if (questionIndex === 3) {
             // Custom render for the tokenomics question slide
@@ -220,6 +234,7 @@ const CreateAcademyPage: React.FC = () => {
                                 label="Token Chain"
                                 type="select"
                                 outline
+                                className="text-black"
                                 onChange={(e) => {
                                     const updatedChains = [...chains, e.target.value]
                                     setField('chains', updatedChains)
@@ -227,7 +242,9 @@ const CreateAcademyPage: React.FC = () => {
                                 }}
                                 placeholder="Select Chain"
                             >
-                                <option value="">Select Chain</option>
+                                <option value="" className="text-black">
+                                    Select Chain
+                                </option>
                                 {chainList.map((chain) => (
                                     <option key={chain.id} value={chain.name}>
                                         {chain.name}
@@ -416,6 +433,73 @@ const CreateAcademyPage: React.FC = () => {
                         autoresize(e)
                     }}
                 />
+                {/* Conditional fields for 'Meme' type */}
+                {selectedAcademyType && selectedAcademyType.name === 'Meme' && (
+                    <>
+                        {/* Chain Selection */}
+                        <ListInput
+                            label="Add Chain"
+                            type="select"
+                            outline
+                            onChange={(e) => {
+                                if (e.target.value) {
+                                    setField('chains', [...(chains || []), e.target.value])
+                                }
+                            }}
+                            value=""
+                            placeholder="Select Chain"
+                        >
+                            <option value="">Select Chain</option>
+                            {(chainList || []).map((chain) => (
+                                <option key={chain.id} value={chain.name}>
+                                    {chain.name}
+                                </option>
+                            ))}
+                        </ListInput>
+                        <div className="flex flex-wrap gap-2 mb-4">
+                            {(chains || []).map((chain, index) => (
+                                <div key={index} className="relative">
+                                    <span onClick={() => removeChain(index)} className="bg-green-200 dark:bg-green-600 px-2 py-1 rounded-lg cursor-pointer">
+                                        {chain}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                        {/* Coingecko Link */}
+                        <ListInput
+                            label="CoinGecko Link"
+                            type="url"
+                            outline
+                            placeholder="Enter CoinGecko Link"
+                            value={coingecko}
+                            onChange={(e) => {
+                                setField('coingecko', e.target.value)
+                            }}
+                        />
+                        {/* DexScreener Link */}
+                        <ListInput
+                            label="DexScreener Link"
+                            type="url"
+                            outline
+                            placeholder="Enter DexScreener Link"
+                            value={dexScreener}
+                            onChange={(e) => {
+                                setField('dexScreener', e.target.value)
+                            }}
+                        />
+                        {/* Contract Address */}
+                        <ListInput
+                            label="Contract Address"
+                            type="text"
+                            outline
+                            placeholder="Enter Contract Address"
+                            value={contractAddress}
+                            onChange={(e) => {
+                                setField('contractAddress', e.target.value)
+                            }}
+                        />
+                    </>
+                )}
                 <div className="relative mb-4">
                     <label className="block font-medium mb-2 mt-6">Upload Logo</label>
                     <input type="file" accept="image/*" onChange={(e) => handleFileChange('logo', e.target.files ? e.target.files[0] : null)} />
@@ -539,6 +623,11 @@ const CreateAcademyPage: React.FC = () => {
 
     const renderEducationalQuizSlide = (questionIndex: number) => {
         const quizQuestionLimit = 100
+
+        // For 'Meme' type, there are only 3 questions, so skip rendering the fourth quiz
+        if (selectedAcademyType && selectedAcademyType.name === 'Meme' && questionIndex >= 3) {
+            return null
+        }
 
         const handleToggleCorrectAnswer = (questionIndex: number, choiceIndex: number) => {
             const updatedAnswers = [...initialAnswers]
@@ -701,6 +790,24 @@ const CreateAcademyPage: React.FC = () => {
                 <p>{chains.length > 0 ? chains.join(', ') : 'N/A'}</p>
             </div>
 
+            {/* Conditional fields for 'Meme' type */}
+            {selectedAcademyType && selectedAcademyType.name === 'Meme' && (
+                <>
+                    <div className="mb-4">
+                        <h3 className="font-medium">CoinGecko Link:</h3>
+                        <p>{coingecko || 'N/A'}</p>
+                    </div>
+                    <div className="mb-4">
+                        <h3 className="font-medium">DexScreener Link:</h3>
+                        <p>{dexScreener || 'N/A'}</p>
+                    </div>
+                    <div className="mb-4">
+                        <h3 className="font-medium">Contract Address:</h3>
+                        <p>{contractAddress || 'N/A'}</p>
+                    </div>
+                </>
+            )}
+
             {/* Initial Questions and Answers */}
             <div className="mb-4">
                 <h3 className="font-medium">Initial Questions and Answers:</h3>
@@ -709,6 +816,7 @@ const CreateAcademyPage: React.FC = () => {
                         <h4 className="font-medium">{`Question ${index + 1}: ${question.question}`}</h4>
                         {index === 3 ? (
                             <div className="ml-4">
+                                {/* This block won't render for 'Meme' type since question 4 doesn't exist */}
                                 <p>
                                     <strong>Token Chain:</strong> {question.chains?.join(', ') || 'N/A'}
                                 </p>
@@ -865,7 +973,7 @@ const CreateAcademyPage: React.FC = () => {
                     onChange={(e) => {
                         setField('academyTypeId', parseInt(e.target.value, 10))
                     }}
-                    value={academyTypeId || 1} // Default to 1 if academyTypeId is not set
+                    value={academyTypeId || ''}
                     placeholder="Select Academy Type"
                     disabled={academyTypes.length === 1} // Disable if only one type is available
                 >

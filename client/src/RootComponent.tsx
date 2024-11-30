@@ -19,6 +19,7 @@ import InboxPage from './pages/InboxPage'
 import AcademyStatisticsPage from './pages/AcademyStatisticsPage'
 import UserProfilePage from './pages/UserProfilePage'
 import CreateAcademyPage from './pages/CreateAcademyPage'
+import ContentCreationPage from './pages/ContentCreationPage'
 import MyAcademiesPage from './pages/MyAcademiesPage'
 import SuperAdminDashboardPage from './pages/SuperAdminDashboardPage'
 import AcademyTypePage from './pages/AcademyTypePage'
@@ -262,6 +263,14 @@ function RootComponent() {
                             element={
                                 <RouteGuard requiredRole="CREATOR">
                                     <CreateAcademyPage />
+                                </RouteGuard>
+                            }
+                        />
+                        <Route
+                            path="/create-content"
+                            element={
+                                <RouteGuard requiredRole="SUPERADMIN">
+                                    <ContentCreationPage />
                                 </RouteGuard>
                             }
                         />

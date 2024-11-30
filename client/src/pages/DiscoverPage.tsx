@@ -7,7 +7,7 @@ import Navbar from '../components/common/Navbar'
 import Sidebar from '../components/common/Sidebar'
 import useDiscoverStore from '../store/useDiscoverStore'
 import useCategoryChainStore from '../store/useCategoryChainStore'
-import BottomTabBar from '../components/BottomTabBar' // Assuming you have a BottomTabBar component
+import BottomTabBar from '../components/BottomTabBar'
 import coming from '../images/svgs/coming-soon3.svg'
 
 const DiscoverPage: React.FC = () => {
@@ -117,6 +117,12 @@ const DiscoverPage: React.FC = () => {
                 navigate(`/discover/${item.id}`, { state: { item } })
                 break
         }
+    }
+
+    // Function to construct image URLs
+    const constructImageUrl = (url: string) => {
+        // return `https://subscribes.lt/${url}`
+        return `http://localhost:4004/${url}`
     }
 
     return (
@@ -229,37 +235,55 @@ const DiscoverPage: React.FC = () => {
                             {/* Display item content based on contentType */}
                             {item.contentType === 'Educator' && (
                                 <>
-                                    {item.avatarUrl && <img alt={item.name} className="h-16 w-16 rounded-full mb-2" src={item.avatarUrl} loading="lazy" />}
-                                    <div className="text-md font-bold whitespace-nowrap">{item.name}</div>
+                                    {item.avatarUrl && (
+                                        <div className="flex items-center justify-center w-full mt-1">
+                                            <img
+                                                alt={item.name}
+                                                className="h-16 w-16 rounded-full mb-2"
+                                                src={constructImageUrl(item.avatarUrl)}
+                                                loading="lazy"
+                                            />
+                                        </div>
+                                    )}
+                                    <div className="text-md font-bold">{item.name}</div>
                                 </>
                             )}
                             {item.contentType === 'Podcast' && (
                                 <>
                                     {/* Display podcast image or placeholder */}
-                                    {item.imageUrl ? (
-                                        <img alt={item.name} className="h-16 w-16 rounded mb-2" src={item.imageUrl} loading="lazy" />
+                                    {item.logoUrl ? (
+                                        <div className="flex items-center justify-center w-full mt-1">
+                                            <img alt={item.name} className="h-16 w-16 rounded-full mb-2" src={constructImageUrl(item.logoUrl)} loading="lazy" />
+                                        </div>
                                     ) : (
-                                        <div className="h-16 w-16 rounded bg-gray-300 mb-2"></div>
+                                        <div className="h-16 w-16 rounded-full bg-gray-300 mb-2"></div>
                                     )}
-                                    <div className="text-md font-bold whitespace-nowrap">{item.name}</div>
+                                    <div className="text-md font-bold">{item.name}</div>
                                 </>
                             )}
                             {item.contentType === 'Tutorial' && (
                                 <>
                                     {/* Display tutorial image or placeholder */}
-                                    {item.imageUrl ? (
-                                        <img alt={item.title} className="h-16 w-16 rounded mb-2" src={item.imageUrl} loading="lazy" />
+                                    {item.logoUrl ? (
+                                        <div className="flex items-center justify-center w-full mt-1">
+                                            <img
+                                                alt={item.title}
+                                                className="h-16 w-16 rounded-full mb-2"
+                                                src={constructImageUrl(item.logoUrl)}
+                                                loading="lazy"
+                                            />
+                                        </div>
                                     ) : (
-                                        <div className="h-16 w-16 rounded bg-gray-300 mb-2"></div>
+                                        <div className="h-16 w-16 rounded-full bg-gray-300 mb-2"></div>
                                     )}
-                                    <div className="text-md font-bold whitespace-nowrap">{item.title}</div>
+                                    <div className="text-md font-bold">{item.title}</div>
                                 </>
                             )}
                             <Button
                                 outline
                                 rounded
                                 onClick={() => handleMoreClick(item)}
-                                className="!text-xs !w-24 !mx-auto mt-1 font-bold shadow-xl !h-6 !mb-3 !whitespace-nowrap"
+                                className="!text-xs !w-24 !mx-auto mt-1 font-bold shadow-xl !h-6 !mb-1 !whitespace-nowrap"
                                 style={{
                                     background: 'linear-gradient(to left, #ff0077, #7700ff)',
                                     color: '#fff'
@@ -267,14 +291,26 @@ const DiscoverPage: React.FC = () => {
                             >
                                 View Details
                             </Button>
+                            {/* Display selected categories and chains as tags */}
+                            <div className="flex flex-wrap gap-1 justify-center mt-1 mb-2">
+                                {/* Categories */}
+                                {item.categories &&
+                                    item.categories.map((category: any, index: number) => (
+                                        <span key={`category-${index}`} className="bg-blue-200 dark:bg-blue-600 !px-[4px] rounded-full text-2xs">
+                                            {category.name}
+                                        </span>
+                                    ))}
+                                {/* Chains */}
+                                {item.chains &&
+                                    item.chains.map((chain: any, index: number) => (
+                                        <span key={`chain-${index}`} className="bg-green-200 dark:bg-green-600 !px-[4px] rounded-full text-2xs">
+                                            {chain.name}
+                                        </span>
+                                    ))}
+                            </div>
                         </Card>
                     </div>
                 ))}
-            </div>
-
-            {/* Coming Soon Sign Centered */}
-            <div className="flex items-center justify-center z-40 pointer-events-none mx-auto w-full mb-2">
-                <img src={coming} className="h-16 rotate-[3deg]" alt="Coming Soon" />
             </div>
 
             {/* Bottom Tab Bar */}

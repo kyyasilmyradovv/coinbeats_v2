@@ -53,6 +53,8 @@ interface AcademyState {
     telegram: string
     discord: string
     coingecko: string
+    dexScreener: string // Added dexScreener
+    contractAddress: string // Added contractAddress
     logo: File | null | string
     coverPhoto: File | null | string
     webpageUrl: string
@@ -66,7 +68,7 @@ interface AcademyState {
     visibleQuestionsCount: number
     currentStep: number
     videoUrls: { initialQuestionId: number; url: string }[]
-    academyTypeId: number | null // Added academyTypeId
+    academyTypeId: number | null
     setVideoUrl: (index: number, url: string) => void
     submitVideoLessons: (academyId: number) => Promise<void>
     setField: (
@@ -104,7 +106,7 @@ interface AcademyState {
     updateAcademy: (academyId: number, logoFile?: File | null, coverPhotoFile?: File | null) => Promise<void>
     submitBasicAcademy: () => Promise<void>
     resetAcademyData: () => void
-    fetchQuestions: (academyTypeId: number) => Promise<void> // Updated to accept academyTypeId
+    fetchQuestions: (academyTypeId: number) => Promise<void>
     fetchVideoUrls: (academyId: number) => Promise<void>
     fetchQuests: (academyId: number) => Promise<void>
     nextStep: () => void
@@ -124,6 +126,8 @@ const useAcademyStore = create<AcademyState>()(
             telegram: '',
             discord: '',
             coingecko: '',
+            dexScreener: '', // Initialize dexScreener
+            contractAddress: '', // Initialize contractAddress
             logo: null,
             coverPhoto: null,
             webpageUrl: '',
@@ -137,8 +141,8 @@ const useAcademyStore = create<AcademyState>()(
             visibleQuestionsCount: 1,
             currentStep: 0,
             videoUrls: [],
-            initialAcademyData: {}, // Initialize as an empty object
-            academyTypeId: null, // Initialize academyTypeId as null
+            initialAcademyData: {},
+            academyTypeId: null,
 
             setField: (field, value) =>
                 set(
@@ -237,30 +241,57 @@ const useAcademyStore = create<AcademyState>()(
                     // Include academyTypeId
                     formData.append('academyTypeId', state.academyTypeId?.toString() || '')
 
-                    // Process the tokenomics data
-                    const tokenomicsData = {
-                        chains: state.initialAnswers[3]?.chains || [],
-                        utility: state.initialAnswers[3]?.utility || '',
-                        totalSupply: state.initialAnswers[3]?.totalSupply || '',
-                        logic: state.initialAnswers[3]?.logic || '',
-                        coingecko: state.initialAnswers[3]?.coingecko || '',
-                        dexScreener: state.initialAnswers[3]?.dexScreener || '',
-                        contractAddress: state.initialAnswers[3]?.contractAddress || ''
+                    // Initialize tokenomicsData
+                    let tokenomicsData: any = {}
+
+                    // Fetch academy types if necessary
+                    let academyTypes = []
+                    try {
+                        const response = await axios.get('/api/academy-types')
+                        academyTypes = response.data
+                    } catch (error) {
+                        console.error('Error fetching academy types:', error)
                     }
 
-                    // Update initialAnswers[3] with the tokenomics data
-                    const updatedInitialAnswers = state.initialAnswers.map((answer, index) => {
-                        if (index === 3) {
-                            return {
-                                ...answer,
-                                answer: JSON.stringify(tokenomicsData)
-                            }
+                    // Get the selected academy type
+                    const selectedAcademyType = state.academyTypeId && academyTypes.find((type: any) => type.id === state.academyTypeId)
+
+                    if (selectedAcademyType && selectedAcademyType.name === 'Meme') {
+                        // For 'Meme' type, get dexScreener and contractAddress directly from state
+                        tokenomicsData = {
+                            coingecko: state.coingecko || '',
+                            dexScreener: state.dexScreener || '',
+                            contractAddress: state.contractAddress || ''
                         }
-                        return answer
-                    })
+                    } else {
+                        // For other types, get data from initialAnswers[3]
+                        tokenomicsData = {
+                            chains: state.initialAnswers[3]?.chains || [],
+                            utility: state.initialAnswers[3]?.utility || '',
+                            totalSupply: state.initialAnswers[3]?.totalSupply || '',
+                            logic: state.initialAnswers[3]?.logic || '',
+                            coingecko: state.initialAnswers[3]?.coingecko || '',
+                            dexScreener: state.initialAnswers[3]?.dexScreener || '',
+                            contractAddress: state.initialAnswers[3]?.contractAddress || ''
+                        }
+                    }
+
+                    // Update initialAnswers[3] with the tokenomics data if not 'Meme' type
+                    let updatedInitialAnswers = state.initialAnswers
+                    if (!(selectedAcademyType && selectedAcademyType.name === 'Meme')) {
+                        updatedInitialAnswers = state.initialAnswers.map((answer, index) => {
+                            if (index === 3) {
+                                return {
+                                    ...answer,
+                                    answer: JSON.stringify(tokenomicsData)
+                                }
+                            }
+                            return answer
+                        })
+                    }
 
                     formData.append('initialAnswers', JSON.stringify(updatedInitialAnswers))
-                    formData.append('tokenomics', state.tokenomics)
+                    formData.append('tokenomics', JSON.stringify(tokenomicsData))
                     formData.append('teamBackground', state.teamBackground)
                     formData.append('congratsVideo', state.congratsVideo)
                     formData.append('getStarted', state.getStarted)
@@ -268,9 +299,9 @@ const useAcademyStore = create<AcademyState>()(
                     formData.append('quests', JSON.stringify(state.quests || []))
 
                     // Include duplicated fields
-                    formData.append('coingeckoLink', tokenomicsData.coingecko)
-                    formData.append('dexScreenerLink', tokenomicsData.dexScreener)
-                    formData.append('contractAddress', tokenomicsData.contractAddress)
+                    formData.append('coingeckoLink', state.coingecko || '')
+                    formData.append('dexScreenerLink', tokenomicsData.dexScreener || '')
+                    formData.append('contractAddress', tokenomicsData.contractAddress || '')
 
                     const url = academyId ? `/api/academies/${academyId}` : `/api/academies`
                     const method = academyId ? 'put' : 'post'
@@ -300,12 +331,19 @@ const useAcademyStore = create<AcademyState>()(
 
                 try {
                     const formData = new FormData()
-                    const initialState = state.initialAcademyData || {} // Initial data to compare changes
+                    const initialState = state.initialAcademyData || {}
 
                     // Helper function to append data if it has changed or is intentionally set to empty
                     const appendIfChangedOrCleared = (key, value) => {
-                        if (value !== undefined && initialState[key] !== value) {
-                            formData.append(key, value)
+                        const initialValue = initialState[key]
+                        const hasChanged = Array.isArray(value) ? JSON.stringify(initialValue) !== JSON.stringify(value) : initialValue !== value
+
+                        if (value !== undefined && hasChanged) {
+                            if (Array.isArray(value)) {
+                                formData.append(key, JSON.stringify(value))
+                            } else {
+                                formData.append(key, value)
+                            }
                         }
                     }
 
@@ -317,6 +355,10 @@ const useAcademyStore = create<AcademyState>()(
                     appendIfChangedOrCleared('telegram', state.telegram)
                     appendIfChangedOrCleared('discord', state.discord)
                     appendIfChangedOrCleared('coingecko', state.coingecko)
+                    appendIfChangedOrCleared('dexScreener', state.dexScreener) // Added
+                    appendIfChangedOrCleared('contractAddress', state.contractAddress) // Added
+                    appendIfChangedOrCleared('chains', state.chains) // Added
+                    appendIfChangedOrCleared('categories', state.categories) // Added
 
                     // Handle logo and cover photo updates
                     if (logoFile || state.logo !== initialState.logo) {
@@ -444,6 +486,8 @@ const useAcademyStore = create<AcademyState>()(
                         telegram: '',
                         discord: '',
                         coingecko: '',
+                        dexScreener: '', // Reset dexScreener
+                        contractAddress: '', // Reset contractAddress
                         logo: null,
                         coverPhoto: null,
                         webpageUrl: '',
@@ -458,13 +502,12 @@ const useAcademyStore = create<AcademyState>()(
                         visibleQuestionsCount: 1,
                         currentStep: 0,
                         initialAcademyData: {},
-                        academyTypeId: null // Reset academyTypeId
+                        academyTypeId: null
                     },
                     false,
                     'Reset Academy Data'
                 )
 
-                // Debugging: Log out the state after reset
                 const currentState = get()
                 console.log('State after reset:', currentState)
             },
@@ -613,6 +656,8 @@ const useAcademyStore = create<AcademyState>()(
                     telegram: data.telegram || '',
                     discord: data.discord || '',
                     coingecko: data.coingecko || '',
+                    dexScreener: data.dexScreener || '', // Added this line
+                    contractAddress: data.contractAddress || '', // Added this line
                     logo: data.logoUrl || null,
                     coverPhoto: data.coverPhotoUrl || null,
                     webpageUrl: data.webpageUrl || '',
@@ -623,7 +668,7 @@ const useAcademyStore = create<AcademyState>()(
                     getStarted: data.getStarted || '',
                     raffles: data.raffles || [],
                     quests: quests || [],
-                    academyTypeId: data.academyTypeId || null // Include academyTypeId
+                    academyTypeId: data.academyTypeId || null
                 }
 
                 // Set the current state with the data

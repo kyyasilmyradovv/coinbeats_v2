@@ -1,15 +1,17 @@
-// controllers/discoverController.js
+// server/controllers/discoverController.js
 
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const createError = require('http-errors');
 
-// Get all educators
+// Get all Educators
 exports.getAllEducators = async (req, res, next) => {
   try {
     const educators = await prisma.educator.findMany({
       include: {
         lessons: true,
+        categories: true,
+        chains: true,
       },
     });
     res.json(educators);
@@ -19,7 +21,7 @@ exports.getAllEducators = async (req, res, next) => {
   }
 };
 
-// Get educator by ID
+// Get Educator by ID
 exports.getEducatorById = async (req, res, next) => {
   const { id } = req.params;
   try {
@@ -27,6 +29,8 @@ exports.getEducatorById = async (req, res, next) => {
       where: { id: parseInt(id, 10) },
       include: {
         lessons: true,
+        categories: true,
+        chains: true,
       },
     });
     if (!educator) {
@@ -39,12 +43,13 @@ exports.getEducatorById = async (req, res, next) => {
   }
 };
 
-// Get all tutorials
+// Get all Tutorials
 exports.getAllTutorials = async (req, res, next) => {
   try {
     const tutorials = await prisma.tutorial.findMany({
       include: {
         categories: true,
+        chains: true,
       },
     });
     res.json(tutorials);
@@ -54,7 +59,7 @@ exports.getAllTutorials = async (req, res, next) => {
   }
 };
 
-// Get tutorial by ID
+// Get Tutorial by ID
 exports.getTutorialById = async (req, res, next) => {
   const { id } = req.params;
   try {
@@ -62,6 +67,7 @@ exports.getTutorialById = async (req, res, next) => {
       where: { id: parseInt(id, 10) },
       include: {
         categories: true,
+        chains: true,
       },
     });
     if (!tutorial) {
@@ -74,4 +80,39 @@ exports.getTutorialById = async (req, res, next) => {
   }
 };
 
-// Similarly, implement getAllPodcasts, getPodcastById, etc.
+// Get all Podcasts
+exports.getAllPodcasts = async (req, res, next) => {
+  try {
+    const podcasts = await prisma.podcast.findMany({
+      include: {
+        categories: true,
+        chains: true,
+      },
+    });
+    res.json(podcasts);
+  } catch (error) {
+    console.error('Error fetching podcasts:', error);
+    next(createError(500, 'Error fetching podcasts'));
+  }
+};
+
+// Get Podcast by ID
+exports.getPodcastById = async (req, res, next) => {
+  const { id } = req.params;
+  try {
+    const podcast = await prisma.podcast.findUnique({
+      where: { id: parseInt(id, 10) },
+      include: {
+        categories: true,
+        chains: true,
+      },
+    });
+    if (!podcast) {
+      return next(createError(404, 'Podcast not found'));
+    }
+    res.json(podcast);
+  } catch (error) {
+    console.error('Error fetching podcast:', error);
+    next(createError(500, 'Error fetching podcast'));
+  }
+};
