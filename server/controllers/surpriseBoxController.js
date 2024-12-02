@@ -69,7 +69,7 @@ exports.updateSurpriseBoxes = async (req, res, next) => {
         data: {
           userId: userId,
           value: surprisePoint,
-          description: 'Academy Completion Bonus',
+          description: 'Surprise XP Boost',
         },
       });
     }
