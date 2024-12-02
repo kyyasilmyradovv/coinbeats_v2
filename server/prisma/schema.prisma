@@ -5,7 +5,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = "postgresql://coinbeats_prod_user:Onamission%23007@37.27.84.251:5433/coinbeats_development_3"
+  url      = env("DATABASE_URL")
 }
 
 model User {

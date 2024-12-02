@@ -287,8 +287,9 @@ const AcademyCompletionSlide: React.FC<AcademyCompletionSlideProps> = ({
                         <button className="absolute right-1 text-gray-500 hover:text-gray-700" onClick={() => setShowSurpriseBoxDialog(false)}>
                             <FaTimes size={20} />
                         </button>
-                        <div className="text-md font-bold text-center mt-4">Black Box</div>
                         <Lottie options={bunnyAnimation} height={200} width={200} />
+                        <div className="text-lg font-bold text-center mt-4">Wow!</div>
+                        <div className="text-lg font-bold text-center mt-4">You got a Black Box XP Boost! 🚀🚀</div>
                         <div className="flex flex-col items-center">
                             <div className="flex mt-4 mb-2 text-2xl font-bold items-end justify-center">
                                 <span className="mr-1">+</span>
