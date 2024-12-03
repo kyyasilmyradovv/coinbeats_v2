@@ -23,6 +23,7 @@ import useUserStore from '../store/useUserStore'
 import useAcademiesStore from '../store/useAcademiesStore'
 import useUserVerificationStore, { VerificationTask } from '../store/useUserVerificationStore'
 import useSurpriseBoxStore from '~/store/useSurpriseBoxStore'
+import useNotificationStore from '~/store/useNotificationStore'
 import coinStackIcon from '../images/coin-stack.png'
 import coinbeats from '../images/coinbeats-l.svg'
 import { Icon } from '@iconify/react'
@@ -489,29 +490,45 @@ export default function ProductPage() {
 
     const handleCompleteAcademy = async () => {
         try {
+            // Step 1: Submit the quiz
             await submitQuiz(academy.id, userId)
 
-            // Fetch updated total points from the backend
+            // Step 2: Fetch updated total points from the backend
             await fetchUserTotalPoints(userId)
 
-            // Fetch updated earnedPoints
+            // Step 3: Fetch updated earned points for the current academy
             fetchEarnedPoints(userId, academy.id)
 
-            // Update the store with the new completed academies count
+            // Step 4: Update the store with the new completed academies count
             const { increaseCompletedAcademies } = useSurpriseBoxStore.getState()
             increaseCompletedAcademies(userId)
 
+            // Step 5: Handle surprise box logic if applicable
             if (completedAcademies + 1 === nextBox) {
                 let randomSurprisePoint = (Math.floor(Math.random() * 10) + 1) * 500
 
                 setSurprisePoint(randomSurprisePoint)
                 setNextBox(userId, randomSurprisePoint)
 
-                // update user state total points
+                // Update user state total points in the store
                 const { totalPoints } = useUserStore.getState()
                 useUserStore.setState({ totalPoints: totalPoints + randomSurprisePoint })
             }
 
+            // Step 6: Fetch notifications to check for level-up or other events
+            const { fetchNotifications, showNotification } = useNotificationStore.getState()
+            await fetchNotifications()
+
+            // Get the first unread notification if available
+            const { notifications } = useNotificationStore.getState()
+            const unreadNotification = notifications.find((notif) => !notif.read)
+
+            // Step 7: If a notification exists, show the notification dialog
+            if (unreadNotification) {
+                showNotification(unreadNotification)
+            }
+
+            // Update the active filter to show completion view
             setActiveFilter('completion')
         } catch (error) {
             console.error('Error completing academy:', error)
