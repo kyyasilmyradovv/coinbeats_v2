@@ -11,6 +11,8 @@ import bunnyLogo from '../images/bunny-mascot.png'
 import useUserStore from '../store/useUserStore'
 import useTasksStore from '../store/useTasksStore'
 import useUserVerificationStore from '../store/useUserVerificationStore'
+import useAcademiesStore from '../store/useAcademiesStore'
+import useNotificationStore from '../store/useNotificationStore'
 import Lottie from 'react-lottie'
 import bunnyHappyAnimationData from '../animations/bunny-happy.json'
 import coinbeats from '../images/coinbeats-l.svg'
@@ -187,7 +189,6 @@ export default function GamesPage() {
         }
     }
 
-    // Handle feedback submission
     const handleSubmitFeedback = async () => {
         if (!selectedTask) return
         if (feedbackText.length < 100) {
@@ -200,15 +201,39 @@ export default function GamesPage() {
         try {
             await startTask(taskId)
             await submitTask(taskId, feedbackText)
+
             setFeedbackDialogOpen(false)
             setNotificationText('We appreciate your feedback very much! You have been awarded points for your feedback.')
             setNotificationOpen(true)
             setFeedbackText('')
             setSelectedTask(null)
 
+            // Fetch updated points and level
+            const { fetchUserTotalPoints } = useAcademiesStore.getState()
+            const { fetchUserLevel } = useUserStore.getState()
+            const userId = useUserStore.getState().userId
+
+            if (userId) {
+                await fetchUserTotalPoints(userId) // Update points
+                await fetchUserLevel() // Update level
+            }
+
+            // Fetch notifications to check for level-up or other events
+            const { fetchNotifications, showNotification } = useNotificationStore.getState()
+            await fetchNotifications()
+
+            // Get the first unread notification if available
+            const { notifications } = useNotificationStore.getState()
+            const unreadNotification = notifications.find((notif) => !notif.read)
+
+            // If a notification exists, show the notification dialog
+            if (unreadNotification) {
+                showNotification(unreadNotification)
+            }
+
             // Refresh user verification tasks
             await fetchUserVerificationTasks()
-        } catch (error: any) {
+        } catch (error) {
             console.error('Error submitting feedback:', error)
             const errorMessage = error.response?.data?.message || 'Submission failed. Please try again later.'
             setNotificationText(errorMessage)
@@ -216,7 +241,6 @@ export default function GamesPage() {
         }
     }
 
-    // Handle input submission for other tasks
     const handleSubmitInput = async () => {
         if (!selectedTask) return
         if (inputText.length < 5) {
@@ -230,9 +254,8 @@ export default function GamesPage() {
             await startTask(taskId)
             await submitTask(taskId, inputText)
 
-            // For PROVIDE_EMAIL task, immediately complete the task
             if (selectedTask.verificationMethod === 'PROVIDE_EMAIL') {
-                await completeTask(taskId)
+                await handleVerify(selectedTask) // Trigger full flow for completion
                 setNotificationText('Thank you! Your email has been submitted and the task is completed.')
             } else {
                 setNotificationText('Submission successful! You will be notified once it is verified.')
@@ -243,9 +266,31 @@ export default function GamesPage() {
             setInputText('')
             setSelectedTask(null)
 
+            // Fetch updated points and level
+            const { fetchUserTotalPoints } = useAcademiesStore.getState()
+            const { fetchUserLevel } = useUserStore.getState()
+            const userId = useUserStore.getState().userId
+
+            if (userId) {
+                await fetchUserTotalPoints(userId) // Update points
+                await fetchUserLevel() // Update level
+            }
+
+            // Fetch notifications
+            const { fetchNotifications, showNotification } = useNotificationStore.getState()
+            await fetchNotifications()
+
+            // Show any unread notifications
+            const { notifications } = useNotificationStore.getState()
+            const unreadNotification = notifications.find((notif) => !notif.read)
+
+            if (unreadNotification) {
+                showNotification(unreadNotification)
+            }
+
             // Refresh user verification tasks
             await fetchUserVerificationTasks()
-        } catch (error: any) {
+        } catch (error) {
             console.error('Error submitting input:', error)
             const errorMessage = error.response?.data?.message || 'Submission failed. Please try again later.'
             setNotificationText(errorMessage)
@@ -256,12 +301,35 @@ export default function GamesPage() {
     const handleVerify = async (task: VerificationTask) => {
         try {
             const message = await completeTask(task.id)
+
+            // Fetch updated points and level
+            const { fetchUserTotalPoints } = useAcademiesStore.getState()
+            const { fetchUserLevel } = useUserStore.getState()
+            const userId = useUserStore.getState().userId
+
+            if (userId) {
+                await fetchUserTotalPoints(userId) // Update points
+                await fetchUserLevel() // Update level
+            }
+
+            // Fetch notifications
+            const { fetchNotifications, showNotification } = useNotificationStore.getState()
+            await fetchNotifications()
+
+            // Show any unread notifications
+            const { notifications } = useNotificationStore.getState()
+            const unreadNotification = notifications.find((notif) => !notif.read)
+
+            if (unreadNotification) {
+                showNotification(unreadNotification)
+            }
+
             setNotificationText(message)
             setNotificationOpen(true)
 
             // Refresh user verification tasks
             await fetchUserVerificationTasks()
-        } catch (error: any) {
+        } catch (error) {
             console.error('Error completing task:', error)
             const errorMessage = error.response?.data?.message || 'Verification failed. Please try again later.'
             setNotificationText(errorMessage)

@@ -8,6 +8,8 @@ import axiosInstance from '../api/axiosInstance'
 import axios from 'axios'
 import useUserStore from '~/store/useUserStore'
 import useUserVerificationStore from '~/store/useUserVerificationStore'
+import useAcademiesStore from '~/store/useAcademiesStore'
+import useNotificationStore from '~/store/useNotificationStore'
 import { FaTwitter } from 'react-icons/fa'
 import bunnyLogo from '../images/bunny-mascot.png'
 import Lottie from 'react-lottie'
@@ -100,6 +102,10 @@ const AcademyCompletionSlide: React.FC<AcademyCompletionSlideProps> = ({
         fetchUserVerificationTasks: state.fetchUserVerificationTasks,
         completeTask: state.completeTask
     }))
+    const { fetchUserTotalPoints } = useAcademiesStore.getState()
+    const { fetchUserLevel } = useUserStore.getState()
+    const { fetchNotifications, showNotification } = useNotificationStore.getState()
+
     const [notificationOpen, setNotificationOpen] = useState(false)
     const [notificationText, setNotificationText] = useState('')
     const [selectedTask, setSelectedTask] = useState<VerificationTask | null>(null)
@@ -175,7 +181,8 @@ const AcademyCompletionSlide: React.FC<AcademyCompletionSlideProps> = ({
                 twitterAuthenticated,
                 academyName,
                 twitterHandle, // Pass the extracted Twitter handle here
-                telegramUserId
+                telegramUserId,
+                userId
             },
             academyId
         )
@@ -204,6 +211,24 @@ const AcademyCompletionSlide: React.FC<AcademyCompletionSlideProps> = ({
 
         try {
             const message = await completeTask(task.id, academyId)
+
+            // Fetch updated points and level
+            if (userId) {
+                await fetchUserTotalPoints(userId) // Update points
+                await fetchUserLevel() // Update level
+            }
+
+            // Fetch notifications
+            await fetchNotifications()
+
+            // Show any unread notifications
+            const { notifications } = useNotificationStore.getState()
+            const unreadNotification = notifications.find((notif) => !notif.read)
+
+            if (unreadNotification) {
+                showNotification(unreadNotification)
+            }
+
             setNotificationText(message)
             setNotificationOpen(true)
 
@@ -332,7 +357,7 @@ const AcademyCompletionSlide: React.FC<AcademyCompletionSlideProps> = ({
             </Dialog>
 
             {/* Feedback Dialog */}
-            {selectedTask && (
+            {selectedTask && feedbackDialogOpen && (
                 <Dialog
                     opened={feedbackDialogOpen}
                     onBackdropClick={() => setFeedbackDialogOpen(false)}

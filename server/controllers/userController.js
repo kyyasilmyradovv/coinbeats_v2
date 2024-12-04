@@ -645,8 +645,10 @@ exports.completeVerificationTask = async (req, res, next) => {
             },
           });
 
-          // Call checkAndApplyLevelUp
+          // Call checkAndApplyLevelUp to handle level up and notifications
+          console.log(`Calling checkAndApplyLevelUp for user ${userId}`);
           await checkAndApplyLevelUp(userId);
+          console.log(`Completed checkAndApplyLevelUp for user ${userId}`);
 
           return res.json({
             message: 'Task completed successfully',
@@ -1041,6 +1043,11 @@ exports.submitTask = async (req, res, next) => {
         },
       });
 
+      // Call checkAndApplyLevelUp to handle level up and notifications
+      console.log(`Calling checkAndApplyLevelUp for user ${userId}`);
+      await checkAndApplyLevelUp(userId);
+      console.log(`Completed checkAndApplyLevelUp for user ${userId}`);
+
       return res.json({
         message: 'Submission received and points awarded.',
       });
@@ -1175,6 +1182,11 @@ exports.checkReferralCompletion = async (req, res) => {
           );
         }
       }
+
+      // Call checkAndApplyLevelUp to handle level up and notifications
+      console.log(`Calling checkAndApplyLevelUp for user ${userId}`);
+      await checkAndApplyLevelUp(userId);
+      console.log(`Completed checkAndApplyLevelUp for user ${userId}`);
 
       return res.json({ isReferralComplete: true });
     } else {
