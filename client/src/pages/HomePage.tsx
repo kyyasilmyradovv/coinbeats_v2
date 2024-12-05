@@ -13,6 +13,7 @@ import { Page, List, ListInput, Card, Button, Dialog, Searchbar, Notification } 
 import { MdBookmarks } from 'react-icons/md'
 import { FaTelegramPlane, FaTimes } from 'react-icons/fa'
 import useUserStore from '../store/useUserStore'
+import useNotificationStore from '../store/useNotificationStore'
 import coins from '../images/coin-stack.png'
 import NewIcon from '../images/new.png'
 import AnimatedNumber from '../components/AnimatedNumber'
@@ -48,7 +49,7 @@ export default function HomePage() {
     // Add state variables for feedback handling
     const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false)
     const [feedbackText, setFeedbackText] = useState('')
-    const [selectedTask, setSelectedTask] = useState(null)
+    const [selectedTask, setSelectedTask] = useState<VerificationTask | null>(null)
 
     const {
         bookmarks,
@@ -62,7 +63,8 @@ export default function HomePage() {
         handleLoginStreak,
         addBookmark,
         twitterAuthenticated,
-        telegramUserId
+        telegramUserId,
+        fetchUserLevel // Added fetchUserLevel from useUserStore
     } = useUserStore((state) => ({
         bookmarks: state.bookmarks,
         userId: state.userId,
@@ -75,8 +77,12 @@ export default function HomePage() {
         handleLoginStreak: state.handleLoginStreak,
         addBookmark: state.addBookmark,
         twitterAuthenticated: state.twitterAuthenticated,
-        telegramUserId: state.telegramUserId
+        telegramUserId: state.telegramUserId,
+        fetchUserLevel: state.fetchUserLevel // Destructure fetchUserLevel
     }))
+
+    const { fetchUserTotalPoints } = useAcademiesStore.getState()
+    const { fetchNotifications, showNotification } = useNotificationStore.getState()
 
     const { categories, chains } = useCategoryChainStore((state) => ({
         categories: state.categories,
@@ -151,6 +157,23 @@ export default function HomePage() {
                     pointsAwarded: point.value
                 })
                 setShowLoginStreakDialog(true)
+
+                // Fetch updated points and level
+                if (userId) {
+                    await fetchUserTotalPoints(userId) // Update points
+                    await fetchUserLevel() // Update level
+                }
+
+                // Fetch notifications
+                await fetchNotifications()
+
+                // Show any unread notifications
+                const { notifications } = useNotificationStore.getState()
+                const unreadNotification = notifications.find((notif) => !notif.read)
+
+                if (unreadNotification) {
+                    showNotification(unreadNotification)
+                }
             }
         } catch (error) {
             console.error('Error handling login streak:', error)
@@ -164,6 +187,23 @@ export default function HomePage() {
             if (referralPointsAwarded && referralPointsAwarded > 0) {
                 // Show referral points dialog
                 setShowReferralPointsDialog(true)
+
+                // Fetch updated points and level
+                if (userId) {
+                    fetchUserTotalPoints(userId) // Update points
+                    fetchUserLevel() // Update level
+                }
+
+                // Fetch notifications
+                fetchNotifications()
+
+                // Show any unread notifications
+                const { notifications } = useNotificationStore.getState()
+                const unreadNotification = notifications.find((notif) => !notif.read)
+
+                if (unreadNotification) {
+                    showNotification(unreadNotification)
+                }
             } else {
                 // Proceed to login streak
                 handleLoginStreakLocal()
@@ -220,7 +260,7 @@ export default function HomePage() {
 
             if (rankA !== rankB) return rankA - rankB
 
-            // Sort further based on active filter
+            // Sort further based on activeFilter
             if (activeFilter === 'new') return new Date(b.createdAt) - new Date(a.createdAt)
             if (activeFilter === 'topRated') return b.xp - a.xp
 
@@ -316,6 +356,23 @@ export default function HomePage() {
             setNotificationOpen(true)
             setFeedbackText('')
             setSelectedTask(null)
+
+            // Fetch updated points and level
+            if (userId) {
+                await fetchUserTotalPoints(userId) // Update points
+                await fetchUserLevel() // Update level
+            }
+
+            // Fetch notifications
+            await fetchNotifications()
+
+            // Show any unread notifications
+            const { notifications } = useNotificationStore.getState()
+            const unreadNotification = notifications.find((notif) => !notif.read)
+
+            if (unreadNotification) {
+                showNotification(unreadNotification)
+            }
 
             // Refresh user verification tasks
             await fetchUserVerificationTasks()
