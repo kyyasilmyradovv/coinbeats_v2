@@ -93,11 +93,11 @@ const useUserVerificationStore = create<UserVerificationState>()(
 
             try {
                 const response = await axiosInstance.post('/api/users/complete-task', { taskId, userId, academyId })
-                const { message, point } = response.data
+                const { message, pointsAwarded } = response.data
 
-                if (point) {
-                    const { totalPoints } = useUserStore.getState()
-                    useUserStore.setState({ totalPoints: totalPoints + point.value })
+                if (pointsAwarded) {
+                    const { totalRaffles, totalPoints } = useUserStore.getState()
+                    useUserStore.setState({ totalPoints: totalPoints + pointsAwarded, totalRaffles: totalRaffles + pointsAwarded / 100 })
                 }
 
                 // Refresh user verification tasks

@@ -68,6 +68,20 @@ const checkAndApplyLevelUp = async (userId) => {
     });
     console.log(`Awarded ${newLevel.rewardPoints} points to user ${userId}`);
 
+    if (newLevel?.rewardPoints > 99) {
+      await prisma.raffle.create({
+        data: {
+          userId,
+          amount: newLevel?.rewardPoints / 100,
+          description: newLevel.levelName,
+        },
+      });
+      await prisma.user.update({
+        where: { id: userId },
+        data: { raffleAmount: { increment: newLevel?.rewardPoints / 100 } },
+      });
+    }
+
     // Create a notification for the user
     await prisma.notification.create({
       data: {

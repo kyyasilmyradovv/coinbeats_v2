@@ -22,12 +22,11 @@ import {
     shouldDisableActionButton,
     shouldDisableVerifyButton
 } from '../utils/actionHandlers'
-
-// Kyyas imports
 import bunnyAnimationData from '../animations/bunny.json'
 import coinsCreditedAnimationData from '../animations/coins-credited.json'
 import AnimatedNumber from '../components/AnimatedNumber'
 import { FaTimes } from 'react-icons/fa'
+import ticket from '../images/ticket.png'
 
 const coinsCreditedAnimation = {
     loop: true,
@@ -46,7 +45,6 @@ const bunnyAnimation = {
         preserveAspectRatio: 'xMidYMid slice'
     }
 }
-// Kyyas end
 
 interface VerificationTask {
     id: number
@@ -251,9 +249,19 @@ const AcademyCompletionSlide: React.FC<AcademyCompletionSlideProps> = ({
     return (
         <div className="flex flex-col items-center justify-center h-full mb-12">
             <h2 className="text-xl font-bold mb-4">In total you collected:</h2>
-            <div className="flex items-center justify-center text-4xl font-bold mb-8">
-                {earnedPoints} / {totalPoints} <img src={coinStack} alt="coin stack" className="w-12 h-12 ml-2 mb-2" />
+            <div className="flex items-end justify-between text-2xl font-bold mb-8 gap-4">
+                <div className="flex items-center">
+                    {earnedPoints} / {totalPoints}
+                    <img src={coinStack} alt="coin stack" className="w-12 h-12 ml-2 mb-2" />
+                </div>
+                {earnedPoints + surprisePoint > 99 && (
+                    <div className="flex items-center">
+                        +{Math.floor((earnedPoints + surprisePoint) / 100)}
+                        <img src={ticket} alt="ticket" className="w-12 h-12 ml-2 mb-2" />
+                    </div>
+                )}
             </div>
+
             <Button
                 large
                 rounded
@@ -279,7 +287,6 @@ const AcademyCompletionSlide: React.FC<AcademyCompletionSlideProps> = ({
             >
                 Explore more academies
             </Button>
-
             {/* Surprise Box  */}
             {showSurpriseBoxDialog && (
                 <Dialog opened={true} onBackdropClick={() => setShowSurpriseBoxDialog(false)} className="!m-0 !p-0 !rounded-2xl !bg-opacity-80">
@@ -291,12 +298,19 @@ const AcademyCompletionSlide: React.FC<AcademyCompletionSlideProps> = ({
                         <div className="text-lg font-bold text-center mt-4">Wow!</div>
                         <div className="text-lg font-bold text-center mt-4">You got a Black Box XP Boost! 🚀🚀</div>
                         <div className="flex flex-col items-center">
-                            <div className="flex mt-4 mb-2 text-2xl font-bold items-end justify-center">
+                            <div className="flex mt-4  text-2xl font-bold items-end justify-center">
                                 <span className="mr-1">+</span>
                                 <div className="mr-2">
                                     <AnimatedNumber target={surprisePoint} duration={2000} />
                                 </div>
                                 <Lottie options={coinsCreditedAnimation} height={60} width={60} />
+                            </div>
+                            <div className="flex mt-1 mb-2 text-2xl font-bold items-end justify-center">
+                                <span className="mr-1">+</span>
+                                <div className="mr-2">
+                                    <AnimatedNumber target={surprisePoint / 100} duration={2000} />
+                                </div>
+                                <img src={ticket} alt="Raffles" style={{ width: 36 }} />
                             </div>
                         </div>
                     </div>
@@ -330,7 +344,6 @@ const AcademyCompletionSlide: React.FC<AcademyCompletionSlideProps> = ({
                     </div>
                 </div>
             </Dialog>
-
             {/* Feedback Dialog */}
             {selectedTask && (
                 <Dialog
@@ -383,7 +396,6 @@ const AcademyCompletionSlide: React.FC<AcademyCompletionSlideProps> = ({
                     </div>
                 </Dialog>
             )}
-
             {/* Notification */}
             <Notification
                 className="fixed !mt-12 top-12 left-0 z-50 border"
@@ -433,7 +445,6 @@ const AcademyCompletionSlide: React.FC<AcademyCompletionSlideProps> = ({
                     </div>
                 )}
             </Notification>
-
             {/* Display End of Academy Tasks */}
             {endOfAcademyTasks.map((task) => {
                 // Find user verification for the current task

@@ -40,6 +40,8 @@ model User {
   UserVerification          UserVerification[]
   bookmarkedAcademies       Academy[]            @relation("BookmarkedAcademies")
   allowedAcademyTypes       AcademyType[]        @relation("UserAcademyTypes")
+  raffleAmount              Int                  @default(0)
+  raffles                   Raffle[]
 }
 
 model TwitterAccount {
@@ -164,15 +166,16 @@ model AcademyQuestion {
 }
 
 model Raffle {
-  id        Int     @id @default(autoincrement())
-  amount    Int
-  reward    String
-  currency  String
-  chain     String
-  dates     String
-  totalPool Int
-  academyId Int
-  academy   Academy @relation(fields: [academyId], references: [id])
+  id                 Int  @id @default(autoincrement())
+  amount             Int  @default(0)
+  desc               String?
+  createdAt          DateTime   @default(now())
+  academyId          Int?
+  taskId             Int?
+  userId             Int?
+  task               VerificationTask? @relation(fields: [taskId], references: [id])
+  academy            Academy? @relation(fields: [academyId], references: [id])
+  user               User? @relation(fields: [userId], references: [id])
 }
 
 model Quest {
@@ -306,6 +309,7 @@ model VerificationTask {
   userTaskSubmissions UserTaskSubmission[]
   userVerification    UserVerification[]
   academy             Academy?             @relation(fields: [academyId], references: [id])
+  raffles             Raffle[]
 }
 
 model UserVerification {
@@ -377,6 +381,12 @@ model SurpriseBox {
   lastBox            Int  @default(0)
   nextBox            Int  @default(3)
   user               User @relation(fields: [userId], references: [id])
+}
+
+model RaffleWinner {
+  id                 Int  @id @default(autoincrement())
+  minAmount          Int  @default(0)
+  winnersCount       Int  @default(0)
 }
 
 enum TaskType {

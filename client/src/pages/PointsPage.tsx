@@ -23,14 +23,31 @@ import { handleAction, copyReferralLink, handleInviteFriend, getActionLabel } fr
 import useUserVerificationStore from '../store/useUserVerificationStore'
 import { VerificationTask, CharacterLevel } from '../types'
 import useCharacterLevelStore from '../store/useCharacterLevelStore'
+import ticket from '../images/ticket.png'
+import ToggleOffOutlinedIcon from '@mui/icons-material/ToggleOffOutlined'
+import ToggleOnOutlinedIcon from '@mui/icons-material/ToggleOnOutlined'
 
 const PointsPage: React.FC = () => {
-    const { userId, totalPoints, userPoints, fetchUserPoints, referralCode, twitterAuthenticated, telegramUserId } = useUserStore((state) => ({
+    const {
+        userId,
+        totalPoints,
+        totalRaffles,
+        userPoints,
+        fetchUserPoints,
+        userRaffles,
+        fetchUserRaffles,
+        referralCode,
+        twitterAuthenticated,
+        telegramUserId
+    } = useUserStore((state) => ({
         userId: state.userId,
         totalPoints: state.totalPoints,
+        totalRaffles: state.totalRaffles,
         userName: state.username,
         userPoints: state.userPoints,
         fetchUserPoints: state.fetchUserPoints,
+        userRaffles: state.userRaffles,
+        fetchUserRaffles: state.fetchUserRaffles,
         referralCode: state.referralCode,
         twitterAuthenticated: state.twitterAuthenticated,
         telegramUserId: state.telegramUserId
@@ -76,6 +93,8 @@ const PointsPage: React.FC = () => {
     const [feedbackText, setFeedbackText] = useState('')
     const [selectedTask, setSelectedTask] = useState<VerificationTask | null>(null)
 
+    const [pointOrRaffle, setPointOrRaffle] = useState('point')
+
     const constructImageUrl = (url: string) => {
         return `https://subscribes.lt/${url}`
     }
@@ -84,6 +103,16 @@ const PointsPage: React.FC = () => {
     const constructLottieFileUrl = (url: string) => {
         return `https://subscribes.lt/${url}`
     }
+
+    console.log('---barde')
+    console.log('---barde')
+    console.log('---barde')
+    console.log('---barde')
+    console.log(totalPoints, totalRaffles)
+    console.log('---barde')
+    console.log('---barde')
+    console.log('---barde')
+    console.log('---barde')
 
     const [startOfWeek, setStartOfWeek] = useState<Date | null>(null)
     const [endOfWeek, setEndOfWeek] = useState<Date | null>(null)
@@ -143,6 +172,12 @@ const PointsPage: React.FC = () => {
             fetchUserPoints(userId)
         }
     }, [userId, fetchUserPoints])
+
+    useEffect(() => {
+        if (userId) {
+            fetchUserRaffles(userId)
+        }
+    }, [userId, fetchUserRaffles])
 
     useEffect(() => {
         if (userId) {
@@ -319,8 +354,15 @@ const PointsPage: React.FC = () => {
                                 </div>
                                 {/* Total Points and Next Level Info */}
                                 <div className="flex justify-between mt-1">
-                                    {/* Total Points */}
-                                    <div className="text-sm font-bold text-black dark:text-white">{totalPoints} coins</div>
+                                    {/* Total Points & Raffles */}
+                                    <div>
+                                        <div style={{ display: 'flex', gap: '2px' }} className="text-sm font-bold text-black dark:text-white">
+                                            <img src={coinStack} alt="Tickets" className="w-5 h-5 ml-2 flex-shrink-0" /> {totalPoints}
+                                        </div>
+                                        <div style={{ display: 'flex', gap: '2px' }} className="text-sm font-bold text-black dark:text-white">
+                                            <img src={ticket} alt="Raffles" className="w-5 h-5 ml-2 flex-shrink-0" /> {totalRaffles}
+                                        </div>
+                                    </div>
                                     {/* Next Level Info */}
                                     {nextLevel && (
                                         <div className="text-right">
@@ -658,17 +700,83 @@ const PointsPage: React.FC = () => {
                             <>
                                 {/* Your Points Breakdown Card */}
                                 <Card className="!mb-18 !p-4 !rounded-2xl shadow-lg !mx-2 relative border border-gray-300 dark:border-gray-600">
-                                    <h2 className="text-sm font-bold mb-4">Your Points Breakdown</h2>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', right: 0 }}>
+                                        <h2 className="text-sm font-bold mb-4">
+                                            {pointOrRaffle === 'point' ? 'Your Points Breakdown' : 'Your Raffles Breakdown'}
+                                        </h2>
+                                        <div style={{ display: 'flex', gap: '8px' }}>
+                                            <img src={coinStack} alt="Coins" className="w-6 h-6  flex-shrink-0" />
+
+                                            {pointOrRaffle === 'point' ? (
+                                                <ToggleOffOutlinedIcon
+                                                    style={{ fontSize: '25px' }}
+                                                    onClick={() => {
+                                                        setPointOrRaffle(pointOrRaffle === 'point' ? 'raffle' : 'point')
+                                                    }}
+                                                />
+                                            ) : (
+                                                <ToggleOnOutlinedIcon
+                                                    style={{ fontSize: '25px' }}
+                                                    onClick={() => {
+                                                        setPointOrRaffle(pointOrRaffle === 'point' ? 'raffle' : 'point')
+                                                    }}
+                                                />
+                                            )}
+
+                                            <img src={ticket} alt="Raffles" className="w-6 h-6  flex-shrink-0" />
+                                        </div>
+                                    </div>
 
                                     {/* Sort userPoints by createdAt in descending order */}
-                                    {userPoints
-                                        .sort((a, b) => {
-                                            const dateA = new Date(a.createdAt)
-                                            const dateB = new Date(b.createdAt)
+                                    {pointOrRaffle === 'point' &&
+                                        userPoints
+                                            .sort((a, b) => {
+                                                const dateA = new Date(a.createdAt)
+                                                const dateB = new Date(b.createdAt)
 
-                                            return dateB.getTime() - dateA.getTime() // Sort by newest first
-                                        })
-                                        .map((point, index) => (
+                                                return dateB.getTime() - dateA.getTime() // Sort by newest first
+                                            })
+                                            .map((point, index) => (
+                                                <div key={index} className="flex items-center mb-4 justify-between">
+                                                    <div className="bg-gray-900 mr-4 items-center justify-center text-center rounded-md w-7 h-6 flex-shrink-0 flex">
+                                                        {point.academy ? (
+                                                            <img
+                                                                src={constructImageUrl(point.academy.logoUrl)}
+                                                                className="h-5 w-5 rounded-full"
+                                                                alt="academy logo"
+                                                            />
+                                                        ) : point.verificationTask?.platform && platformIcons[point.verificationTask.platform] ? (
+                                                            platformIcons[point.verificationTask.platform]
+                                                        ) : point.verificationTask?.platform === 'NONE' ? (
+                                                            <img src={bunny} alt="Coins" className="h-5 w-5" />
+                                                        ) : point.verificationTask?.verificationMethod === 'INVITE_TELEGRAM_FRIEND' ? (
+                                                            <img src={bunny} alt="Bunny" className="h-5 w-5" />
+                                                        ) : point.description ? (
+                                                            <img src={Trophy} alt="Level Up" className="h-5 w-5" /> // Use a trophy or level-up icon
+                                                        ) : (
+                                                            <img src={bunny} alt="Coins" className="h-5 w-5" />
+                                                        )}
+                                                    </div>
+                                                    <div className="flex flex-col w-full">
+                                                        <div className="flex justify-between items-center">
+                                                            <p className="text-sm font-semibold dark:text-gray-100">
+                                                                {point.academy
+                                                                    ? point.academy.name
+                                                                    : point.verificationTask?.name ||
+                                                                      point.description || // Display description if available
+                                                                      'Level Up Reward'}{' '}
+                                                            </p>
+                                                            <div className="flex items-center w-20 justify-end">
+                                                                <p className="text-sm font-semibold dark:text-gray-100">+{point.value}</p>
+                                                                <img src={coinStack} alt="Coins" className="w-5 h-5 ml-2 flex-shrink-0" />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+
+                                    {pointOrRaffle === 'raffle' &&
+                                        userRaffles.map((point, index) => (
                                             <div key={index} className="flex items-center mb-4 justify-between">
                                                 <div className="bg-gray-900 mr-4 items-center justify-center text-center rounded-md w-7 h-6 flex-shrink-0 flex">
                                                     {point.academy ? (
@@ -677,14 +785,14 @@ const PointsPage: React.FC = () => {
                                                             className="h-5 w-5 rounded-full"
                                                             alt="academy logo"
                                                         />
-                                                    ) : point.verificationTask?.platform && platformIcons[point.verificationTask.platform] ? (
-                                                        platformIcons[point.verificationTask.platform]
-                                                    ) : point.verificationTask?.platform === 'NONE' ? (
+                                                    ) : point.task?.platform && platformIcons[point.task.platform] ? (
+                                                        platformIcons[point.task.platform]
+                                                    ) : point.task?.platform === 'NONE' ? (
                                                         <img src={bunny} alt="Coins" className="h-5 w-5" />
-                                                    ) : point.verificationTask?.verificationMethod === 'INVITE_TELEGRAM_FRIEND' ? (
+                                                    ) : point.task?.verificationMethod === 'INVITE_TELEGRAM_FRIEND' ? (
                                                         <img src={bunny} alt="Bunny" className="h-5 w-5" />
                                                     ) : point.description ? (
-                                                        <img src={Trophy} alt="Level Up" className="h-5 w-5" /> // Use a trophy or level-up icon
+                                                        <img src={Trophy} alt="Level Up" className="h-5 w-5" />
                                                     ) : (
                                                         <img src={bunny} alt="Coins" className="h-5 w-5" />
                                                     )}
@@ -692,15 +800,11 @@ const PointsPage: React.FC = () => {
                                                 <div className="flex flex-col w-full">
                                                     <div className="flex justify-between items-center">
                                                         <p className="text-sm font-semibold dark:text-gray-100">
-                                                            {point.academy
-                                                                ? point.academy.name
-                                                                : point.verificationTask?.name ||
-                                                                  point.description || // Display description if available
-                                                                  'Level Up Reward'}{' '}
+                                                            {point.academy ? point.academy.name : point.task?.name || point.description || 'Level Up Reward'}{' '}
                                                         </p>
                                                         <div className="flex items-center w-20 justify-end">
-                                                            <p className="text-sm font-semibold dark:text-gray-100">+{point.value}</p>
-                                                            <img src={coinStack} alt="Coins" className="w-5 h-5 ml-2 flex-shrink-0" />
+                                                            <p className="text-sm font-semibold dark:text-gray-100">+{point.amount}</p>
+                                                            <img src={ticket} alt="Raffles" className="w-5 h-5 ml-2 flex-shrink-0" />
                                                         </div>
                                                     </div>
                                                 </div>

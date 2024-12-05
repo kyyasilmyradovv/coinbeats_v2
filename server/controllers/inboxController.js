@@ -127,6 +127,21 @@ exports.creditUserForFeedback = async (req, res, next) => {
       },
     });
 
+    // TODO: test on the development when available again
+    if (pointsAwarded > 99) {
+      await prisma.raffle.create({
+        data: {
+          userId,
+          taskId: parseInt(submission.taskId, 10),
+          amount: pointsAwarded / 100,
+        },
+      });
+      await prisma.user.update({
+        where: { id: userId },
+        data: { raffleAmount: { increment: pointsAwarded / 100 } },
+      });
+    }
+
     // Mark the submission as processed
     await prisma.userTaskSubmission.update({
       where: { id: submission.id },

@@ -508,8 +508,8 @@ export default function ProductPage() {
                 setNextBox(userId, randomSurprisePoint)
 
                 // update user state total points
-                const { totalPoints } = useUserStore.getState()
-                useUserStore.setState({ totalPoints: totalPoints + randomSurprisePoint })
+                const { totalRaffles, totalPoints } = useUserStore.getState()
+                useUserStore.setState({ totalPoints: totalPoints + randomSurprisePoint, totalRaffles: totalRaffles + randomSurprisePoint / 100 })
             }
 
             setActiveFilter('completion')

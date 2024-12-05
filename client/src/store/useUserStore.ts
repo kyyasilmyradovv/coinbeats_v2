@@ -15,8 +15,10 @@ interface UserState {
     emailConfirmed: boolean
     roles: UserRole[]
     totalPoints: number
+    totalRaffles: number
     points: any[]
     userPoints: any[]
+    userRaffles: any[]
     bookmarks: Array<any>
     authenticated: boolean
     token: string | null
@@ -47,6 +49,7 @@ interface UserState {
         emailConfirmed: boolean
         roles: UserRole[]
         totalPoints: number
+        totalRaffles: number
         points: any[]
         bookmarks: Array<any>
         token: string
@@ -77,12 +80,14 @@ interface UserState {
     addBookmark: (academyId: number) => Promise<void>
     fetchBookmarkedAcademies: (userId: number) => Promise<void>
     fetchUserPoints: (userId: number) => Promise<void>
+    fetchUserRaffles: (userId: number) => Promise<void>
     fetchTwitterAuthStatus: () => Promise<void>
     removeTwitterAccount: () => Promise<string>
 
     fetchUserLevel: () => Promise<void> // New method to fetch user level
 
     updateTotalPoints: (points: number) => void
+    updateTotalRaffles: (amount: number) => void
 }
 
 const useUserStore = create<UserState>()(
@@ -94,8 +99,10 @@ const useUserStore = create<UserState>()(
         emailConfirmed: false,
         roles: ['USER'],
         totalPoints: 0,
+        totalRaffles: 0,
         points: [],
         userPoints: [],
+        userRaffles: [],
         bookmarks: [],
         authenticated: false,
         token: null,
@@ -132,6 +139,7 @@ const useUserStore = create<UserState>()(
             emailConfirmed,
             roles,
             totalPoints,
+            totalRaffles,
             points,
             bookmarks,
             token,
@@ -150,8 +158,10 @@ const useUserStore = create<UserState>()(
                 emailConfirmed,
                 roles,
                 totalPoints,
+                totalRaffles,
                 points,
                 userPoints: [],
+                userRaffles: [],
                 bookmarks,
                 authenticated: true,
                 token,
@@ -174,8 +184,10 @@ const useUserStore = create<UserState>()(
                 emailConfirmed: false,
                 roles: ['USER'],
                 totalPoints: 0,
+                totalRaffles: 0,
                 points: [],
                 userPoints: [],
+                userRaffles: [],
                 bookmarks: [],
                 authenticated: false,
                 token: null,
@@ -233,7 +245,8 @@ const useUserStore = create<UserState>()(
                         erc20WalletAddress,
                         solanaWalletAddress,
                         tonWalletAddress,
-                        characterLevel // Include character level
+                        characterLevel, // Include character level
+                        raffleAmount
                     } = response.data
                     const hasAcademy = academies && academies.length > 0
                     const totalPoints = points ? points.reduce((sum: number, point: any) => sum + point.value, 0) : 0
@@ -246,8 +259,10 @@ const useUserStore = create<UserState>()(
                         emailConfirmed: emailConfirmed,
                         roles: roles,
                         totalPoints: totalPoints,
+                        totalRaffles: raffleAmount,
                         points: points || [],
                         userPoints: [],
+                        userRaffles: [],
                         bookmarks: bookmarkedAcademies || [],
                         authenticated: true,
                         hasAcademy: hasAcademy,
@@ -297,8 +312,10 @@ const useUserStore = create<UserState>()(
                     emailConfirmed: userData.emailConfirmed,
                     roles: userData.roles,
                     totalPoints: totalPoints,
+                    totalRaffles: userData.raffleAmount,
                     points: userData.points || [],
                     userPoints: [],
+                    userRaffles: [],
                     bookmarks: userData.bookmarkedAcademies || [],
                     authenticated: true,
                     hasAcademy: hasAcademy,
@@ -331,6 +348,7 @@ const useUserStore = create<UserState>()(
 
                     set({
                         totalPoints,
+                        totalRaffles: get().totalRaffles || 0 + point / 100,
                         points: [...currentPoints, point],
                         loginStreakData: userVerification // Store login streak data if needed
                     })
@@ -362,7 +380,9 @@ const useUserStore = create<UserState>()(
                     roles: userData.roles,
                     totalPoints: userData.points ? userData.points.reduce((sum: number, point: any) => sum + point.value, 0) : 0,
                     points: userData.points || [],
+                    totalRaffles: userData?.raffleAmount,
                     userPoints: [],
+                    userRaffles: [],
                     bookmarks: userData.bookmarkedAcademies || [],
                     authenticated: true,
                     hasAcademy: userData.academies && userData.academies.length > 0,
@@ -422,8 +442,28 @@ const useUserStore = create<UserState>()(
             }
         },
 
+        // Fetches user raffles
+        fetchUserRaffles: async (userId) => {
+            if (!userId) {
+                console.error('User ID is null or undefined, not fetching user points.')
+                return
+            }
+
+            try {
+                const response = await axiosInstance.get(`/api/raffle?userId=${userId}`)
+                console.log('Fetched Raffles:', response.data)
+                set({ userRaffles: response.data })
+            } catch (error) {
+                console.error('Error fetching user points:', error)
+            }
+        },
+
         updateTotalPoints: (points) => {
-            set((state) => ({ totalPoints: state.totalPoints + points }))
+            set((state) => ({ totalPoints: state.totalPoints + points, totalRaffles: state.totalRaffles + points / 100 }))
+        },
+
+        updateTotalRaffles: (amount) => {
+            set((state) => ({ totalRaffles: state.totalRaffles + amount }))
         },
 
         fetchTwitterAuthStatus: async () => {
