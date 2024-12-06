@@ -104,16 +104,6 @@ const PointsPage: React.FC = () => {
         return `https://subscribes.lt/${url}`
     }
 
-    console.log('---barde')
-    console.log('---barde')
-    console.log('---barde')
-    console.log('---barde')
-    console.log(totalPoints, totalRaffles)
-    console.log('---barde')
-    console.log('---barde')
-    console.log('---barde')
-    console.log('---barde')
-
     const [startOfWeek, setStartOfWeek] = useState<Date | null>(null)
     const [endOfWeek, setEndOfWeek] = useState<Date | null>(null)
 

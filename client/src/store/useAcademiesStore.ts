@@ -73,6 +73,7 @@ interface AcademiesState {
 
     submitQuiz: (academyId: number, userId: number) => Promise<void>
     fetchUserTotalPoints: (userId: number) => Promise<void>
+    fetchUserTotalRaffles: (userId: number) => Promise<void>
     fetchAcademyById: (id: number) => Promise<AcademyData>
 }
 
@@ -297,6 +298,18 @@ const useAcademiesStore = create<AcademiesState>()(
                     ...state,
                     totalPoints,
                     points: userPoints
+                }))
+            } catch (error) {
+                console.error('Error fetching user total points:', error)
+            }
+        },
+
+        fetchUserTotalRaffles: async (userId) => {
+            try {
+                const response = await axiosInstance.get(`/api/raffle/total/?userId=${userId}`)
+                useUserStore.setState((state) => ({
+                    ...state,
+                    totalRaffles: response.data
                 }))
             } catch (error) {
                 console.error('Error fetching user total points:', error)

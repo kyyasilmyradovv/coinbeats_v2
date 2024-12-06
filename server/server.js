@@ -94,6 +94,9 @@ app.use(
   express.static(path.join(__dirname, 'public', 'downloads'))
 ); // <-- Added this line
 
+// Add cron jobs
+require('./utils/cronJobs.js');
+
 // Catch 404 and forward to error handler
 app.use((req, res, next) => {
   next(createError(404, 'Not Found'));

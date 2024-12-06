@@ -42,6 +42,7 @@ model User {
   allowedAcademyTypes       AcademyType[]        @relation("UserAcademyTypes")
   raffleAmount              Int                  @default(0)
   raffles                   Raffle[]
+  raffleWins                RaffleWinners[]
 }
 
 model TwitterAccount {
@@ -383,10 +384,33 @@ model SurpriseBox {
   user               User @relation(fields: [userId], references: [id])
 }
 
-model RaffleWinner {
-  id                 Int  @id @default(autoincrement())
-  minAmount          Int  @default(0)
-  winnersCount       Int  @default(0)
+model OverallRaffle {
+  id                 Int          @id @default(autoincrement())
+  minAmount          Int          @default(0)
+  winnersCount       Int          @default(0)
+  deadline           DateTime?
+  minPoints          Int?
+}
+
+model RafflesHistory {
+  id                 Int          @id @default(autoincrement())
+  name               String?
+  startDate          DateTime?    @db.Date
+  endDate            DateTime?    @db.Date
+  winnersCount       Int?
+  minPoints          Int?
+  minRaffles         Int?
+  winners            RaffleWinners[]
+}
+
+model RaffleWinners {
+  id                 Int          @id @default(autoincrement())
+  winningAmount      Int?
+  raffleAmount       Int?
+  userId             Int
+  historyId          Int
+  user               User @relation(fields: [userId], references: [id])
+  history            RafflesHistory @relation(fields: [historyId], references: [id])
 }
 
 enum TaskType {

@@ -110,6 +110,7 @@ export default function ProductPage() {
         saveResponse,
         submitQuiz,
         fetchUserTotalPoints,
+        fetchUserTotalRaffles,
         questions,
         quests
     } = useAcademiesStore((state) => ({
@@ -122,6 +123,7 @@ export default function ProductPage() {
         saveResponse: state.saveResponse,
         submitQuiz: state.submitQuiz,
         fetchUserTotalPoints: state.fetchUserTotalPoints,
+        fetchUserTotalRaffles: state.fetchUserTotalRaffles,
         questions: state.questions,
         quests: state.quests
     }))
@@ -493,6 +495,8 @@ export default function ProductPage() {
 
             // Fetch updated total points from the backend
             await fetchUserTotalPoints(userId)
+
+            await fetchUserTotalRaffles(userId)
 
             // Fetch updated earnedPoints
             fetchEarnedPoints(userId, academy.id)
