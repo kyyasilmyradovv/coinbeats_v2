@@ -12,7 +12,7 @@ COPY package.json pnpm-lock.yaml ./
 RUN pnpm install
 
 # Install clinic globally for monitoring
-RUN npm install -g clinic
+RUN pnpm install -g clinic
 
 # Copy the rest of the application code
 COPY . .
