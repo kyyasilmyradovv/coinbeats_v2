@@ -11,16 +11,13 @@ RUN npm install -g pnpm
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install
 
-# Install clinic globally for monitoring
-RUN pnpm install -g clinic
-
 # Copy the rest of the application code
 COPY . .
 
 RUN pnpm prisma generate
 
 # Expose the ports
-EXPOSE 4000 9229
+EXPOSE 4000
 
-# Start the server with clinic.js
-CMD ["clinic", "doctor", "--", "pnpm", "start"]
+# Start the server
+CMD ["pnpm", "start"]
