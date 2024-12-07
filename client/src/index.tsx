@@ -21,7 +21,7 @@ if (darkMode) {
 
 const root = createRoot(document.getElementById('root')!)
 
-const MAINTENANCE_MODE = import.meta.env.VITE_MAINTENANCE_MODE
+const MAINTENANCE_MODE = false
 
 const Index = () => {
     useEffect(() => {
