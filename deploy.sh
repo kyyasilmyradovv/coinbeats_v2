@@ -1,4 +1,4 @@
-#!/bin/bash
+# deploy.sh: Script to deploy the application
 
 # Paths
 DEPLOYMENT_CONF="/etc/nginx/conf.d/deployment.conf"

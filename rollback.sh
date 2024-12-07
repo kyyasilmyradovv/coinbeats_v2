@@ -1,4 +1,4 @@
-#!/bin/bash
+# rollback.sh: Script to rollback the deployment to the previous deployment
 
 # Paths
 DEPLOYMENT_CONF="/etc/nginx/conf.d/deployment.conf"

@@ -1,10 +1,11 @@
 // client/src/index.tsx
 
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter as Router } from 'react-router-dom'
 import App from './App'
 import IntroPage from './components/IntroPage'
+import MaintenancePage from './components/MaintenancePage'
 import * as serviceWorker from './serviceWorker'
 import { SDKProvider } from '@telegram-apps/sdk-react'
 
@@ -20,10 +21,27 @@ if (darkMode) {
 
 const root = createRoot(document.getElementById('root')!)
 
-const Index = () => {
-    const [showIntro, setShowIntro] = useState(true) // Control intro visibility
+const MAINTENANCE_MODE = import.meta.env.VITE_MAINTENANCE_MODE
 
-    // Once the intro completes, show the main app
+const Index = () => {
+    useEffect(() => {
+        // Remove the spinner if it exists
+        const spinner = document.getElementById('initial-spinner')
+        if (spinner) {
+            spinner.remove()
+        }
+    }, [])
+
+    if (MAINTENANCE_MODE) {
+        return (
+            <React.StrictMode>
+                <MaintenancePage />
+            </React.StrictMode>
+        )
+    }
+
+    // If not in maintenance mode, show the normal intro -> app flow
+    const [showIntro, setShowIntro] = React.useState(true)
     const handleIntroComplete = () => {
         setShowIntro(false)
     }
@@ -31,10 +49,7 @@ const Index = () => {
     return (
         <React.StrictMode>
             <SDKProvider>
-                <Router>
-                    {/* Display IntroPage until the intro is done */}
-                    {showIntro ? <IntroPage onComplete={handleIntroComplete} /> : <App />}
-                </Router>
+                <Router>{showIntro ? <IntroPage onComplete={handleIntroComplete} /> : <App />}</Router>
             </SDKProvider>
         </React.StrictMode>
     )
