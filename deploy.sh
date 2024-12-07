@@ -40,9 +40,13 @@ sleep 10
 
 # Update the deployment variable
 echo "Updating deployment configuration..."
+#echo 'map "" $deployment {
+#    default "'$NEW_DEPLOYMENT'";
+#}' | sudo tee $DEPLOYMENT_CONF >/dev/null
+
 echo 'map "" $deployment {
     default "'$NEW_DEPLOYMENT'";
-}' | sudo tee $DEPLOYMENT_CONF >/dev/null
+}' | tee $DEPLOYMENT_CONF > /dev/null
 
 # Reload Nginx
 echo "Reloading Nginx..."
