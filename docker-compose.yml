@@ -1,4 +1,30 @@
 services:
+  postgres-production:
+    image: postgres:latest
+    container_name: coinbeats-production-database
+    environment:
+      POSTGRES_USER: coinbeats_prod_user
+      POSTGRES_PASSWORD: Onamission#007
+      POSTGRES_DB: coinbeats_prod_db
+    volumes:
+      - coinbeats_prod_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    restart: always
+
+  postgres-development:
+    image: postgres:latest
+    container_name: coinbeats-development-database
+    environment:
+      POSTGRES_USER: coinbeats_dev_user
+      POSTGRES_PASSWORD: Onamission#007
+      POSTGRES_DB: coinbeats_dev_db
+    volumes:
+      - coinbeats_dev_data:/var/lib/postgresql/data
+    ports:
+      - "5434:5432"
+    restart: always
+
   frontend-blue:
     build:
       context: ./client
@@ -60,4 +86,6 @@ networks:
     external: true
 
 volumes:
+  coinbeats_prod_data:
+  coinbeats_dev_data:
   uploads:
