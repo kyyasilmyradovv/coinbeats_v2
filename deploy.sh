@@ -1,3 +1,4 @@
+#!/bin/bash
 # deploy.sh: Script to deploy the application
 
 # Paths
@@ -11,7 +12,7 @@ get_current_deployment() {
 CURRENT_DEPLOYMENT=$(get_current_deployment)
 echo "Current deployment is: $CURRENT_DEPLOYMENT"
 
-if [ "$CURRENT_DEPLOYMENT" == "blue" ]; then
+if [ "$CURRENT_DEPLOYMENT" = "blue" ]; then
   NEW_DEPLOYMENT="green"
   OLD_DEPLOYMENT="blue"
 else
@@ -40,18 +41,13 @@ sleep 10
 
 # Update the deployment variable
 echo "Updating deployment configuration..."
-#echo 'map "" $deployment {
-#    default "'$NEW_DEPLOYMENT'";
-#}' | sudo tee $DEPLOYMENT_CONF >/dev/null
-
 echo 'map "" $deployment {
     default "'$NEW_DEPLOYMENT'";
-}' | tee $DEPLOYMENT_CONF > /dev/null
+}' | tee $DEPLOYMENT_CONF >/dev/null
 
 # Reload Nginx
 echo "Reloading Nginx..."
-sudo nginx -t && sudo nginx -s reload
+nginx -t && nginx -s reload
 
 echo "Switched deployment to $NEW_DEPLOYMENT"
 echo "If issues occur, run './rollback.sh' to revert."
-
