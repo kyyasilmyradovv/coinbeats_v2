@@ -77,12 +77,12 @@ const PointsPage: React.FC = () => {
     const [selectedTask, setSelectedTask] = useState<VerificationTask | null>(null)
 
     const constructImageUrl = (url: string) => {
-        return `https://subscribes.lt/${url}`
+        return `https://telegram.coinbeats.xyz/${url}`
     }
 
     // Updated constructLottieFileUrl function
     const constructLottieFileUrl = (url: string) => {
-        return `https://subscribes.lt/${url}`
+        return `https://telegram.coinbeats.xyz/${url}`
     }
 
     const [startOfWeek, setStartOfWeek] = useState<Date | null>(null)

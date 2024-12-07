@@ -117,7 +117,7 @@ const EditAcademyPage: React.FC = () => {
     }
 
     const constructImageUrl = (url: string) => {
-        return `https://subscribes.lt/${url}`
+        return `https://telegram.coinbeats.xyz/${url}`
     }
 
     const handleSubmit = async () => {

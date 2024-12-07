@@ -307,7 +307,7 @@ const useAcademiesStore = create<AcademiesState>()(
 
 // Utility function to construct image URL
 const constructImageUrl = (url: string) => {
-    return `https://subscribes.lt/${url}`
+    return `https://telegram.coinbeats.xyz/${url}`
 }
 
 // Utility function to shuffle an array

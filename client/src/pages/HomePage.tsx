@@ -272,7 +272,7 @@ export default function HomePage() {
     }, [academies, category, chain, searchQuery, activeFilter, points])
 
     const constructImageUrl = (url) => {
-        return `https://subscribes.lt/${url}`
+        return `https://telegram.coinbeats.xyz/${url}`
     }
 
     const handleBookmark = async (academy) => {

@@ -121,8 +121,7 @@ const DiscoverPage: React.FC = () => {
 
     // Function to construct image URLs
     const constructImageUrl = (url: string) => {
-        // return `https://subscribes.lt/${url}`
-        return `http://localhost:4004/${url}`
+        return `https://telegram.coinbeats.xyz/${url}`
     }
 
     return (

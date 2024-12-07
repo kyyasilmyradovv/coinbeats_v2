@@ -384,7 +384,7 @@ export default function ProductPage() {
         setActiveFilter(null)
     }
 
-    const constructImageUrl = (url: string) => `https://subscribes.lt/${url}`
+    const constructImageUrl = (url: string) => `https://telegram.coinbeats.xyz/${url}`
 
     const handleChoiceClick = (questionIndex: number, choiceIndex: number) => {
         setInitialAnswers(initialAnswers.map((q, qi) => (qi === questionIndex ? { ...q, selectedChoice: choiceIndex } : q)))

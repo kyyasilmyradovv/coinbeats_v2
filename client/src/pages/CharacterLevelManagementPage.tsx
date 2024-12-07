@@ -152,7 +152,7 @@ const CharacterLevelManagementPage: React.FC = () => {
     }
 
     const constructLottieFileUrl = (url: string) => {
-        return `https://subscribes.lt/${url}`
+        return `https://telegram.coinbeats.xyz/${url}`
     }
 
     return (

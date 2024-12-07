@@ -36,7 +36,7 @@ interface Submission {
 }
 
 const constructImageUrl = (url: string) => {
-    return `https://subscribes.lt/${url}`
+    return `https://telegram.coinbeats.xyz/${url}`
 }
 
 const InboxPage: React.FC = () => {
