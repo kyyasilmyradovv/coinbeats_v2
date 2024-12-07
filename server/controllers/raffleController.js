@@ -18,8 +18,8 @@ exports.getMyRaffles = async (req, res, next) => {
 
     res.status(200).json(raffles);
   } catch (error) {
-    console.error('Error fetching surprise box:', error);
-    next(createError(500, 'Error fetching surprise box'));
+    console.error('Error fetching my raffles:', error);
+    next(createError(500, 'Error fetching my raffles'));
   }
 };
 
@@ -61,7 +61,7 @@ exports.getOverallRaffle = async (req, res, next) => {
 
 exports.updateOverallRaffle = async (req, res, next) => {
   try {
-    let { minAmount, minPoints, winnersCount, deadline } = req.body;
+    let { minAmount, minPoints, winnersCount, deadline, reward } = req.body;
 
     if (deadline) deadline = new Date(deadline);
 
@@ -71,6 +71,7 @@ exports.updateOverallRaffle = async (req, res, next) => {
         minPoints: +minPoints,
         winnersCount: +winnersCount,
         deadline,
+        reward,
       },
     });
 

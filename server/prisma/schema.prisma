@@ -390,6 +390,7 @@ model OverallRaffle {
   winnersCount       Int          @default(0)
   deadline           DateTime?
   minPoints          Int?
+  reward             String?
 }
 
 model RafflesHistory {

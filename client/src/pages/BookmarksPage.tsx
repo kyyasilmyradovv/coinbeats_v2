@@ -1,6 +1,6 @@
 // src/pages/BookmarksPage.js
 
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Page, Button } from 'konsta/react'
 import Navbar from '../components/common/Navbar'
 import Sidebar from '../components/common/Sidebar'
@@ -14,54 +14,93 @@ import aurelius from '../images/aurelius.png'
 import aarna from '../images/aarna.png'
 import skale from '../images/skale.png'
 import clip from '../images/clip.png'
+import coinbeats from '../images/coinbeats-l.svg'
 import coming from '../images/svgs/coming-soon3.svg'
+import axiosInstance from '~/api/axiosInstance'
+import useUserStore from '~/store/useUserStore'
 
-// Sample academy data (replace with real data later)
-const academies = [
-    {
-        name: 'Clip Finance',
-        logoUrl: clip,
-        nextRaffleDate: '10/12/2024',
-        reward: '200 USDC',
-        winners: '10 x 20 USDC',
-        remainingDays: 9,
-        inMyRaffles: true
-    },
-    {
-        name: 'SKALE Network',
-        logoUrl: skale,
-        nextRaffleDate: '10/20/2024',
-        reward: '100 USDC',
-        winners: '5 x 20 USDC',
-        remainingDays: 17,
-        inMyRaffles: false
-    },
-    {
-        name: 'Aarna',
-        logoUrl: aarna,
-        nextRaffleDate: '10/28/2024',
-        reward: '300 USDC',
-        winners: '15 x 20 USDC',
-        remainingDays: 25,
-        inMyRaffles: true
-    },
-    {
-        name: 'Aurelius Finance',
-        logoUrl: aurelius,
-        nextRaffleDate: '11/02/2024',
-        reward: '250 USDC',
-        winners: '10 x 25 USDC',
-        remainingDays: 30,
-        inMyRaffles: false
-    }
-]
+interface AcademyInterface {
+    name: string
+    logoUrl: string
+    nextRaffleDate: string
+    reward: string
+    winners: string
+    remainingDays: number
+    inMyRaffles: boolean
+}
 
 export default function BookmarksPage() {
+    const { totalRaffles } = useUserStore()
+
     const [headerTab, setHeaderTab] = useState('all')
     const [activeTab, setActiveTab] = useState('tab-2')
+    const [academies, setAcademies] = useState<AcademyInterface[]>([])
+
+    useEffect(() => {
+        const fetchCoinBeatsRaffle = async () => {
+            try {
+                const response = await axiosInstance.get('/api/raffle/overall')
+
+                const today = new Date()
+                const deadline = new Date(response.data?.deadline)
+
+                setAcademies([
+                    {
+                        name: 'CoinBeats',
+                        logoUrl: coinbeats,
+                        nextRaffleDate: deadline.toLocaleDateString(),
+                        reward: response.data?.reward,
+                        winners: `${response.data?.winnersCount} x ${response.data?.reward}`,
+                        remainingDays: Math.ceil((deadline.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)),
+                        inMyRaffles: true
+                    },
+                    {
+                        name: 'Clip Finance',
+                        logoUrl: clip,
+                        nextRaffleDate: '10/12/2024',
+                        reward: '200 USDC',
+                        winners: '10 x 20 USDC',
+                        remainingDays: 9,
+                        inMyRaffles: true
+                    },
+                    {
+                        name: 'SKALE Network',
+                        logoUrl: skale,
+                        nextRaffleDate: '10/20/2024',
+                        reward: '100 USDC',
+                        winners: '5 x 20 USDC',
+                        remainingDays: 17,
+                        inMyRaffles: false
+                    },
+                    {
+                        name: 'Aarna',
+                        logoUrl: aarna,
+                        nextRaffleDate: '10/28/2024',
+                        reward: '300 USDC',
+                        winners: '15 x 20 USDC',
+                        remainingDays: 25,
+                        inMyRaffles: true
+                    },
+                    {
+                        name: 'Aurelius Finance',
+                        logoUrl: aurelius,
+                        nextRaffleDate: '11/02/2024',
+                        reward: '250 USDC',
+                        winners: '10 x 25 USDC',
+                        remainingDays: 30,
+                        inMyRaffles: false
+                    }
+                ])
+            } catch (error) {
+                console.error('Error fetching overall raffle:', error)
+            }
+        }
+
+        fetchCoinBeatsRaffle()
+    }, [])
 
     // Filter academies based on active tab
-    const filteredAcademies = academies.filter((academy) => headerTab === 'all' || (headerTab === 'my' && academy.inMyRaffles))
+    const filteredAcademies = academies?.filter((academy) => headerTab === 'all' || (headerTab === 'my' && academy.inMyRaffles))
 
     return (
         <Page>
@@ -150,7 +189,7 @@ export default function BookmarksPage() {
                                             color: '#fff'
                                         }}
                                     >
-                                        {academy.inMyRaffles ? '5 Entries' : 'Join'}
+                                        {index === 0 ? `${totalRaffles} Entries` : academy.inMyRaffles ? '5 Entries' : 'Join'}
                                     </Button>
                                     <div className="text-sm font-bold flex items-center">
                                         <img src={moneyBag} className="h-6 w-6 mr-1" alt="Money bag icon" /> {academy.reward}

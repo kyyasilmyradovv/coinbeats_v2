@@ -13,12 +13,6 @@ const {
 const router = express.Router();
 
 // Admin routes for overall raffles
-router.get(
-  '/overall',
-  authenticateToken,
-  authorizeRoles('SUPERADMIN'),
-  asyncHandler(getOverallRaffle)
-);
 router.put(
   '/overall',
   authenticateToken,
@@ -39,6 +33,7 @@ router.get(
 );
 
 // User apis
+router.get('/overall', asyncHandler(getOverallRaffle));
 router.get('/total', asyncHandler(getMyTotalRaffles));
 router.get('/', asyncHandler(getMyRaffles));
 

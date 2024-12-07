@@ -14,6 +14,7 @@ interface RaffleDataInterface {
     minPoints: number
     winnersCount: number
     deadline: string
+    reward: string
 }
 
 interface RafflesHistoryInterface {
@@ -160,6 +161,14 @@ const OverallRaffleManagementPage: React.FC = () => {
                                 })
                         }
                         placeholder="Enter deadline"
+                    />
+                    <ListInput
+                        label="Reward"
+                        type="string"
+                        outline
+                        value={overallRaffleData?.reward}
+                        onChange={(e) => updateSetOverallRaffleData({ reward: e.target?.value })}
+                        placeholder="Enter reward with currency"
                     />
                 </List>
                 <Button large rounded onClick={handleSave} className="!w-[90%] !mx-auto">

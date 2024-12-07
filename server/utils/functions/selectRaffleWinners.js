@@ -83,7 +83,7 @@ const selectRaffleWinners = async () => {
     // Create RaffleWinners for each winning user
     const raffleWinnersData = users.map((user) => ({
       raffleAmount: user.raffleAmount,
-      //   winningAmount: 10,
+      // winningAmount: 10,
       historyId: newRaffleHistory.id,
       userId: user.id,
     }));
