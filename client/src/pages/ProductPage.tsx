@@ -111,6 +111,7 @@ export default function ProductPage() {
         saveResponse,
         submitQuiz,
         fetchUserTotalPoints,
+        fetchUserTotalRaffles,
         questions,
         quests
     } = useAcademiesStore((state) => ({
@@ -123,6 +124,7 @@ export default function ProductPage() {
         saveResponse: state.saveResponse,
         submitQuiz: state.submitQuiz,
         fetchUserTotalPoints: state.fetchUserTotalPoints,
+        fetchUserTotalRaffles: state.fetchUserTotalRaffles,
         questions: state.questions,
         quests: state.quests
     }))
@@ -496,7 +498,9 @@ export default function ProductPage() {
             // Step 2: Fetch updated total points from the backend
             await fetchUserTotalPoints(userId)
 
-            // Step 3: Fetch updated earned points for the current academy
+            await fetchUserTotalRaffles(userId)
+
+            // Fetch updated earnedPoints
             fetchEarnedPoints(userId, academy.id)
 
             // Step 4: Update the store with the new completed academies count
@@ -510,9 +514,9 @@ export default function ProductPage() {
                 setSurprisePoint(randomSurprisePoint)
                 setNextBox(userId, randomSurprisePoint)
 
-                // Update user state total points in the store
-                const { totalPoints } = useUserStore.getState()
-                useUserStore.setState({ totalPoints: totalPoints + randomSurprisePoint })
+                // update user state total points
+                const { totalRaffles, totalPoints } = useUserStore.getState()
+                useUserStore.setState({ totalPoints: totalPoints + randomSurprisePoint, totalRaffles: totalRaffles + randomSurprisePoint / 100 })
             }
 
             // Step 6: Fetch notifications to check for level-up or other events

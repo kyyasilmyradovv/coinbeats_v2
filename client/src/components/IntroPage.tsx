@@ -16,6 +16,7 @@ import useSessionStore from '../store/useSessionStore'
 import useUserStore from '../store/useUserStore'
 import useNotificationStore from '../store/useNotificationStore'
 import axiosInstance from '~/api/axiosInstance'
+import useRafflesStore from '~/store/useRafflesStore'
 
 interface IntroPageProps {
     onComplete: () => void // Function to call when the intro is complete
@@ -27,6 +28,7 @@ const IntroPage: React.FC<IntroPageProps> = ({ onComplete }) => {
 
     const { fetchAcademiesAndPreloadImages } = useAcademiesStore()
     const { fetchUserPoints } = usePointsStore()
+    const { fetchUserRaffles } = useRafflesStore()
     const { fetchLeaderboards } = useLeaderboardStore()
     const { fetchVerificationTasks, fetchGameTasks } = useTasksStore()
     const { fetchUserVerificationTasks } = useUserVerificationStore()
@@ -153,6 +155,7 @@ const IntroPage: React.FC<IntroPageProps> = ({ onComplete }) => {
                 await Promise.all([
                     fetchAcademiesAndPreloadImages(),
                     fetchUserPoints(),
+                    fetchUserRaffles(),
                     fetchLeaderboards(),
                     fetchVerificationTasks(),
                     fetchGameTasks(),

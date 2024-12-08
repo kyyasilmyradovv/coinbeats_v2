@@ -167,6 +167,21 @@ exports.registerUser = async (req, res, next) => {
           });
           console.log('Point record created for new user.');
 
+          // TODO: ask Timo about it because i cant check it
+          // if (xpAwarded > 99) {
+          //   await prisma.raffle.create({
+          //     data: {
+          //       userId: user?.id,
+          //       amount: xpAwarded / 100,
+          //       taskId: verificationTask.id,
+          //     },
+          //   });
+          //   await prisma.user.update({
+          //     where: { id: user?.id },
+          //     data: { raffleAmount: { increment: xpAwarded / 100 } },
+          //   });
+          // }
+
           // Create UserVerification record for the new user
           await prisma.userVerification.create({
             data: {

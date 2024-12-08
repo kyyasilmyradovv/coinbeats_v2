@@ -36,6 +36,7 @@ const superadminRoutes = require('./routes/superadmin');
 const discoverRoutes = require('./routes/discover');
 const contentRoutes = require('./routes/content');
 const surpriseBoxRoutes = require('./routes/surpriseBox');
+const raffleRoutes = require('./routes/raffle');
 const downloadRoutes = require('./routes/downloadRoutes'); // <-- Added this line
 
 // Initialize Express app
@@ -83,6 +84,7 @@ app.use('/api/superadmin', superadminRoutes);
 app.use('/api/discover', discoverRoutes);
 app.use('/api/content', contentRoutes);
 app.use('/api/surprise-box', surpriseBoxRoutes);
+app.use('/api/raffle', raffleRoutes);
 app.use('/api', downloadRoutes); // <-- Added this line
 
 // Serve static files
@@ -91,6 +93,9 @@ app.use(
   '/downloads',
   express.static(path.join(__dirname, 'public', 'downloads'))
 ); // <-- Added this line
+
+// Add cron jobs
+require('./utils/cronJobs.js');
 
 // Catch 404 and forward to error handler
 app.use((req, res, next) => {

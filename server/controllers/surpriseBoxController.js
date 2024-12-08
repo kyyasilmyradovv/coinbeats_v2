@@ -67,10 +67,22 @@ exports.updateSurpriseBoxes = async (req, res, next) => {
     if (surprisePoint > 0) {
       await prisma.point.create({
         data: {
-          userId: userId,
+          userId,
           value: surprisePoint,
           description: 'Surprise XP Boost',
         },
+      });
+
+      await prisma.raffle.create({
+        data: {
+          userId,
+          desc: 'Surprise Raffle Boost',
+          amount: surprisePoint / 100,
+        },
+      });
+      await prisma.user.update({
+        where: { id: userId },
+        data: { raffleAmount: { increment: surprisePoint / 100 } },
       });
     }
 

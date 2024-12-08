@@ -581,13 +581,30 @@ exports.completeVerificationTask = async (req, res, next) => {
           `Awarded ${verificationTask.xp} points to user ${userId} for task ${taskId}`
         );
 
+        if (verificationTask.xp > 99) {
+          await prisma.raffle.create({
+            data: {
+              userId,
+              amount: verificationTask.xp / 100,
+              taskId: taskId,
+              academyId: academyId || null,
+            },
+          });
+          await prisma.user.update({
+            where: { id: userId },
+            data: { raffleAmount: { increment: verificationTask.xp / 100 } },
+          });
+        }
+
         // Call checkAndApplyLevelUp to handle level up and notifications
         console.log(`Calling checkAndApplyLevelUp for user ${userId}`);
         await checkAndApplyLevelUp(userId);
         console.log(`Completed checkAndApplyLevelUp for user ${userId}`);
 
         return res.json({
-          message: 'Task completed successfully',
+          message: `Task completed successfully. You have earned ${
+            verificationTask.xp
+          } Points + ${verificationTask.xp / 100} Raffle entries`,
           pointsAwarded: verificationTask.xp,
         });
       } else {
@@ -645,13 +662,28 @@ exports.completeVerificationTask = async (req, res, next) => {
             },
           });
 
-          // Call checkAndApplyLevelUp to handle level up and notifications
-          console.log(`Calling checkAndApplyLevelUp for user ${userId}`);
+          if (verificationTask.xp > 99) {
+            await prisma.raffle.create({
+              data: {
+                userId,
+                amount: verificationTask.xp / 100,
+                taskId: taskId,
+                academyId: academyId || null,
+              },
+            });
+            await prisma.user.update({
+              where: { id: userId },
+              data: { raffleAmount: { increment: verificationTask.xp / 100 } },
+            });
+          }
+
+          // Call checkAndApplyLevelUp
           await checkAndApplyLevelUp(userId);
-          console.log(`Completed checkAndApplyLevelUp for user ${userId}`);
 
           return res.json({
-            message: 'Task completed successfully',
+            message: `Task completed successfully. You have earned ${
+              verificationTask.xp
+            } Points + ${verificationTask.xp / 100} Raffle entries`,
             pointsAwarded: verificationTask.xp,
           });
         } else {
@@ -842,6 +874,22 @@ exports.handleLoginStreak = async (req, res, next) => {
     console.log(
       `Awarded ${userVerification.pointsAwarded} points to user ${userId} for login streak`
     );
+
+    if (userVerification.pointsAwarded > 99) {
+      await prisma.raffle.create({
+        data: {
+          userId,
+          amount: userVerification.pointsAwarded / 100,
+          taskId: verificationTask.id,
+        },
+      });
+      await prisma.user.update({
+        where: { id: userId },
+        data: {
+          raffleAmount: { increment: userVerification.pointsAwarded / 100 },
+        },
+      });
+    }
 
     // Call checkAndApplyLevelUp to handle level up and notifications
     console.log(`Calling checkAndApplyLevelUp for user ${userId}`);
@@ -1043,11 +1091,6 @@ exports.submitTask = async (req, res, next) => {
         },
       });
 
-      // Call checkAndApplyLevelUp to handle level up and notifications
-      console.log(`Calling checkAndApplyLevelUp for user ${userId}`);
-      await checkAndApplyLevelUp(userId);
-      console.log(`Completed checkAndApplyLevelUp for user ${userId}`);
-
       return res.json({
         message: 'Submission received and points awarded.',
       });
@@ -1162,6 +1205,20 @@ exports.checkReferralCompletion = async (req, res) => {
 
           console.log('Point record created for referring user.');
 
+          if (xpAwarded > 99) {
+            await prisma.raffle.create({
+              data: {
+                userId: referringUserId,
+                amount: xpAwarded / 100,
+                taskId: verificationTask.id,
+              },
+            });
+            await prisma.user.update({
+              where: { id: referringUserId },
+              data: { raffleAmount: { increment: xpAwarded / 100 } },
+            });
+          }
+
           // Update UserVerification record for the referring user
           await prisma.userVerification.updateMany({
             where: {
@@ -1182,11 +1239,6 @@ exports.checkReferralCompletion = async (req, res) => {
           );
         }
       }
-
-      // Call checkAndApplyLevelUp to handle level up and notifications
-      console.log(`Calling checkAndApplyLevelUp for user ${userId}`);
-      await checkAndApplyLevelUp(userId);
-      console.log(`Completed checkAndApplyLevelUp for user ${userId}`);
 
       return res.json({ isReferralComplete: true });
     } else {

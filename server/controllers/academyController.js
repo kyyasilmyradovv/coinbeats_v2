@@ -538,27 +538,28 @@ exports.updateAcademy = async (req, res, next) => {
     }
 
     // Handle raffles
-    if (parsedRaffles !== undefined) {
-      // Delete existing raffles
-      await prisma.raffle.deleteMany({
-        where: { academyId: parseInt(id, 10) },
-      });
+    // Commented beacuse raffle table has changed
+    // if (parsedRaffles !== undefined) {
+    //   // Delete existing raffles
+    //   await prisma.raffle.deleteMany({
+    //     where: { academyId: parseInt(id, 10) },
+    //   });
 
-      // Create new raffles
-      if (parsedRaffles.length > 0) {
-        await prisma.raffle.createMany({
-          data: parsedRaffles.map((raffle) => ({
-            academyId: parseInt(id, 10),
-            amount: parseInt(raffle.amount, 10) || 0,
-            reward: raffle.reward || '',
-            currency: raffle.currency || '',
-            chain: raffle.chain || '',
-            dates: raffle.dates || '',
-            totalPool: parseInt(raffle.totalPool, 10) || 0,
-          })),
-        });
-      }
-    }
+    // Create new raffles
+    // if (parsedRaffles.length > 0) {
+    //   await prisma.raffle.createMany({
+    //     data: parsedRaffles.map((raffle) => ({
+    //       academyId: parseInt(id, 10),
+    //       amount: parseInt(raffle.amount, 10) || 0,
+    //       reward: raffle.reward || '',
+    //       currency: raffle.currency || '',
+    //       chain: raffle.chain || '',
+    //       dates: raffle.dates || '',
+    //       totalPool: parseInt(raffle.totalPool, 10) || 0,
+    //     })),
+    //   });
+    // }
+    // }
 
     // Handle quests
     if (parsedQuests !== undefined) {
@@ -1153,6 +1154,7 @@ exports.submitQuizAnswers = async (req, res, next) => {
         where: { id: existingPoints.id },
         data: { value: totalPoints },
       });
+      // await prisma.raffle.create();  // commented because nothing inserted here and also raffle table has changed
       console.log(
         `Updated existing points record for user ${userId} and academy ${academyId}`
       );
@@ -1168,6 +1170,20 @@ exports.submitQuizAnswers = async (req, res, next) => {
       console.log(
         `Created new points record for user ${userId} and academy ${academyId}`
       );
+    }
+
+    if (totalPoints > 99) {
+      await prisma.raffle.create({
+        data: {
+          userId,
+          academyId: parseInt(academyId, 10),
+          amount: totalPoints / 100,
+        },
+      });
+      await prisma.user.update({
+        where: { id: userId },
+        data: { raffleAmount: { increment: totalPoints / 100 } },
+      });
     }
 
     // Call checkAndApplyLevelUp to handle level up and notifications

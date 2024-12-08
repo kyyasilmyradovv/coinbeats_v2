@@ -45,6 +45,7 @@ import CharacterLevelManagementPage from './pages/CharacterLevelManagementPage'
 // Import the NotificationDialog component and the notification store
 import NotificationDialog from './components/NotificationDialog'
 import useNotificationStore from './store/useNotificationStore'
+import OverallRaffleManagementPage from './pages/OverallRaffleManagementPage'
 
 function RootComponent() {
     const [isLoading, setIsLoading] = useState(true)
@@ -238,6 +239,14 @@ function RootComponent() {
                             element={
                                 <RouteGuard requiredRole="SUPERADMIN">
                                     <ScholarshipManagementPage />
+                                </RouteGuard>
+                            }
+                        />
+                        <Route
+                            path="/overall-raffle-management"
+                            element={
+                                <RouteGuard requiredRole="SUPERADMIN">
+                                    <OverallRaffleManagementPage />
                                 </RouteGuard>
                             }
                         />
