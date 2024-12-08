@@ -53,42 +53,6 @@ export default function BookmarksPage() {
                         winners: `${response.data?.winnersCount} x ${response.data?.reward}`,
                         remainingDays: Math.ceil((deadline.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)),
                         inMyRaffles: true
-                    },
-                    {
-                        name: 'Clip Finance',
-                        logoUrl: clip,
-                        nextRaffleDate: '10/12/2024',
-                        reward: '200 USDC',
-                        winners: '10 x 20 USDC',
-                        remainingDays: 9,
-                        inMyRaffles: true
-                    },
-                    {
-                        name: 'SKALE Network',
-                        logoUrl: skale,
-                        nextRaffleDate: '10/20/2024',
-                        reward: '100 USDC',
-                        winners: '5 x 20 USDC',
-                        remainingDays: 17,
-                        inMyRaffles: false
-                    },
-                    {
-                        name: 'Aarna',
-                        logoUrl: aarna,
-                        nextRaffleDate: '10/28/2024',
-                        reward: '300 USDC',
-                        winners: '15 x 20 USDC',
-                        remainingDays: 25,
-                        inMyRaffles: true
-                    },
-                    {
-                        name: 'Aurelius Finance',
-                        logoUrl: aurelius,
-                        nextRaffleDate: '11/02/2024',
-                        reward: '250 USDC',
-                        winners: '10 x 25 USDC',
-                        remainingDays: 30,
-                        inMyRaffles: false
                     }
                 ])
             } catch (error) {
@@ -140,10 +104,10 @@ export default function BookmarksPage() {
                         </Button>
                     </div>
 
-                    {/* Coming Soon Sign Centered */}
+                    {/* Coming Soon Sign Centered
                     <div className="flex items-center justify-center z-40 pointer-events-none mx-auto w-full mb-2">
                         <img src={coming} className="h-16 rotate-[3deg]" alt="Coming Soon" />
-                    </div>
+                    </div> */}
 
                     {/* Cards Layout */}
                     <div className="grid grid-cols-1 gap-4 px-4">
