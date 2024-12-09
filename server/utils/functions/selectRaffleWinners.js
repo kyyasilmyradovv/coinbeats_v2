@@ -25,12 +25,11 @@ const selectRaffleWinners = async () => {
     const deadlineDay = deadlineDate.getUTCDate();
     const deadlineHour = deadlineDate.getUTCHours();
 
-    // Check if year, month, day, and hour match
+    // Check if year, month, day match
     if (
       nowYear !== deadlineYear ||
       nowMonth !== deadlineMonth ||
-      nowDate !== deadlineDay ||
-      nowHour !== deadlineHour
+      nowDate !== deadlineDay
     ) {
       console.log('This is not the right time to run raffle selection.');
       return;
@@ -102,7 +101,15 @@ const selectRaffleWinners = async () => {
     }));
 
     const a = await prisma.notification.createMany({ data: notificationsData });
-    console.log('Winners selected');
+
+    // Set all users' raffles to zero to restart the competition
+    await prisma.$queryRaw`UPDATE "User" set "raffleAmount" = 0;`;
+    await prisma.$queryRaw`DELETE FROM "Raffle";`;
+
+    console.log(
+      'Overall Raffle Winners selection script has Executed. Time: ',
+      new Date()
+    );
   } catch (error) {
     console.log(error);
     throw new Error(error);

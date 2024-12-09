@@ -716,7 +716,6 @@ const PointsPage: React.FC = () => {
                                             <img src={ticket} alt="Raffles" className="w-6 h-6  flex-shrink-0" />
                                         </div>
                                     </div>
-
                                     {/* Sort userPoints by createdAt in descending order */}
                                     {pointOrRaffle === 'point' &&
                                         userPoints
@@ -764,7 +763,6 @@ const PointsPage: React.FC = () => {
                                                     </div>
                                                 </div>
                                             ))}
-
                                     {pointOrRaffle === 'raffle' &&
                                         userRaffles.map((point, index) => (
                                             <div key={index} className="flex items-center mb-4 justify-between">
@@ -800,6 +798,7 @@ const PointsPage: React.FC = () => {
                                                 </div>
                                             </div>
                                         ))}
+                                    {userRaffles?.length === 0 && <div>CoinBeats Weekly Raffle Resets every week</div>}
                                 </Card>
                             </>
                         )}
