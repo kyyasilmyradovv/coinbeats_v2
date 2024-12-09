@@ -75,7 +75,7 @@ export default function BookmarksPage() {
                 <div className="absolute inset-0 bg-black opacity-50 z-0"></div>
                 <div className="relative z-10">
                     {/* Tabs */}
-                    <div className="flex justify-center gap-2 mt-4 mx-4 relative z-10 px-4 pt-4 mb-2">
+                    <div className="flex justify-center gap-2 mt-4 mx-4 relative z-10 px-4 pt-4 mb-6">
                         <Button
                             outline
                             rounded

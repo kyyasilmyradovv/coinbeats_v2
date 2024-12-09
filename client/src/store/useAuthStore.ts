@@ -22,7 +22,7 @@ const useAuthStore = create<AuthState>()(
         (set) => ({
             accessToken: null,
             refreshToken: null,
-            userRoles: [], // Initialize as an empty array
+            userRoles: ['USER'], // Initialize as an empty array
 
             // Login method to authenticate user
             login: async (email, password) => {
@@ -49,10 +49,12 @@ const useAuthStore = create<AuthState>()(
             // Logout method to clear tokens and user info
             logout: () => {
                 console.log('Logging out and clearing tokens...')
-                set({ accessToken: null, refreshToken: null, userRoles: [] })
+                set({ accessToken: null, refreshToken: null, userRoles: ['USER'] })
                 localStorage.removeItem('accessToken')
                 localStorage.removeItem('refreshToken')
             },
+
+            setUserRoles: (roles: string[]) => set({ userRoles: roles }),
 
             refreshAccessToken: async () => {
                 try {
