@@ -101,9 +101,19 @@ const Sidebar: React.FC = () => {
         return (
             <>
                 {uniqueMenuItems.map((item, index) => (
-                    <Button key={index} raised rounded onClick={() => handleNavigation(item.path)}>
+                    <button
+                        key={index}
+                        onClick={() => handleNavigation(item.path)}
+                        style={{
+                            background: 'linear-gradient(to left, #3b82f6, #ff0077)', // Purple-blue gradient
+                            color: '#fff',
+                            border: '1px solid #DE47F0',
+                            borderRadius: '9999px'
+                        }}
+                        className="w-full py-1 px-4 text-center font-semibold !mt-2"
+                    >
                         {item.label}
-                    </Button>
+                    </button>
                 ))}
             </>
         )
@@ -113,8 +123,8 @@ const Sidebar: React.FC = () => {
         <Panel side="right" floating opened={sidebarOpened} onBackdropClick={toggleSidebar}>
             <Page>
                 <Block className="space-y-4">
-                    <BlockTitle className="mb-1">Connect your TON Wallet</BlockTitle>
-                    <TonConnectButton className="mx-auto" />
+                    {/* <BlockTitle className="mb-1">Connect your TON Wallet</BlockTitle>
+                    <TonConnectButton className="mx-auto" /> */}
 
                     {/* <BlockTitle>Theme</BlockTitle>
                     <List strong inset>
