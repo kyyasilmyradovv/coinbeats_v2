@@ -50,7 +50,8 @@ const OverallRaffleManagementPage: React.FC = () => {
             try {
                 const response = await axiosInstance.get('/api/raffle/overall')
 
-                response.data.deadline = format(utcToZonedTime(new Date(response.data.deadline), 'Europe/Berlin'), 'yyyy-MM-dd HH:mm:ss')
+                // response.data.deadline = format(utcToZonedTime(new Date(response.data.deadline), 'Europe/Berlin'), 'yyyy-MM-dd HH:mm:ss')
+                response.data.deadline = format(new Date(response.data.deadline), 'yyyy-MM-dd HH:mm:ss')
 
                 setOverallRaffleData(response.data)
             } catch (error) {
@@ -157,7 +158,8 @@ const OverallRaffleManagementPage: React.FC = () => {
                             // (e) => updateSetOverallRaffleData({ deadline: e.target?.value })
                             (e) =>
                                 updateSetOverallRaffleData({
-                                    deadline: format(utcToZonedTime(new Date(e.target?.value), 'Europe/Berlin'), 'yyyy-MM-dd HH:mm:ss')
+                                    // deadline: format(utcToZonedTime(new Date(e.target?.value), 'Europe/Berlin'), 'yyyy-MM-dd HH:mm:ss')
+                                    deadline: e.target?.value
                                 })
                         }
                         placeholder="Enter deadline"
