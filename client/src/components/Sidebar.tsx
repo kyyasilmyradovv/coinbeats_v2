@@ -33,7 +33,6 @@ const Sidebar: React.FC = () => {
 
     const handleLogout = () => {
         useAuthStore.getState().logout() // Clear store and tokens
-        useUserStore.getState().logoutUser() // Clear user state
         navigate('/login') // Redirect to login page
         toggleSidebar() // Close sidebar
     }

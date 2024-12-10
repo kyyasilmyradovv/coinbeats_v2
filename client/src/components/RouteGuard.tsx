@@ -15,18 +15,19 @@ const RouteGuard: React.FC<RouteGuardProps> = ({ children, requiredRole }) => {
         userRoles: state.userRoles
     }))
 
+    console.log('Access Token:', accessToken)
+    console.log('User Roles:', userRoles)
+
     if (!accessToken) {
-        // User is not authenticated, redirect to login page
+        console.warn('No access token, redirecting to login')
         return <Navigate to="/login" replace />
     }
 
     if (requiredRole && !userRoles.includes(requiredRole)) {
-        // User is authenticated but does not have the required role
-        console.log(`User roles are ${userRoles.join(', ')}, but required role is ${requiredRole}`)
+        console.warn(`User lacks role: ${requiredRole}. Roles are: ${userRoles}`)
         return <Navigate to="/not-authorized" replace />
     }
 
-    // User is authenticated and authorized
     return children
 }
 
