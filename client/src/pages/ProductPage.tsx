@@ -76,8 +76,9 @@ export default function ProductPage() {
     const [currentPoints, setCurrentPoints] = useState(0)
     const [showXPAnimation, setShowXPAnimation] = useState(false)
     const swiperRef = useRef<any>(null)
-    const { userId, setUser, referralCode } = useUserStore((state) => ({
+    const { userId, setUser, referralCode, telegramUserId } = useUserStore((state) => ({
         userId: state.userId,
+        telegramUserId: state.telegramUserId,
         setUser: state.setUser,
         referralCode: state.referralCode
     }))
@@ -494,64 +495,91 @@ export default function ProductPage() {
     }, [userId, loadSurpriseBoxData])
 
     const handleCompleteAcademy = async () => {
+        console.log('handleCompleteAcademy called')
         try {
+            console.log('Submitting quiz for academy ID:', academy?.id, 'userId:', userId)
             // Step 1: Submit the quiz
             await submitQuiz(academy.id, userId)
+            console.log('Quiz submitted successfully')
 
             // Step 2: Fetch updated total points from the backend
+            console.log('Fetching updated total points for user:', userId)
             await fetchUserTotalPoints(userId)
+            console.log('Total points fetched')
+
+            console.log('Fetching updated total raffles for user:', userId)
             await fetchUserTotalRaffles(userId)
+            console.log('Total raffles fetched')
 
             // Fetch updated earnedPoints
-            fetchEarnedPoints(userId, academy.id)
+            console.log('Fetching earned points for user:', userId, 'academy:', academy.id)
+            await fetchEarnedPoints(userId, academy.id)
+            console.log('Earned points fetched')
 
             // Step 4: Update the store with the new completed academies count
+            console.log('Increasing completed academies count for user:', userId)
             const { increaseCompletedAcademies } = useSurpriseBoxStore.getState()
             increaseCompletedAcademies(userId)
 
             // Step 5: Handle surprise box logic if applicable
+            console.log('Checking surprise box logic. completedAcademies:', completedAcademies, 'nextBox:', nextBox)
             if (completedAcademies + 1 === nextBox) {
                 let randomSurprisePoint = (Math.floor(Math.random() * 10) + 1) * 500
                 setSurprisePoint(randomSurprisePoint)
+                console.log('Surprise point awarded:', randomSurprisePoint)
                 setNextBox(userId, randomSurprisePoint)
 
                 // update user state total points
                 const { totalRaffles, totalPoints } = useUserStore.getState()
-                useUserStore.setState({ totalPoints: totalPoints + randomSurprisePoint, totalRaffles: totalRaffles + randomSurprisePoint / 100 })
+                const newTotalPoints = totalPoints + randomSurprisePoint
+                const newTotalRaffles = totalRaffles + randomSurprisePoint / 100
+                console.log('Updating user store with new totals:', { newTotalPoints, newTotalRaffles })
+                useUserStore.setState({
+                    totalPoints: newTotalPoints,
+                    totalRaffles: newTotalRaffles
+                })
             }
 
             // Step 6: Fetch notifications to check for level-up or other events
+            console.log('Fetching notifications for user:', userId)
             const { fetchNotifications, showNotification } = useNotificationStore.getState()
             await fetchNotifications()
+            console.log('Notifications fetched')
 
             // Get the first unread notification if available
             const { notifications } = useNotificationStore.getState()
             const unreadNotification = notifications.find((notif) => !notif.read)
-
-            // Step 7: If a notification exists, show the notification dialog
             if (unreadNotification) {
+                console.log('Showing unread notification:', unreadNotification)
                 showNotification(unreadNotification)
             }
 
             // Old TappAds Postback Integration
-            if (tappadsPublisher && tappadsClickId && userId) {
-                const telegram_id = userId
+            console.log('Checking TappAds postback params. tappadsPublisher:', tappadsPublisher, 'tappadsClickId:', tappadsClickId, 'userId:', telegramUserId)
+            if (tappadsPublisher && tappadsClickId && telegramUserId) {
+                const telegram_id = telegramUserId
                 const startapp = `tappads_${tappadsPublisher}_${tappadsClickId}`
                 const is_old = 'false' // Adjust if needed
                 const YOUR_ADVERT_ID = '56' // Replace with your actual Advert ID
                 const YOUR_OFFER_ID = '187' // Replace with your actual Offer ID
 
                 const url = `https://wallapi.tappads.io/v1/tapp-cpa?pubid=${tappadsPublisher}&m=2&advert_id=${YOUR_ADVERT_ID}&click_id=${tappadsClickId}&offer_id=${YOUR_OFFER_ID}&telegram_id=${telegram_id}&startapp=${encodeURIComponent(startapp)}&is_old=${is_old}`
+                console.log('Sending TappAds postback:', url)
 
                 try {
                     const response = await fetch(url, { method: 'GET' })
-                    console.log('TappAds postback response:', response.status, await response.text())
+                    const responseText = await response.text()
+                    console.log('TappAds postback response status:', response.status, 'response text:', responseText)
                 } catch (err) {
                     console.error('Error sending TappAds postback:', err)
                 }
+            } else {
+                console.log('TappAds postback not sent. Missing publisher, clickId, or userId.')
             }
 
+            console.log('Setting activeFilter to completion')
             setActiveFilter('completion')
+            console.log('handleCompleteAcademy finished successfully')
         } catch (error) {
             console.error('Error completing academy:', error)
         }
