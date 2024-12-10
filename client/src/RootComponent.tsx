@@ -125,9 +125,24 @@ function RootComponent() {
         }
     }, [initData, addRouteDuration, endSession, location.pathname, setCurrentRoute, startSession.sessionStartTime])
 
-    // Telegram environment is confirmed ready once initData is available
+    // Attempt to initialize TappAds after confirming initData and Telegram environment
     useEffect(() => {
+        console.log('Debug: initData = ', initData)
+        console.log('Debug: window.Telegram = ', (window as any).Telegram)
+        console.log('Debug: window.Telegram?.WebApp = ', (window as any).Telegram?.WebApp)
+
+        // Call Telegram.WebApp.ready() if available
+        if ((window as any).Telegram?.WebApp?.ready) {
+            ;(window as any).Telegram.WebApp.ready()
+            console.log('Debug: Called Telegram.WebApp.ready()')
+        }
+
         if (initData && typeof TappAdsAdvSdk !== 'undefined') {
+            if (!(window as any).Telegram?.WebApp) {
+                console.error('Telegram WebApp is not defined yet.')
+                return
+            }
+
             TappAdsAdvSdk.init('0f851f3d-2778-4dc1-9a4e-f10597e1065f', { debug: true })
                 .then(() => {
                     console.log('TappAdsAdvSdk initialized successfully')
