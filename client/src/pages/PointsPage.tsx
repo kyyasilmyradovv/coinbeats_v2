@@ -798,7 +798,6 @@ const PointsPage: React.FC = () => {
                                                 </div>
                                             </div>
                                         ))}
-                                    {userRaffles?.length === 0 && <div>CoinBeats Weekly Raffle Resets every week</div>}
                                 </Card>
                             </>
                         )}

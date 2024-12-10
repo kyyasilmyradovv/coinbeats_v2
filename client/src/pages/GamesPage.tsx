@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { Page, Button, Dialog, ListInput, List, Notification } from 'konsta/react'
-import { FaTwitter, FaFacebook, FaInstagram, FaTelegramPlane, FaDiscord, FaYoutube, FaEnvelope, FaTimes } from 'react-icons/fa'
+import { FaTimes } from 'react-icons/fa'
 import Navbar from '../components/common/Navbar'
 import Sidebar from '../components/common/Sidebar'
 import BottomTabBar from '../components/BottomTabBar'
