@@ -41,6 +41,8 @@ import RouteGuard from './components/RouteGuard'
 import Spinner from './components/Spinner'
 import ScholarshipManagementPage from './pages/ScholarshipManagementPage'
 import CharacterLevelManagementPage from './pages/CharacterLevelManagementPage'
+
+// Import the NotificationDialog component and the notification store
 import NotificationDialog from './components/NotificationDialog'
 import useNotificationStore from './store/useNotificationStore'
 import OverallRaffleManagementPage from './pages/OverallRaffleManagementPage'
@@ -68,6 +70,7 @@ function RootComponent() {
     }))
 
     const location = useLocation()
+
     const inIFrame = window.parent !== window
 
     useLayoutEffect(() => {
@@ -105,6 +108,7 @@ function RootComponent() {
 
         console.log('This is the init data object', initData)
 
+        // Remove the user session initialization logic
         setIsLoading(false)
 
         const handleSessionEnd = () => {
@@ -123,39 +127,7 @@ function RootComponent() {
             window.removeEventListener('beforeunload', handleSessionEnd)
             updateRouteDuration()
         }
-    }, [initData, addRouteDuration, endSession, location.pathname, setCurrentRoute, startSession.sessionStartTime])
-
-    // Attempt to initialize TappAds after confirming initData and Telegram environment
-    useEffect(() => {
-        console.log('Debug: initData = ', initData)
-        console.log('Debug: window.Telegram = ', (window as any).Telegram)
-        console.log('Debug: window.Telegram?.WebApp = ', (window as any).Telegram?.WebApp)
-
-        // Call Telegram.WebApp.ready() if available
-        if ((window as any).Telegram?.WebApp?.ready) {
-            ;(window as any).Telegram.WebApp.ready()
-            console.log('Debug: Called Telegram.WebApp.ready()')
-        }
-
-        if (initData && typeof TappAdsAdvSdk !== 'undefined') {
-            if (!(window as any).Telegram?.WebApp) {
-                console.error('Telegram WebApp is not defined yet.')
-                return
-            }
-
-            TappAdsAdvSdk.init('0f851f3d-2778-4dc1-9a4e-f10597e1065f', { debug: true })
-                .then(() => {
-                    console.log('TappAdsAdvSdk initialized successfully')
-                    return TappAdsAdvSdk.event({ isOld: false })
-                })
-                .then(() => {
-                    console.log('Event sent successfully')
-                })
-                .catch((err) => {
-                    console.error('Error initializing or sending event:', err)
-                })
-        }
-    }, [initData])
+    }, [initData]) // Include initData in the dependency array
 
     // Import the telegramUserId from the session store
     const telegramUserId = useSessionStore((state) => state.userId)

@@ -24,6 +24,7 @@ import useAcademiesStore from '../store/useAcademiesStore'
 import useUserVerificationStore, { VerificationTask } from '../store/useUserVerificationStore'
 import useSurpriseBoxStore from '~/store/useSurpriseBoxStore'
 import useNotificationStore from '~/store/useNotificationStore'
+import useSessionStore from '../store/useSessionStore'
 import coinStackIcon from '../images/coin-stack.png'
 import coinbeats from '../images/coinbeats-l.svg'
 import { Icon } from '@iconify/react'
@@ -80,6 +81,12 @@ export default function ProductPage() {
         setUser: state.setUser,
         referralCode: state.referralCode
     }))
+
+    const { tappadsPublisher, tappadsClickId } = useSessionStore((state) => ({
+        tappadsPublisher: state.tappadsPublisher,
+        tappadsClickId: state.tappadsClickId
+    }))
+
     const {
         userVerificationTasks,
         fetchUserVerificationTasks,
@@ -250,9 +257,7 @@ export default function ProductPage() {
     useEffect(() => {
         if (academy) {
             if (userId !== null) {
-                if (userId !== null) {
-                    fetchEarnedPoints(userId, academy.id)
-                }
+                fetchEarnedPoints(userId, academy.id)
             }
             fetchQuestions(academy.id)
             if (userId !== null) {
@@ -342,7 +347,6 @@ export default function ProductPage() {
         const arrowTimer = setTimeout(() => {
             setShowArrow(false)
         }, 3000)
-
         return () => clearTimeout(arrowTimer)
     }, [])
 
@@ -406,7 +410,7 @@ export default function ProductPage() {
             return
         }
 
-        setErrorMessage('') // Clear error message
+        setErrorMessage('')
 
         try {
             if (timerIntervalRef.current) {
@@ -434,7 +438,6 @@ export default function ProductPage() {
 
                 // Update earnedPoints from store
                 fetchEarnedPoints(userId, academy.id)
-
                 setCurrentPoints(pointsAwarded)
                 triggerXPAnimation()
             }
@@ -488,7 +491,7 @@ export default function ProductPage() {
         if (userId) {
             loadSurpriseBoxData(userId)
         }
-    }, [userId])
+    }, [userId, loadSurpriseBoxData])
 
     const handleCompleteAcademy = async () => {
         try {
@@ -497,7 +500,6 @@ export default function ProductPage() {
 
             // Step 2: Fetch updated total points from the backend
             await fetchUserTotalPoints(userId)
-
             await fetchUserTotalRaffles(userId)
 
             // Fetch updated earnedPoints
@@ -510,7 +512,6 @@ export default function ProductPage() {
             // Step 5: Handle surprise box logic if applicable
             if (completedAcademies + 1 === nextBox) {
                 let randomSurprisePoint = (Math.floor(Math.random() * 10) + 1) * 500
-
                 setSurprisePoint(randomSurprisePoint)
                 setNextBox(userId, randomSurprisePoint)
 
@@ -532,16 +533,23 @@ export default function ProductPage() {
                 showNotification(unreadNotification)
             }
 
-            // // After completing the academy and doing all updates:
-            // if (typeof TappAdsAdvSdk !== 'undefined') {
-            //     TappAdsAdvSdk.event({ isOld: false })
-            //         .then(() => {
-            //             console.log('TappAds conversion event successfully sent (new user acquisition)')
-            //         })
-            //         .catch((err) => {
-            //             console.error('Error sending TappAds event:', err)
-            //         })
-            // }
+            // Old TappAds Postback Integration
+            if (tappadsPublisher && tappadsClickId && userId) {
+                const telegram_id = userId
+                const startapp = `tappads_${tappadsPublisher}_${tappadsClickId}`
+                const is_old = 'false' // Adjust if needed
+                const YOUR_ADVERT_ID = '56' // Replace with your actual Advert ID
+                const YOUR_OFFER_ID = '187' // Replace with your actual Offer ID
+
+                const url = `https://wallapi.tappads.io/v1/tapp-cpa?pubid=${tappadsPublisher}&m=2&advert_id=${YOUR_ADVERT_ID}&click_id=${tappadsClickId}&offer_id=${YOUR_OFFER_ID}&telegram_id=${telegram_id}&startapp=${encodeURIComponent(startapp)}&is_old=${is_old}`
+
+                try {
+                    const response = await fetch(url, { method: 'GET' })
+                    console.log('TappAds postback response:', response.status, await response.text())
+                } catch (err) {
+                    console.error('Error sending TappAds postback:', err)
+                }
+            }
 
             setActiveFilter('completion')
         } catch (error) {
@@ -637,7 +645,6 @@ export default function ProductPage() {
             startTimer()
             setInitialAnswers((prevAnswers) => prevAnswers.map((q, qi) => (qi === 0 ? { ...q, timerStarted: true } : q)))
         }
-
         if (swiperRef.current && swiperRef.current.swiper) {
             swiperRef.current.swiper.slideTo(0, 0) // Slide to the first question without animation
         } else {
@@ -673,7 +680,6 @@ export default function ProductPage() {
 
         if (question.question === 'Tokenomics details' && question.answer) {
             let parsedAnswer = {}
-
             try {
                 parsedAnswer = JSON.parse(question.answer)
             } catch (error) {
@@ -862,7 +868,7 @@ export default function ProductPage() {
             setNotificationOpen(true)
         } catch (error) {
             console.error('Error verifying quest:', error)
-            const errorMessage = error.response?.data?.message || 'Verification failed.'
+            const errorMessage = (error as any).response?.data?.message || 'Verification failed.'
             setNotificationText(errorMessage)
             setNotificationOpen(true)
         }

@@ -10,11 +10,13 @@ interface SessionState {
     routeDurations: Record<string, number>
     userId: number | null
     username: string
-    roles: string[] // Updated to handle multiple roles
+    roles: string[]
     currentRoute: string
     darkMode: boolean
     theme: string
     colorTheme: string
+    tappadsPublisher: string | null
+    tappadsClickId: string | null
     setCurrentRoute: (route: string) => void
     addRouteDuration: (route: string, duration: number) => void
     startSession: (data: { sessionStartTime: number; userId: number | null; username: string; roles: string[] }) => void
@@ -34,9 +36,11 @@ const useSessionStore = create<SessionState>()(
         username: 'Guest',
         roles: ['USER'],
         currentRoute: '/',
-        darkMode: true, // Default to true
+        darkMode: true,
         theme: 'ios',
         colorTheme: '',
+        tappadsPublisher: null,
+        tappadsClickId: null,
 
         setCurrentRoute: (route) => set({ currentRoute: route }),
 
@@ -78,17 +82,13 @@ const useSessionStore = create<SessionState>()(
             const theme = localStorage.getItem('theme')
             const colorTheme = localStorage.getItem('colorTheme')
 
-            // Determine darkMode value
-            const darkMode = darkModeSetting !== 'false' // Default to true unless explicitly set to 'false'
-
-            // Set state with the correct darkMode value
+            const darkMode = darkModeSetting !== 'false'
             set({
                 darkMode: darkMode,
                 theme: theme || 'ios',
                 colorTheme: colorTheme || ''
             })
 
-            // Ensure the dark mode class is correctly applied based on darkMode state
             document.documentElement.classList.toggle('dark', darkMode)
         },
 
@@ -115,7 +115,9 @@ const useSessionStore = create<SessionState>()(
                     routeDurations: {},
                     userId: null,
                     username: 'Guest',
-                    roles: ['USER']
+                    roles: ['USER'],
+                    tappadsPublisher: null,
+                    tappadsClickId: null
                 })
             }
         }

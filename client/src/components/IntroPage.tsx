@@ -1,7 +1,7 @@
 // client/src/components/IntroPage.tsx
 
 import React, { useEffect, useRef } from 'react'
-import './IntroPage.css' // Styles for the intro page
+import './IntroPage.css'
 import introImage from '../images/intro.webp'
 import coinbeatsText from '../images/coinbeats.png'
 import schoolText from '../images/school.png'
@@ -19,7 +19,7 @@ import axiosInstance from '~/api/axiosInstance'
 import useRafflesStore from '~/store/useRafflesStore'
 
 interface IntroPageProps {
-    onComplete: () => void // Function to call when the intro is complete
+    onComplete: () => void
 }
 
 const IntroPage: React.FC<IntroPageProps> = ({ onComplete }) => {
@@ -42,9 +42,10 @@ const IntroPage: React.FC<IntroPageProps> = ({ onComplete }) => {
         referralCompletionChecked,
         checkReferralCompletion,
         userId,
-        fetchUserLevel // Added to fetch user level
+        fetchUserLevel
     } = useUserStore()
     const { startSession } = useSessionStore()
+    const { addNotifications } = useNotificationStore()
 
     useEffect(() => {
         if (!initData || !initData.user || initializedRef.current) return
@@ -59,38 +60,44 @@ const IntroPage: React.FC<IntroPageProps> = ({ onComplete }) => {
 
         removeSpinner()
 
+        // Parse TappAds parameters if any
+        let tappadsPublisher: string | null = null
+        let tappadsClickId: string | null = null
+
+        if (initData.startParam && initData.startParam.startsWith('tappads_')) {
+            const match = initData.startParam.match(/^tappads_(\d+)_(\S+)$/)
+            if (match) {
+                tappadsPublisher = match[1]
+                tappadsClickId = match[2]
+            }
+        }
+
+        // Store tappads info in sessionStore for later use
+        useSessionStore.setState({ tappadsPublisher, tappadsClickId })
+
         const initializeUserSession = async () => {
             try {
                 const telegramUserId = initData.user.id
                 const username = initData.user.username || initData.user.firstName || initData.user.lastName || 'Guest'
-
-                // Get startParam from initData
                 const startParam = initData.startParam || null
 
-                // Set telegramUserId in useSessionStore before any axios requests
                 useSessionStore.setState({ userId: telegramUserId })
 
-                let userRoles: string[] = ['USER'] // Default roles
+                let userRoles: string[] = ['USER']
 
                 try {
-                    // Attempt to fetch existing user data using store method
+                    // Attempt to fetch existing user data
                     await fetchUser(telegramUserId)
-
-                    // Access roles from store
                     const roles = useUserStore.getState().roles
                     userRoles = roles || ['USER']
                 } catch (error: any) {
                     if (error.response && error.response.status === 404) {
-                        // User not found, register using store method
+                        // User not found, register
                         await registerUser(telegramUserId, username, startParam)
-
-                        // Access roles from store
                         const roles = useUserStore.getState().roles
                         userRoles = roles || ['USER']
                     } else {
                         console.error('Error fetching user:', error)
-                        // Handle other errors if necessary
-                        // Set default values in case of error
                         useUserStore.setState({
                             userId: null,
                             username: 'Guest',
@@ -118,18 +125,15 @@ const IntroPage: React.FC<IntroPageProps> = ({ onComplete }) => {
                     roles: userRoles
                 })
 
-                // Check for startParam indicating Twitter authentication success
+                // Check for twitter auth
                 if (startParam === 'twitterAuthSuccess') {
                     setTwitterAuthenticated(true)
-                    // Optionally, fetch the latest user data
                     await fetchTwitterAuthStatus()
                 }
 
-                // Fetch user level after initializing session
                 await fetchUserLevel()
             } catch (e) {
                 console.error('Error initializing user session:', e)
-                // Set default user in case of error
                 useUserStore.setState({
                     userId: null,
                     username: 'Guest',
@@ -162,7 +166,7 @@ const IntroPage: React.FC<IntroPageProps> = ({ onComplete }) => {
                     fetchUserVerificationTasks(),
                     fetchCategoriesAndChains(),
                     fetchTwitterAuthStatus(),
-                    fetchUserLevel() // Ensure user level is fetched
+                    fetchUserLevel()
                 ])
             } catch (error) {
                 console.error('Error in fetchData:', error)
@@ -170,44 +174,57 @@ const IntroPage: React.FC<IntroPageProps> = ({ onComplete }) => {
         }
 
         fetchData().then(() => {
-            // Ensure the intro runs for at least 4 seconds
             setTimeout(() => {
                 onComplete()
             }, 4000)
         })
-    }, [initData]) // Keep initData in the dependency array
-
-    const { addNotifications } = useNotificationStore()
+    }, [
+        initData,
+        onComplete,
+        fetchAcademiesAndPreloadImages,
+        fetchUserPoints,
+        fetchUserRaffles,
+        fetchLeaderboards,
+        fetchVerificationTasks,
+        fetchGameTasks,
+        fetchUserVerificationTasks,
+        fetchCategoriesAndChains,
+        fetchTwitterAuthStatus,
+        fetchUserLevel,
+        fetchUser,
+        registerUser,
+        setTwitterAuthenticated,
+        startSession
+    ])
 
     useEffect(() => {
-        const fetchNotifications = async () => {
-            try {
-                const response = await axiosInstance.get(`/api/notifications/${userId}`)
-                const notifications = response.data.map((notif: any) => ({
-                    id: notif.id,
-                    text: notif.message,
-                    title: notif.type === 'LEVEL_UP' ? 'Level Up!' : 'Notification',
-                    icon: null, // Optionally set an icon based on the type
-                    type: notif.type,
-                    read: notif.read
-                }))
-                addNotifications(notifications)
-            } catch (error) {
-                console.error('Error fetching notifications:', error)
+        const fetchNotificationsAsync = async () => {
+            if (userId) {
+                try {
+                    const response = await axiosInstance.get(`/api/notifications/${userId}`)
+                    const notifications = response.data.map((notif: any) => ({
+                        id: notif.id,
+                        text: notif.message,
+                        title: notif.type === 'LEVEL_UP' ? 'Level Up!' : 'Notification',
+                        icon: null,
+                        type: notif.type,
+                        read: notif.read
+                    }))
+                    addNotifications(notifications)
+                } catch (error) {
+                    console.error('Error fetching notifications:', error)
+                }
             }
         }
 
-        if (userId) {
-            fetchNotifications()
-        }
-    }, [userId])
+        fetchNotificationsAsync()
+    }, [userId, addNotifications])
 
-    // Referral completion check useEffect
     useEffect(() => {
         if (userId && !referralCompletionChecked) {
             checkReferralCompletion(userId)
         }
-    }, [userId, referralCompletionChecked, checkReferralCompletion]) // Include referralCompletionChecked and userId in the dependency array
+    }, [userId, referralCompletionChecked, checkReferralCompletion])
 
     return (
         <div className="intro-container">
