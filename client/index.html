@@ -10,10 +10,7 @@
         <link rel="manifest" href="/manifest.json" />
         <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
         <link rel="stylesheet" href="./src/components/Spinner.css" />
-
         <title>React App</title>
-
-        <!-- TappAds SDK -->
         <script src="https://sdk.tappads.io/adv/sdk_v1.js"></script>
     </head>
     <body>
@@ -29,36 +26,6 @@
         </div>
 
         <div id="root"></div>
-
-        <!-- Initialize TappAds SDK after everything is loaded -->
-        <script>
-            // Check if TappAdsAdvSdk object exists
-            if (typeof TappAdsAdvSdk === 'undefined') {
-                console.error('TappAdsAdvSdk is not loaded. Please check the SDK connection.')
-            } else {
-                // Initialize the SDK
-                TappAdsAdvSdk.init('0f851f3d-2778-4dc1-9a4e-f10597e1065f', { debug: true })
-                    .then(() => {
-                        console.log('TappAdsAdvSdk initialized successfully')
-                        // Send the target event after successful initialization
-                        trackEvent()
-                    })
-                    .catch((err) => {
-                        console.error('Error initializing TappAdsAdvSdk:', err)
-                    })
-
-                // Function to send the target event
-                function trackEvent() {
-                    TappAdsAdvSdk.event({ isOld: false })
-                        .then(() => {
-                            console.log('Event sent successfully')
-                        })
-                        .catch((err) => {
-                            console.error('Error sending event:', err)
-                        })
-                }
-            }
-        </script>
         <script type="module" src="/src/index.tsx"></script>
     </body>
 </html>

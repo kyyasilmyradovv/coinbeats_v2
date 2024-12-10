@@ -41,8 +41,6 @@ import RouteGuard from './components/RouteGuard'
 import Spinner from './components/Spinner'
 import ScholarshipManagementPage from './pages/ScholarshipManagementPage'
 import CharacterLevelManagementPage from './pages/CharacterLevelManagementPage'
-
-// Import the NotificationDialog component and the notification store
 import NotificationDialog from './components/NotificationDialog'
 import useNotificationStore from './store/useNotificationStore'
 import OverallRaffleManagementPage from './pages/OverallRaffleManagementPage'
@@ -70,7 +68,6 @@ function RootComponent() {
     }))
 
     const location = useLocation()
-
     const inIFrame = window.parent !== window
 
     useLayoutEffect(() => {
@@ -108,7 +105,6 @@ function RootComponent() {
 
         console.log('This is the init data object', initData)
 
-        // Remove the user session initialization logic
         setIsLoading(false)
 
         const handleSessionEnd = () => {
@@ -127,7 +123,24 @@ function RootComponent() {
             window.removeEventListener('beforeunload', handleSessionEnd)
             updateRouteDuration()
         }
-    }, [initData]) // Include initData in the dependency array
+    }, [initData, addRouteDuration, endSession, location.pathname, setCurrentRoute, startSession.sessionStartTime])
+
+    // Telegram environment is confirmed ready once initData is available
+    useEffect(() => {
+        if (initData && typeof TappAdsAdvSdk !== 'undefined') {
+            TappAdsAdvSdk.init('0f851f3d-2778-4dc1-9a4e-f10597e1065f', { debug: true })
+                .then(() => {
+                    console.log('TappAdsAdvSdk initialized successfully')
+                    return TappAdsAdvSdk.event({ isOld: false })
+                })
+                .then(() => {
+                    console.log('Event sent successfully')
+                })
+                .catch((err) => {
+                    console.error('Error initializing or sending event:', err)
+                })
+        }
+    }, [initData])
 
     // Import the telegramUserId from the session store
     const telegramUserId = useSessionStore((state) => state.userId)
