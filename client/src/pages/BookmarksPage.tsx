@@ -5,19 +5,15 @@ import { Page, Button } from 'konsta/react'
 import Navbar from '../components/common/Navbar'
 import Sidebar from '../components/common/Sidebar'
 import BottomTabBar from '../components/BottomTabBar'
-import coins from '../images/coin-stack.png'
 import ticket from '../images/ticket.png'
 import moneyBag from '../images/money-bag.png'
 import calendar from '../images/calendar.png'
 import cash from '../images/cash.png'
-import aurelius from '../images/aurelius.png'
-import aarna from '../images/aarna.png'
-import skale from '../images/skale.png'
-import clip from '../images/clip.png'
 import coinbeats from '../images/coinbeats-l.svg'
 import coming from '../images/svgs/coming-soon3.svg'
 import axiosInstance from '~/api/axiosInstance'
 import useUserStore from '~/store/useUserStore'
+import { FaTwitter, FaFacebook, FaInstagram, FaTelegramPlane, FaDiscord, FaYoutube, FaEnvelope, FaTimes } from 'react-icons/fa'
 
 interface AcademyInterface {
     name: string
@@ -31,10 +27,10 @@ interface AcademyInterface {
 
 export default function BookmarksPage() {
     const { totalRaffles } = useUserStore()
-
     const [headerTab, setHeaderTab] = useState('all')
     const [activeTab, setActiveTab] = useState('tab-2')
     const [academies, setAcademies] = useState<AcademyInterface[]>([])
+    const [showTooltip, setShowTooltip] = useState(false)
 
     useEffect(() => {
         const fetchCoinBeatsRaffle = async () => {
@@ -89,6 +85,7 @@ export default function BookmarksPage() {
                         >
                             All Raffles
                         </Button>
+
                         <Button
                             outline
                             rounded
@@ -102,6 +99,70 @@ export default function BookmarksPage() {
                         >
                             My Raffles
                         </Button>
+
+                        <button
+                            className="rounded-full bg-gray-700 text-white text-xs font-bold w-11 h-6 items-center justify-center"
+                            onClick={() => setShowTooltip(!showTooltip)}
+                        >
+                            ?
+                        </button>
+
+                        {showTooltip && (
+                            <div className="tooltip absolute bg-gray-700  text-xs rounded-2xl p-4 mt-2 z-20">
+                                {'Your raffle entries are reset every week when the raffle happens'}
+                                <button className="absolute top-0 right-0 text-white mt-2 mr-2" onClick={() => setShowTooltip(false)}>
+                                    <FaTimes size={12} />
+                                </button>
+                            </div>
+                        )}
+                    </div> */}
+
+                    <div className="flex flex-col justify-center gap-2 mt-4 mx-4 relative z-10 px-4 pt-4 mb-2 items-center">
+                        <div className="flex gap-2 items-center">
+                            <Button
+                                outline
+                                rounded
+                                onClick={() => setHeaderTab('all')}
+                                className={`${
+                                    headerTab === 'all' ? 'bg-gray-100 dark:bg-gray-800 k-color-brand-purple shadow-lg' : 'bg-white dark:bg-gray-900 shadow-lg'
+                                } rounded-full text-xs`}
+                                style={{
+                                    color: '#fff'
+                                }}
+                            >
+                                All Raffles
+                            </Button>
+
+                            <Button
+                                outline
+                                rounded
+                                onClick={() => setHeaderTab('my')}
+                                className={`${
+                                    headerTab === 'my' ? 'bg-gray-100 dark:bg-gray-800 k-color-brand-purple shadow-lg' : 'bg-white dark:bg-gray-900 shadow-lg'
+                                } rounded-full text-xs`}
+                                style={{
+                                    color: '#fff'
+                                }}
+                            >
+                                My Raffles
+                            </Button>
+
+                            <button
+                                className="rounded-full bg-gray-700 text-white text-xs font-bold w-12 h-6 items-center justify-center"
+                                onClick={() => setShowTooltip(!showTooltip)}
+                            >
+                                ?
+                            </button>
+                        </div>
+
+                        {showTooltip && (
+                            <div className="flex bg-gray-700 text-xs rounded-2xl p-4 mt-2 shadow-lg w-fit">
+                                <p>The raffle entries are reset at the time when the raffle happens.</p>
+                                <button className="items-center p-1" onClick={() => setShowTooltip(false)}>
+                                    <FaTimes size={12} />
+                                </button>
+                            </div>
+                        )}
                     </div>
 
                     {/* Coming Soon Sign Centered

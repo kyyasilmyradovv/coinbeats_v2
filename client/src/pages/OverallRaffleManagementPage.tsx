@@ -42,16 +42,23 @@ const OverallRaffleManagementPage: React.FC = () => {
     const [winners, setWinners] = useState<WinnersInterface[]>([])
 
     const updateSetOverallRaffleData = (payload: Partial<RaffleDataInterface>) => {
-        setOverallRaffleData({ ...overallRaffleData, ...payload })
+        const data = { ...overallRaffleData, ...payload }
+        // data.deadline = convertToCetTime(data?.deadline)
+        setOverallRaffleData(data)
+    }
+
+    const convertToCetTime = (time: string) => {
+        console.log('time received - ', time)
+        const convertedTime = format(utcToZonedTime(new Date(time), 'Europe/Berlin'), "yyyy-MM-dd' 'HH:mm", { timeZone: 'Europe/Berlin' })
+        console.log('time converted - ', convertedTime)
+        return convertedTime
     }
 
     useEffect(() => {
         const fetchOverallRaffle = async () => {
             try {
                 const response = await axiosInstance.get('/api/raffle/overall')
-
-                // response.data.deadline = format(utcToZonedTime(new Date(response.data.deadline), 'Europe/Berlin'), 'yyyy-MM-dd HH:mm:ss')
-                response.data.deadline = format(new Date(response.data.deadline), 'yyyy-MM-dd HH:mm:ss')
+                response.data.deadline = convertToCetTime(response.data.deadline)
 
                 setOverallRaffleData(response.data)
             } catch (error) {
@@ -153,14 +160,11 @@ const OverallRaffleManagementPage: React.FC = () => {
                         label="Raffle End Date"
                         type="datetime-local"
                         outline
-                        value={overallRaffleData.deadline}
-                        onChange={
-                            // (e) => updateSetOverallRaffleData({ deadline: e.target?.value })
-                            (e) =>
-                                updateSetOverallRaffleData({
-                                    // deadline: format(utcToZonedTime(new Date(e.target?.value), 'Europe/Berlin'), 'yyyy-MM-dd HH:mm:ss')
-                                    deadline: e.target?.value
-                                })
+                        value={overallRaffleData?.deadline}
+                        onChange={(e) =>
+                            updateSetOverallRaffleData({
+                                deadline: e.target?.value
+                            })
                         }
                         placeholder="Enter deadline"
                     />

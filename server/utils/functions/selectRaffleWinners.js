@@ -49,18 +49,52 @@ const selectRaffleWinners = async () => {
       return;
     }
 
-    // Select random winners
+    // Select winners
     const users = await prisma.$queryRaw`
-        SELECT id, name, email, "telegramUserId", "erc20WalletAddress", "solanaWalletAddress", "tonWalletAddress", "raffleAmount"
+      with WeightedUsers as (
+        SELECT
+            id,
+            name,
+            email,
+            "telegramUserId",
+            "erc20WalletAddress",
+            "solanaWalletAddress",
+            "tonWalletAddress",
+            "raffleAmount",
+            generate_series(1, "raffleAmount" / 100) AS weight
         FROM "User"
-        WHERE "raffleAmount" > ${minRaffles}
+        WHERE "raffleAmount" > ${minRaffles || 500}
         AND (
             "erc20WalletAddress" IS NOT NULL AND "erc20WalletAddress" <> ''
             OR "solanaWalletAddress" IS NOT NULL AND "solanaWalletAddress" <> ''
             OR "tonWalletAddress" IS NOT NULL AND "tonWalletAddress" <> ''
+        )),
+        UniqueUsers AS (
+            SELECT
+                id,
+                name,
+                email,
+                "telegramUserId",
+                "erc20WalletAddress",
+                "solanaWalletAddress",
+                "tonWalletAddress",
+                "raffleAmount",
+                ROW_NUMBER() OVER (PARTITION BY id ORDER BY RANDOM()) AS row_num -- Assign random rank to each user
+            FROM WeightedUsers
         )
-        ORDER BY RANDOM()
-        LIMIT ${winnersCount};
+        SELECT 
+            id,
+            name,
+            email,
+            "telegramUserId",
+            "erc20WalletAddress",
+            "solanaWalletAddress",
+            "tonWalletAddress",
+            "raffleAmount"
+        FROM UniqueUsers
+        WHERE row_num = 1 -- Keep only the top random row for each user
+        ORDER BY RANDOM() -- Randomize final selection
+        LIMIT ${winnersCount || 10};
     `;
 
     // Create Raffle History (one history for each week)
@@ -115,5 +149,7 @@ const selectRaffleWinners = async () => {
     throw new Error(error);
   }
 };
+
+selectRaffleWinners();
 
 module.exports = selectRaffleWinners;
