@@ -14,9 +14,8 @@ if (import.meta.env.DEV) {
         // Telegram environment. So, there is no need to mock it.
         retrieveLaunchParams()
 
-        // We could previously mock the environment. In case we did, we should do it again. The reason
-        // is the page could be reloaded, and we should apply mock again, because mocking also
-        // enables modifying the window object.
+        // If we previously mocked the environment, keep mocking. This helps in case the page
+        // was reloaded and we need to ensure consistent mocking state.
         shouldMock = !!sessionStorage.getItem('____mocked')
     } catch (e) {
         shouldMock = true
@@ -38,7 +37,12 @@ if (import.meta.env.DEV) {
             ],
             ['hash', '89d6079ad6762351f38c6dbbc41bb53048019256a9443988af7a48bcad16ba31'],
             ['auth_date', '1716922846'],
-            ['start_param', 'f1174622ac83f36c'],
+
+            // The key addition: mock the startapp parameter as provided in your URL
+            // Original URL was:
+            // https://t.me/CoinbeatsMiniApp_bot/miniapp?startapp=tappads_2_6385400494211949544527294947074
+            ['startapp', 'tappads_2_6385400494211949544527294947074'],
+
             ['chat_type', 'sender'],
             ['chat_instance', '8428209589180549439']
         ]).toString()
@@ -64,10 +68,11 @@ if (import.meta.env.DEV) {
             version: '7.2',
             platform: 'tdesktop'
         })
+
         sessionStorage.setItem('____mocked', '1')
 
         console.info(
-            'As long as the current environment was not considered as the Telegram-based one, it was mocked. Take a note, that you should not do it in production and current behavior is only specific to the development process. Environment mocking is also applied only in development mode. So, after building the application, you will not see this behavior and related warning, leading to crashing the application outside Telegram.'
+            'The Telegram environment has been mocked, including the `startapp` parameter for TappAds. This is only for development and will not be included in production builds.'
         )
     }
 }

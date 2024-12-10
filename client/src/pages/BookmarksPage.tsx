@@ -115,7 +115,7 @@ export default function BookmarksPage() {
                                 </button>
                             </div>
                         )}
-                    </div> */}
+                    </div>
 
                     <div className="flex flex-col justify-center gap-2 mt-4 mx-4 relative z-10 px-4 pt-4 mb-2 items-center">
                         <div className="flex gap-2 items-center">
