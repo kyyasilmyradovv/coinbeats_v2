@@ -217,7 +217,7 @@ const EditAcademyPage: React.FC = () => {
                         {/* Chain Selection */}
                         <ListInput
                             label="Add Chain"
-                            inputClassName="!bg-gray-800 !text-white"
+                            inputClassName="!bg-[#1c1c1d] !text-white !m-1 !pl-2"
                             type="select"
                             onChange={(e) => setField('chains', [...chains, e.target.value])}
                             value=""
@@ -394,7 +394,7 @@ const EditAcademyPage: React.FC = () => {
                             }}
                             value=""
                             placeholder="Select Chain"
-                            inputClassName="!bg-[#1c1c1d] !text-white !m-1"
+                            inputClassName="!bg-[#1c1c1d] !text-white !m-1 !pl-2"
                         >
                             <option value="" className="!text-black">
                                 Select Chain
@@ -480,6 +480,7 @@ const EditAcademyPage: React.FC = () => {
                     onChange={(e) => setField('categories', [...categories, e.target.value])}
                     value=""
                     placeholder="Select Category"
+                    inputClassName="!bg-[#1c1c1d] !text-white !m-1 !pl-2"
                     outline
                 >
                     <option value="">Select Category</option>

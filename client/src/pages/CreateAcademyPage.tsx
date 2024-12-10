@@ -240,6 +240,7 @@ const CreateAcademyPage: React.FC = () => {
                                     setField('chains', updatedChains)
                                     setInitialAnswer(3, 'chains', updatedChains)
                                 }}
+                                inputClassName="!bg-[#1c1c1d] !text-white !m-1 !pl-2"
                                 placeholder="Select Chain"
                             >
                                 <option value="" className="text-black">
@@ -448,6 +449,7 @@ const CreateAcademyPage: React.FC = () => {
                             }}
                             value=""
                             placeholder="Select Chain"
+                            inputClassName="!bg-[#1c1c1d] !text-white !m-1 !pl-2"
                         >
                             <option value="">Select Chain</option>
                             {(chainList || []).map((chain) => (
@@ -947,6 +949,7 @@ const CreateAcademyPage: React.FC = () => {
                     }}
                     value=""
                     placeholder="Select Category"
+                    inputClassName="!bg-[#1c1c1d] !text-white !m-1 !pl-2"
                 >
                     <option value="">Select Category</option>
                     {categoryList.map((category) => (
@@ -975,6 +978,7 @@ const CreateAcademyPage: React.FC = () => {
                     }}
                     value={academyTypeId || ''}
                     placeholder="Select Academy Type"
+                    inputClassName="!bg-[#1c1c1d] !text-white !m-1 !pl-2"
                     disabled={academyTypes.length === 1} // Disable if only one type is available
                 >
                     {/* Only display allowed academy types */}

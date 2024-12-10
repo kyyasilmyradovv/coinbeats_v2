@@ -532,16 +532,16 @@ export default function ProductPage() {
                 showNotification(unreadNotification)
             }
 
-            // After completing the academy and doing all updates:
-            if (typeof TappAdsAdvSdk !== 'undefined') {
-                TappAdsAdvSdk.event({ isOld: false })
-                    .then(() => {
-                        console.log('TappAds conversion event successfully sent (new user acquisition)')
-                    })
-                    .catch((err) => {
-                        console.error('Error sending TappAds event:', err)
-                    })
-            }
+            // // After completing the academy and doing all updates:
+            // if (typeof TappAdsAdvSdk !== 'undefined') {
+            //     TappAdsAdvSdk.event({ isOld: false })
+            //         .then(() => {
+            //             console.log('TappAds conversion event successfully sent (new user acquisition)')
+            //         })
+            //         .catch((err) => {
+            //             console.error('Error sending TappAds event:', err)
+            //         })
+            // }
 
             setActiveFilter('completion')
         } catch (error) {

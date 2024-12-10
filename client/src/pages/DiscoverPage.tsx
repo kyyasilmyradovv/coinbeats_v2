@@ -143,7 +143,7 @@ const DiscoverPage: React.FC = () => {
                                 type="select"
                                 dropdown
                                 outline
-                                inputClassName="!flex !h-7 !ml-0 !mr-0 !mt-0 !mb-0"
+                                inputClassName="!bg-[#1c1c1d] !text-white !m-1 !pl-2"
                                 inputStyle={{ fontSize: '0.85rem' }}
                                 placeholder="Please choose..."
                                 value={category}
@@ -166,7 +166,7 @@ const DiscoverPage: React.FC = () => {
                                 type="select"
                                 dropdown
                                 outline
-                                inputClassName="!flex !h-7 !ml-0 !mr-0 !mt-0 !mb-0"
+                                inputClassName="!bg-[#1c1c1d] !text-white !m-1 !pl-2"
                                 inputStyle={{ fontSize: '0.85rem' }}
                                 placeholder="Please choose..."
                                 value={chain}

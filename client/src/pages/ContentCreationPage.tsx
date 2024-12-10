@@ -143,6 +143,7 @@ const ContentCreationPage: React.FC = () => {
                     }}
                     value=""
                     placeholder="Select Category"
+                    inputClassName="!bg-[#1c1c1d] !text-white !m-1 !pl-2"
                 >
                     <option value="">Select Category</option>
                     {(categoryList || []).map((category) => (
@@ -172,6 +173,7 @@ const ContentCreationPage: React.FC = () => {
                     }}
                     value=""
                     placeholder="Select Chain"
+                    inputClassName="!bg-[#1c1c1d] !text-white !m-1 !pl-2"
                 >
                     <option value="">Select Chain</option>
                     {(chainList || []).map((chain) => (
@@ -294,6 +296,7 @@ const ContentCreationPage: React.FC = () => {
                     }}
                     value=""
                     placeholder="Select Category"
+                    inputClassName="!bg-[#1c1c1d] !text-white !m-1 !pl-2"
                 >
                     <option value="">Select Category</option>
                     {(categoryList || []).map((category) => (
@@ -323,6 +326,7 @@ const ContentCreationPage: React.FC = () => {
                     }}
                     value=""
                     placeholder="Select Chain"
+                    inputClassName="!bg-[#1c1c1d] !text-white !m-1 !pl-2"
                 >
                     <option value="">Select Chain</option>
                     {(chainList || []).map((chain) => (
@@ -416,6 +420,7 @@ const ContentCreationPage: React.FC = () => {
                     outline
                     value={tutorialData.type}
                     onChange={(e) => setField('type', e.target.value)}
+                    inputClassName="!bg-[#1c1c1d] !text-white !m-1 !pl-2"
                 >
                     <option value="">Select Type</option>
                     <option value="WALLET_SETUP">Wallet Setup</option>
@@ -436,6 +441,7 @@ const ContentCreationPage: React.FC = () => {
                     }}
                     value=""
                     placeholder="Select Category"
+                    inputClassName="!bg-[#1c1c1d] !text-white !m-1 !pl-2"
                 >
                     <option value="">Select Category</option>
                     {(categoryList || []).map((category) => (
@@ -465,6 +471,7 @@ const ContentCreationPage: React.FC = () => {
                     }}
                     value=""
                     placeholder="Select Chain"
+                    inputClassName="!bg-[#1c1c1d] !text-white !m-1 !pl-2"
                 >
                     <option value="">Select Chain</option>
                     {(chainList || []).map((chain) => (

@@ -24,32 +24,13 @@ const root = createRoot(document.getElementById('root')!)
 const MAINTENANCE_MODE = false
 
 const Index = () => {
-    const [showIntro, setShowIntro] = useState(true)
-
     useEffect(() => {
         // Remove the spinner if it exists
         const spinner = document.getElementById('initial-spinner')
         if (spinner) {
             spinner.remove()
         }
-
-        // Initialize TappAds SDK
-        if (typeof TappAdsAdvSdk !== 'undefined') {
-            TappAdsAdvSdk.init('0f851f3d-2778-4dc1-9a4e-f10597e1065f', { debug: true })
-                .then(() => {
-                    console.log('TappAdsAdvSdk initialized successfully')
-                })
-                .catch((err) => {
-                    console.error('Error initializing TappAdsAdvSdk:', err)
-                })
-        } else {
-            console.error('TappAdsAdvSdk is not loaded.')
-        }
     }, [])
-
-    const handleIntroComplete = () => {
-        setShowIntro(false)
-    }
 
     if (MAINTENANCE_MODE) {
         return (
@@ -57,6 +38,12 @@ const Index = () => {
                 <MaintenancePage />
             </React.StrictMode>
         )
+    }
+
+    // If not in maintenance mode, show the normal intro -> app flow
+    const [showIntro, setShowIntro] = React.useState(true)
+    const handleIntroComplete = () => {
+        setShowIntro(false)
     }
 
     return (
