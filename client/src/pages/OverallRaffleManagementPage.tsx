@@ -224,6 +224,7 @@ const OverallRaffleManagementPage: React.FC = () => {
                                     className="!m-0 !p-0"
                                     value={selectedWalletType}
                                     onChange={(e) => setSelectedWalletType(e.target.value)}
+                                    inputClassName="!bg-[#1c1c1d] !text-white !m-1 !pl-2"
                                 >
                                     <option value="erc20WalletAddress">ERC20 Wallet Address</option>
                                     <option value="solanaWalletAddress">Solana Wallet Address</option>

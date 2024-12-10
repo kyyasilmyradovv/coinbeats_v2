@@ -196,7 +196,15 @@ const AddQuestsPage: React.FC = () => {
                                 placeholder="Enter task description"
                                 clearButton
                             />
-                            <ListInput outline label="Interval Type" type="select" name="intervalType" value={formData.intervalType} onChange={handleChange}>
+                            <ListInput
+                                outline
+                                label="Interval Type"
+                                type="select"
+                                inputClassName="!bg-[#1c1c1d] !text-white !m-1 !pl-2"
+                                name="intervalType"
+                                value={formData.intervalType}
+                                onChange={handleChange}
+                            >
                                 <option value="ONETIME">One-Time</option>
                                 <option value="REPEATED">Repeated</option>
                             </ListInput>
@@ -219,11 +227,20 @@ const AddQuestsPage: React.FC = () => {
                                 name="displayLocation"
                                 value={formData.displayLocation}
                                 onChange={handleChange}
+                                inputClassName="!bg-[#1c1c1d] !text-white !m-1 !pl-2"
                             >
                                 <option value="QUEST_TAB">Quest Tab</option>
                                 <option value="END_OF_ACADEMY">End of Academy</option>
                             </ListInput>
-                            <ListInput outline label="Platform" type="select" name="platform" value={formData.platform} onChange={handleChange}>
+                            <ListInput
+                                outline
+                                label="Platform"
+                                type="select"
+                                inputClassName="!bg-[#1c1c1d] !text-white !m-1 !pl-2"
+                                name="platform"
+                                value={formData.platform}
+                                onChange={handleChange}
+                            >
                                 <option value="NONE">None</option>
                                 <option value="X">X</option>
                                 <option value="TELEGRAM">Telegram</option>

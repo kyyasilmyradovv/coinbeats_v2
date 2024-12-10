@@ -73,6 +73,7 @@ const AcademyDetailPage: React.FC = () => {
                             value={academy.sponsored.toString()}
                             onChange={(e) => setAcademy({ ...academy, sponsored: e.target.value === 'true' })}
                             outline
+                            inputClassName="!bg-[#1c1c1d] !text-white !m-1 !pl-2"
                         >
                             <option value="true">True</option>
                             <option value="false">False</option>
@@ -83,6 +84,7 @@ const AcademyDetailPage: React.FC = () => {
                             value={academy.status}
                             onChange={(e) => setAcademy({ ...academy, status: e.target.value })}
                             outline
+                            inputClassName="!bg-[#1c1c1d] !text-white !m-1 !pl-2"
                         >
                             <option value="pending">Pending</option>
                             <option value="approved">Approved</option>
