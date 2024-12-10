@@ -71,51 +71,6 @@ export default function BookmarksPage() {
                 <div className="absolute inset-0 bg-black opacity-50 z-0"></div>
                 <div className="relative z-10">
                     {/* Tabs */}
-                    <div className="flex justify-center gap-2 mt-4 mx-4 relative z-10 px-4 pt-4 mb-6">
-                        <Button
-                            outline
-                            rounded
-                            onClick={() => setHeaderTab('all')}
-                            className={`${
-                                headerTab === 'all' ? 'bg-gray-100 dark:bg-gray-800 k-color-brand-purple shadow-lg' : 'bg-white dark:bg-gray-900 shadow-lg'
-                            } rounded-full text-xs`}
-                            style={{
-                                color: '#fff'
-                            }}
-                        >
-                            All Raffles
-                        </Button>
-
-                        <Button
-                            outline
-                            rounded
-                            onClick={() => setHeaderTab('my')}
-                            className={`${
-                                headerTab === 'my' ? 'bg-gray-100 dark:bg-gray-800 k-color-brand-purple shadow-lg' : 'bg-white dark:bg-gray-900 shadow-lg'
-                            } rounded-full text-xs`}
-                            style={{
-                                color: '#fff'
-                            }}
-                        >
-                            My Raffles
-                        </Button>
-
-                        <button
-                            className="rounded-full bg-gray-700 text-white text-xs font-bold w-11 h-6 items-center justify-center"
-                            onClick={() => setShowTooltip(!showTooltip)}
-                        >
-                            ?
-                        </button>
-
-                        {showTooltip && (
-                            <div className="tooltip absolute bg-gray-700  text-xs rounded-2xl p-4 mt-2 z-20">
-                                {'Your raffle entries are reset every week when the raffle happens'}
-                                <button className="absolute top-0 right-0 text-white mt-2 mr-2" onClick={() => setShowTooltip(false)}>
-                                    <FaTimes size={12} />
-                                </button>
-                            </div>
-                        )}
-                    </div> */}
 
                     <div className="flex flex-col justify-center gap-2 mt-4 mx-4 relative z-10 px-4 pt-4 mb-2 items-center">
                         <div className="flex gap-2 items-center">
