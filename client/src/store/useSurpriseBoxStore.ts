@@ -14,7 +14,7 @@ interface SurpriseBoxState {
 
 // Function to generate a random increment for `nextBox`
 const getRandomIncrement = (): number => {
-    const increments = [3, 3, 5, 6]
+    const increments = [3, 3, 5, 5]
     return increments[Math.floor(Math.random() * increments.length)]
 }
 
