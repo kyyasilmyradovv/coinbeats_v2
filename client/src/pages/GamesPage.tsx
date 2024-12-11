@@ -639,7 +639,7 @@ export default function GamesPage() {
                                 return (
                                     <div
                                         key={task.id}
-                                        className="relative bg-white dark:bg-zinc-900 rounded-2xl shadow-lg py-1 flex flex-row items-center px-1 border border-gray-300 dark:border-gray-600 h-16 justify-between w-full mb-2"
+                                        className="relative bg-white dark:bg-zinc-900 rounded-2xl shadow-lg py-1 flex flex-row items-center px-1 border border-gray-300 dark:border-gray-600 h-16 justify-between w-full mb-10"
                                     >
                                         {/* Platform Icon */}
                                         <div className="w-12 h-16 flex items-center justify-center pt-2">

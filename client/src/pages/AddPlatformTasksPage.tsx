@@ -474,7 +474,7 @@ const AddPlatformTasksPage: React.FC = () => {
                                                 <p className="text-sm font-semibold">Parameters:</p>
                                                 <ul className="list-disc list-inside">
                                                     {Object.entries(task.parameters).map(([key, value]) => (
-                                                        <li key={key}>
+                                                        <li key={key} className="break-all whitespace-normal">
                                                             {key}: {value as string}
                                                         </li>
                                                     ))}

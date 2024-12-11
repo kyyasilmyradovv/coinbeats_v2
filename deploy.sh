@@ -29,7 +29,7 @@ docker-compose rm -f frontend-$NEW_DEPLOYMENT backend-$NEW_DEPLOYMENT
 
 # Build new images without cache
 echo "Building new images without cache..."
-docker-compose build --no-cache frontend-$NEW_DEPLOYMENT backend-$NEW_DEPLOYMENT
+docker-compose build frontend-$NEW_DEPLOYMENT backend-$NEW_DEPLOYMENT
 
 # Bring up the new containers
 echo "Starting new containers..."
