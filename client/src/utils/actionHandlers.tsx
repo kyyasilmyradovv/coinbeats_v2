@@ -1,7 +1,7 @@
 // src/utils/actionHandlers.ts
 
 import { VerificationTask } from '../types'
-import { FaFacebook, FaInstagram, FaTelegramPlane, FaDiscord, FaYoutube, FaEnvelope } from 'react-icons/fa'
+import { FaFacebook, FaInstagram, FaTelegramPlane, FaDiscord, FaYoutube, FaEnvelope, FaLinkedin } from 'react-icons/fa'
 import { TbBrandX } from 'react-icons/tb'
 import useUserVerificationStore from '../store/useUserVerificationStore'
 import { initUtils } from '@telegram-apps/sdk'
@@ -14,7 +14,8 @@ export const platformIcons: { [key: string]: JSX.Element } = {
     TELEGRAM: <FaTelegramPlane className="w-8 h-8 !mb-3 text-blue-400 !p-0 !m-0" />,
     DISCORD: <FaDiscord className="w-8 h-8 !mb-3 text-indigo-600 !p-0 !m-0" />,
     YOUTUBE: <FaYoutube className="w-8 h-8 !mb-3 text-red-600 !p-0 !m-0" />,
-    EMAIL: <FaEnvelope className="w-8 h-8 !mb-3 text-green-500 !p-0 !m-0" />
+    EMAIL: <FaEnvelope className="w-8 h-8 !mb-3 text-green-500 !p-0 !m-0" />,
+    LINKEDIN: <FaLinkedin className="w-8 h-8 !mb-3 text-blue-700 !p-0 !m-0" />
     // Add other platforms as needed
 }
 
@@ -77,9 +78,9 @@ export function getActionLabel(verificationMethod: string, isAuthenticated?: boo
         case 'MEME_TWEET':
             return !isAuthenticated ? 'Authenticate' : 'Tweet Meme'
         case 'FOLLOW_INSTAGRAM_USER':
-            return 'Follow on Instagram'
+            return 'Follow'
         case 'FOLLOW_LINKEDIN_USER':
-            return 'Follow on LinkedIn'
+            return 'Follow'
         default:
             return 'Action'
     }

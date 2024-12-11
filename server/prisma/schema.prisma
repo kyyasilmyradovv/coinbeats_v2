@@ -441,6 +441,7 @@ enum Platform {
   TELEGRAM
   DISCORD
   EMAIL
+  LINKEDIN
   NONE
 }
 
