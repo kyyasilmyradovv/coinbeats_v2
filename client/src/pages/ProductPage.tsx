@@ -24,7 +24,6 @@ import useAcademiesStore from '../store/useAcademiesStore'
 import useUserVerificationStore, { VerificationTask } from '../store/useUserVerificationStore'
 import useSurpriseBoxStore from '~/store/useSurpriseBoxStore'
 import useNotificationStore from '~/store/useNotificationStore'
-import useSessionStore from '../store/useSessionStore'
 import coinStackIcon from '../images/coin-stack.png'
 import coinbeats from '../images/coinbeats-l.svg'
 import { Icon } from '@iconify/react'
@@ -76,18 +75,11 @@ export default function ProductPage() {
     const [currentPoints, setCurrentPoints] = useState(0)
     const [showXPAnimation, setShowXPAnimation] = useState(false)
     const swiperRef = useRef<any>(null)
-    const { userId, setUser, referralCode, telegramUserId } = useUserStore((state) => ({
+    const { userId, setUser, referralCode } = useUserStore((state) => ({
         userId: state.userId,
-        telegramUserId: state.telegramUserId,
         setUser: state.setUser,
         referralCode: state.referralCode
     }))
-
-    const { tappadsPublisher, tappadsClickId } = useSessionStore((state) => ({
-        tappadsPublisher: state.tappadsPublisher,
-        tappadsClickId: state.tappadsClickId
-    }))
-
     const {
         userVerificationTasks,
         fetchUserVerificationTasks,
@@ -119,7 +111,6 @@ export default function ProductPage() {
         saveResponse,
         submitQuiz,
         fetchUserTotalPoints,
-        fetchUserTotalRaffles,
         questions,
         quests
     } = useAcademiesStore((state) => ({
@@ -132,7 +123,6 @@ export default function ProductPage() {
         saveResponse: state.saveResponse,
         submitQuiz: state.submitQuiz,
         fetchUserTotalPoints: state.fetchUserTotalPoints,
-        fetchUserTotalRaffles: state.fetchUserTotalRaffles,
         questions: state.questions,
         quests: state.quests
     }))
@@ -258,7 +248,9 @@ export default function ProductPage() {
     useEffect(() => {
         if (academy) {
             if (userId !== null) {
-                fetchEarnedPoints(userId, academy.id)
+                if (userId !== null) {
+                    fetchEarnedPoints(userId, academy.id)
+                }
             }
             fetchQuestions(academy.id)
             if (userId !== null) {
@@ -348,6 +340,7 @@ export default function ProductPage() {
         const arrowTimer = setTimeout(() => {
             setShowArrow(false)
         }, 3000)
+
         return () => clearTimeout(arrowTimer)
     }, [])
 
@@ -411,7 +404,7 @@ export default function ProductPage() {
             return
         }
 
-        setErrorMessage('')
+        setErrorMessage('') // Clear error message
 
         try {
             if (timerIntervalRef.current) {
@@ -439,6 +432,7 @@ export default function ProductPage() {
 
                 // Update earnedPoints from store
                 fetchEarnedPoints(userId, academy.id)
+
                 setCurrentPoints(pointsAwarded)
                 triggerXPAnimation()
             }
@@ -492,94 +486,50 @@ export default function ProductPage() {
         if (userId) {
             loadSurpriseBoxData(userId)
         }
-    }, [userId, loadSurpriseBoxData])
+    }, [userId])
 
     const handleCompleteAcademy = async () => {
-        console.log('handleCompleteAcademy called')
         try {
-            console.log('Submitting quiz for academy ID:', academy?.id, 'userId:', userId)
             // Step 1: Submit the quiz
             await submitQuiz(academy.id, userId)
-            console.log('Quiz submitted successfully')
 
             // Step 2: Fetch updated total points from the backend
-            console.log('Fetching updated total points for user:', userId)
             await fetchUserTotalPoints(userId)
-            console.log('Total points fetched')
 
-            console.log('Fetching updated total raffles for user:', userId)
-            await fetchUserTotalRaffles(userId)
-            console.log('Total raffles fetched')
-
-            // Fetch updated earnedPoints
-            console.log('Fetching earned points for user:', userId, 'academy:', academy.id)
-            await fetchEarnedPoints(userId, academy.id)
-            console.log('Earned points fetched')
+            // Step 3: Fetch updated earned points for the current academy
+            fetchEarnedPoints(userId, academy.id)
 
             // Step 4: Update the store with the new completed academies count
-            console.log('Increasing completed academies count for user:', userId)
             const { increaseCompletedAcademies } = useSurpriseBoxStore.getState()
             increaseCompletedAcademies(userId)
 
             // Step 5: Handle surprise box logic if applicable
-            console.log('Checking surprise box logic. completedAcademies:', completedAcademies, 'nextBox:', nextBox)
             if (completedAcademies + 1 === nextBox) {
                 let randomSurprisePoint = (Math.floor(Math.random() * 10) + 1) * 500
+
                 setSurprisePoint(randomSurprisePoint)
-                console.log('Surprise point awarded:', randomSurprisePoint)
                 setNextBox(userId, randomSurprisePoint)
 
-                // update user state total points
-                const { totalRaffles, totalPoints } = useUserStore.getState()
-                const newTotalPoints = totalPoints + randomSurprisePoint
-                const newTotalRaffles = totalRaffles + randomSurprisePoint / 100
-                console.log('Updating user store with new totals:', { newTotalPoints, newTotalRaffles })
-                useUserStore.setState({
-                    totalPoints: newTotalPoints,
-                    totalRaffles: newTotalRaffles
-                })
+                // Update user state total points in the store
+                const { totalPoints } = useUserStore.getState()
+                useUserStore.setState({ totalPoints: totalPoints + randomSurprisePoint })
             }
 
             // Step 6: Fetch notifications to check for level-up or other events
-            console.log('Fetching notifications for user:', userId)
             const { fetchNotifications, showNotification } = useNotificationStore.getState()
             await fetchNotifications()
-            console.log('Notifications fetched')
 
             // Get the first unread notification if available
             const { notifications } = useNotificationStore.getState()
             const unreadNotification = notifications.find((notif) => !notif.read)
+
+            // Step 7: If a notification exists, show the notification dialog
             if (unreadNotification) {
-                console.log('Showing unread notification:', unreadNotification)
                 showNotification(unreadNotification)
             }
 
-            // Old TappAds Postback Integration
-            console.log('Checking TappAds postback params. tappadsPublisher:', tappadsPublisher, 'tappadsClickId:', tappadsClickId, 'userId:', telegramUserId)
-            if (tappadsPublisher && tappadsClickId && telegramUserId) {
-                const telegram_id = telegramUserId
-                const startapp = `tappads_${tappadsPublisher}_${tappadsClickId}`
-                const is_old = 'false' // Adjust if needed
-                const YOUR_ADVERT_ID = '56' // Replace with your actual Advert ID
-                const YOUR_OFFER_ID = '187' // Replace with your actual Offer ID
-
-                const url = `https://wallapi.tappads.io/v1/tapp-cpa?pubid=${tappadsPublisher}&m=2&advert_id=${YOUR_ADVERT_ID}&click_id=${tappadsClickId}&offer_id=${YOUR_OFFER_ID}&telegram_id=${telegram_id}&startapp=${encodeURIComponent(startapp)}&is_old=${is_old}`
-                console.log('Sending TappAds postback:', url)
-
-                try {
-                    const response = await fetch(url, { method: 'GET' })
-                    const responseText = await response.text()
-                    console.log('TappAds postback response status:', response.status, 'response text:', responseText)
-                } catch (err) {
-                    console.error('Error sending TappAds postback:', err)
-                }
-            } else {
-                console.log('TappAds postback not sent. Missing publisher, clickId, or userId.')
-            }
-
-            console.log('Setting activeFilter to completion')
+            // Update the active filter to show completion view
             setActiveFilter('completion')
-            console.log('handleCompleteAcademy finished successfully')
         } catch (error) {
             console.error('Error completing academy:', error)
         }
@@ -673,6 +623,7 @@ export default function ProductPage() {
             startTimer()
             setInitialAnswers((prevAnswers) => prevAnswers.map((q, qi) => (qi === 0 ? { ...q, timerStarted: true } : q)))
         }
+
         if (swiperRef.current && swiperRef.current.swiper) {
             swiperRef.current.swiper.slideTo(0, 0) // Slide to the first question without animation
         } else {
@@ -708,6 +659,7 @@ export default function ProductPage() {
 
         if (question.question === 'Tokenomics details' && question.answer) {
             let parsedAnswer = {}
+
             try {
                 parsedAnswer = JSON.parse(question.answer)
             } catch (error) {

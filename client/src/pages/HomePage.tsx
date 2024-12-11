@@ -14,6 +14,7 @@ import { MdBookmarks } from 'react-icons/md'
 import { FaTelegramPlane, FaTimes } from 'react-icons/fa'
 import useUserStore from '../store/useUserStore'
 import useNotificationStore from '../store/useNotificationStore'
+import useSessionStore from '../store/useSessionStore'
 import coins from '../images/coin-stack.png'
 import NewIcon from '../images/new.png'
 import AnimatedNumber from '../components/AnimatedNumber'
@@ -91,6 +92,11 @@ export default function HomePage() {
 
     const { academies } = useAcademiesStore((state) => ({
         academies: state.academies
+    }))
+
+    const { tappadsPublisher, tappadsClickId } = useSessionStore((state) => ({
+        tappadsPublisher: state.tappadsPublisher,
+        tappadsClickId: state.tappadsClickId
     }))
 
     const { homepageTasks } = useTasksStore((state) => ({
@@ -213,6 +219,33 @@ export default function HomePage() {
             }
         }
     }, [referralPointsAwarded])
+
+    useEffect(() => {
+        const sendPostback = async () => {
+            if (tappadsPublisher && tappadsClickId && telegramUserId) {
+                const telegram_id = telegramUserId
+                const startapp = `tappads_${tappadsPublisher}_${tappadsClickId}`
+                const is_old = 'false' // Adjust if needed
+                const YOUR_ADVERT_ID = '56' // Replace with your actual Advert ID
+                const YOUR_OFFER_ID = '187' // Replace with your actual Offer ID
+
+                const url = `https://wallapi.tappads.io/v1/tapp-cpa?pubid=${tappadsPublisher}&m=2&advert_id=${YOUR_ADVERT_ID}&click_id=${tappadsClickId}&offer_id=${YOUR_OFFER_ID}&telegram_id=${telegram_id}&startapp=${encodeURIComponent(startapp)}&is_old=${is_old}`
+                console.log('Sending TappAds postback:', url)
+
+                try {
+                    const response = await fetch(url, { method: 'GET' })
+                    const responseText = await response.text()
+                    console.log('TappAds postback response status:', response.status, 'response text:', responseText)
+                } catch (err) {
+                    console.error('Error sending TappAds postback:', err)
+                }
+            } else {
+                console.log('TappAds postback not sent. Missing publisher, clickId, or userId.')
+            }
+        }
+
+        sendPostback()
+    }, [tappadsPublisher, tappadsClickId, telegramUserId])
 
     useEffect(() => {
         if (userId) {
