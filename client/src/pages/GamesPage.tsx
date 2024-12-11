@@ -526,7 +526,7 @@ export default function GamesPage() {
                         onClose={() => setNotificationOpen(false)}
                     />
 
-                    <div className="mt-0 px-4 pb-10 pt-4 mb-8">
+                    <div className="mt-0 px-4 pb-10 pt-4 mb-12">
                         {/* Tabs for Tasks */}
                         <div className="flex justify-center gap-2 mt-4 mx-4 relative z-10 mb-4">
                             <Button
@@ -639,7 +639,7 @@ export default function GamesPage() {
                                 return (
                                     <div
                                         key={task.id}
-                                        className="relative bg-white dark:bg-zinc-900 rounded-2xl shadow-lg py-1 flex flex-row items-center px-1 border border-gray-300 dark:border-gray-600 h-16 justify-between w-full mb-10"
+                                        className="relative bg-white dark:bg-zinc-900 rounded-2xl shadow-lg py-1 flex flex-row items-center px-1 border border-gray-300 dark:border-gray-600 h-16 justify-between w-full mb-2"
                                     >
                                         {/* Platform Icon */}
                                         <div className="w-12 h-16 flex items-center justify-center pt-2">
