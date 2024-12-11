@@ -495,10 +495,6 @@ export const handleTwitterAuthentication = (
     } else {
         console.log('Desktop or unknown device detected. Using alternative methods to open link')
 
-        if (window.Telegram?.WebApp?.openLink) {
-            window.Telegram.WebApp.openLink(authUrl, { target: 'external' })
-        } else {
-            window.open(authUrl, '_blank')
-        }
+        window.open(authUrl, '_blank')
     }
 }
