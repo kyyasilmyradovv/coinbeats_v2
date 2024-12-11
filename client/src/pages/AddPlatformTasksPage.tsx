@@ -247,6 +247,7 @@ const AddPlatformTasksPage: React.FC = () => {
                                 <option value="INSTAGRAM">Instagram</option>
                                 <option value="DISCORD">Discord</option>
                                 <option value="EMAIL">Email</option>
+                                <option value="LINKEDIN">LinkedIn</option>
                             </ListInput>
                             <ListInput
                                 label="Verification Method"
