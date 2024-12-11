@@ -81,7 +81,7 @@ export default function HomePage() {
         fetchUserLevel: state.fetchUserLevel // Destructure fetchUserLevel
     }))
 
-    const { fetchUserTotalPoints } = useAcademiesStore.getState()
+    const { fetchUserTotalPoints, fetchUserTotalRaffles } = useAcademiesStore.getState()
     const { fetchNotifications, showNotification } = useNotificationStore.getState()
 
     const { categories, chains } = useCategoryChainStore((state) => ({
@@ -161,6 +161,8 @@ export default function HomePage() {
                 // Fetch updated points and level
                 if (userId) {
                     await fetchUserTotalPoints(userId) // Update points
+                    await fetchUserTotalRaffles(userId) // Update raffles
+
                     await fetchUserLevel() // Update level
                 }
 
@@ -191,6 +193,7 @@ export default function HomePage() {
                 // Fetch updated points and level
                 if (userId) {
                     fetchUserTotalPoints(userId) // Update points
+                    fetchUserTotalRaffles(userId) // Update raffles
                     fetchUserLevel() // Update level
                 }
 
@@ -360,6 +363,7 @@ export default function HomePage() {
             // Fetch updated points and level
             if (userId) {
                 await fetchUserTotalPoints(userId) // Update points
+                await fetchUserTotalRaffles(userId) // Update raffles
                 await fetchUserLevel() // Update level
             }
 

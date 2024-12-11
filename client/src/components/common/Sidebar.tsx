@@ -1,13 +1,14 @@
 // client/src/components/common/Sidebar.tsx
 
 import React, { useState, useLayoutEffect, useEffect, useRef } from 'react'
-import { Page, Panel, Block, BlockTitle, List, ListInput, Button, Dialog, Notification, Popover } from 'konsta/react'
+import { Page, Panel, Block, BlockTitle, List, ListInput, Button, Dialog, Notification } from 'konsta/react'
 import { useNavigate } from 'react-router-dom'
 import useUserStore from '../../store/useUserStore'
 import useSessionStore from '../../store/useSessionStore'
 import Lottie from 'react-lottie'
 import bunnyAnimationData from '../../animations/bunny.json'
 import { TbBrandX } from 'react-icons/tb'
+import { Popover } from '@mui/material'
 
 // Import the handleTwitterAuthentication function
 import { handleTwitterAuthentication } from '../../utils/actionHandlers'
@@ -188,6 +189,12 @@ const Sidebar: React.FC = () => {
     const [popoverOpen, setPopoverOpen] = useState(false)
     const popoverTargetRef = useRef<HTMLButtonElement>(null)
 
+    const togglePopover = () => {
+        setPopoverOpen((prevState) => {
+            return !prevState
+        })
+    }
+
     // Function to handle authentication
     const handleAuthenticate = () => {
         if (!authenticated || !telegramUserId) {
@@ -197,7 +204,7 @@ const Sidebar: React.FC = () => {
         }
 
         handleTwitterAuthentication(telegramUserId, { setNotificationText, setNotificationOpen })
-        setPopoverOpen(false)
+        togglePopover()
     }
 
     // Function to handle removal of Twitter account
@@ -205,7 +212,7 @@ const Sidebar: React.FC = () => {
         const message = await removeTwitterAccount()
         setNotificationText(message)
         setNotificationOpen(true)
-        setPopoverOpen(false)
+        togglePopover()
     }
 
     // Fetch Twitter authentication status
@@ -263,22 +270,34 @@ const Sidebar: React.FC = () => {
                         <button
                             ref={popoverTargetRef}
                             className="flex items-center space-x-2 px-4 py-2 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold shadow-lg hover:shadow-xl transition-transform transform hover:scale-105"
-                            onClick={() => {
-                                setPopoverOpen(true)
-                            }}
+                            onClick={togglePopover}
                         >
                             <TbBrandX className="w-5 h-5" />
                             <span className="text-sm">{twitterAuthenticated ? `@${twitterUsername}` : 'Authenticate with X'}</span>
                         </button>
 
                         {/* Popover */}
+
                         <Popover
-                            opened={popoverOpen}
-                            target={popoverTargetRef.current}
-                            onBackdropClick={() => setPopoverOpen(false)}
-                            size="w-56"
-                            className="right-0"
-                            style={{ transform: 'translateX(-50%)' }}
+                            open={popoverOpen}
+                            anchorEl={popoverTargetRef.current}
+                            onClose={togglePopover}
+                            anchorOrigin={{
+                                vertical: 'bottom',
+                                horizontal: 'center'
+                            }}
+                            transformOrigin={{
+                                vertical: 'top',
+                                horizontal: 'center'
+                            }}
+                            slotProps={{
+                                paper: {
+                                    style: {
+                                        backgroundColor: 'transparent'
+                                        // boxShadow: '10px'
+                                    }
+                                }
+                            }}
                         >
                             <Block>
                                 {twitterAuthenticated ? (
@@ -364,7 +383,8 @@ const Sidebar: React.FC = () => {
 
                 {/* Success Notification */}
                 <Notification
-                    className="fixed top-12 left-0 z-50 border"
+                    className="absolute top-12 right-0 z-50 border  px-4 py-2 w-full"
+                    style={{ maxWidth: '100%', insetInlineStart: 'initial' }}
                     opened={notificationOpen}
                     title="Message"
                     text={notificationText}
