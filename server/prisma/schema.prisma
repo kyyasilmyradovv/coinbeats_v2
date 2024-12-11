@@ -462,6 +462,7 @@ enum VerificationMethod {
   COMMENT_ON_TWEET
   LEAVE_FEEDBACK
   MEME_TWEET
+  FOLLOW_LINKEDIN_USER
 }
 
 enum LessonType {

@@ -76,7 +76,10 @@ export function getActionLabel(verificationMethod: string, isAuthenticated?: boo
             return 'Feedback'
         case 'MEME_TWEET':
             return !isAuthenticated ? 'Authenticate' : 'Tweet Meme'
-        // Add other mappings as needed
+        case 'FOLLOW_INSTAGRAM_USER':
+            return 'Follow on Instagram'
+        case 'FOLLOW_LINKEDIN_USER':
+            return 'Follow on LinkedIn'
         default:
             return 'Action'
     }
@@ -145,7 +148,7 @@ export const handleAction = async (task: VerificationTask, options: { [key: stri
             await startTask(task.id, academyId) // Start the task
             setSelectedTask(task)
             setFeedbackDialogOpen(true)
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error starting task:', error)
             setNotificationText(error.response?.data?.message || 'Error starting task. Please try again later.')
             setNotificationOpen(true)
@@ -200,6 +203,40 @@ export const handleAction = async (task: VerificationTask, options: { [key: stri
                 // Add handling for other platforms if needed
                 break
 
+            case 'FOLLOW_INSTAGRAM_USER':
+                console.log('Handling FOLLOW_INSTAGRAM_USER action')
+                const igUsername = task.parameters?.username
+                if (!igUsername) {
+                    setNotificationText('Instagram username is not specified for this task.')
+                    setNotificationOpen(true)
+                    return
+                }
+                window.open(`https://www.instagram.com/${igUsername}/`, '_blank')
+
+                try {
+                    await startTask(task.id, academyId)
+                } catch (error) {
+                    console.error('Error starting task:', error)
+                }
+                break
+
+            case 'FOLLOW_LINKEDIN_USER':
+                console.log('Handling FOLLOW_LINKEDIN_USER action')
+                const linkedinUrl = task.parameters?.username // We'll store the profile URL in 'username' parameter for simplicity
+                if (!linkedinUrl) {
+                    setNotificationText('LinkedIn profile URL not specified for this task.')
+                    setNotificationOpen(true)
+                    return
+                }
+                window.open(linkedinUrl, '_blank')
+
+                try {
+                    await startTask(task.id, academyId)
+                } catch (error) {
+                    console.error('Error starting task:', error)
+                }
+                break
+
             case 'TWEET':
                 if (!twitterAuthenticated) {
                     console.log('User not authenticated with Twitter, starting OAuth flow')
@@ -241,7 +278,6 @@ export const handleAction = async (task: VerificationTask, options: { [key: stri
                     return
                 }
                 window.open(`https://twitter.com/intent/retweet?tweet_id=${retweetId}`, '_blank')
-
                 try {
                     await startTask(task.id, academyId)
                 } catch (error) {
@@ -258,7 +294,6 @@ export const handleAction = async (task: VerificationTask, options: { [key: stri
                     return
                 }
                 window.open(`https://twitter.com/intent/like?tweet_id=${likeTweetId}`, '_blank')
-
                 try {
                     await startTask(task.id, academyId)
                 } catch (error) {
@@ -494,7 +529,6 @@ export const handleTwitterAuthentication = (
         window.open(authUrl, '_blank')
     } else {
         console.log('Desktop or unknown device detected. Using alternative methods to open link')
-
         window.open(authUrl, '_blank')
     }
 }

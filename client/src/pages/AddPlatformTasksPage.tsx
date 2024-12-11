@@ -269,6 +269,7 @@ const AddPlatformTasksPage: React.FC = () => {
                                 <option value="SUBSCRIBE_YOUTUBE_CHANNEL">Subscribe YouTube Channel</option>
                                 <option value="WATCH_YOUTUBE_VIDEO">Watch YouTube Video</option>
                                 <option value="FOLLOW_INSTAGRAM_USER">Follow Instagram User</option>
+                                <option value="FOLLOW_LINKEDIN_USER">Follow LinkedIn User</option>
                                 <option value="JOIN_DISCORD_CHANNEL">Join Discord Channel</option>
                                 <option value="PROVIDE_EMAIL">Provide Email</option>
                                 <option value="SHORT_CIRCUIT">Short Circuit</option>
@@ -277,6 +278,7 @@ const AddPlatformTasksPage: React.FC = () => {
                             </ListInput>
 
                             {/* Conditional Parameters Input Fields */}
+
                             {/* For FOLLOW_USER */}
                             {formData.verificationMethod === 'FOLLOW_USER' && (
                                 <ListInput
@@ -355,6 +357,19 @@ const AddPlatformTasksPage: React.FC = () => {
                                     clearButton
                                 />
                             )}
+                            {/* For FOLLOW_LINKEDIN_USER */}
+                            {formData.verificationMethod === 'FOLLOW_LINKEDIN_USER' && (
+                                <ListInput
+                                    label="LinkedIn Profile URL"
+                                    type="text"
+                                    name="username"
+                                    outline
+                                    value={formData.parameters.username || ''}
+                                    onChange={(e) => handleParameterChange('username', e.target.value)}
+                                    placeholder="Enter LinkedIn Profile URL"
+                                    clearButton
+                                />
+                            )}
                             {/* For JOIN_DISCORD_CHANNEL */}
                             {formData.verificationMethod === 'JOIN_DISCORD_CHANNEL' && (
                                 <ListInput
@@ -381,6 +396,7 @@ const AddPlatformTasksPage: React.FC = () => {
                                     clearButton
                                 />
                             )}
+
                             <ListInput
                                 label="XP Allocation"
                                 type="number"
@@ -458,7 +474,7 @@ const AddPlatformTasksPage: React.FC = () => {
                                                 <ul className="list-disc list-inside">
                                                     {Object.entries(task.parameters).map(([key, value]) => (
                                                         <li key={key}>
-                                                            {key}: {value}
+                                                            {key}: {value as string}
                                                         </li>
                                                     ))}
                                                 </ul>
