@@ -391,6 +391,10 @@ model OverallRaffle {
   deadline           DateTime?
   minPoints          Int?
   reward             String?
+  isActive           Boolean      @default(false)
+  creatorId          Int?
+  academyId          Int?
+  type               String? 
 }
 
 model RafflesHistory {

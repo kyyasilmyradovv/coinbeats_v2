@@ -33,7 +33,7 @@ router.get(
 );
 
 // User apis
-router.get('/overall', asyncHandler(getOverallRaffle));
+router.get('/overall', authenticateToken, asyncHandler(getOverallRaffle));
 router.get('/total', asyncHandler(getMyTotalRaffles));
 router.get('/', asyncHandler(getMyRaffles));
 

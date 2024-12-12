@@ -42,11 +42,21 @@ exports.getMyTotalRaffles = async (req, res, next) => {
 // Admin controllers
 exports.getOverallRaffle = async (req, res, next) => {
   try {
-    let overallRaffle = await prisma.OverallRaffle.findFirst();
+    // Check user type and construct where condition accordingly
+    let where = {};
+    if (req?.user?.roles?.includes('SUPERADMIN')) {
+      where.type = 'platform';
+    } else if (req?.user?.roles?.includes('CREATOR')) {
+      where.creatorId = req.user.id;
+    } else {
+      return next(createError(403, 'Forbidden'));
+    }
+
+    let overallRaffle = await prisma.OverallRaffle.findFirst({ where });
 
     // If not found then create
     if (!overallRaffle) {
-      overallRaffle = await prisma.OverallRaffle.create({});
+      overallRaffle = await prisma.OverallRaffle.create({ type: 'platform' });
     }
 
     if (overallRaffle.deadline)
@@ -65,7 +75,10 @@ exports.updateOverallRaffle = async (req, res, next) => {
 
     if (deadline) deadline = new Date(deadline);
 
-    const overallRaffle = await prisma.OverallRaffle.updateMany({
+    const overallRaffle = await prisma.OverallRaffle.update({
+      where: {
+        type: 'platform',
+      },
       data: {
         minAmount: +minAmount,
         minPoints: +minPoints,

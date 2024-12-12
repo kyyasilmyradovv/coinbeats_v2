@@ -245,9 +245,9 @@ function RootComponent() {
                         <Route
                             path="/overall-raffle-management"
                             element={
-                                <RouteGuard requiredRole="SUPERADMIN">
-                                    <OverallRaffleManagementPage />
-                                </RouteGuard>
+                                // <RouteGuard requiredRole="SUPERADMIN">
+                                <OverallRaffleManagementPage />
+                                // </RouteGuard>
                             }
                         />
                         <Route
