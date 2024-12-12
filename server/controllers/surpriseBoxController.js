@@ -16,7 +16,7 @@ exports.getSurpriseBoxes = async (req, res, next) => {
     if (!surpriseBox) {
       // Get the total number of completed academies for the user from the "Point" table
       const completedAcademiesCount = await prisma.point.count({
-        where: { userId },
+        where: { userId, academyId: { not: null } },
       });
 
       surpriseBox = await prisma.surpriseBox.create({
@@ -48,7 +48,7 @@ exports.updateSurpriseBoxes = async (req, res, next) => {
     if (!box) {
       completedAcademies =
         (await prisma.point.count({
-          where: { userId },
+          where: { userId, academyId: { not: null } },
         })) || 0;
 
       nextBox = completedAcademies + 3;
