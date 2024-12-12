@@ -138,12 +138,11 @@ const DiscoverPage: React.FC = () => {
                     <div className="!flex w-1/3">
                         <List className="!flex !ml-0 !mr-0 !mt-0 !mb-0 !w-full !my-0">
                             <ListInput
-                                className="!flex text-xs !ml-0 !mr-0 !mt-0 !mb-0"
                                 label="Category"
                                 type="select"
                                 dropdown
                                 outline
-                                inputClassName="!bg-[#1c1c1d] !text-white !m-1 !pl-2"
+                                inputClassName="!bg-zinc-900 !text-white !m-1 !pl-2 !h-6"
                                 inputStyle={{ fontSize: '0.85rem' }}
                                 placeholder="Please choose..."
                                 value={category}
@@ -151,7 +150,7 @@ const DiscoverPage: React.FC = () => {
                             >
                                 <option value="">All</option>
                                 {categories.map((category) => (
-                                    <option key={category.id} value={category.name} className="!dark:text-white !text-black dark:bg-gray-800 !bg-gray-100">
+                                    <option key={category.id} value={category.name}>
                                         {category.name}
                                     </option>
                                 ))}
@@ -161,12 +160,11 @@ const DiscoverPage: React.FC = () => {
                     <div className="!flex w-1/3">
                         <List className="!flex !ml-0 !mr-0 !mt-0 !mb-0 !w-full !my-0">
                             <ListInput
-                                className="!flex text-xs !h-4 !ml-0 !mr-0 !mt-0 !mb-0"
                                 label="Chain"
                                 type="select"
                                 dropdown
                                 outline
-                                inputClassName="!bg-[#1c1c1d] !text-white !m-1 !pl-2"
+                                inputClassName="!bg-zinc-900 !text-white !m-1 !pl-2 !h-6"
                                 inputStyle={{ fontSize: '0.85rem' }}
                                 placeholder="Please choose..."
                                 value={chain}

@@ -171,7 +171,7 @@ function RootComponent() {
                         <Route
                             path="/creator-dashboard"
                             element={
-                                <RouteGuard requiredRole="CREATOR">
+                                <RouteGuard allowedRoles={['CREATOR']}>
                                     <CreatorDashboardPage />
                                 </RouteGuard>
                             }
@@ -179,7 +179,7 @@ function RootComponent() {
                         <Route
                             path="/superadmin-dashboard"
                             element={
-                                <RouteGuard requiredRole="SUPERADMIN">
+                                <RouteGuard allowedRoles={['SUPERADMIN']}>
                                     <SuperAdminDashboardPage />
                                 </RouteGuard>
                             }
@@ -187,23 +187,23 @@ function RootComponent() {
                         <Route
                             path="/user-management"
                             element={
-                                <RouteGuard requiredRole="SUPERADMIN">
-                                    <UserManagementPage />
+                                <RouteGuard allowedRoles={['SUPERADMIN']}>
+                                    <UserManagementPage theme={theme} setTheme={() => {}} setColorTheme={() => {}} />
                                 </RouteGuard>
                             }
                         />
                         <Route
                             path="/user/:userId"
                             element={
-                                <RouteGuard requiredRole="SUPERADMIN">
-                                    <UserDetailPage />
+                                <RouteGuard allowedRoles={['SUPERADMIN']}>
+                                    <UserDetailPage theme={theme} setTheme={() => {}} setColorTheme={() => {}} />
                                 </RouteGuard>
                             }
                         />
                         <Route
                             path="/academy-management"
                             element={
-                                <RouteGuard requiredRole="SUPERADMIN">
+                                <RouteGuard allowedRoles={['SUPERADMIN']}>
                                     <AcademyManagementPage />
                                 </RouteGuard>
                             }
@@ -211,7 +211,7 @@ function RootComponent() {
                         <Route
                             path="/academy/:academyId"
                             element={
-                                <RouteGuard requiredRole="SUPERADMIN">
+                                <RouteGuard allowedRoles={['SUPERADMIN']}>
                                     <AcademyDetailPage />
                                 </RouteGuard>
                             }
@@ -221,7 +221,7 @@ function RootComponent() {
                         <Route
                             path="/academy-types"
                             element={
-                                <RouteGuard requiredRole="SUPERADMIN">
+                                <RouteGuard allowedRoles={['SUPERADMIN']}>
                                     <AcademyTypePage />
                                 </RouteGuard>
                             }
@@ -229,7 +229,7 @@ function RootComponent() {
                         <Route
                             path="/add-platform-tasks"
                             element={
-                                <RouteGuard requiredRole="SUPERADMIN">
+                                <RouteGuard allowedRoles={['SUPERADMIN']}>
                                     <AddPlatformTasksPage />
                                 </RouteGuard>
                             }
@@ -237,7 +237,7 @@ function RootComponent() {
                         <Route
                             path="/scholarship-management"
                             element={
-                                <RouteGuard requiredRole="SUPERADMIN">
+                                <RouteGuard allowedRoles={['SUPERADMIN']}>
                                     <ScholarshipManagementPage />
                                 </RouteGuard>
                             }
@@ -245,15 +245,21 @@ function RootComponent() {
                         <Route
                             path="/overall-raffle-management"
                             element={
+<<<<<<< HEAD
                                 // <RouteGuard requiredRole="SUPERADMIN">
                                 <OverallRaffleManagementPage />
                                 // </RouteGuard>
+=======
+                                <RouteGuard allowedRoles={['CREATOR', 'ADMIN', 'SUPERADMIN']}>
+                                    <OverallRaffleManagementPage />
+                                </RouteGuard>
+>>>>>>> main
                             }
                         />
                         <Route
                             path="/character-management"
                             element={
-                                <RouteGuard requiredRole="SUPERADMIN">
+                                <RouteGuard allowedRoles={['SUPERADMIN']}>
                                     <CharacterLevelManagementPage />
                                 </RouteGuard>
                             }
@@ -261,7 +267,7 @@ function RootComponent() {
                         <Route
                             path="/add-categories-chains"
                             element={
-                                <RouteGuard requiredRole="SUPERADMIN">
+                                <RouteGuard allowedRoles={['SUPERADMIN']}>
                                     <CategoryChainManagementPage />
                                 </RouteGuard>
                             }
@@ -270,7 +276,7 @@ function RootComponent() {
                         <Route
                             path="/create-academy"
                             element={
-                                <RouteGuard requiredRole="CREATOR">
+                                <RouteGuard allowedRoles={['CREATOR']}>
                                     <CreateAcademyPage />
                                 </RouteGuard>
                             }
@@ -278,7 +284,7 @@ function RootComponent() {
                         <Route
                             path="/create-content"
                             element={
-                                <RouteGuard requiredRole="SUPERADMIN">
+                                <RouteGuard allowedRoles={['SUPERADMIN']}>
                                     <ContentCreationPage />
                                 </RouteGuard>
                             }
@@ -286,7 +292,7 @@ function RootComponent() {
                         <Route
                             path="/my-academies"
                             element={
-                                <RouteGuard requiredRole="CREATOR">
+                                <RouteGuard allowedRoles={['CREATOR']}>
                                     <MyAcademiesPage />
                                 </RouteGuard>
                             }
@@ -294,7 +300,7 @@ function RootComponent() {
                         <Route
                             path="/add-video-lessons/:id"
                             element={
-                                <RouteGuard requiredRole="CREATOR">
+                                <RouteGuard allowedRoles={['CREATOR']}>
                                     <AddVideoLessonsPage />
                                 </RouteGuard>
                             }
@@ -302,7 +308,7 @@ function RootComponent() {
                         <Route
                             path="/add-raffles/:id"
                             element={
-                                <RouteGuard requiredRole="CREATOR">
+                                <RouteGuard allowedRoles={['CREATOR']}>
                                     <AddRafflesPage />
                                 </RouteGuard>
                             }
@@ -310,7 +316,7 @@ function RootComponent() {
                         <Route
                             path="/add-tasks/:id"
                             element={
-                                <RouteGuard requiredRole="CREATOR">
+                                <RouteGuard allowedRoles={['CREATOR']}>
                                     <AddQuestsPage />
                                 </RouteGuard>
                             }
@@ -318,7 +324,7 @@ function RootComponent() {
                         <Route
                             path="/edit-academy/:id"
                             element={
-                                <RouteGuard requiredRole="CREATOR">
+                                <RouteGuard allowedRoles={['CREATOR']}>
                                     <EditAcademyPage />
                                 </RouteGuard>
                             }
@@ -326,7 +332,7 @@ function RootComponent() {
                         <Route
                             path="/allocate-xp/:id"
                             element={
-                                <RouteGuard requiredRole="CREATOR">
+                                <RouteGuard allowedRoles={['CREATOR']}>
                                     <AllocateXpPage />
                                 </RouteGuard>
                             }

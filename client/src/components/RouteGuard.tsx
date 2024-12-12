@@ -6,10 +6,10 @@ import useAuthStore from '../store/useAuthStore'
 
 interface RouteGuardProps {
     children: JSX.Element
-    requiredRole?: string // Optional role requirement
+    allowedRoles?: string[] // Now this is an array of allowed roles
 }
 
-const RouteGuard: React.FC<RouteGuardProps> = ({ children, requiredRole }) => {
+const RouteGuard: React.FC<RouteGuardProps> = ({ children, allowedRoles }) => {
     const { accessToken, userRoles } = useAuthStore((state) => ({
         accessToken: state.accessToken,
         userRoles: state.userRoles
@@ -23,9 +23,13 @@ const RouteGuard: React.FC<RouteGuardProps> = ({ children, requiredRole }) => {
         return <Navigate to="/login" replace />
     }
 
-    if (requiredRole && !userRoles.includes(requiredRole)) {
-        console.warn(`User lacks role: ${requiredRole}. Roles are: ${userRoles}`)
-        return <Navigate to="/not-authorized" replace />
+    if (allowedRoles && allowedRoles.length > 0) {
+        // Check if the user has at least one of the allowed roles
+        const hasRole = allowedRoles.some((role) => userRoles.includes(role))
+        if (!hasRole) {
+            console.warn(`User lacks any of the required roles: ${allowedRoles.join(', ')}. User Roles are: ${userRoles}`)
+            return <Navigate to="/not-authorized" replace />
+        }
     }
 
     return children
