@@ -1,12 +1,13 @@
-// src/store/useContentStore.ts
-
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
 import axios from '../api/axiosInstance'
 import useAuthStore from './useAuthStore'
+import useUserStore from './useUserStore'
+
+type ContentType = 'Podcast' | 'Educator' | 'Tutorial' | null
 
 interface ContentState {
-    contentType: 'Podcast' | 'Educator' | 'Tutorial' | null
+    contentType: ContentType
     podcastData: {
         name: string
         description: string
@@ -40,15 +41,15 @@ interface ContentState {
         logo: File | null | string
         coverPhoto: File | null | string
     }
-    setContentType: (type: ContentState['contentType']) => void
-    setField: (field: string, value: any, contentType?: ContentState['contentType']) => void
-    submitContent: () => Promise<void>
+    setContentType: (type: ContentType) => void
+    setField: (field: string, value: any, contentType?: ContentType) => void
+    submitContent: (id?: number | null) => Promise<void>
     resetContentData: () => void
 }
 
 const useContentStore = create<ContentState>()(
     devtools((set, get) => ({
-        contentType: null,
+        contentType: 'Podcast',
         podcastData: {
             name: '',
             description: '',
@@ -83,9 +84,9 @@ const useContentStore = create<ContentState>()(
             coverPhoto: null
         },
         setContentType: (type) => set({ contentType: type }),
-        setField: (field, value, contentType) => {
+        setField: (field, value, ct) => {
             const state = get()
-            const currentType = contentType || state.contentType
+            const currentType = ct || state.contentType
             if (!currentType) return
             set((state) => ({
                 [`${currentType.toLowerCase()}Data`]: {
@@ -94,7 +95,7 @@ const useContentStore = create<ContentState>()(
                 }
             }))
         },
-        submitContent: async () => {
+        submitContent: async (id?: number | null) => {
             const state = get()
             const { accessToken } = useAuthStore.getState()
 
@@ -105,7 +106,13 @@ const useContentStore = create<ContentState>()(
             try {
                 const contentType = state.contentType?.toLowerCase()
                 if (!contentType) return
+
                 const data = state[`${contentType}Data`]
+
+                // Determine contentOrigin based on user roles
+                const { roles } = useUserStore.getState()
+                const isPlatformBased = roles.includes('SUPERADMIN') || roles.includes('ADMIN')
+                const contentOrigin = isPlatformBased ? 'PLATFORM_BASED' : 'CREATOR_BASED'
 
                 const formData = new FormData()
 
@@ -120,17 +127,32 @@ const useContentStore = create<ContentState>()(
                     }
                 })
 
-                const response = await axios.post(`/api/content/${contentType}s`, formData, {
+                // Append contentOrigin
+                formData.append('contentOrigin', contentOrigin)
+
+                let endpoint = `/api/content/${contentType}s`
+                let method: 'post' | 'put' = 'post'
+
+                if (id && id > 0) {
+                    // If we have an id, we assume we are updating
+                    endpoint = `/api/content/${contentType}s/${id}`
+                    method = 'put'
+                }
+
+                const response = await axios({
+                    url: endpoint,
+                    method,
+                    data: formData,
                     headers: {
                         'Content-Type': 'multipart/form-data',
                         Authorization: `Bearer ${accessToken}`
                     }
                 })
 
-                console.log(`${state.contentType} created successfully`, response.data)
+                console.log(`${state.contentType} ${id ? 'updated' : 'created'} successfully`, response.data)
                 state.resetContentData()
             } catch (error) {
-                console.error(`Error creating ${state.contentType?.toLowerCase()}:`, error)
+                console.error(`Error ${id ? 'updating' : 'creating'} ${state.contentType?.toLowerCase()}:`, error)
                 throw error
             }
         },

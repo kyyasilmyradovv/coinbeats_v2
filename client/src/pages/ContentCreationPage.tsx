@@ -1,13 +1,40 @@
 // src/pages/ContentCreationPage.tsx
 
 import React, { useState, useEffect } from 'react'
-import { Page, List, ListInput, Button, Notification, Card, BlockTitle } from 'konsta/react'
+import { Page, List, ListInput, Button, Notification, Card, BlockTitle, Popover, Block, ListButton } from 'konsta/react'
 import { useNavigate } from 'react-router-dom'
 import Navbar from '../components/common/Navbar'
 import Sidebar from '../components/Sidebar'
 import useContentStore from '../store/useContentStore'
 import bunnyLogo from '../images/bunny-mascot.png'
 import useCategoryChainStore from '../store/useCategoryChainStore'
+import { Icon } from '@iconify/react'
+import axios from '../api/axiosInstance'
+
+interface ContentItem {
+    id: number
+    name?: string // For Podcast/Educator
+    title?: string // For Tutorial
+    description?: string
+    spotifyUrl?: string
+    appleUrl?: string
+    youtubeUrl?: string
+    bio?: string
+    telegramUrl?: string
+    twitterUrl?: string
+    discordUrl?: string
+    contentUrl?: string
+    type?: string
+    logoUrl?: string
+    coverPhotoUrl?: string
+    categories?: string[]
+    chains?: string[]
+}
+
+const constructImageUrl = (url: string | null | undefined) => {
+    if (!url) return ''
+    return `https://telegram.coinbeats.xyz/${url}`
+}
 
 const ContentCreationPage: React.FC = () => {
     const navigate = useNavigate()
@@ -17,6 +44,13 @@ const ContentCreationPage: React.FC = () => {
 
     const [notificationOpen, setNotificationOpen] = useState(false)
     const [notificationText, setNotificationText] = useState('')
+    const [items, setItems] = useState<ContentItem[]>([])
+    const [loading, setLoading] = useState(true)
+
+    const [popoverOpen, setPopoverOpen] = useState(false)
+    const [popoverTarget, setPopoverTarget] = useState<HTMLElement | null>(null)
+    const [selectedItemId, setSelectedItemId] = useState<number | null>(null)
+    const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
 
     useEffect(() => {
         fetchCategoriesAndChains()
@@ -31,7 +65,7 @@ const ContentCreationPage: React.FC = () => {
             return URL.createObjectURL(file)
         }
         if (typeof file === 'string') {
-            return file
+            return constructImageUrl(file)
         }
         return null
     }
@@ -42,21 +76,46 @@ const ContentCreationPage: React.FC = () => {
         target.style.height = `${target.scrollHeight}px`
     }
 
+    const loadItems = async () => {
+        if (!contentType) return
+        setLoading(true)
+
+        let endpoint = ''
+        if (contentType === 'Podcast') endpoint = '/api/content/podcasts'
+        if (contentType === 'Educator') endpoint = '/api/content/educators'
+        if (contentType === 'Tutorial') endpoint = '/api/content/tutorials'
+
+        try {
+            const response = await axios.get(endpoint)
+            setItems(response.data)
+        } catch (error) {
+            console.error(`Error fetching ${contentType.toLowerCase()}s:`, error)
+            setItems([])
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    useEffect(() => {
+        // Load items whenever contentType changes
+        loadItems()
+    }, [contentType])
+
     const handleSubmit = async () => {
         try {
-            await submitContent()
+            await submitContent(selectedItemId) // pass selectedItemId to handle update vs create
             resetContentData()
-            setNotificationText(`${contentType} created successfully`)
+            setNotificationText(`${contentType} ${selectedItemId ? 'updated' : 'created'} successfully`)
             setNotificationOpen(true)
-            navigate('/content-list', { state: { notificationType: 'create' } })
+            setSelectedItemId(null)
+            loadItems() // reload items to show updated list
         } catch (error) {
-            console.error(`Error creating ${contentType.toLowerCase()}:`, error)
-            setNotificationText(`Failed to create ${contentType}`)
+            console.error(`Error ${selectedItemId ? 'updating' : 'creating'} ${contentType?.toLowerCase()}:`, error)
+            setNotificationText(`Failed to ${selectedItemId ? 'update' : 'create'} ${contentType}`)
             setNotificationOpen(true)
         }
     }
 
-    // Function to remove a category
     const removeCategory = (index: number) => {
         let updatedCategories = []
         if (contentType === 'Tutorial') {
@@ -69,7 +128,6 @@ const ContentCreationPage: React.FC = () => {
         setField('categories', updatedCategories)
     }
 
-    // Function to remove a chain
     const removeChain = (index: number) => {
         let updatedChains = []
         if (contentType === 'Tutorial') {
@@ -82,9 +140,86 @@ const ContentCreationPage: React.FC = () => {
         setField('chains', updatedChains)
     }
 
+    const fillFormForEditing = (item: ContentItem) => {
+        // Reset form first
+        resetContentData()
+
+        // Set fields according to the current contentType
+        if (contentType === 'Podcast') {
+            setField('name', item.name || '')
+            setField('description', item.description || '')
+            setField('spotifyUrl', item.spotifyUrl || '')
+            setField('appleUrl', item.appleUrl || '')
+            setField('youtubeUrl', item.youtubeUrl || '')
+            setField('logo', item.logoUrl || null)
+            setField('coverPhoto', item.coverPhotoUrl || null)
+            setField('categories', item.categories || [])
+            setField('chains', item.chains || [])
+        } else if (contentType === 'Educator') {
+            setField('name', item.name || '')
+            setField('bio', item.bio || '')
+            setField('youtubeUrl', item.youtubeUrl || '')
+            setField('twitterUrl', item.twitterUrl || '')
+            setField('telegramUrl', item.telegramUrl || '')
+            setField('discordUrl', item.discordUrl || '')
+            setField('logo', item.logoUrl || null)
+            setField('coverPhoto', item.coverPhotoUrl || null)
+            setField('categories', item.categories || [])
+            setField('chains', item.chains || [])
+        } else if (contentType === 'Tutorial') {
+            setField('title', item.title || '')
+            setField('description', item.description || '')
+            setField('contentUrl', item.contentUrl || '')
+            setField('type', item.type || '')
+            setField('logo', item.logoUrl || null)
+            setField('coverPhoto', item.coverPhotoUrl || null)
+            setField('categories', item.categories || [])
+            setField('chains', item.chains || [])
+        }
+    }
+
+    const openPopoverForItem = (id: number, event: React.MouseEvent<HTMLButtonElement>) => {
+        setSelectedItemId(id)
+        setPopoverTarget(event.currentTarget)
+        setPopoverOpen(true)
+    }
+
+    const handleEditItem = () => {
+        if (!selectedItemId || !contentType) return
+        const item = items.find((i) => i.id === selectedItemId)
+        if (!item) return
+        fillFormForEditing(item)
+        setPopoverOpen(false)
+    }
+
+    const handleDeleteItem = async () => {
+        if (!selectedItemId || !contentType) return
+        let endpoint = ''
+        if (contentType === 'Podcast') endpoint = `/api/content/podcasts/${selectedItemId}`
+        if (contentType === 'Educator') endpoint = `/api/content/educators/${selectedItemId}`
+        if (contentType === 'Tutorial') endpoint = `/api/content/tutorials/${selectedItemId}`
+
+        try {
+            await axios.delete(endpoint)
+            setNotificationText(`${contentType} deleted successfully.`)
+            setNotificationOpen(true)
+            setItems(items.filter((i) => i.id !== selectedItemId))
+        } catch (error) {
+            console.error(`Error deleting ${contentType.toLowerCase()}:`, error)
+            setNotificationText(`Failed to delete ${contentType}.`)
+            setNotificationOpen(true)
+        } finally {
+            setSelectedItemId(null)
+            setPopoverOpen(false)
+            setConfirmDeleteOpen(false)
+        }
+    }
+
     const renderPodcastForm = () => (
         <Card key="podcast-form" className="!mb-4 !p-4 !rounded-2xl shadow-lg !mx-4 relative border border-gray-300 dark:border-gray-600">
-            <BlockTitle> Create Podcast </BlockTitle>
+            <BlockTitle>{selectedItemId ? 'Edit Podcast' : 'Create Podcast'}</BlockTitle>
+            {/* Podcast form inputs here (like in the original code, omitted for brevity) */}
+            {/* ...Same fields as before... */}
             <List>
                 <ListInput
                     label="Name"
@@ -131,7 +266,7 @@ const ContentCreationPage: React.FC = () => {
                     value={podcastData.youtubeUrl}
                     onChange={(e) => setField('youtubeUrl', e.target.value)}
                 />
-                {/* Category Selection */}
+                {/* Category & Chain selection as before */}
                 <ListInput
                     label="Add Category"
                     type="select"
@@ -161,7 +296,6 @@ const ContentCreationPage: React.FC = () => {
                         </div>
                     ))}
                 </div>
-                {/* Chain Selection */}
                 <ListInput
                     label="Add Chain"
                     type="select"
@@ -217,11 +351,19 @@ const ContentCreationPage: React.FC = () => {
                 </div>
             </List>
             <div className="flex justify-between">
-                <Button onClick={() => setContentType(null)} className="w-1/2 bg-gray-500 text-white rounded-full mr-2" large raised>
+                <Button
+                    onClick={() => {
+                        resetContentData()
+                        setSelectedItemId(null)
+                    }}
+                    className="w-1/2 bg-gray-500 text-white rounded-full mr-2"
+                    large
+                    raised
+                >
                     Back
                 </Button>
                 <Button onClick={handleSubmit} className="w-1/2 bg-brand-primary text-white rounded-full ml-2" large raised>
-                    Submit Podcast
+                    {selectedItemId ? 'Update Podcast' : 'Submit Podcast'}
                 </Button>
             </div>
         </Card>
@@ -229,7 +371,8 @@ const ContentCreationPage: React.FC = () => {
 
     const renderEducatorForm = () => (
         <Card key="educator-form" className="!mb-4 !p-4 !rounded-2xl shadow-lg !mx-4 relative border border-gray-300 dark:border-gray-600">
-            <BlockTitle> Create Educator </BlockTitle>
+            <BlockTitle>{selectedItemId ? 'Edit Educator' : 'Create Educator'}</BlockTitle>
+            {/* Similar form inputs for Educator as before, omitted for brevity */}
             <List>
                 <ListInput
                     label="Name"
@@ -252,39 +395,11 @@ const ContentCreationPage: React.FC = () => {
                         autoresize(e)
                     }}
                 />
-                <ListInput
-                    label="YouTube URL"
-                    type="url"
-                    outline
-                    placeholder="Enter YouTube URL"
-                    value={educatorData.youtubeUrl}
-                    onChange={(e) => setField('youtubeUrl', e.target.value)}
-                />
-                <ListInput
-                    label="Twitter URL"
-                    type="url"
-                    outline
-                    placeholder="Enter Twitter URL"
-                    value={educatorData.twitterUrl}
-                    onChange={(e) => setField('twitterUrl', e.target.value)}
-                />
-                <ListInput
-                    label="Telegram URL"
-                    type="url"
-                    outline
-                    placeholder="Enter Telegram URL"
-                    value={educatorData.telegramUrl}
-                    onChange={(e) => setField('telegramUrl', e.target.value)}
-                />
-                <ListInput
-                    label="Discord URL"
-                    type="url"
-                    outline
-                    placeholder="Enter Discord URL"
-                    value={educatorData.discordUrl}
-                    onChange={(e) => setField('discordUrl', e.target.value)}
-                />
-                {/* Category Selection */}
+                <ListInput label="YouTube URL" type="url" outline value={educatorData.youtubeUrl} onChange={(e) => setField('youtubeUrl', e.target.value)} />
+                <ListInput label="Twitter URL" type="url" outline value={educatorData.twitterUrl} onChange={(e) => setField('twitterUrl', e.target.value)} />
+                <ListInput label="Telegram URL" type="url" outline value={educatorData.telegramUrl} onChange={(e) => setField('telegramUrl', e.target.value)} />
+                <ListInput label="Discord URL" type="url" outline value={educatorData.discordUrl} onChange={(e) => setField('discordUrl', e.target.value)} />
+                {/* Category & Chain selection as similar to Podcast */}
                 <ListInput
                     label="Add Category"
                     type="select"
@@ -314,7 +429,7 @@ const ContentCreationPage: React.FC = () => {
                         </div>
                     ))}
                 </div>
-                {/* Chain Selection */}
+
                 <ListInput
                     label="Add Chain"
                     type="select"
@@ -370,11 +485,19 @@ const ContentCreationPage: React.FC = () => {
                 </div>
             </List>
             <div className="flex justify-between">
-                <Button onClick={() => setContentType(null)} className="w-1/2 bg-gray-500 text-white rounded-full mr-2" large raised>
+                <Button
+                    onClick={() => {
+                        resetContentData()
+                        setSelectedItemId(null)
+                    }}
+                    className="w-1/2 bg-gray-500 text-white rounded-full mr-2"
+                    large
+                    raised
+                >
                     Back
                 </Button>
                 <Button onClick={handleSubmit} className="w-1/2 bg-brand-primary text-white rounded-full ml-2" large raised>
-                    Submit Educator
+                    {selectedItemId ? 'Update Educator' : 'Submit Educator'}
                 </Button>
             </div>
         </Card>
@@ -382,7 +505,7 @@ const ContentCreationPage: React.FC = () => {
 
     const renderTutorialForm = () => (
         <Card key="tutorial-form" className="!mb-4 !p-4 !rounded-2xl shadow-lg !mx-4 relative border border-gray-300 dark:border-gray-600">
-            <BlockTitle> Create Tutorial </BlockTitle>
+            <BlockTitle>{selectedItemId ? 'Edit Tutorial' : 'Create Tutorial'}</BlockTitle>
             <List>
                 <ListInput
                     label="Title"
@@ -429,7 +552,6 @@ const ContentCreationPage: React.FC = () => {
                     <option value="RESEARCH_TUTORIAL">Research Tutorial</option>
                     <option value="OTHER">Other</option>
                 </ListInput>
-                {/* Category Selection */}
                 <ListInput
                     label="Add Category"
                     type="select"
@@ -459,7 +581,6 @@ const ContentCreationPage: React.FC = () => {
                         </div>
                     ))}
                 </div>
-                {/* Chain Selection */}
                 <ListInput
                     label="Add Chain"
                     type="select"
@@ -515,11 +636,19 @@ const ContentCreationPage: React.FC = () => {
                 </div>
             </List>
             <div className="flex justify-between">
-                <Button onClick={() => setContentType(null)} className="w-1/2 bg-gray-500 text-white rounded-full mr-2" large raised>
+                <Button
+                    onClick={() => {
+                        resetContentData()
+                        setSelectedItemId(null)
+                    }}
+                    className="w-1/2 bg-gray-500 text-white rounded-full mr-2"
+                    large
+                    raised
+                >
                     Back
                 </Button>
                 <Button onClick={handleSubmit} className="w-1/2 bg-brand-primary text-white rounded-full ml-2" large raised>
-                    Submit Tutorial
+                    {selectedItemId ? 'Update Tutorial' : 'Submit Tutorial'}
                 </Button>
             </div>
         </Card>
@@ -542,7 +671,11 @@ const ContentCreationPage: React.FC = () => {
         <div className="flex space-x-2 mb-4 justify-center">
             <Button
                 outline={contentType !== 'Podcast'}
-                onClick={() => setContentType('Podcast')}
+                onClick={() => {
+                    setContentType('Podcast')
+                    setSelectedItemId(null)
+                    resetContentData()
+                }}
                 raised
                 className={`w-1/3 rounded-full ${contentType === 'Podcast' ? 'bg-brand-primary text-white' : ''}`}
             >
@@ -550,7 +683,11 @@ const ContentCreationPage: React.FC = () => {
             </Button>
             <Button
                 outline={contentType !== 'Educator'}
-                onClick={() => setContentType('Educator')}
+                onClick={() => {
+                    setContentType('Educator')
+                    setSelectedItemId(null)
+                    resetContentData()
+                }}
                 raised
                 className={`w-1/3 rounded-full ${contentType === 'Educator' ? 'bg-brand-primary text-white' : ''}`}
             >
@@ -558,7 +695,11 @@ const ContentCreationPage: React.FC = () => {
             </Button>
             <Button
                 outline={contentType !== 'Tutorial'}
-                onClick={() => setContentType('Tutorial')}
+                onClick={() => {
+                    setContentType('Tutorial')
+                    setSelectedItemId(null)
+                    resetContentData()
+                }}
                 raised
                 className={`w-1/3 rounded-full ${contentType === 'Tutorial' ? 'bg-brand-primary text-white' : ''}`}
             >
@@ -566,6 +707,50 @@ const ContentCreationPage: React.FC = () => {
             </Button>
         </div>
     )
+
+    const renderItemsList = () => {
+        if (loading) {
+            return <p className="text-center">Loading {contentType?.toLowerCase()}s...</p>
+        }
+
+        if (items.length === 0) {
+            return <p className="text-center">No {contentType?.toLowerCase()}s found.</p>
+        }
+
+        return items.map((item) => {
+            const titleForItem = contentType === 'Tutorial' ? item.title : item.name
+            return (
+                <Block key={item.id}>
+                    <Card
+                        className="!mb-2 !p-0 !rounded-2xl shadow-lg !mx-2 relative border border-gray-300 dark:border-gray-600"
+                        style={{
+                            backgroundImage: `url(${constructImageUrl(item.coverPhotoUrl)})`,
+                            backgroundSize: 'cover',
+                            backgroundPosition: 'center'
+                        }}
+                    >
+                        <div className="absolute inset-0 bg-white dark:bg-black opacity-50 rounded-xl z-0"></div>
+
+                        <div className="relative z-10 p-4">
+                            <div className="flex justify-between items-center">
+                                <div>
+                                    <h3 className="font-bold text-xl mb-2">{titleForItem}</h3>
+                                    {item.description && <p className="text-sm">{item.description}</p>}
+                                </div>
+                                {item.logoUrl && <img alt={titleForItem || ''} className="h-16 w-16 rounded-full" src={constructImageUrl(item.logoUrl)} />}
+                            </div>
+                        </div>
+
+                        <div className="flex justify-center w-full relative z-10">
+                            <Button className="rounded-full items-center justify-center" raised onClick={(e) => openPopoverForItem(item.id, e)}>
+                                Actions <Icon icon="mdi:menu-down" className="w-9 h-9 mb-1" />
+                            </Button>
+                        </div>
+                    </Card>
+                </Block>
+            )
+        })
+    }
 
     return (
         <Page>
@@ -579,6 +764,10 @@ const ContentCreationPage: React.FC = () => {
                 {/* Content Forms */}
                 {renderContentForm()}
 
+                {/* Display Existing Items */}
+                {contentType && <BlockTitle>{contentType} List</BlockTitle>}
+                {contentType && renderItemsList()}
+
                 {/* Notification */}
                 <Notification
                     className="fixed top-0 left-0 z-50 border"
@@ -589,6 +778,46 @@ const ContentCreationPage: React.FC = () => {
                     button={<Button onClick={() => setNotificationOpen(false)}>Close</Button>}
                     onClose={() => setNotificationOpen(false)}
                 />
+
+                <Popover opened={popoverOpen} target={popoverTarget} onBackdropClick={() => setPopoverOpen(false)} onClose={() => setPopoverOpen(false)} angle>
+                    <div className="text-center">
+                        <List>
+                            <ListButton onClick={handleEditItem}>
+                                <span className="text-primary text-lg">Edit {contentType}</span>
+                            </ListButton>
+                            <ListButton
+                                className="!text-red-600"
+                                onClick={() => {
+                                    setPopoverOpen(false)
+                                    setConfirmDeleteOpen(true)
+                                }}
+                            >
+                                <span className="text-red-500 text-lg">Delete {contentType}</span>
+                            </ListButton>
+                        </List>
+                    </div>
+                </Popover>
+
+                <Popover
+                    opened={confirmDeleteOpen}
+                    target={popoverTarget}
+                    onBackdropClick={() => setConfirmDeleteOpen(false)}
+                    onClose={() => setConfirmDeleteOpen(false)}
+                    angle
+                >
+                    <Block className="text-center">
+                        <h3 className="text-lg font-bold mb-4">Delete {contentType}</h3>
+                        <p className="mb-4">Are you sure you want to delete this {contentType?.toLowerCase()}? This action is irreversible!</p>
+                        <div className="flex">
+                            <Button onClick={handleDeleteItem} className="bg-red-600 rounded-full mr-2 !text-xs">
+                                Yes, Delete
+                            </Button>
+                            <Button onClick={() => setConfirmDeleteOpen(false)} className="bg-gray-400 rounded-full !text-xs">
+                                Cancel
+                            </Button>
+                        </div>
+                    </Block>
+                </Popover>
             </div>
         </Page>
     )

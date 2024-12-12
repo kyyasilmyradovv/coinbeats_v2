@@ -82,7 +82,7 @@ const BottomTabBar: React.FC<BottomTabBarProps> = ({ activeTab, setActiveTab, ha
                     </div>
                 </div>
                 {/* Tab 5 */}
-                <div className="relative flex-1" onClick={() => handleTabClick('tab-5')}>
+                {/* <div className="relative flex-1" onClick={() => handleTabClick('tab-5')}>
                     {activeTab === 'tab-5' && (
                         <div className="absolute inset-0 rounded-xl tab-background m-1">
                             <div className={`relative m-[1px] rounded-xl overflow-hidden`}>
@@ -103,7 +103,7 @@ const BottomTabBar: React.FC<BottomTabBarProps> = ({ activeTab, setActiveTab, ha
                             <span className="tab-label text-xs">Learn</span>
                         </div>
                     </div>
-                </div>
+                </div> */}
                 {/* Tab 2 */}
                 <div className="relative flex-1" onClick={() => handleTabClick('tab-2')}>
                     {activeTab === 'tab-2' && (

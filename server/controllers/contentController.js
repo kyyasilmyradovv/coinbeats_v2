@@ -3,9 +3,8 @@
 const { PrismaClient } = require('@prisma/client');
 const createError = require('http-errors');
 const prisma = new PrismaClient();
-const { saveFile } = require('../uploadConfig'); // Reuse the saveFile function from uploadConfig.js
+const { saveFile } = require('../uploadConfig');
 
-// Helper function to handle file uploads
 const handleFileUpload = (files, fieldName) => {
   return files && files[fieldName] ? saveFile(files[fieldName][0]) : null;
 };
@@ -19,8 +18,9 @@ exports.createPodcast = async (req, res, next) => {
       spotifyUrl = '',
       appleUrl = '',
       youtubeUrl = '',
-      categories = '[]', // Expecting a JSON stringified array
-      chains = '[]', // Expecting a JSON stringified array
+      categories = '[]',
+      chains = '[]',
+      contentOrigin, // This is now passed from the front end
     } = req.body;
 
     const categoryNames = JSON.parse(categories);
@@ -33,7 +33,6 @@ exports.createPodcast = async (req, res, next) => {
       return next(createError(400, 'Name is required'));
     }
 
-    // Fetch category records
     const categoryRecords = await Promise.all(
       categoryNames.map(async (categoryName) => {
         const category = await prisma.category.findUnique({
@@ -46,7 +45,6 @@ exports.createPodcast = async (req, res, next) => {
       })
     );
 
-    // Fetch chain records
     const chainRecords = await Promise.all(
       chainNames.map(async (chainName) => {
         const chain = await prisma.chain.findUnique({
@@ -68,6 +66,10 @@ exports.createPodcast = async (req, res, next) => {
         spotifyUrl,
         appleUrl,
         youtubeUrl,
+        contentOrigin:
+          contentOrigin === 'PLATFORM_BASED'
+            ? 'PLATFORM_BASED'
+            : 'CREATOR_BASED',
         categories: {
           connect: categoryRecords.map((category) => ({ id: category.id })),
         },
@@ -96,6 +98,7 @@ exports.createEducator = async (req, res, next) => {
       discordUrl = '',
       categories = '[]',
       chains = '[]',
+      contentOrigin,
     } = req.body;
 
     const categoryNames = JSON.parse(categories);
@@ -142,6 +145,10 @@ exports.createEducator = async (req, res, next) => {
         twitterUrl,
         telegramUrl,
         discordUrl,
+        contentOrigin:
+          contentOrigin === 'PLATFORM_BASED'
+            ? 'PLATFORM_BASED'
+            : 'CREATOR_BASED',
         categories: {
           connect: categoryRecords.map((category) => ({ id: category.id })),
         },
@@ -170,6 +177,7 @@ exports.createTutorial = async (req, res, next) => {
       type,
       categories = '[]',
       chains = '[]',
+      contentOrigin,
     } = req.body;
 
     const categoryNames = JSON.parse(categories);
@@ -216,6 +224,10 @@ exports.createTutorial = async (req, res, next) => {
         type,
         logoUrl,
         coverPhotoUrl,
+        contentOrigin:
+          contentOrigin === 'PLATFORM_BASED'
+            ? 'PLATFORM_BASED'
+            : 'CREATOR_BASED',
         categories: {
           connect: categoryRecords.map((category) => ({ id: category.id })),
         },
@@ -262,7 +274,7 @@ exports.getEducators = async (req, res, next) => {
         chains: true,
       },
       orderBy: {
-        id: 'desc',
+        createdAt: 'desc',
       },
     });
     res.json(educators);
@@ -281,7 +293,7 @@ exports.getTutorials = async (req, res, next) => {
         chains: true,
       },
       orderBy: {
-        id: 'desc',
+        createdAt: 'desc',
       },
     });
     res.json(tutorials);
