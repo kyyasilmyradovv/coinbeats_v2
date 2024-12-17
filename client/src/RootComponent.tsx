@@ -46,6 +46,7 @@ import CharacterLevelManagementPage from './pages/CharacterLevelManagementPage'
 import NotificationDialog from './components/NotificationDialog'
 import useNotificationStore from './store/useNotificationStore'
 import OverallRaffleManagementPage from './pages/OverallRaffleManagementPage'
+import SurpriseBoxPage from './pages/SurpriseBoxPage'
 
 function RootComponent() {
     const [isLoading, setIsLoading] = useState(true)
@@ -245,15 +246,17 @@ function RootComponent() {
                         <Route
                             path="/overall-raffle-management"
                             element={
-<<<<<<< HEAD
-                                // <RouteGuard requiredRole="SUPERADMIN">
-                                <OverallRaffleManagementPage />
-                                // </RouteGuard>
-=======
                                 <RouteGuard allowedRoles={['CREATOR', 'ADMIN', 'SUPERADMIN']}>
                                     <OverallRaffleManagementPage />
                                 </RouteGuard>
->>>>>>> main
+                            }
+                        />
+                        <Route
+                            path="/surprise-box"
+                            element={
+                                <RouteGuard allowedRoles={['ADMIN', 'SUPERADMIN']}>
+                                    <SurpriseBoxPage />
+                                </RouteGuard>
                             }
                         />
                         <Route

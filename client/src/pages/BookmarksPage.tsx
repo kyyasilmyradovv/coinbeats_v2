@@ -10,18 +10,19 @@ import moneyBag from '../images/money-bag.png'
 import calendar from '../images/calendar.png'
 import cash from '../images/cash.png'
 import coinbeats from '../images/coinbeats-l.svg'
-import coming from '../images/svgs/coming-soon3.svg'
 import axiosInstance from '~/api/axiosInstance'
 import useUserStore from '~/store/useUserStore'
 import { FaTwitter, FaFacebook, FaInstagram, FaTelegramPlane, FaDiscord, FaYoutube, FaEnvelope, FaTimes } from 'react-icons/fa'
 
-interface AcademyInterface {
+interface RaffleInterface {
     name: string
     logoUrl: string
-    nextRaffleDate: string
     reward: string
     winners: string
     remainingDays: number
+    deadline: string
+    type: string
+    raffleCount: string
     inMyRaffles: boolean
 }
 
@@ -29,38 +30,50 @@ export default function BookmarksPage() {
     const { totalRaffles } = useUserStore()
     const [headerTab, setHeaderTab] = useState('all')
     const [activeTab, setActiveTab] = useState('tab-2')
-    const [academies, setAcademies] = useState<AcademyInterface[]>([])
+    const [raffles, setRaffles] = useState<RaffleInterface[]>([])
     const [showTooltip, setShowTooltip] = useState(false)
+    const { userId } = useUserStore((state) => ({ userId: state.userId }))
 
     useEffect(() => {
-        const fetchCoinBeatsRaffle = async () => {
+        const fetchRaffles = async () => {
             try {
-                const response = await axiosInstance.get('/api/raffle/overall')
+                const response = await axiosInstance.get(`/api/raffle/overall-for-users?userId=${userId}`)
 
+                const rafflesList = []
                 const today = new Date()
-                const deadline = new Date(response.data?.deadline)
 
-                setAcademies([
-                    {
-                        name: 'CoinBeats',
-                        logoUrl: coinbeats,
-                        nextRaffleDate: deadline.toLocaleDateString(),
-                        reward: response.data?.reward,
-                        winners: `${response.data?.winnersCount} x ${response.data?.reward}`,
+                for (let r of response?.data) {
+                    const deadline = new Date(r.deadline)
+                    rafflesList.push({
+                        ...r,
+                        deadline: deadline.toLocaleDateString().split('T')[0],
+                        winners: `${r?.winnersCount} x ${r?.reward}`,
                         remainingDays: Math.ceil((deadline.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)),
-                        inMyRaffles: true
-                    }
-                ])
+                        inMyRaffles: r.raffleCount > 0
+                    })
+                }
+
+                if (rafflesList[0].type === 'PLATFORM') {
+                    rafflesList[0].name = 'CoinBeats Platform'
+                    rafflesList[0].inMyRaffles = true
+                    rafflesList[0].raffleCount = totalRaffles
+                }
+
+                setRaffles(rafflesList)
             } catch (error) {
                 console.error('Error fetching overall raffle:', error)
             }
         }
 
-        fetchCoinBeatsRaffle()
+        fetchRaffles()
     }, [])
 
-    // Filter academies based on active tab
-    const filteredAcademies = academies?.filter((academy) => headerTab === 'all' || (headerTab === 'my' && academy.inMyRaffles))
+    // Filter raffles based on active tab
+    const filteredRaffles = raffles?.filter((raffle) => headerTab === 'all' || (headerTab === 'my' && raffle.inMyRaffles))
+
+    const constructImageUrl = (url: string) => {
+        return `https://telegram.coinbeats.xyz/${url}`
+    }
 
     return (
         <Page>
@@ -71,7 +84,7 @@ export default function BookmarksPage() {
                 <div className="absolute inset-0 bg-black opacity-50 z-0"></div>
                 <div className="relative z-10">
                     {/* Tabs */}
-                    <div className="flex flex-col justify-center gap-2 mt-4 mx-4 relative z-10 px-4 pt-4 mb-2 items-center">
+                    <div className="flex flex-col justify-center gap-2 mt-1 mb-5 mx-4 relative z-10 px-4 pt-4 mb-2 items-center">
                         <div className="flex gap-2 items-center">
                             <Button
                                 outline
@@ -111,7 +124,13 @@ export default function BookmarksPage() {
 
                         {showTooltip && (
                             <div className="flex bg-gray-700 text-xs rounded-2xl p-4 mt-2 shadow-lg w-fit">
-                                <p>The raffle entries are reset at the time when the raffle happens.</p>
+                                <p>
+                                    <p>The raffle entries are reset at the time when the raffle happens.</p>
+                                    <p>
+                                        You'll see all ongoing raffles under "All Raffles" tab, and you'll see all ongoing raffles where you have earned entries
+                                        under "My Raffles".
+                                    </p>
+                                </p>
                                 <button className="items-center p-1" onClick={() => setShowTooltip(false)}>
                                     <FaTimes size={12} />
                                 </button>
@@ -119,35 +138,34 @@ export default function BookmarksPage() {
                         )}
                     </div>
 
-                    {/* Coming Soon Sign Centered
-                    <div className="flex items-center justify-center z-40 pointer-events-none mx-auto w-full mb-2">
-                        <img src={coming} className="h-16 rotate-[3deg]" alt="Coming Soon" />
-                    </div> */}
-
                     {/* Cards Layout */}
                     <div className="grid grid-cols-1 gap-4 px-4">
-                        {filteredAcademies.map((academy, index) => (
+                        {filteredRaffles.map((raffle, index) => (
                             <div
                                 key={index}
                                 className="p-1 flex flex-row items-center justify-between rounded-2xl shadow-lg bg-white dark:bg-zinc-900 bg-opacity-75 border border-gray-600"
                             >
-                                {/* Academy Logo */}
+                                {/* raffle Logo */}
                                 <div className="flex-shrink-0 ml-2">
-                                    <img alt={academy.name} className="h-16 w-16 rounded-full" src={academy.logoUrl} />
+                                    <img
+                                        alt={raffle.name}
+                                        className="h-16 w-16 rounded-full"
+                                        src={raffle.type === 'PLATFORM' ? coinbeats : constructImageUrl(raffle.logoUrl)}
+                                    />
                                 </div>
 
                                 {/* Raffle Information */}
                                 <div className="flex-grow text-left ml-4 text-white">
                                     <div className="flex font-bold text-sm items-center mt-1">
                                         <img src={ticket} className="h-7 w-7 mr-2" alt="Ticket icon" />
-                                        {academy.name}
+                                        {raffle.name}
                                     </div>
                                     <div className="text-gray-400 text-sm">
                                         <div className="flex text-gray-300">
-                                            <img src={cash} className="h-5 w-5 mr-2" alt="Cash icon" /> {academy.winners}
+                                            <img src={cash} className="h-5 w-5 mr-2" alt="Cash icon" /> {raffle.winners}
                                         </div>
                                         <div className="flex text-gray-300">
-                                            <img src={calendar} className="h-5 w-5 mr-2" alt="Calendar icon" /> {academy.nextRaffleDate}
+                                            <img src={calendar} className="h-5 w-5 mr-2" alt="Calendar icon" /> {raffle.deadline}
                                         </div>
                                     </div>
                                 </div>
@@ -159,21 +177,21 @@ export default function BookmarksPage() {
                                         large
                                         outline
                                         className={`ml-1 font-bold text-2xs shadow-lg !w-20 !whitespace-nowrap !h-6 !px-2 !py-1 !mb-1 right-0 ${
-                                            academy.inMyRaffles ? '!border-blue-400' : ''
+                                            raffle.inMyRaffles ? '!border-blue-400' : ''
                                         }`}
                                         style={{
-                                            background: academy.inMyRaffles
+                                            background: raffle.inMyRaffles
                                                 ? 'linear-gradient(to left, #16a34a, #3b82f6)' // Green to blue gradient
                                                 : 'linear-gradient(to left, #ff0077, #7700ff)', // Purple gradient
                                             color: '#fff'
                                         }}
                                     >
-                                        {index === 0 ? `${totalRaffles} Entries` : academy.inMyRaffles ? '5 Entries' : 'Join'}
+                                        {+raffle.raffleCount > 0 ? `${raffle.raffleCount} Entries` : 'Join'}
                                     </Button>
                                     <div className="text-sm font-bold flex items-center">
-                                        <img src={moneyBag} className="h-6 w-6 mr-1" alt="Money bag icon" /> {academy.reward}
+                                        <img src={moneyBag} className="h-6 w-6 mr-1" alt="Money bag icon" /> {raffle.reward}
                                     </div>
-                                    <div className="mt-1 text-xs text-purple-400">{academy.remainingDays} days remaining</div>
+                                    <div className="mt-1 text-xs text-purple-400">{raffle.remainingDays} days remaining</div>
                                 </div>
                             </div>
                         ))}

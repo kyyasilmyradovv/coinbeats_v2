@@ -94,3 +94,37 @@ exports.updateSurpriseBoxes = async (req, res, next) => {
     next(createError(500, 'Error updating surprise box'));
   }
 };
+
+// For admin
+exports.getSurprisePoints = async (req, res, next) => {
+  try {
+    let { keyword, limit, offset } = req.query;
+    if (keyword) keyword = '%' + keyword + '%';
+
+    const surprisePoints = await prisma.$queryRaw`
+      SELECT 
+          p.id, 
+          p.value,
+          TO_CHAR(p."createdAt", 'YYYY-MM-DD') AS "createdAt",
+          u.name as username
+      FROM 
+          "Point" p
+      JOIN 
+          "User" u 
+      ON 
+          p."userId" = u.id
+      WHERE 
+          p.description = 'Surprise XP Boost'
+          AND u.name ILIKE ${keyword || '%%'}
+      LIMIT 
+          ${+limit || 20} 
+      OFFSET 
+          ${+offset || 0};
+      `;
+
+    res.status(200).json(surprisePoints);
+  } catch (error) {
+    console.error('Error fetching surprise pints:', error);
+    next(createError(500, 'Error fetching surprise points'));
+  }
+};

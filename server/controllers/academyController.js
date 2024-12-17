@@ -1173,17 +1173,40 @@ exports.submitQuizAnswers = async (req, res, next) => {
     }
 
     if (totalPoints > 99) {
+      const incrementAmount = totalPoints / 100;
+
+      // Create a raffle entry
       await prisma.raffle.create({
         data: {
           userId,
           academyId: parseInt(academyId, 10),
-          amount: totalPoints / 100,
+          amount: incrementAmount,
         },
       });
+
+      // Update user's raffleAmount
       await prisma.user.update({
         where: { id: userId },
-        data: { raffleAmount: { increment: totalPoints / 100 } },
+        data: { raffleAmount: { increment: incrementAmount } },
       });
+
+      // Upsert the entry in academyRaffleEntries
+      const hasRunningRaffle = await prisma.overallRaffle.findFirst({
+        where: { academyId, isActive: true },
+      });
+      if (hasRunningRaffle != null) {
+        await prisma.academyRaffleEntries.upsert({
+          where: { userId_academyId: { userId, academyId } },
+          update: {
+            amount: { increment: incrementAmount },
+          },
+          create: {
+            userId,
+            academyId: parseInt(academyId, 10),
+            amount: incrementAmount,
+          },
+        });
+      }
     }
 
     // Call checkAndApplyLevelUp to handle level up and notifications

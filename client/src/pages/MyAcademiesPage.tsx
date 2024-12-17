@@ -38,7 +38,6 @@ const MyAcademiesPage: React.FC = () => {
         const fetchAcademies = async () => {
             try {
                 const response = await axios.get('/api/academies/my')
-                console.log('Academies:', response.data)
                 setAcademies(response.data)
             } catch (error) {
                 console.error('Error fetching academies:', error)
