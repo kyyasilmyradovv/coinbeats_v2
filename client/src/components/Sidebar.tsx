@@ -67,7 +67,8 @@ const Sidebar: React.FC = () => {
         ADMIN: [
             { label: 'Admin Dashboard', path: '/admin-dashboard' },
             { label: 'User Management', path: '/user-management' },
-            { label: 'Inbox', path: '/inbox' }
+            { label: 'Inbox', path: '/inbox' },
+            { label: 'Raffle Management', path: '/overall-raffle-management' }
         ],
         CREATOR: [
             { label: 'Creator Dashboard', path: '/creator-dashboard' },
@@ -76,7 +77,8 @@ const Sidebar: React.FC = () => {
             { label: 'My Academies', path: '/my-academies' },
             { label: 'User Profile', path: '/user-profile' },
             { label: 'Academy Statistics', path: '/academy-statistics' },
-            { label: 'Inbox', path: '/inbox' }
+            { label: 'Inbox', path: '/inbox' },
+            { label: 'Raffle Management', path: '/overall-raffle-management' }
         ]
         // Add other roles if needed
     }
