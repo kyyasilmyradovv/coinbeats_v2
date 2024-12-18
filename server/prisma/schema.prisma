@@ -227,10 +227,11 @@ model Educator {
   telegramUrl   String?
   discordUrl    String?
   lessons       Lesson[]   @relation("EducatorLessons")
-
-  // Add these lines
   categories    Category[] @relation("EducatorCategories")
   chains        Chain[]    @relation("EducatorChains")
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  contentOrigin ContentOrigin
 }
 
 model Lesson {
@@ -252,10 +253,11 @@ model Podcast {
   spotifyUrl    String?
   appleUrl      String?
   youtubeUrl    String?
-
-  // Add these lines
   categories    Category[] @relation("PodcastCategories")
   chains        Chain[]    @relation("PodcastChains")
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  contentOrigin ContentOrigin
 }
 
 model Tutorial {
@@ -268,9 +270,10 @@ model Tutorial {
   type          TutorialType
   xp            Int          @default(0)
   categories    Category[]   @relation("TutorialCategories")
-
-  // Add this line
   chains        Chain[]      @relation("TutorialChains")
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  contentOrigin ContentOrigin
 }
 
 model Category {
@@ -290,6 +293,7 @@ model Chain {
   educators Educator[] @relation("EducatorChains")
   tutorials Tutorial[] @relation("TutorialChains")
 }
+
 model VerificationTask {
   id                  Int                  @id @default(autoincrement())
   description         String?
@@ -432,6 +436,11 @@ model AcademyRaffleEntries {
   userId             Int
   user               User? @relation(fields: [userId], references: [id])
   @@unique([userId, academyId])
+}
+
+enum ContentOrigin {
+  PLATFORM_BASED
+  CREATOR_BASED
 }
 
 enum TaskType {
