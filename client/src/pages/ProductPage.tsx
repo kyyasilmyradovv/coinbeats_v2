@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { useInitData } from '@telegram-apps/sdk-react'
 import { useLocation } from 'react-router-dom'
 import { FaTwitter, FaFacebook, FaInstagram, FaTelegramPlane, FaDiscord, FaYoutube, FaEnvelope } from 'react-icons/fa'
-import { Page, Card, Radio, Button, Block, Preloader, Dialog, Notification } from 'konsta/react'
+import { Page, Card, Radio, Button, Block, Notification } from 'konsta/react'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import 'swiper/swiper-bundle.css'
 import Navbar from '../components/common/Navbar'
@@ -35,7 +35,6 @@ import Lottie from 'react-lottie'
 import coinsEarnedAnimationData from '../animations/earned-coins.json'
 import bunnyLogo from '../images/bunny-head.png'
 
-// Import platform logos
 import xLogo from '../images/x.png'
 import telegramLogo from '../images/x.png'
 import youtubeLogo from '../images/x.png'
@@ -44,6 +43,8 @@ import discordLogo from '../images/x.png'
 import emailLogo from '../images/x.png'
 import defaultLogo from '../images/x.png'
 import { X } from '@mui/icons-material'
+
+import { handleAction, getActionLabel, requiresInputField, getInputPlaceholder } from '../utils/actionHandlers' // Import from actionHandlers
 
 const platformLogos: { [key: string]: string } = {
     X: xLogo,
@@ -63,7 +64,6 @@ const platformIcons: { [key: string]: JSX.Element } = {
     YOUTUBE: <FaYoutube className="w-8 h-8 text-red-600" />,
     EMAIL: <FaEnvelope className="w-8 h-8 text-green-500" />,
     NONE: <img src={coinbeats} alt="CoinBeats" className="w-8 h-8" />
-    // Add any other platforms as needed
 }
 
 export default function ProductPage() {
@@ -75,32 +75,20 @@ export default function ProductPage() {
     const [currentPoints, setCurrentPoints] = useState(0)
     const [showXPAnimation, setShowXPAnimation] = useState(false)
     const swiperRef = useRef<any>(null)
-    const { userId, setUser, referralCode } = useUserStore((state) => ({
+    const { userId, referralCode, twitterAuthenticated } = useUserStore((state) => ({
         userId: state.userId,
-        setUser: state.setUser,
-        referralCode: state.referralCode
+        referralCode: state.referralCode,
+        twitterAuthenticated: state.twitterAuthenticated
     }))
-    const {
-        userVerificationTasks,
-        fetchUserVerificationTasks,
-        startTask,
-        submitTask,
-        completeTask,
-        getActionLabel,
-        requiresInputField,
-        getInputPlaceholder,
-        performAction
-    } = useUserVerificationStore((state) => ({
+
+    const { userVerificationTasks, fetchUserVerificationTasks, startTask, submitTask, completeTask } = useUserVerificationStore((state) => ({
         userVerificationTasks: state.userVerificationTasks,
         fetchUserVerificationTasks: state.fetchUserVerificationTasks,
         startTask: state.startTask,
         submitTask: state.submitTask,
-        completeTask: state.completeTask,
-        getActionLabel: state.getActionLabel,
-        requiresInputField: state.requiresInputField,
-        getInputPlaceholder: state.getInputPlaceholder,
-        performAction: state.performAction
+        completeTask: state.completeTask
     }))
+
     const {
         earnedPoints,
         fetchEarnedPoints,
@@ -126,12 +114,13 @@ export default function ProductPage() {
         questions: state.questions,
         quests: state.quests
     }))
+
     const [showArrow, setShowArrow] = useState(true)
     const [userHasResponses, setUserHasResponses] = useState(false)
     const [initialAnswers, setInitialAnswers] = useState<Question[]>([])
     const [showIntro, setShowIntro] = useState(false)
     const [loadingQuests, setLoadingQuests] = useState(true)
-    const nextRaffleDate = new Date('2024-10-12T14:00:00') // 12th October, 2pm
+    const nextRaffleDate = new Date('2024-10-12T14:00:00')
     const raffles = [
         {
             date: new Date('2024-10-12T14:00:00'),
@@ -157,18 +146,16 @@ export default function ProductPage() {
             setVisibleTooltip(null)
         } else {
             setVisibleTooltip(tooltipIndex)
-            // Optionally close the tooltip after 5 seconds
             setTimeout(() => setVisibleTooltip(null), 5000)
         }
     }
 
-    // Timer related state variables
     const [timer, setTimer] = useState(45)
     const timerIntervalRef = useRef<NodeJS.Timeout | null>(null)
     const [quizStarted, setQuizStarted] = useState(false)
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
     const [errorMessage, setErrorMessage] = useState('')
-    const [maxAllowedSlide, setMaxAllowedSlide] = useState(1) // Initialize to first quiz slide
+    const [maxAllowedSlide, setMaxAllowedSlide] = useState(1)
     const [pendingActiveFilter, setPendingActiveFilter] = useState<string | null>(null)
     const [selectedTask, setSelectedTask] = useState<VerificationTask | null>(null)
     const [taskInputValues, setTaskInputValues] = useState<{ [key: number]: string }>({})
@@ -181,10 +168,7 @@ export default function ProductPage() {
     const [referralLink, setReferralLink] = useState('')
     const [pendingNavigationAction, setPendingNavigationAction] = useState<(() => void) | null>(null)
 
-    const checkAnswerButtonRefs = useRef<(HTMLDivElement | null)[]>([]) // Updated to an array of refs
-    // Ref for the "Check Answer" buttons
-
-    // Feedback handling state variables
+    const checkAnswerButtonRefs = useRef<(HTMLDivElement | null)[]>([])
     const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false)
     const [feedbackText, setFeedbackText] = useState('')
 
@@ -197,60 +181,15 @@ export default function ProductPage() {
         }
     }
 
-    const handleActionClick = async (task: VerificationTask) => {
-        try {
-            const { notificationText, referralLink } = await performAction(task, referralCode)
-
-            if (notificationText) {
-                setNotificationText(notificationText)
-                setNotificationOpen(true)
-            }
-
-            if (referralLink) {
-                setReferralLink(referralLink)
-                setReferralModalOpen(true)
-            }
-
-            // Handle any additional UI updates as needed
-            if (task.verificationMethod === 'LEAVE_FEEDBACK') {
-                setSelectedTask(task)
-                setFeedbackDialogOpen(true)
-            }
-        } catch (error) {
-            console.error('Error performing action:', error)
-        }
-    }
-
-    const handleNavigationAttempt = (newFilter: string | null, navigationAction: () => void) => {
-        const currentFilter = activeFilterRef.current
-
-        if (
-            (currentFilter === 'read' || currentFilter === 'watch') &&
-            newFilter !== 'read' &&
-            newFilter !== 'watch' &&
-            hasAnsweredAtLeastOneQuestion() // Changed from !hasAnsweredAtLeastOneQuestion()
-        ) {
-            setPendingNavigationAction(() => navigationAction)
-            setShowLeaveConfirmation(true)
-        } else {
-            navigationAction()
-        }
-    }
-
-    // Define handlePrevClick and handleNextClick
-    const handlePrevClick = () => {
-        if (currentSlideIndex > 0 && swiperRef.current && swiperRef.current.swiper) {
-            swiperRef.current.swiper.slidePrev()
-            setErrorMessage('') // Reset error message when moving back
-        }
-    }
+    const { loadSurpriseBoxData, setNextBox } = useSurpriseBoxStore()
+    const { completedAcademies, nextBox } = useSurpriseBoxStore()
+    const [surprisePoint, setSurprisePoint] = useState(0)
+    const { fetchNotifications, showNotification } = useNotificationStore.getState()
 
     useEffect(() => {
         if (academy) {
             if (userId !== null) {
-                if (userId !== null) {
-                    fetchEarnedPoints(userId, academy.id)
-                }
+                fetchEarnedPoints(userId, academy.id)
             }
             fetchQuestions(academy.id)
             if (userId !== null) {
@@ -285,70 +224,75 @@ export default function ProductPage() {
             const now = new Date()
             const newTimeRemainingList = raffles.map((raffle) => {
                 const distance = raffle.date.getTime() - now.getTime()
-
                 if (distance < 0) {
                     return 'Raffle has ended'
                 }
-
                 const days = Math.floor(distance / (1000 * 60 * 60 * 24))
                 const hours = Math.floor((distance / (1000 * 60 * 60)) % 24)
                 const minutes = Math.floor((distance / (1000 * 60)) % 60)
                 const seconds = Math.floor((distance / 1000) % 60)
-
                 return `${days}d ${hours}h ${minutes}m ${seconds}s`
             })
-
             setTimeRemainingList(newTimeRemainingList)
         }
 
-        updateTimer() // Update immediately
-
-        const timerId = setInterval(updateTimer, 1000) // Update every second
-
+        updateTimer()
+        const timerId = setInterval(updateTimer, 1000)
         return () => clearInterval(timerId)
     }, [])
 
-    const handleNextClick = () => {
-        const isQuizSlide = currentSlideIndex % 2 === 1 // Odd indices are quiz slides
-        const questionIndex = Math.floor(currentSlideIndex / 2)
+    const handleNavigationAttempt = (newFilter: string | null, navigationAction: () => void) => {
+        const currentFilter = activeFilterRef.current
+        if ((currentFilter === 'read' || currentFilter === 'watch') && newFilter !== 'read' && newFilter !== 'watch' && hasAnsweredAtLeastOneQuestion()) {
+            setPendingNavigationAction(() => navigationAction)
+            setShowLeaveConfirmation(true)
+        } else {
+            navigationAction()
+        }
+    }
 
+    const handlePrevClick = () => {
+        if (currentSlideIndex > 0 && swiperRef.current?.swiper) {
+            swiperRef.current.swiper.slidePrev()
+            setErrorMessage('')
+        }
+    }
+
+    const handleNextClick = () => {
+        const isQuizSlide = currentSlideIndex % 2 === 1
+        const questionIndex = Math.floor(currentSlideIndex / 2)
         if (isQuizSlide) {
             const currentQuestion = initialAnswers[questionIndex]
             if (currentQuestion.isCorrect !== undefined) {
-                // Allow moving to the next question
                 if (currentSlideIndex + 2 <= initialAnswers.length * 2 - 1) {
                     setMaxAllowedSlide((prev) => Math.min(prev + 2, initialAnswers.length * 2 - 1))
                 }
-                if (swiperRef.current && swiperRef.current.swiper) {
+                if (swiperRef.current?.swiper) {
                     swiperRef.current.swiper.slideNext()
-                    setErrorMessage('') // Reset error message
+                    setErrorMessage('')
                 }
             } else {
                 setErrorMessage('You must check your answer before proceeding.')
             }
         } else {
-            // Allow moving to the quiz slide of the current question
-            if (swiperRef.current && swiperRef.current.swiper) {
+            if (swiperRef.current?.swiper) {
                 swiperRef.current.swiper.slideNext()
-                setErrorMessage('') // Reset error message
+                setErrorMessage('')
             }
         }
     }
 
     useEffect(() => {
-        // Hide the arrow after 3 seconds
         const arrowTimer = setTimeout(() => {
             setShowArrow(false)
         }, 3000)
-
         return () => clearTimeout(arrowTimer)
     }, [])
 
     useEffect(() => {
-        // Only reset maxAllowedSlide when navigating away from 'read' or 'watch' tabs
         if (activeFilter !== 'read' && activeFilter !== 'watch') {
             setCurrentSlideIndex(0)
-            setMaxAllowedSlide(1) // Reset maxAllowedSlide
+            setMaxAllowedSlide(1)
         }
     }, [activeFilter])
 
@@ -360,18 +304,17 @@ export default function ProductPage() {
         }
     }, [])
 
-    // Timer management based on activeFilter
     useEffect(() => {
         if (activeFilter === 'read' && quizStarted && !showIntro) {
             const question = initialAnswers[currentQuestionIndex]
             if (question && !question.timerStarted) {
-                setTimer(45) // Total time remains 45 seconds
+                setTimer(45)
                 startTimer()
                 setInitialAnswers((prevAnswers) => prevAnswers.map((q, qi) => (qi === currentQuestionIndex ? { ...q, timerStarted: true } : q)))
             }
         } else {
             if (timerIntervalRef.current) {
-                clearInterval(timerIntervalRef.current) // Clear any existing timers
+                clearInterval(timerIntervalRef.current)
             }
         }
     }, [activeFilter, quizStarted, showIntro, currentQuestionIndex])
@@ -386,10 +329,32 @@ export default function ProductPage() {
 
     const constructImageUrl = (url: string) => `https://telegram.coinbeats.xyz/${url}`
 
+    const handleActionClick = async (task: VerificationTask) => {
+        try {
+            await handleAction(
+                task,
+                {
+                    referralCode,
+                    setReferralLink,
+                    setReferralModalOpen,
+                    setNotificationText,
+                    setNotificationOpen,
+                    setSelectedTask,
+                    setFeedbackDialogOpen,
+                    twitterAuthenticated: true, // Adjust if you have auth implemented
+                    academyName: academy?.name,
+                    twitterHandle: '', // If needed, provide handle
+                    telegramUserId: initData.user.id
+                },
+                academy?.id
+            )
+        } catch (error) {
+            console.error('Error handling action:', error)
+        }
+    }
+
     const handleChoiceClick = (questionIndex: number, choiceIndex: number) => {
         setInitialAnswers(initialAnswers.map((q, qi) => (qi === questionIndex ? { ...q, selectedChoice: choiceIndex } : q)))
-
-        // Scroll to the "Check Answer" button for the current question
         if (checkAnswerButtonRefs.current[questionIndex]) {
             checkAnswerButtonRefs.current[questionIndex].scrollIntoView({ behavior: 'smooth', block: 'center' })
         }
@@ -398,27 +363,20 @@ export default function ProductPage() {
     const handleCheckAnswer = async (questionIndex: number) => {
         const question = initialAnswers[questionIndex]
         const selectedChoiceId = question.choices[question.selectedChoice]?.id
-
         if (selectedChoiceId === undefined) {
             setErrorMessage('You must make a selection!')
             return
         }
-
-        setErrorMessage('') // Clear error message
-
+        setErrorMessage('')
         try {
             if (timerIntervalRef.current) {
                 clearInterval(timerIntervalRef.current)
             }
-
             const { correct, maxPoints, correctChoiceId } = await checkAnswer(academy.id, question.academyQuestionId, selectedChoiceId, initData.user.id)
-
             let pointsAwarded = 0
-
             if (correct) {
                 const totalXP = maxPoints
                 const basePoints = Math.floor(totalXP * 0.25)
-
                 if (timer > 25) {
                     pointsAwarded = totalXP
                 } else if (timer > 0) {
@@ -429,17 +387,11 @@ export default function ProductPage() {
                 } else {
                     pointsAwarded = basePoints
                 }
-
-                // Update earnedPoints from store
                 fetchEarnedPoints(userId, academy.id)
-
                 setCurrentPoints(pointsAwarded)
                 triggerXPAnimation()
             }
-
             await saveResponse(academy.id, question.academyQuestionId, selectedChoiceId, initData.user.id, correct, pointsAwarded)
-
-            // Update the question with the correct answers
             setInitialAnswers(
                 initialAnswers.map((q, qi) =>
                     qi === questionIndex
@@ -455,8 +407,6 @@ export default function ProductPage() {
                         : q
                 )
             )
-
-            // Allow navigation to the next slide
             setMaxAllowedSlide((prev) => Math.min(prev + 2, initialAnswers.length * 2 - 1))
             setErrorMessage('')
         } catch (error) {
@@ -467,20 +417,16 @@ export default function ProductPage() {
     const handleNextQuestion = () => {
         const totalSlides = initialAnswers.length * 2
         if (currentSlideIndex >= totalSlides - 1) {
-            handleCompleteAcademy() // Invoke the API call function
+            handleCompleteAcademy()
         } else {
-            if (swiperRef.current && swiperRef.current.swiper) {
+            if (swiperRef.current?.swiper) {
                 swiperRef.current.swiper.slideNext()
-                setErrorMessage('') // Reset error message when moving to next question
+                setErrorMessage('')
             } else {
                 console.error('Swiper reference is not available.')
             }
         }
     }
-
-    const { loadSurpriseBoxData, setNextBox } = useSurpriseBoxStore()
-    const { completedAcademies, nextBox } = useSurpriseBoxStore()
-    const [surprisePoint, setSurprisePoint] = useState(0)
 
     useEffect(() => {
         if (userId) {
@@ -490,45 +436,27 @@ export default function ProductPage() {
 
     const handleCompleteAcademy = async () => {
         try {
-            // Step 1: Submit the quiz
             await submitQuiz(academy.id, userId)
-
-            // Step 2: Fetch updated total points from the backend
             await fetchUserTotalPoints(userId)
-
-            // Step 3: Fetch updated earned points for the current academy
             fetchEarnedPoints(userId, academy.id)
-
-            // Step 4: Update the store with the new completed academies count
             const { increaseCompletedAcademies } = useSurpriseBoxStore.getState()
             increaseCompletedAcademies(userId)
 
-            // Step 5: Handle surprise box logic if applicable
             if (completedAcademies + 1 === nextBox) {
                 let randomSurprisePoint = (Math.floor(Math.random() * 10) + 1) * 500
-
                 setSurprisePoint(randomSurprisePoint)
                 setNextBox(userId, randomSurprisePoint)
-
-                // Update user state total points in the store
                 const { totalPoints } = useUserStore.getState()
                 useUserStore.setState({ totalPoints: totalPoints + randomSurprisePoint })
             }
 
-            // Step 6: Fetch notifications to check for level-up or other events
-            const { fetchNotifications, showNotification } = useNotificationStore.getState()
             await fetchNotifications()
-
-            // Get the first unread notification if available
             const { notifications } = useNotificationStore.getState()
             const unreadNotification = notifications.find((notif) => !notif.read)
-
-            // Step 7: If a notification exists, show the notification dialog
             if (unreadNotification) {
                 showNotification(unreadNotification)
             }
 
-            // Update the active filter to show completion view
             setActiveFilter('completion')
         } catch (error) {
             console.error('Error completing academy:', error)
@@ -546,23 +474,17 @@ export default function ProductPage() {
     const handleSlideChange = (swiper: any) => {
         const newIndex = swiper.activeIndex
         setCurrentSlideIndex(newIndex)
-
         const newQuestionIndex = Math.floor(newIndex / 2)
         setCurrentQuestionIndex(newQuestionIndex)
-
         const question = initialAnswers[newQuestionIndex]
-
-        // Restrict navigation beyond allowed slides
         if (newIndex > maxAllowedSlide) {
             setErrorMessage('Please complete the current question before proceeding.')
-            if (swiperRef.current && swiperRef.current.swiper) {
+            if (swiperRef.current?.swiper) {
                 swiperRef.current.swiper.slideTo(maxAllowedSlide, 300)
             }
         } else {
             setErrorMessage('')
         }
-
-        // Start timer for new question on read tab
         if (activeFilter === 'read') {
             if (question && !question.timerStarted) {
                 setTimer(45)
@@ -578,9 +500,7 @@ export default function ProductPage() {
         }
 
         const currentQuestion = initialAnswers[currentQuestionIndex]
-        const totalSlides = initialAnswers.length * 2 // Each question has 2 slides
-
-        // Decide whether to show the timer bar
+        const totalSlides = initialAnswers.length * 2
         const showTimerBar = activeFilter === 'read' && quizStarted && timer >= 0 && currentQuestion && currentQuestion.isCorrect === undefined
 
         return (
@@ -617,15 +537,12 @@ export default function ProductPage() {
     const handleStartQuiz = () => {
         setShowIntro(false)
         setQuizStarted(true)
-
-        // Start the timer for the first question before sliding
         if (initialAnswers.length > 0 && !initialAnswers[0].timerStarted) {
             startTimer()
             setInitialAnswers((prevAnswers) => prevAnswers.map((q, qi) => (qi === 0 ? { ...q, timerStarted: true } : q)))
         }
-
-        if (swiperRef.current && swiperRef.current.swiper) {
-            swiperRef.current.swiper.slideTo(0, 0) // Slide to the first question without animation
+        if (swiperRef.current?.swiper) {
+            swiperRef.current.swiper.slideTo(0, 0)
         } else {
             console.error('Swiper reference is not available.')
         }
@@ -646,7 +563,6 @@ export default function ProductPage() {
         }, 1000)
     }
 
-    // Define a custom decorator function with Tailwind classes for styling links
     const linkDecorator = (href: string, text: string, key: number) => (
         <a href={href} key={key} className="text-blue-500 underline" target="_blank" rel="noopener noreferrer">
             {text}
@@ -656,16 +572,13 @@ export default function ProductPage() {
     const renderInitialQuestionSlide = (questionIndex: number) => {
         const question = initialAnswers[questionIndex]
         if (!question) return null
-
         if (question.question === 'Tokenomics details' && question.answer) {
             let parsedAnswer = {}
-
             try {
                 parsedAnswer = JSON.parse(question.answer)
             } catch (error) {
                 console.error('Error parsing answer JSON:', error)
             }
-
             return (
                 <SwiperSlide key={`initial-question-${questionIndex}`}>
                     <Card className="!my-2 !mx-1 !p-4 !rounded-2xl !bg-gray-50 dark:!bg-gray-800 !border !border-gray-200 dark:!border-gray-700 !shadow-sm !mb-12">
@@ -693,7 +606,6 @@ export default function ProductPage() {
             )
         }
 
-        // Use Linkify to wrap the answer text in the default case
         return (
             <SwiperSlide key={`initial-question-${questionIndex}`}>
                 <Card className="!my-2 !mx-1 !p-4 !rounded-2xl !bg-gray-50 dark:!bg-gray-800 !border !border-gray-200 dark:!border-gray-700 !shadow-sm !mb-12">
@@ -709,7 +621,6 @@ export default function ProductPage() {
     const renderQuizSlide = (questionIndex: number) => {
         const question = initialAnswers[questionIndex]
         if (!question) return null
-
         return (
             <SwiperSlide key={`quiz-question-${questionIndex}-${question.isCorrect}`}>
                 <Card className="!mx-1 !my-2 p-2 !rounded-2xl !bg-gray-50 dark:!bg-gray-800 !border !border-gray-200 dark:!border-gray-700 !shadow-sm">
@@ -720,7 +631,6 @@ export default function ProductPage() {
                         const isSelected = question.selectedChoice === choiceIndex
                         const isCorrectChoice = choice.isCorrect
                         const isWrongChoice = choice.isWrong
-
                         let choiceClass = ''
                         if (question.isCorrect !== undefined) {
                             if (isCorrectChoice) {
@@ -731,7 +641,6 @@ export default function ProductPage() {
                         } else if (isSelected) {
                             choiceClass = 'bg-purple-200 border border-purple-500'
                         }
-
                         return (
                             <div
                                 key={choiceIndex}
@@ -780,7 +689,6 @@ export default function ProductPage() {
     }
 
     const renderWatchTab = () => {
-        // We will display only the first video available.
         const firstVideoQuestion = initialAnswers.find((q) => q.video)
         if (!firstVideoQuestion || !firstVideoQuestion.video) {
             return (
@@ -789,11 +697,9 @@ export default function ProductPage() {
                 </Card>
             )
         }
-
         const videoUrl = firstVideoQuestion.video
         const videoId = extractYouTubeVideoId(videoUrl || '')
         const embedUrl = videoId ? `https://www.youtube.com/embed/${videoId}` : ''
-
         return (
             <Card className="!my-2 !mx-1 p-2 !rounded-2xl !bg-gray-50 dark:!bg-gray-800 !border !border-gray-200 dark:!border-gray-700 !shadow-sm">
                 {embedUrl ? (
@@ -812,7 +718,6 @@ export default function ProductPage() {
         )
     }
 
-    // Handle verify button click
     const handleVerifyClick = async (quest: VerificationTask) => {
         try {
             const message = await completeTask(quest.id, academy.id)
@@ -826,26 +731,23 @@ export default function ProductPage() {
         }
     }
 
-    // Render Quest Tab
     const renderQuestTab = () => (
         <Block className="!m-0 !p-0">
             {quests.length > 0 ? (
                 quests.map((quest) => {
-                    // For simplicity, we'll assume quests are not yet verified
-                    const isVerified = false // Replace with actual verification status if available
+                    const userVerification = userVerificationTasks.find(
+                        (uv) => uv.verificationTaskId === quest.id && uv.academyId === academy.id && uv.userId === userId
+                    )
+                    const isVerified = userVerification?.verified || false
                     return (
                         <div
                             key={quest.id}
                             className="relative bg-white dark:bg-zinc-900 rounded-2xl shadow-lg py-1 flex flex-row items-center px-1 border border-gray-300 dark:border-gray-600 h-16 justify-between w-full mb-2"
                         >
-                            {/* Platform Icon */}
                             <div className="w-12 h-16 flex items-center justify-center">
                                 {platformIcons[quest.platform] || <div className="w-8 h-8 text-gray-500">?</div>}
                             </div>
-
-                            {/* Quest Details */}
                             <div className="flex flex-col flex-grow mx-2 py-1">
-                                {/* Quest Name and Tooltip */}
                                 <h3 className="font-semibold text-left break-words whitespace-normal text-xs flex items-center relative">
                                     {quest.name}
                                     <button
@@ -863,8 +765,6 @@ export default function ProductPage() {
                                         </div>
                                     )}
                                 </h3>
-
-                                {/* XP and Users Completed */}
                                 <div className="flex items-center mt-1">
                                     <div className="flex items-center">
                                         <span className="mx-1 text-sm text-gray-100">+{quest.xp}</span>
@@ -873,9 +773,7 @@ export default function ProductPage() {
                                 </div>
                             </div>
 
-                            {/* Action Buttons */}
                             <div className="flex flex-col space-y-1 justify-center mr-2">
-                                {/* Action Button */}
                                 <Button
                                     rounded
                                     onClick={() => handleActionClick(quest)}
@@ -885,10 +783,9 @@ export default function ProductPage() {
                                         color: '#fff'
                                     }}
                                 >
-                                    {getActionLabel(quest.verificationMethod)}
+                                    {getActionLabel(quest.verificationMethod, twitterAuthenticated)}
                                 </Button>
 
-                                {/* Verify Button */}
                                 {quest.verificationMethod !== 'LEAVE_FEEDBACK' && (
                                     <Button
                                         rounded
@@ -928,7 +825,6 @@ export default function ProductPage() {
                 />
             )
         }
-
         switch (activeFilter) {
             case 'read':
                 return renderReadTab()
@@ -951,12 +847,10 @@ export default function ProductPage() {
         }
     }, [activeFilter])
 
-    // Set introSlideDismissed and quizStarted based on user responses
     useEffect(() => {
         if (userHasResponses) {
             setShowIntro(false)
             setQuizStarted(true)
-            // Optionally, start timer for the first unanswered question if any
         }
     }, [userHasResponses])
 
@@ -1104,7 +998,6 @@ export default function ProductPage() {
                 </div>
             )}
 
-            {/* Leave confirmation dialog */}
             <LeaveConfirmationDialog
                 opened={showLeaveConfirmation}
                 onConfirm={() => {
@@ -1120,7 +1013,6 @@ export default function ProductPage() {
                 }}
             />
 
-            {/* Notification Component */}
             <Notification
                 className="fixed !mt-12 top-12 left-0 z-50 border"
                 opened={notificationOpen}

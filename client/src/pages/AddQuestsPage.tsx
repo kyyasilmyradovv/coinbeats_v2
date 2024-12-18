@@ -21,6 +21,7 @@ interface VerificationTask {
     xp: number
     shortCircuit: boolean
     shortCircuitTimer: number | null
+    parameters?: { [key: string]: string }
 }
 
 const AddQuestsPage: React.FC = () => {
@@ -35,19 +36,19 @@ const AddQuestsPage: React.FC = () => {
         verificationMethod: 'SHORT_CIRCUIT',
         xp: '',
         shortCircuit: false,
-        shortCircuitTimer: ''
+        shortCircuitTimer: '',
+        parameters: {} as { [key: string]: string } // Add parameters field
     })
+
     const [notificationOpen, setNotificationOpen] = useState(false)
     const [notificationText, setNotificationText] = useState('')
     const [tasks, setTasks] = useState<VerificationTask[]>([])
     const [loading, setLoading] = useState<boolean>(true)
     const [editingTask, setEditingTask] = useState<VerificationTask | null>(null)
     const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
-    const [popoverOpen, setPopoverOpen] = useState(false)
     const [popoverTarget, setPopoverTarget] = useState<HTMLElement | null>(null)
     const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null)
 
-    // Fetch tasks when component mounts
     useEffect(() => {
         const fetchTasks = async () => {
             try {
@@ -72,6 +73,16 @@ const AddQuestsPage: React.FC = () => {
         }))
     }
 
+    const handleParameterChange = (key: string, value: string) => {
+        setFormData((prev) => ({
+            ...prev,
+            parameters: {
+                ...prev.parameters,
+                [key]: value
+            }
+        }))
+    }
+
     const resetForm = () => {
         setFormData({
             name: '',
@@ -83,33 +94,32 @@ const AddQuestsPage: React.FC = () => {
             verificationMethod: 'SHORT_CIRCUIT',
             xp: '',
             shortCircuit: false,
-            shortCircuitTimer: ''
+            shortCircuitTimer: '',
+            parameters: {}
         })
         setEditingTask(null)
     }
 
     const handleSubmit = async () => {
         try {
+            const taskData = {
+                ...formData,
+                academyId: academyId ? parseInt(academyId, 10) : 0,
+                taskType: 'ACADEMY_SPECIFIC',
+                xp: formData.xp ? parseInt(formData.xp.toString(), 10) : 0,
+                repeatInterval: formData.repeatInterval ? parseInt(formData.repeatInterval.toString(), 10) : null,
+                shortCircuitTimer: formData.shortCircuitTimer ? parseInt(formData.shortCircuitTimer.toString(), 10) : null,
+                parameters: formData.parameters || {}
+            }
+
             if (editingTask) {
                 // Update existing task
-                await axios.put(`/api/verification-tasks/${editingTask.id}`, {
-                    ...formData,
-                    xp: formData.xp ? parseInt(formData.xp.toString(), 10) : 0,
-                    repeatInterval: formData.repeatInterval ? parseInt(formData.repeatInterval.toString(), 10) : null,
-                    shortCircuitTimer: formData.shortCircuitTimer ? parseInt(formData.shortCircuitTimer.toString(), 10) : null
-                })
+                await axios.put(`/api/verification-tasks/${editingTask.id}`, taskData)
                 setNotificationText('Task updated successfully.')
-                setTasks((prevTasks) => prevTasks.map((task) => (task.id === editingTask.id ? { ...task, ...formData } : task)))
+                setTasks((prevTasks) => prevTasks.map((task) => (task.id === editingTask.id ? { ...task, ...taskData } : task)))
             } else {
                 // Create new task
-                const response = await axios.post('/api/verification-tasks/academy', {
-                    ...formData,
-                    academyId: academyId ? parseInt(academyId, 10) : 0,
-                    taskType: 'ACADEMY_SPECIFIC',
-                    xp: formData.xp ? parseInt(formData.xp.toString(), 10) : 0,
-                    repeatInterval: formData.repeatInterval ? parseInt(formData.repeatInterval.toString(), 10) : null,
-                    shortCircuitTimer: formData.shortCircuitTimer ? parseInt(formData.shortCircuitTimer.toString(), 10) : null
-                })
+                const response = await axios.post('/api/verification-tasks/academy', taskData)
                 setNotificationText('Task created successfully.')
                 setTasks((prevTasks) => [...prevTasks, response.data])
             }
@@ -134,7 +144,8 @@ const AddQuestsPage: React.FC = () => {
             verificationMethod: task.verificationMethod || 'SHORT_CIRCUIT',
             xp: task.xp.toString(),
             shortCircuit: task.shortCircuit,
-            shortCircuitTimer: task.shortCircuitTimer?.toString() || ''
+            shortCircuitTimer: task.shortCircuitTimer?.toString() || '',
+            parameters: task.parameters || {}
         })
         window.scrollTo(0, 0)
     }
@@ -248,6 +259,7 @@ const AddQuestsPage: React.FC = () => {
                                 <option value="INSTAGRAM">Instagram</option>
                                 <option value="DISCORD">Discord</option>
                                 <option value="EMAIL">Email</option>
+                                <option value="LINKEDIN">LinkedIn</option>
                             </ListInput>
                             <ListInput
                                 label="Verification Method"
@@ -256,11 +268,13 @@ const AddQuestsPage: React.FC = () => {
                                 name="verificationMethod"
                                 value={formData.verificationMethod}
                                 onChange={handleChange}
+                                inputClassName="!bg-[#1c1c1d] !text-white !m-1 !pl-2"
                             >
                                 <option value="FOLLOW_USER">Follow User</option>
                                 <option value="TWEET">Tweet</option>
                                 <option value="RETWEET">Retweet</option>
                                 <option value="LIKE_TWEET">Like Tweet</option>
+                                <option value="COMMENT_ON_TWEET">Comment on Tweet</option>
                                 <option value="ADD_TO_BIO">Add to Bio</option>
                                 <option value="JOIN_TELEGRAM_CHANNEL">Join Telegram Channel</option>
                                 <option value="INVITE_TELEGRAM_FRIEND">Invite Telegram Friend</option>
@@ -268,11 +282,115 @@ const AddQuestsPage: React.FC = () => {
                                 <option value="SUBSCRIBE_YOUTUBE_CHANNEL">Subscribe YouTube Channel</option>
                                 <option value="WATCH_YOUTUBE_VIDEO">Watch YouTube Video</option>
                                 <option value="FOLLOW_INSTAGRAM_USER">Follow Instagram User</option>
+                                <option value="FOLLOW_LINKEDIN_USER">Follow LinkedIn User</option>
                                 <option value="JOIN_DISCORD_CHANNEL">Join Discord Channel</option>
                                 <option value="PROVIDE_EMAIL">Provide Email</option>
                                 <option value="SHORT_CIRCUIT">Short Circuit</option>
+                                <option value="LEAVE_FEEDBACK">Leave Feedback</option>
                                 <option value="MEME_TWEET">Tweet Meme</option>
                             </ListInput>
+
+                            {/* Conditional Parameters Input Fields (Same logic as in AddPlatformTasksPage) */}
+                            {formData.verificationMethod === 'FOLLOW_USER' && (
+                                <ListInput
+                                    label="Username"
+                                    type="text"
+                                    outline
+                                    value={formData.parameters.username || ''}
+                                    onChange={(e) => handleParameterChange('username', e.target.value)}
+                                    placeholder="Enter username"
+                                    clearButton
+                                />
+                            )}
+                            {['RETWEET', 'LIKE_TWEET', 'COMMENT_ON_TWEET'].includes(formData.verificationMethod) && (
+                                <ListInput
+                                    label="Tweet ID"
+                                    type="text"
+                                    outline
+                                    value={formData.parameters.tweetId || ''}
+                                    onChange={(e) => handleParameterChange('tweetId', e.target.value)}
+                                    placeholder="Enter Tweet ID"
+                                    clearButton
+                                />
+                            )}
+                            {formData.verificationMethod === 'JOIN_TELEGRAM_CHANNEL' && (
+                                <ListInput
+                                    label="Channel Link"
+                                    type="text"
+                                    outline
+                                    value={formData.parameters.channelLink || ''}
+                                    onChange={(e) => handleParameterChange('channelLink', e.target.value)}
+                                    placeholder="Enter Telegram Channel Link"
+                                    clearButton
+                                />
+                            )}
+                            {formData.verificationMethod === 'SUBSCRIBE_YOUTUBE_CHANNEL' && (
+                                <ListInput
+                                    label="Channel URL"
+                                    type="text"
+                                    outline
+                                    value={formData.parameters.channelUrl || ''}
+                                    onChange={(e) => handleParameterChange('channelUrl', e.target.value)}
+                                    placeholder="Enter YouTube Channel URL"
+                                    clearButton
+                                />
+                            )}
+                            {formData.verificationMethod === 'WATCH_YOUTUBE_VIDEO' && (
+                                <ListInput
+                                    label="Video URL"
+                                    type="text"
+                                    outline
+                                    value={formData.parameters.videoUrl || ''}
+                                    onChange={(e) => handleParameterChange('videoUrl', e.target.value)}
+                                    placeholder="Enter YouTube Video URL"
+                                    clearButton
+                                />
+                            )}
+                            {formData.verificationMethod === 'FOLLOW_INSTAGRAM_USER' && (
+                                <ListInput
+                                    label="Instagram Username"
+                                    type="text"
+                                    outline
+                                    value={formData.parameters.username || ''}
+                                    onChange={(e) => handleParameterChange('username', e.target.value)}
+                                    placeholder="Enter Instagram Username"
+                                    clearButton
+                                />
+                            )}
+                            {formData.verificationMethod === 'FOLLOW_LINKEDIN_USER' && (
+                                <ListInput
+                                    label="LinkedIn Profile URL"
+                                    type="text"
+                                    outline
+                                    value={formData.parameters.username || ''}
+                                    onChange={(e) => handleParameterChange('username', e.target.value)}
+                                    placeholder="Enter LinkedIn Profile URL"
+                                    clearButton
+                                />
+                            )}
+                            {formData.verificationMethod === 'JOIN_DISCORD_CHANNEL' && (
+                                <ListInput
+                                    label="Invite Link"
+                                    type="text"
+                                    outline
+                                    value={formData.parameters.inviteLink || ''}
+                                    onChange={(e) => handleParameterChange('inviteLink', e.target.value)}
+                                    placeholder="Enter Discord Invite Link"
+                                    clearButton
+                                />
+                            )}
+                            {formData.verificationMethod === 'TWEET' && (
+                                <ListInput
+                                    label="Tweet Text"
+                                    type="text"
+                                    outline
+                                    value={formData.parameters.tweetText || ''}
+                                    onChange={(e) => handleParameterChange('tweetText', e.target.value)}
+                                    placeholder="Enter Tweet Text"
+                                    clearButton
+                                />
+                            )}
+
                             <ListInput
                                 label="XP Allocation"
                                 type="number"
@@ -343,6 +461,18 @@ const AddQuestsPage: React.FC = () => {
                                         <p className="text-sm mt-1">
                                             XP: {task.xp} | Platform: {task.platform} | Method: {task.verificationMethod}
                                         </p>
+                                        {task.parameters && Object.keys(task.parameters).length > 0 && (
+                                            <div className="mt-2">
+                                                <p className="text-sm font-semibold">Parameters:</p>
+                                                <ul className="list-disc list-inside">
+                                                    {Object.entries(task.parameters).map(([key, value]) => (
+                                                        <li key={key} className="break-all whitespace-normal">
+                                                            {key}: {value as string}
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        )}
                                     </div>
                                     <div className="flex flex-col items-end">
                                         <Button onClick={() => handleEdit(task)} className="!m-0 !p-0 bg-transparent">
@@ -365,7 +495,7 @@ const AddQuestsPage: React.FC = () => {
                 className="fixed top-0 left-0 z-50 border"
                 opened={notificationOpen}
                 icon={<img src={bunnyLogo} alt="Bunny Mascot" className="w-10 h-10" />}
-                title="Message from Coinbeats Bunny"
+                title="Message from CoinBeats Bunny"
                 text={notificationText}
                 button={<Button onClick={() => setNotificationOpen(false)}>Close</Button>}
                 onClose={() => setNotificationOpen(false)}
