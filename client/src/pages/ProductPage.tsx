@@ -780,63 +780,35 @@ export default function ProductPage() {
     }
 
     const renderWatchTab = () => {
-        const totalSlides = initialAnswers.length * 2 // Each question has 2 slides
+        // We will display only the first video available.
+        const firstVideoQuestion = initialAnswers.find((q) => q.video)
+        if (!firstVideoQuestion || !firstVideoQuestion.video) {
+            return (
+                <Card className="m-2 p-2">
+                    <p className="text-center">No tutorial video available</p>
+                </Card>
+            )
+        }
 
-        return (
-            <>
-                <ProgressBar
-                    totalSlides={totalSlides}
-                    currentSlideIndex={currentSlideIndex}
-                    handlePrevClick={handlePrevClick}
-                    handleNextClick={handleNextClick}
-                />
-                <Swiper
-                    pagination={{ clickable: true }}
-                    onSlideChange={handleSlideChange}
-                    ref={swiperRef}
-                    allowTouchMove={true}
-                    initialSlide={currentSlideIndex}
-                >
-                    {initialAnswers.length > 0 ? (
-                        initialAnswers.flatMap((question, index) => [renderVideoSlide(index), renderQuizSlide(index)])
-                    ) : (
-                        <SwiperSlide key="no-videos">
-                            <Card className="m-2 p-2">
-                                <p className="text-center">No videos available</p>
-                            </Card>
-                        </SwiperSlide>
-                    )}
-                </Swiper>
-            </>
-        )
-    }
-
-    const renderVideoSlide = (questionIndex: number) => {
-        const question = initialAnswers[questionIndex]
-        if (!question) return null
-
-        const videoUrl = question.video
-        console.log('Video URL:', videoUrl)
+        const videoUrl = firstVideoQuestion.video
         const videoId = extractYouTubeVideoId(videoUrl || '')
         const embedUrl = videoId ? `https://www.youtube.com/embed/${videoId}` : ''
 
         return (
-            <SwiperSlide key={`video-slide-${questionIndex}`}>
-                <Card className="!my-2 !mx-1 p-2 !rounded-2xl !bg-gray-50 dark:!bg-gray-800 !border !border-gray-200 dark:!border-gray-700 !shadow-sm">
-                    {embedUrl ? (
-                        <iframe
-                            width="100%"
-                            height="315"
-                            src={embedUrl}
-                            title={`Video ${questionIndex + 1}`}
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                            allowFullScreen
-                        />
-                    ) : (
-                        <p className="text-center text-red-500">Invalid video URL</p>
-                    )}
-                </Card>
-            </SwiperSlide>
+            <Card className="!my-2 !mx-1 p-2 !rounded-2xl !bg-gray-50 dark:!bg-gray-800 !border !border-gray-200 dark:!border-gray-700 !shadow-sm">
+                {embedUrl ? (
+                    <iframe
+                        width="100%"
+                        height="315"
+                        src={embedUrl}
+                        title="Tutorial Video"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                    />
+                ) : (
+                    <p className="text-center text-red-500">Invalid video URL</p>
+                )}
+            </Card>
         )
     }
 
@@ -1075,7 +1047,7 @@ export default function ProductPage() {
                                     borderRadius: '9999px'
                                 }}
                             >
-                                Watch
+                                Tutorial
                             </Button>
 
                             <Button
