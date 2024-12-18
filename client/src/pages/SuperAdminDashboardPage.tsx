@@ -64,7 +64,7 @@ const SuperAdminDashboardPage: React.FC = () => {
                 if (error.response.status === 401) {
                     alert('Unauthorized. Please log in again.')
                 } else if (error.response.status === 403) {
-                    alert('Access denied. You do not have permission to view this resource.')
+                    // alert('Access denied. You do not have permission to view this resource.')
                 } else if (error.response.status === 404) {
                     alert('Resource not found.')
                 } else {

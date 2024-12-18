@@ -507,15 +507,10 @@ export const handleTwitterAuthentication = (
 
     // Platform detection using user agent
     const userAgent = navigator.userAgent || navigator.vendor || ''
-    console.log('User agent:', userAgent)
 
     const isAndroid = /Android/i.test(userAgent)
     const isIOS = /iPhone|iPad|iPod/i.test(userAgent)
     const isDesktop = !isAndroid && !isIOS
-
-    console.log('isAndroid:', isAndroid)
-    console.log('isIOS:', isIOS)
-    console.log('isDesktop:', isDesktop)
 
     if (isIOS) {
         console.log('iOS device detected. Using window.location.href')

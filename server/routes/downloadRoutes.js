@@ -36,7 +36,7 @@ router.post('/download-csv-email', authenticateToken, async (req, res) => {
     } else if (dataType === 'referrers') {
       csvContent = generateReferrersCSV(data, selectedWalletType);
     } else if (dataType === 'raffle_winners') {
-      csvContent = generateRaffleWinnersCSV(data, selectedWalletType);
+      csvContent = generateRaffleWinnersCSV(data);
     } else {
       return res.status(400).json({ error: 'Invalid data type' });
     }
@@ -97,14 +97,18 @@ const generateReferrersCSV = (data, selectedWalletType) => {
   return [header, ...rows].join('\n');
 };
 
-const generateRaffleWinnersCSV = (data, selectedWalletType) => {
-  const header = 'Rank,Username,UserId,TelegramUserId,WalletAddress';
+const generateRaffleWinnersCSV = (data) => {
+  const header =
+    'Rank,Username,erc20WalletAddress,solanaWalletAddress,tonWalletAddress';
+
   const rows = data.map((winner, index) => {
-    const walletAddress = winner.user[selectedWalletType] || '';
-    return `${index + 1},${winner.user.name},${winner.user.id},${
-      winner.user.telegramUserId
-    },${walletAddress}`;
+    return `${index + 1},${winner.user.name},${
+      winner.user?.erc20WalletAddress || ''
+    },${winner.user?.solanaWalletAddress || ''},${
+      winner.user?.tonWalletAddress || ''
+    }`;
   });
+
   return [header, ...rows].join('\n');
 };
 

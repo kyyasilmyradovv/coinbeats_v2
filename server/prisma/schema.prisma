@@ -43,6 +43,7 @@ model User {
   raffleAmount              Int                  @default(0)
   raffles                   Raffle[]
   raffleWins                RaffleWinners[]
+  academyRaffleEntries      AcademyRaffleEntries[]
 }
 
 model TwitterAccount {
@@ -388,6 +389,11 @@ model SurpriseBox {
   user               User @relation(fields: [userId], references: [id])
 }
 
+enum OverallRaffleType {
+  PLATFORM
+  ACADEMY
+}
+
 model OverallRaffle {
   id                 Int          @id @default(autoincrement())
   minAmount          Int          @default(0)
@@ -395,6 +401,10 @@ model OverallRaffle {
   deadline           DateTime?
   minPoints          Int?
   reward             String?
+  isActive           Boolean      @default(false)
+  creatorId          Int?
+  academyId          Int?         @unique
+  type               OverallRaffleType?
 }
 
 model RafflesHistory {
@@ -406,16 +416,26 @@ model RafflesHistory {
   minPoints          Int?
   minRaffles         Int?
   winners            RaffleWinners[]
+  overallRaffleId    Int?
 }
 
 model RaffleWinners {
   id                 Int          @id @default(autoincrement())
-  winningAmount      Int?
+  winningAmount      String?
   raffleAmount       Int?
   userId             Int
   historyId          Int
   user               User @relation(fields: [userId], references: [id])
   history            RafflesHistory @relation(fields: [historyId], references: [id])
+}
+
+model AcademyRaffleEntries {
+  id                 Int  @id @default(autoincrement())
+  amount             Int  @default(0)
+  academyId          Int
+  userId             Int
+  user               User? @relation(fields: [userId], references: [id])
+  @@unique([userId, academyId])
 }
 
 enum ContentOrigin {
