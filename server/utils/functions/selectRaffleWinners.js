@@ -271,6 +271,4 @@ const selectRaffleWinners = async () => {
   }
 };
 
-selectRaffleWinners();
-
 module.exports = selectRaffleWinners;
