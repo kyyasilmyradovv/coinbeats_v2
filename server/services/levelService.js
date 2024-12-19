@@ -73,7 +73,7 @@ const checkAndApplyLevelUp = async (userId) => {
         data: {
           userId,
           amount: newLevel?.rewardPoints / 100,
-          description: newLevel.levelName,
+          desc: newLevel.levelName,
         },
       });
       await prisma.user.update({
