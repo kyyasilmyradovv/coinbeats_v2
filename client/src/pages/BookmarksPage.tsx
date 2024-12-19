@@ -1,7 +1,7 @@
 // src/pages/BookmarksPage.js
 
 import React, { useEffect, useState } from 'react'
-import { Page, Button } from 'konsta/react'
+import { Page, Button, Preloader } from 'konsta/react'
 import Navbar from '../components/common/Navbar'
 import Sidebar from '../components/common/Sidebar'
 import BottomTabBar from '../components/BottomTabBar'
@@ -12,7 +12,7 @@ import cash from '../images/cash.png'
 import coinbeats from '../images/coinbeats-l.svg'
 import axiosInstance from '~/api/axiosInstance'
 import useUserStore from '~/store/useUserStore'
-import { FaTwitter, FaFacebook, FaInstagram, FaTelegramPlane, FaDiscord, FaYoutube, FaEnvelope, FaTimes } from 'react-icons/fa'
+import { FaTimes } from 'react-icons/fa'
 
 interface RaffleInterface {
     name: string
@@ -33,10 +33,12 @@ export default function BookmarksPage() {
     const [raffles, setRaffles] = useState<RaffleInterface[]>([])
     const [showTooltip, setShowTooltip] = useState(false)
     const { userId } = useUserStore((state) => ({ userId: state.userId }))
+    const [loading, setLoading] = useState(false)
 
     useEffect(() => {
         const fetchRaffles = async () => {
             try {
+                setLoading(true)
                 const response = await axiosInstance.get(`/api/raffle/overall-for-users?userId=${userId}`)
 
                 const rafflesList = []
@@ -46,7 +48,8 @@ export default function BookmarksPage() {
                     const deadline = new Date(r.deadline)
                     rafflesList.push({
                         ...r,
-                        deadline: deadline.toLocaleDateString().split('T')[0],
+                        deadline: deadline.toLocaleString().split('T')[0],
+                        // deadline: deadline.toLocaleDateString().split('T')[0],
                         winners: `${r?.winnersCount} x ${r?.reward}`,
                         remainingDays: Math.ceil((deadline.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)),
                         inMyRaffles: r.raffleCount > 0
@@ -60,12 +63,15 @@ export default function BookmarksPage() {
                 }
 
                 setRaffles(rafflesList)
+                setLoading(false)
             } catch (error) {
                 console.error('Error fetching overall raffle:', error)
             }
         }
 
-        fetchRaffles()
+        if (!loading) {
+            fetchRaffles()
+        }
     }, [])
 
     // Filter raffles based on active tab
@@ -79,7 +85,6 @@ export default function BookmarksPage() {
         <Page>
             <Navbar />
             <Sidebar />
-
             <div className="relative min-h-screen bg-cosmos-bg bg-fixed bg-center bg-no-repeat bg-cover">
                 <div className="absolute inset-0 bg-black opacity-50 z-0"></div>
                 <div className="relative z-10">
@@ -138,6 +143,13 @@ export default function BookmarksPage() {
                         )}
                     </div>
 
+                    {/* Spinner */}
+                    {loading && (
+                        <div style={{ display: 'flex', justifyContent: 'center', paddingBottom: '12px' }}>
+                            <Preloader />
+                        </div>
+                    )}
+
                     {/* Cards Layout */}
                     <div className="grid grid-cols-1 gap-4 px-4">
                         {filteredRaffles.map((raffle, index) => (
@@ -181,8 +193,8 @@ export default function BookmarksPage() {
                                         }`}
                                         style={{
                                             background: raffle.inMyRaffles
-                                                ? 'linear-gradient(to left, #16a34a, #3b82f6)' // Green to blue gradient
-                                                : 'linear-gradient(to left, #ff0077, #7700ff)', // Purple gradient
+                                                ? 'linear-gradient(to left, #16a34a, #3b82f6)'
+                                                : 'linear-gradient(to left, #ff0077, #7700ff)',
                                             color: '#fff'
                                         }}
                                     >
