@@ -1,6 +1,6 @@
 // client/src/components/IntroPage.tsx
 
-import React, { useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import './IntroPage.css'
 import introImage from '../images/intro.webp'
 import coinbeatsText from '../images/coinbeats.png'
@@ -17,6 +17,7 @@ import useUserStore from '../store/useUserStore'
 import useNotificationStore from '../store/useNotificationStore'
 import axiosInstance from '~/api/axiosInstance'
 import useRafflesStore from '~/store/useRafflesStore'
+import { Preloader } from 'konsta/react'
 
 interface IntroPageProps {
     onComplete: () => void
@@ -226,13 +227,72 @@ const IntroPage: React.FC<IntroPageProps> = ({ onComplete }) => {
         }
     }, [userId, referralCompletionChecked, checkReferralCompletion])
 
+    const [progress, setProgress] = useState(0)
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setProgress((prev) => {
+                if (prev >= 100) {
+                    clearInterval(interval)
+                    return 100
+                }
+                return prev + 1
+            })
+        }, 120)
+
+        return () => clearInterval(interval)
+    }, [])
+
     return (
-        <div className="intro-container">
+        <div className="intro-container" style={{ position: 'relative', height: '100vh' }}>
             <div className="intro-image">
                 <img src={introImage} alt="Intro Background" className="intro-bg" />
                 <img src={coinbeatsText} alt="Coinbeats Text" className="coinbeats-text" />
                 <img src={schoolText} alt="School Text" className="school-text" />
             </div>
+            {progress < 100 && (
+                <div
+                    style={{
+                        position: 'absolute',
+                        bottom: '10%',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        width: '80%'
+                    }}
+                >
+                    <div
+                        style={{
+                            backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                            borderRadius: '10px',
+                            height: '10px',
+                            overflow: 'hidden',
+                            position: 'relative'
+                        }}
+                    >
+                        <div
+                            style={{
+                                backgroundColor: 'white',
+                                width: `${progress}%`,
+                                height: '100%',
+                                transition: 'width 0.05s linear'
+                            }}
+                        />
+                    </div>
+                </div>
+            )}
+            {progress == 100 && (
+                <div
+                    style={{
+                        position: 'absolute',
+                        top: '90%',
+                        left: '50%',
+                        transform: 'translate(-50%, -50%) scale(0.25)',
+                        zIndex: 10
+                    }}
+                >
+                    <Preloader size="small" style={{ color: 'white' }} />
+                </div>
+            )}
         </div>
     )
 }
