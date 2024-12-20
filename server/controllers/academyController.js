@@ -1000,34 +1000,10 @@ exports.getAllAcademies = async (req, res, next) => {
         chains: true,
         academyType: true,
       },
+      orderBy: [{ academyType: { name: 'asc' } }, { createdAt: 'desc' }],
     });
 
-    // Fetch counts separately
-    for (const academy of academies) {
-      const pointCount = await prisma.point.count({
-        where: { academyId: academy.id },
-      });
-      academy.pointCount = pointCount;
-    }
-
-    // Custom sorting to move Coinbeats academies to the top
-    const sortedAcademies = academies.sort((a, b) => {
-      if (
-        a.academyType.name === 'Coinbeats' &&
-        b.academyType.name !== 'Coinbeats'
-      ) {
-        return -1; // Move Coinbeats up
-      } else if (
-        a.academyType.name !== 'Coinbeats' &&
-        b.academyType.name === 'Coinbeats'
-      ) {
-        return 1; // Move other academies down
-      } else {
-        return new Date(b.createdAt) - new Date(a.createdAt); // Sort by creation date if both are the same type
-      }
-    });
-
-    res.json(sortedAcademies);
+    res.json(academies);
   } catch (error) {
     console.error('Error fetching academies:', error);
     next(createError(500, 'Error fetching academies'));
@@ -1166,6 +1142,10 @@ exports.submitQuizAnswers = async (req, res, next) => {
           academyId: parseInt(academyId, 10),
           value: totalPoints,
         },
+      });
+      await prisma.academy.update({
+        where: { id: +academyId },
+        data: { pointCount: { increment: 1 } },
       });
       console.log(
         `Created new points record for user ${userId} and academy ${academyId}`

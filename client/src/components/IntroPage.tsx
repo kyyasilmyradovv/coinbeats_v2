@@ -202,7 +202,7 @@ const IntroPage: React.FC<IntroPageProps> = ({ onComplete }) => {
         const fetchNotificationsAsync = async () => {
             if (userId) {
                 try {
-                    const response = await axiosInstance.get(`/api/notifications/${userId}`)
+                    const response = await axiosInstance.get(`/api/notifications`)
                     const notifications = response.data.map((notif: any) => ({
                         id: notif.id,
                         text: notif.message,
@@ -238,7 +238,7 @@ const IntroPage: React.FC<IntroPageProps> = ({ onComplete }) => {
                 }
                 return prev + 1
             })
-        }, 120)
+        }, 70)
 
         return () => clearInterval(interval)
     }, [])
