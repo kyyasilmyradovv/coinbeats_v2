@@ -1000,7 +1000,7 @@ exports.getAllAcademies = async (req, res, next) => {
         chains: true,
         academyType: true,
       },
-      orderBy: [{ academyType: { name: 'asc' } }, { createdAt: 'desc' }],
+      // orderBy: [{ academyType: { name: 'asc' } }, { createdAt: 'desc' }],
     });
 
     res.json(academies);
