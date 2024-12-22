@@ -227,21 +227,21 @@ const IntroPage: React.FC<IntroPageProps> = ({ onComplete }) => {
         }
     }, [userId, referralCompletionChecked, checkReferralCompletion])
 
-    const [progress, setProgress] = useState(0)
+    // const [progress, setProgress] = useState(0)
 
-    useEffect(() => {
-        const interval = setInterval(() => {
-            setProgress((prev) => {
-                if (prev >= 100) {
-                    clearInterval(interval)
-                    return 100
-                }
-                return prev + 1
-            })
-        }, 70)
+    // useEffect(() => {
+    //     const interval = setInterval(() => {
+    //         setProgress((prev) => {
+    //             if (prev >= 100) {
+    //                 clearInterval(interval)
+    //                 return 100
+    //             }
+    //             return prev + 1
+    //         })
+    //     }, 70)
 
-        return () => clearInterval(interval)
-    }, [])
+    //     return () => clearInterval(interval)
+    // }, [])
 
     return (
         <div className="intro-container" style={{ position: 'relative', height: '100vh' }}>
@@ -250,7 +250,7 @@ const IntroPage: React.FC<IntroPageProps> = ({ onComplete }) => {
                 <img src={coinbeatsText} alt="Coinbeats Text" className="coinbeats-text" />
                 <img src={schoolText} alt="School Text" className="school-text" />
             </div>
-            {progress < 100 && (
+            {/* {progress < 100 && (
                 <div
                     style={{
                         position: 'absolute',
@@ -279,20 +279,20 @@ const IntroPage: React.FC<IntroPageProps> = ({ onComplete }) => {
                         />
                     </div>
                 </div>
-            )}
-            {progress == 100 && (
-                <div
-                    style={{
-                        position: 'absolute',
-                        top: '90%',
-                        left: '50%',
-                        transform: 'translate(-50%, -50%) scale(0.25)',
-                        zIndex: 10
-                    }}
-                >
-                    <Preloader size="small" style={{ color: 'white' }} />
-                </div>
-            )}
+            )} */}
+            {/* {progress == 100 && ( */}
+            <div
+                style={{
+                    position: 'absolute',
+                    top: '90%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%) scale(0.25)',
+                    zIndex: 10
+                }}
+            >
+                <Preloader size="small" style={{ color: 'white' }} />
+            </div>
+            {/* )} */}
         </div>
     )
 }
