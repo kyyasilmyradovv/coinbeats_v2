@@ -44,7 +44,7 @@ exports.updateSurpriseBoxes = async (req, res, next) => {
       where: { userId },
     });
 
-    // If the user doesn't have the suprise box then create
+    // If the user doesn't have the surprise box then create
     if (!box) {
       completedAcademies =
         (await prisma.point.count({

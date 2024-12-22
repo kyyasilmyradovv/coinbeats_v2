@@ -9,41 +9,42 @@ datasource db {
 }
 
 model User {
-  id                        Int                  @id @default(autoincrement())
+  id                        Int                    @id @default(autoincrement())
   name                      String
-  email                     String?              @unique
+  email                     String?                @unique
   password                  String?
-  createdAt                 DateTime             @default(now())
-  updatedAt                 DateTime             @updatedAt
-  telegramUserId            BigInt               @unique
-  emailConfirmationToken    String?              @unique
-  emailConfirmed            Boolean              @default(false)
-  referralCode              String?              @unique
+  createdAt                 DateTime               @default(now())
+  updatedAt                 DateTime               @updatedAt
+  telegramUserId            BigInt                 @unique
+  emailConfirmationToken    String?                @unique
+  emailConfirmed            Boolean                @default(false)
+  referralCode              String?                @unique
   referredByUserId          Int?
-  roles                     Role[]               @default([USER])
-  referralCompletionChecked Boolean              @default(true)
+  roles                     Role[]                 @default([USER])
+  referralCompletionChecked Boolean                @default(true)
   erc20WalletAddress        String?
   solanaWalletAddress       String?
   tonWalletAddress          String?
   characterLevelId          Int?
+  raffleAmount              Int                    @default(0)
   academies                 Academy[]
+  academyRaffleEntries      AcademyRaffleEntries[]
   Notification              Notification[]
   points                    Point[]
+  raffles                   Raffle[]
+  raffleWins                RaffleWinners[]
   sessionLogs               SessionLog[]
   surpriseBoxes             SurpriseBox[]
   twitterAccount            TwitterAccount[]
-  characterLevel            CharacterLevel?      @relation(fields: [characterLevelId], references: [id])
-  referredBy                User?                @relation("UserReferrals", fields: [referredByUserId], references: [id])
-  referrals                 User[]               @relation("UserReferrals")
+  characterLevel            CharacterLevel?        @relation(fields: [characterLevelId], references: [id])
+  referredBy                User?                  @relation("UserReferrals", fields: [referredByUserId], references: [id])
+  referrals                 User[]                 @relation("UserReferrals")
   userResponses             UserResponse[]
   userTaskSubmissions       UserTaskSubmission[]
   UserVerification          UserVerification[]
-  bookmarkedAcademies       Academy[]            @relation("BookmarkedAcademies")
-  allowedAcademyTypes       AcademyType[]        @relation("UserAcademyTypes")
-  raffleAmount              Int                  @default(0)
-  raffles                   Raffle[]
-  raffleWins                RaffleWinners[]
-  academyRaffleEntries      AcademyRaffleEntries[]
+  bookmarkedAcademies       Academy[]              @relation("BookmarkedAcademies")
+  allowedAcademyTypes       AcademyType[]          @relation("UserAcademyTypes")
+  pointCount                BigInt?                @default(0)
 }
 
 model TwitterAccount {
@@ -96,6 +97,7 @@ model Academy {
   categories       Category[]         @relation("AcademyToCategory")
   chains           Chain[]            @relation("AcademyToChain")
   bookmarkedBy     User[]             @relation("BookmarkedAcademies")
+  pointCount       BigInt?            @default(0)
 }
 
 model Subscription {
@@ -168,16 +170,16 @@ model AcademyQuestion {
 }
 
 model Raffle {
-  id                 Int  @id @default(autoincrement())
-  amount             Int  @default(0)
-  desc               String?
-  createdAt          DateTime   @default(now())
-  academyId          Int?
-  taskId             Int?
-  userId             Int?
-  task               VerificationTask? @relation(fields: [taskId], references: [id])
-  academy            Academy? @relation(fields: [academyId], references: [id])
-  user               User? @relation(fields: [userId], references: [id])
+  id        Int               @id @default(autoincrement())
+  amount    Int               @default(0)
+  academyId Int?
+  createdAt DateTime          @default(now())
+  desc      String?
+  taskId    Int?
+  userId    Int?
+  academy   Academy?          @relation(fields: [academyId], references: [id])
+  task      VerificationTask? @relation(fields: [taskId], references: [id])
+  user      User?             @relation(fields: [userId], references: [id])
 }
 
 model Quest {
@@ -216,22 +218,22 @@ model SessionLog {
 }
 
 model Educator {
-  id            Int        @id @default(autoincrement())
+  id            Int           @id @default(autoincrement())
   name          String
   bio           String?
   avatarUrl     String?
-  logoUrl       String?
-  coverPhotoUrl String?
   youtubeUrl    String?
   twitterUrl    String?
   telegramUrl   String?
   discordUrl    String?
-  lessons       Lesson[]   @relation("EducatorLessons")
-  categories    Category[] @relation("EducatorCategories")
-  chains        Chain[]    @relation("EducatorChains")
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
+  coverPhotoUrl String?
+  logoUrl       String?
   contentOrigin ContentOrigin
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  lessons       Lesson[]      @relation("EducatorLessons")
+  categories    Category[]    @relation("EducatorCategories")
+  chains        Chain[]       @relation("EducatorChains")
 }
 
 model Lesson {
@@ -245,52 +247,52 @@ model Lesson {
 }
 
 model Podcast {
-  id            Int        @id @default(autoincrement())
+  id            Int           @id @default(autoincrement())
   name          String
   description   String?
-  logoUrl       String?
-  coverPhotoUrl String?
   spotifyUrl    String?
   appleUrl      String?
   youtubeUrl    String?
-  categories    Category[] @relation("PodcastCategories")
-  chains        Chain[]    @relation("PodcastChains")
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
+  coverPhotoUrl String?
+  logoUrl       String?
   contentOrigin ContentOrigin
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  categories    Category[]    @relation("PodcastCategories")
+  chains        Chain[]       @relation("PodcastChains")
 }
 
 model Tutorial {
-  id            Int          @id @default(autoincrement())
+  id            Int           @id @default(autoincrement())
   title         String
-  description   String?
   contentUrl    String
-  logoUrl       String?
-  coverPhotoUrl String?
   type          TutorialType
-  xp            Int          @default(0)
-  categories    Category[]   @relation("TutorialCategories")
-  chains        Chain[]      @relation("TutorialChains")
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  xp            Int           @default(0)
+  coverPhotoUrl String?
+  description   String?
+  logoUrl       String?
   contentOrigin ContentOrigin
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  categories    Category[]    @relation("TutorialCategories")
+  chains        Chain[]       @relation("TutorialChains")
 }
 
 model Category {
   id        Int        @id @default(autoincrement())
   name      String     @unique
   academies Academy[]  @relation("AcademyToCategory")
-  tutorials Tutorial[] @relation("TutorialCategories")
-  podcasts  Podcast[]  @relation("PodcastCategories")
   educators Educator[] @relation("EducatorCategories")
+  podcasts  Podcast[]  @relation("PodcastCategories")
+  tutorials Tutorial[] @relation("TutorialCategories")
 }
 
 model Chain {
   id        Int        @id @default(autoincrement())
   name      String     @unique
   academies Academy[]  @relation("AcademyToChain")
-  podcasts  Podcast[]  @relation("PodcastChains")
   educators Educator[] @relation("EducatorChains")
+  podcasts  Podcast[]  @relation("PodcastChains")
   tutorials Tutorial[] @relation("TutorialChains")
 }
 
@@ -312,10 +314,10 @@ model VerificationTask {
   platform            Platform?
   parameters          Json?
   Point               Point[]
+  raffles             Raffle[]
   userTaskSubmissions UserTaskSubmission[]
   userVerification    UserVerification[]
   academy             Academy?             @relation(fields: [academyId], references: [id])
-  raffles             Raffle[]
 }
 
 model UserVerification {
@@ -389,53 +391,54 @@ model SurpriseBox {
   user               User @relation(fields: [userId], references: [id])
 }
 
-enum OverallRaffleType {
-  PLATFORM
-  ACADEMY
-}
-
 model OverallRaffle {
-  id                 Int          @id @default(autoincrement())
-  minAmount          Int          @default(0)
-  winnersCount       Int          @default(0)
-  deadline           DateTime?
-  minPoints          Int?
-  reward             String?
-  isActive           Boolean      @default(false)
-  creatorId          Int?
-  academyId          Int?         @unique
-  type               OverallRaffleType?
+  id           Int                @id @default(autoincrement())
+  minAmount    Int                @default(0)
+  winnersCount Int                @default(0)
+  deadline     DateTime?
+  minPoints    Int?
+  reward       String?
+  academyId    Int?               @unique
+  creatorId    Int?
+  isActive     Boolean            @default(false)
+  type         OverallRaffleType?
 }
 
 model RafflesHistory {
-  id                 Int          @id @default(autoincrement())
-  name               String?
-  startDate          DateTime?    @db.Date
-  endDate            DateTime?    @db.Date
-  winnersCount       Int?
-  minPoints          Int?
-  minRaffles         Int?
-  winners            RaffleWinners[]
-  overallRaffleId    Int?
+  id              Int             @id @default(autoincrement())
+  name            String?
+  startDate       DateTime?       @db.Date
+  endDate         DateTime?       @db.Date
+  winnersCount    Int?
+  minPoints       Int?
+  minRaffles      Int?
+  overallRaffleId Int?
+  winners         RaffleWinners[]
 }
 
 model RaffleWinners {
-  id                 Int          @id @default(autoincrement())
-  winningAmount      String?
-  raffleAmount       Int?
-  userId             Int
-  historyId          Int
-  user               User @relation(fields: [userId], references: [id])
-  history            RafflesHistory @relation(fields: [historyId], references: [id])
+  id            Int            @id @default(autoincrement())
+  winningAmount String?
+  raffleAmount  Int?
+  userId        Int
+  historyId     Int
+  history       RafflesHistory @relation(fields: [historyId], references: [id])
+  user          User           @relation(fields: [userId], references: [id])
 }
 
 model AcademyRaffleEntries {
-  id                 Int  @id @default(autoincrement())
-  amount             Int  @default(0)
-  academyId          Int
-  userId             Int
-  user               User? @relation(fields: [userId], references: [id])
+  id        Int  @id @default(autoincrement())
+  amount    Int  @default(0)
+  userId    Int
+  academyId Int
+  user      User @relation(fields: [userId], references: [id])
+
   @@unique([userId, academyId])
+}
+
+enum OverallRaffleType {
+  PLATFORM
+  ACADEMY
 }
 
 enum ContentOrigin {
@@ -470,8 +473,8 @@ enum Platform {
   TELEGRAM
   DISCORD
   EMAIL
-  LINKEDIN
   NONE
+  LINKEDIN
 }
 
 enum VerificationMethod {
