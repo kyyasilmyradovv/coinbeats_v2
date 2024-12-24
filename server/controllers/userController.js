@@ -28,14 +28,11 @@ exports.getAllUsers = async (req, res, next) => {
           },
         },
       },
+      // take: 20,
     });
 
     // Calculate additional data
     const usersWithDetails = users.map((user) => {
-      const totalPoints = user.points.reduce(
-        (sum, point) => sum + point.value,
-        0
-      );
       const sessionCount = user.sessionLogs.length;
       const subscription = user.academies.find(
         (academy) => academy.subscription
@@ -50,7 +47,6 @@ exports.getAllUsers = async (req, res, next) => {
 
       return {
         ...user,
-        totalPoints,
         sessionCount,
         subscriptionStatus,
         subscriptionValidUntil,
@@ -577,6 +573,16 @@ exports.completeVerificationTask = async (req, res, next) => {
             academyId: academyId || null,
           },
         });
+
+        // Increase user pointCount & lastWeekPointCount
+        await prisma.user.update({
+          where: { id: userId },
+          data: {
+            pointCount: { increment: verificationTask.xp },
+            lastWeekPointCount: { increment: verificationTask.xp },
+          },
+        });
+
         console.log(
           `Awarded ${verificationTask.xp} points to user ${userId} for task ${taskId}`
         );
@@ -659,6 +665,15 @@ exports.completeVerificationTask = async (req, res, next) => {
               value: verificationTask.xp,
               verificationTaskId: taskId,
               academyId: academyId || null,
+            },
+          });
+
+          // Increase user pointCount & lastWeekPointCount
+          await prisma.user.update({
+            where: { id: userId },
+            data: {
+              pointCount: { increment: verificationTask.xp },
+              lastWeekPointCount: { increment: verificationTask.xp },
             },
           });
 
@@ -871,6 +886,16 @@ exports.handleLoginStreak = async (req, res, next) => {
         verificationTaskId: verificationTask.id,
       },
     });
+
+    // Increase user pointCount & lastWeekPointCount
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        pointCount: { increment: userVerification.pointsAwarded },
+        lastWeekPointCount: { increment: userVerification.pointsAwarded },
+      },
+    });
+
     console.log(
       `Awarded ${userVerification.pointsAwarded} points to user ${userId} for login streak`
     );
@@ -1091,6 +1116,15 @@ exports.submitTask = async (req, res, next) => {
         },
       });
 
+      // Increase user pointCount & lastWeekPointCount
+      await prisma.user.update({
+        where: { id: userId },
+        data: {
+          pointCount: { increment: verificationTask.xp },
+          lastWeekPointCount: { increment: verificationTask.xp },
+        },
+      });
+
       return res.json({
         message: 'Submission received and points awarded.',
       });
@@ -1200,6 +1234,15 @@ exports.checkReferralCompletion = async (req, res) => {
               userId: referringUserId,
               value: xpAwarded,
               verificationTaskId: verificationTask.id,
+            },
+          });
+
+          // Increase user pointCount & lastWeekPointCount
+          await prisma.user.update({
+            where: { id: referringUserId },
+            data: {
+              pointCount: { increment: verificationTask.xp },
+              lastWeekPointCount: { increment: verificationTask.xp },
             },
           });
 
