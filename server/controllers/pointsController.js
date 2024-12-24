@@ -52,29 +52,22 @@ exports.getPointsByUserAndAcademy = async (req, res, next) => {
 exports.getLeaderboard = async (req, res, next) => {
   const { period } = req.query;
 
-  let dateCondition = getLastSunday();
-  if (period === 'weekly') dateCondition.setFullYear(2010);
-
-  dateCondition = dateCondition.toISOString().split('T')[0];
+  let orderBy =
+    period === 'weekly'
+      ? { lastWeekPointCount: 'desc' }
+      : { pointCount: 'desc' };
 
   try {
-    const leaderboardData = await prisma.$queryRaw`
-      SELECT
-        p."userId",
-        u."name",
-        COALESCE(SUM(p."value"), 0)::int AS "totalPoints"
-      FROM
-        "Point" p
-      LEFT JOIN
-        "User" u ON p."userId" = u.id
-      WHERE
-        p."createdAt"::DATE >= ${dateCondition}::DATE
-      GROUP BY
-        p."userId", u."name"
-      ORDER BY
-        "totalPoints" DESC
-      LIMIT 200;
-    `;
+    const leaderboardData = await prisma.user.findMany({
+      select: {
+        id: true,
+        name: true,
+        pointCount: true,
+        lastWeekPointCount: true,
+      },
+      orderBy,
+      take: 200,
+    });
 
     res.status(200).json(leaderboardData);
   } catch (error) {

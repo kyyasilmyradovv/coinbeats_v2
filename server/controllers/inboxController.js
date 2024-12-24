@@ -127,17 +127,26 @@ exports.creditUserForFeedback = async (req, res, next) => {
       },
     });
 
+    // Increase user pointCount & lastWeekPointCount
+    await prisma.user.update({
+      where: { id: submission.userId },
+      data: {
+        pointCount: { increment: pointsAwarded },
+        lastWeekPointCount: { increment: pointsAwarded },
+      },
+    });
+
     // TODO: test on the development when available again
     if (pointsAwarded > 99) {
       await prisma.raffle.create({
         data: {
-          userId,
+          userId: submission.userId,
           taskId: parseInt(submission.taskId, 10),
           amount: pointsAwarded / 100,
         },
       });
       await prisma.user.update({
-        where: { id: userId },
+        where: { id: submission.userId },
         data: { raffleAmount: { increment: pointsAwarded / 100 } },
       });
     }

@@ -619,7 +619,7 @@ const PointsPage: React.FC = () => {
                                                             : 'text-gray-600 dark:text-gray-300 text-sm font-bold'
                                                     }`}
                                                 >
-                                                    <strong>{user.totalPoints}</strong>
+                                                    <strong>{user.pointCount}</strong>
                                                 </div>
                                             </div>
                                         )
@@ -677,7 +677,7 @@ const PointsPage: React.FC = () => {
                                                             : 'text-gray-600 dark:text-gray-300 text-sm font-bold'
                                                     }`}
                                                 >
-                                                    <strong>{user.totalPoints}</strong>
+                                                    <strong>{user.lastWeekPointCount}</strong>
                                                 </div>
                                             </div>
                                         )

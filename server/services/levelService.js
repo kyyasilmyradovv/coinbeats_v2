@@ -7,12 +7,12 @@ const checkAndApplyLevelUp = async (userId) => {
   try {
     console.log(`Checking level up for userId: ${userId}`);
 
-    // Fetch total points of the user
-    const totalPointsResult = await prisma.point.aggregate({
-      where: { userId },
-      _sum: { value: true },
+    // Fetch user
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { characterLevelId: true, pointCount: true },
     });
-    const totalPoints = totalPointsResult._sum.value || 0;
+    const totalPoints = user?.pointCount || 0;
     console.log(`Total points for user ${userId}: ${totalPoints}`);
 
     // Fetch all character levels
@@ -38,11 +38,7 @@ const checkAndApplyLevelUp = async (userId) => {
       return;
     }
 
-    // Fetch current level of the user
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { characterLevelId: true },
-    });
+    // Check current level of the user
     console.log(`Current level for user ${userId}: ${user.characterLevelId}`);
 
     if (user.characterLevelId === newLevel.id) {
@@ -66,6 +62,16 @@ const checkAndApplyLevelUp = async (userId) => {
         description: newLevel.levelName,
       },
     });
+
+    // Increase user pointCount & lastWeekPointCount
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        pointCount: { increment: newLevel.rewardPoints },
+        lastWeekPointCount: { increment: newLevel.rewardPoints },
+      },
+    });
+
     console.log(`Awarded ${newLevel.rewardPoints} points to user ${userId}`);
 
     if (newLevel?.rewardPoints > 99) {

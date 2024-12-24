@@ -738,14 +738,37 @@ exports.approveAcademy = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    const updatedAcademy = await prisma.academy.update({
+    // Fetch the current status of the academy
+    const academy = await prisma.academy.findUnique({
       where: { id: parseInt(id, 10) },
-      data: { status: 'approved' },
+      select: { id: true, name: true, status: true },
     });
+
+    if (academy?.status !== 'approved') {
+      academy = await prisma.academy.update({
+        where: { id: parseInt(id, 10) },
+        data: { status: 'approved' },
+      });
+
+      const userIds = await prisma.user.findMany({
+        select: { id: true },
+      });
+
+      const notifications = userIds.map(({ id }) => ({
+        type: 'ADMIN_BROADCAST',
+        message: `New Academy Added: ${academy?.name}`,
+        userId: id,
+      }));
+
+      // Bulk create notifications
+      await prisma.notification.createMany({
+        data: notifications,
+      });
+    }
 
     res.json({
       message: 'Academy approved successfully',
-      academy: updatedAcademy,
+      academy,
     });
   } catch (error) {
     console.error('Error approving academy:', error);
@@ -1075,6 +1098,7 @@ exports.getAcademyQuestions = async (req, res, next) => {
   }
 };
 
+// TODO: Task 3
 exports.submitQuizAnswers = async (req, res, next) => {
   const { academyId } = req.body;
 
@@ -1130,7 +1154,16 @@ exports.submitQuizAnswers = async (req, res, next) => {
         where: { id: existingPoints.id },
         data: { value: totalPoints },
       });
-      // await prisma.raffle.create();  // commented because nothing inserted here and also raffle table has changed
+
+      // Increase user pointCount & lastWeekPointCount
+      await prisma.user.update({
+        where: { id: +userId },
+        data: {
+          pointCount: { increment: totalPoints - existingPoints.value },
+          lastWeekPointCount: { increment: totalPoints - existingPoints.value },
+        },
+      });
+
       console.log(
         `Updated existing points record for user ${userId} and academy ${academyId}`
       );
@@ -1138,15 +1171,27 @@ exports.submitQuizAnswers = async (req, res, next) => {
       // Otherwise, create a new record
       await prisma.point.create({
         data: {
-          userId: userId,
+          userId,
           academyId: parseInt(academyId, 10),
           value: totalPoints,
         },
       });
+
+      // Increase academy pointCount
       await prisma.academy.update({
         where: { id: +academyId },
         data: { pointCount: { increment: 1 } },
       });
+
+      // Increase user pointCount & lastWeekPointCount
+      await prisma.user.update({
+        where: { id: +userId },
+        data: {
+          pointCount: { increment: totalPoints },
+          lastWeekPointCount: { increment: totalPoints },
+        },
+      });
+
       console.log(
         `Created new points record for user ${userId} and academy ${academyId}`
       );
@@ -1201,6 +1246,7 @@ exports.submitQuizAnswers = async (req, res, next) => {
   }
 };
 
+// TODO: Task 2
 exports.checkAnswer = async (req, res, next) => {
   const { academyId, questionId, choiceId } = req.body;
   let telegramUserId = req.user
@@ -1471,3 +1517,5 @@ exports.getCorrectChoicesForAnsweredQuestions = async (req, res, next) => {
     next(createError(500, 'Failed to get correct choices.'));
   }
 };
+
+// TODO: Task 1 "User"."pointCount" & "User"."lastWeekPointCount"

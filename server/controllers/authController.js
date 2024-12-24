@@ -165,6 +165,16 @@ exports.registerUser = async (req, res, next) => {
               verificationTaskId: verificationTask.id,
             },
           });
+
+          // Increase user pointCount & lastWeekPointCount
+          await prisma.user.update({
+            where: { id: user.id },
+            data: {
+              pointCount: { increment: xpAwarded },
+              lastWeekPointCount: { increment: xpAwarded },
+            },
+          });
+
           console.log('Point record created for new user.');
 
           // TODO: ask Timo about it because i cant check it
