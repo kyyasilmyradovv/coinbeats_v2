@@ -66,10 +66,25 @@ exports.getLeaderboard = async (req, res, next) => {
         lastWeekPointCount: true,
       },
       orderBy,
-      take: 200,
+      take: 500,
     });
 
     res.status(200).json(leaderboardData);
+  } catch (error) {
+    console.error('Error fetching leaderboard:', error);
+    next(createError(500, 'Internal Server Error: Error fetching leaderboard'));
+  }
+};
+
+exports.getLeaderboardRankOfOwn = async (req, res, next) => {
+  const { pointCount } = req.query;
+
+  try {
+    const rank = await prisma.user.count({
+      where: { pointCount: { gt: pointCount } },
+    });
+
+    res.status(200).json(rank);
   } catch (error) {
     console.error('Error fetching leaderboard:', error);
     next(createError(500, 'Internal Server Error: Error fetching leaderboard'));
