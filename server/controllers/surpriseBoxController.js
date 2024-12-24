@@ -80,9 +80,15 @@ exports.updateSurpriseBoxes = async (req, res, next) => {
           amount: surprisePoint / 100,
         },
       });
+
+      // Increase user pointCount & lastWeekPointCount & raffleAmount
       await prisma.user.update({
         where: { id: userId },
-        data: { raffleAmount: { increment: surprisePoint / 100 } },
+        data: {
+          pointCount: { increment: surprisePoint },
+          lastWeekPointCount: { increment: surprisePoint },
+          raffleAmount: { increment: surprisePoint / 100 },
+        },
       });
     }
 

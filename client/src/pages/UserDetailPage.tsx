@@ -64,7 +64,7 @@ const UserDetailPage: React.FC<{
                         <ListInput label="Email" type="email" value={user.email} onChange={(e) => setUser({ ...user, email: e.target.value })} outline />
                         <ListInput label="Role" type="text" value={user.role} onChange={(e) => setUser({ ...user, role: e.target.value })} outline />
                         <div>
-                            <span className="font-semibold">Total Points:</span> <span className="font-bold">{user.totalPoints}</span>
+                            <span className="font-semibold">Total Points:</span> <span className="font-bold">{user.pointCount}</span>
                         </div>
                         <div>
                             <span className="font-semibold">Session Count:</span> <span className="font-bold">{user.sessionCount}</span>

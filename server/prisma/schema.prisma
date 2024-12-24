@@ -45,6 +45,7 @@ model User {
   bookmarkedAcademies       Academy[]              @relation("BookmarkedAcademies")
   allowedAcademyTypes       AcademyType[]          @relation("UserAcademyTypes")
   pointCount                BigInt?                @default(0)
+  lastWeekPointCount        BigInt?                @default(0)
 }
 
 model TwitterAccount {
