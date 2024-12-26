@@ -738,8 +738,7 @@ exports.approveAcademy = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    // Fetch the current status of the academy
-    const academy = await prisma.academy.findUnique({
+    let academy = await prisma.academy.findUnique({
       where: { id: parseInt(id, 10) },
       select: { id: true, name: true, status: true },
     });

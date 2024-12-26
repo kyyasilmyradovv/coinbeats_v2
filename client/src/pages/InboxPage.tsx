@@ -232,7 +232,7 @@ const InboxPage: React.FC = () => {
                                                 <p className="text-sm">
                                                     Creator: {academy.creator?.name} ({academy.creator?.email})
                                                 </p>
-                                                <p className="text-sm">Submitted on: {new Date(academy.createdAt).toLocaleDateString()}</p>
+                                                <p className="text-sm">Created on: {new Date(academy.createdAt).toLocaleDateString()}</p>
                                             </div>
                                             <img alt={academy.name} className="h-16 w-16 rounded-full" src={constructImageUrl(academy.logoUrl)} />
                                         </div>
