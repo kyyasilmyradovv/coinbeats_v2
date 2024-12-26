@@ -1516,5 +1516,3 @@ exports.getCorrectChoicesForAnsweredQuestions = async (req, res, next) => {
     next(createError(500, 'Failed to get correct choices.'));
   }
 };
-
-// TODO: Task 1 "User"."pointCount" & "User"."lastWeekPointCount"
