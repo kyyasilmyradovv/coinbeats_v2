@@ -455,7 +455,7 @@ export default function HomePage() {
                 <div className="relative z-10">
                     {/* Header and Tasks */}
                     <div className="flex flex-row justify-center items-center mb-2 mt-2">
-                        <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-1 flex flex-col items-center px-1 m-2 border border-gray-300 dark:border-gray-600 h-auto ml-4">
+                        <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-1 flex flex-col items-center px-0 m-2 border border-gray-300 dark:border-gray-600 h-auto ml-4">
                             {/* "Your Coins" card */}
                             <div className="flex flex-row items-center justify-between w-full">
                                 <div className="w-10 h-10">
