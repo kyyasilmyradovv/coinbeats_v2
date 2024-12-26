@@ -720,7 +720,7 @@ exports.getPendingAcademies = async (req, res, next) => {
   try {
     const academies = await prisma.academy.findMany({
       where: { status: 'pending' },
-      include: { creator: true },
+      include: { creator: true, categories: true, chains: true },
     });
 
     if (!academies.length) {
