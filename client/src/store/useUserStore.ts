@@ -246,10 +246,11 @@ const useUserStore = create<UserState>()(
                         solanaWalletAddress,
                         tonWalletAddress,
                         characterLevel, // Include character level
-                        raffleAmount
+                        raffleAmount,
+                        pointCount
                     } = response.data
                     const hasAcademy = academies && academies.length > 0
-                    const totalPoints = points ? points.reduce((sum: number, point: any) => sum + point.value, 0) : 0
+                    const totalPoints = pointCount || 0
 
                     set({
                         userId: id,

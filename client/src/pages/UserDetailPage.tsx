@@ -20,7 +20,7 @@ const UserDetailPage: React.FC<{
     useEffect(() => {
         const fetchUser = async () => {
             try {
-                const response = await axios.get(`/api/users/details/${userId}`) // Use the new endpoint
+                const response = await axios.get(`/api/users/details/${userId}`)
                 setUser(response.data)
             } catch (error) {
                 console.error('Error fetching user:', error)
@@ -33,7 +33,7 @@ const UserDetailPage: React.FC<{
     const handleSaveUser = async () => {
         try {
             await axios.put(`/api/users/${user.id}`, user)
-            navigate('/user-management') // Redirect back to user management page
+            navigate('/user-management')
         } catch (error) {
             console.error('Error saving user:', error)
         }
@@ -43,7 +43,7 @@ const UserDetailPage: React.FC<{
         setRightPanelOpened(!rightPanelOpened)
     }
 
-    if (!user) return null // Return null if user is not loaded
+    if (!user) return null
 
     return (
         <Page>
@@ -62,7 +62,7 @@ const UserDetailPage: React.FC<{
                     <List strong>
                         <ListInput label="Name" type="text" value={user.name} onChange={(e) => setUser({ ...user, name: e.target.value })} outline />
                         <ListInput label="Email" type="email" value={user.email} onChange={(e) => setUser({ ...user, email: e.target.value })} outline />
-                        <ListInput label="Role" type="text" value={user.role} onChange={(e) => setUser({ ...user, role: e.target.value })} outline />
+                        <ListInput label="Role" type="text" value={user.roles} onChange={(e) => setUser({ ...user, role: e.target.value })} outline />
                         <div>
                             <span className="font-semibold">Total Points:</span> <span className="font-bold">{user.pointCount}</span>
                         </div>
@@ -76,8 +76,7 @@ const UserDetailPage: React.FC<{
                             <span className="font-semibold">Valid Until:</span> <span className="font-bold">{user.subscriptionValidUntil}</span>
                         </div>
                         <div>
-                            <span className="font-semibold">Created At:</span>{' '}
-                            <span className="font-bold">{new Date(user.createdAt).toLocaleDateString()}</span>
+                            <span className="font-semibold">Registered date:</span> <span className="font-bold">{user.createdAt}</span>
                         </div>
                         <div className="flex flex-col gap-2 justify-between mt-4">
                             <Button onClick={handleSaveUser} className="bg-green-500 text-white rounded-full">

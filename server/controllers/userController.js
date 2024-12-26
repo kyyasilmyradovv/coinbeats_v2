@@ -13,56 +13,84 @@ const prisma = new PrismaClient();
 const SALT_ROUNDS = 10;
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
 
-/**
- * Get all users with additional details.
- */
+// Get all users with no additional details.
 exports.getAllUsers = async (req, res, next) => {
+  const { limit, offset, keyword, roles, hasWallets } = req.query;
+
+  let where = {};
+
+  if (keyword) {
+    where.name = {
+      contains: keyword,
+      mode: 'insensitive',
+    };
+  }
+
+  if (roles?.length) {
+    where.roles = {
+      hasSome: roles,
+    };
+  }
+
+  if (hasWallets === 'true') {
+    where.OR = [
+      {
+        AND: [
+          { tonWalletAddress: { not: null } },
+          { tonWalletAddress: { not: '' } },
+        ],
+      },
+      {
+        AND: [
+          { erc20WalletAddress: { not: null } },
+          { erc20WalletAddress: { not: '' } },
+        ],
+      },
+      {
+        AND: [
+          { solanaWalletAddress: { not: null } },
+          { solanaWalletAddress: { not: '' } },
+        ],
+      },
+    ];
+  } else if (hasWallets === 'false') {
+    where.AND = [
+      {
+        OR: [{ tonWalletAddress: null }, { tonWalletAddress: '' }],
+      },
+      {
+        OR: [{ erc20WalletAddress: null }, { erc20WalletAddress: '' }],
+      },
+      {
+        OR: [{ solanaWalletAddress: null }, { solanaWalletAddress: '' }],
+      },
+    ];
+  }
+
   try {
     const users = await prisma.user.findMany({
-      include: {
-        points: true,
-        sessionLogs: true,
-        academies: {
-          include: {
-            subscription: true,
-          },
-        },
+      where,
+      select: {
+        id: true,
+        telegramUserId: true,
+        name: true,
+        roles: true,
       },
-      // take: 20,
+      take: +limit || 0,
+      skip: +offset || 0,
+      orderBy: {
+        id: 'desc',
+      },
     });
 
-    // Calculate additional data
-    const usersWithDetails = users.map((user) => {
-      const sessionCount = user.sessionLogs.length;
-      const subscription = user.academies.find(
-        (academy) => academy.subscription
-      );
-      const subscriptionStatus = subscription ? 'Active' : 'Inactive';
-      const subscriptionValidUntil =
-        subscription &&
-        subscription.subscription &&
-        subscription.subscription.endDate
-          ? new Date(subscription.subscription.endDate).toLocaleDateString()
-          : 'N/A';
-
-      return {
-        ...user,
-        sessionCount,
-        subscriptionStatus,
-        subscriptionValidUntil,
-      };
-    });
-
-    res.json(usersWithDetails);
+    res.json(users);
   } catch (error) {
     console.error('Error fetching users:', error);
     next(createError(500, 'Error fetching users'));
   }
 };
 
-/**
- * Get user details by user ID.
- */
+// Get user details by user ID.
 exports.getUserDetailsById = async (req, res, next) => {
   const { userId } = req.params;
 
@@ -84,10 +112,6 @@ exports.getUserDetailsById = async (req, res, next) => {
       return next(createError(404, 'User not found'));
     }
 
-    const totalPoints = user.points.reduce(
-      (sum, point) => sum + point.value,
-      0
-    );
     const sessionCount = user.sessionLogs.length;
     const subscription = user.academies.find((academy) => academy.subscription);
     const subscriptionStatus = subscription ? 'Active' : 'Inactive';
@@ -95,12 +119,12 @@ exports.getUserDetailsById = async (req, res, next) => {
       subscription &&
       subscription.subscription &&
       subscription.subscription.endDate
-        ? new Date(subscription.subscription.endDate).toLocaleDateString()
+        ? subscription.subscription.endDate.toLocaleDateString()
         : 'N/A';
 
     res.json({
       ...user,
-      totalPoints,
+      createdAt: user.createdAt.toLocaleDateString(),
       sessionCount,
       subscriptionStatus,
       subscriptionValidUntil,
@@ -171,15 +195,10 @@ exports.getUserByTelegramId = async (req, res, next) => {
       return next(createError(404, 'User not found'));
     }
 
-    const totalPoints = user.points.reduce(
-      (sum, point) => sum + point.value,
-      0
-    );
     const hasAcademy = user.academies.length > 0;
 
     const response = {
       ...user,
-      totalPoints,
       hasAcademy,
     };
 

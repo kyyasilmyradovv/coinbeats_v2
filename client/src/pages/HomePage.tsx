@@ -26,6 +26,7 @@ import bunnyHappyAnimationData from '../animations/bunny-happy.json'
 import bunnyLogo from '../images/bunny-mascot.png'
 import { handleAction, handleInviteFriend, copyReferralLink, generateReferralLink, getActionLabel } from '../utils/actionHandlers'
 import { VerificationTask } from '../types'
+import bunnyImage from '../images/bunny-head.png'
 
 export default function HomePage() {
     const navigate = useNavigate()
@@ -338,8 +339,8 @@ export default function HomePage() {
     // Compute userRank
     const userRank = useMemo(() => {
         if (leaderboard && userId) {
-            const rank = leaderboard.findIndex((user) => user.userId === userId)
-            return rank >= 0 ? rank + 1 : null
+            const rank = leaderboard.findIndex((user) => user.id === userId)
+            return rank >= 0 ? rank + 1 : '🔻500'
         }
         return null
     }, [leaderboard, userId])
@@ -465,8 +466,12 @@ export default function HomePage() {
                             {/* User Rank */}
                             {userRank && (
                                 <div className="flex flex-row items-center mt-2 w-full">
-                                    <div className="w-10 h-10 items-center">
-                                        <Lottie options={bunnyHappyAnimation} height={35} width={35} />
+                                    <div className="w-10 h-10 flex items-center justify-center ">
+                                        {userRank !== '🔻500' ? (
+                                            <Lottie options={bunnyHappyAnimation} height={35} width={35} />
+                                        ) : (
+                                            <img src={bunnyImage} alt="Bunny Mascot" style={{ height: '30px' }} />
+                                        )}
                                     </div>
                                     <div className="flex flex-col file:text-md font-bold text-black dark:text-white flex-grow text-end mr-2 mt-1">
                                         <div className="flex flex-row items-center justify-center">
