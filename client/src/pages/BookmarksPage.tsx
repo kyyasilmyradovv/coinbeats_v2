@@ -46,12 +46,20 @@ export default function BookmarksPage() {
 
                 for (let r of response?.data) {
                     const deadline = new Date(r.deadline)
+                    const remainingTime = deadline.getTime() - today.getTime()
+
+                    // Calculate remaining days, hours, and minutes
+                    const remainingDays = Math.floor(remainingTime / (1000 * 60 * 60 * 24))
+                    const remainingHours = Math.floor((remainingTime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+                    const remainingMinutes = Math.floor((remainingTime % (1000 * 60 * 60)) / (1000 * 60))
+
+                    const countdown = `${remainingDays}d ${remainingHours}h ${remainingMinutes}m`
+
                     rafflesList.push({
                         ...r,
                         deadline: deadline.toLocaleString().split('T')[0],
-                        // deadline: deadline.toLocaleDateString().split('T')[0],
                         winners: `${r?.winnersCount} x ${r?.reward}`,
-                        remainingDays: Math.ceil((deadline.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)),
+                        remainingDays: countdown,
                         inMyRaffles: r.raffleCount > 0
                     })
                 }
@@ -203,7 +211,7 @@ export default function BookmarksPage() {
                                     <div className="text-sm font-bold flex items-center">
                                         <img src={moneyBag} className="h-6 w-6 mr-1" alt="Money bag icon" /> {raffle.reward}
                                     </div>
-                                    <div className="mt-1 text-xs text-purple-400">{raffle.remainingDays} days remaining</div>
+                                    <div className="mt-1 text-xs text-purple-400">{raffle.remainingDays} remaining</div>
                                 </div>
                             </div>
                         ))}
