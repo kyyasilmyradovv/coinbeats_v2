@@ -14,6 +14,9 @@ importers:
       '@emotion/styled':
         specifier: ^11.13.0
         version: 11.13.0(@emotion/react@11.13.0(@types/react@18.3.3)(react@18.3.1))(@types/react@18.3.3)(react@18.3.1)
+      '@fingerprintjs/fingerprintjs-pro':
+        specifier: ^3.11.5
+        version: 3.11.5
       '@fontsource/roboto':
         specifier: ^5.0.13
         version: 5.0.14
@@ -593,6 +596,9 @@ packages:
   '@eslint/object-schema@2.1.4':
     resolution: {integrity: sha512-BsWiH1yFGjXXS2yvrf5LyuoSIIbPrGUWob917o+BTKuZ7qJdxX8aJLRxs1fS9n6r7vESrq1OUqb68dANcFXuQQ==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+
+  '@fingerprintjs/fingerprintjs-pro@3.11.5':
+    resolution: {integrity: sha512-Yn3E/nAE1udXQkNGJS7/jmlY3zUXDFXA4V32odMZ3vCAXb7kYnqHn62YMJ5jOa9NVVzicmDudiywLUtxUZU9PA==}
 
   '@floating-ui/core@1.6.5':
     resolution: {integrity: sha512-8GrTWmoFhm5BsMZOTHeGD2/0FLKLQQHvO/ZmQga4tKempYRLz8aqJGqXVuQgisnMObq2YZ2SgkwctN1LOOxcqA==}
@@ -4054,6 +4060,10 @@ snapshots:
   '@eslint/js@9.8.0': {}
 
   '@eslint/object-schema@2.1.4': {}
+
+  '@fingerprintjs/fingerprintjs-pro@3.11.5':
+    dependencies:
+      tslib: 2.6.3
 
   '@floating-ui/core@1.6.5':
     dependencies:

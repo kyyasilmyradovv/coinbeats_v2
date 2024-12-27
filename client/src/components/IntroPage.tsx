@@ -18,6 +18,8 @@ import useNotificationStore from '../store/useNotificationStore'
 import axiosInstance from '~/api/axiosInstance'
 import useRafflesStore from '~/store/useRafflesStore'
 import { Preloader } from 'konsta/react'
+// New import for fingerprint
+import FingerprintJS from '@fingerprintjs/fingerprintjs-pro'
 
 interface IntroPageProps {
     onComplete: () => void
@@ -27,6 +29,7 @@ const IntroPage: React.FC<IntroPageProps> = ({ onComplete }) => {
     const initData = useInitData()
     const initializedRef = useRef(false)
 
+    // Existing store hooks
     const { fetchAcademiesAndPreloadImages } = useAcademiesStore()
     const { fetchUserPoints } = usePointsStore()
     const { fetchUserRaffles } = useRafflesStore()
@@ -49,16 +52,17 @@ const IntroPage: React.FC<IntroPageProps> = ({ onComplete }) => {
     const { addNotifications } = useNotificationStore()
 
     useEffect(() => {
+        // Ensure we only run once and that initData is available
         if (!initData || !initData.user || initializedRef.current) return
         initializedRef.current = true
 
+        // Remove any spinner if present
         const removeSpinner = () => {
             const spinner = document.getElementById('initial-spinner')
             if (spinner) {
                 spinner.remove()
             }
         }
-
         removeSpinner()
 
         // Parse TappAds parameters if any
@@ -76,12 +80,29 @@ const IntroPage: React.FC<IntroPageProps> = ({ onComplete }) => {
         // Store tappads info in sessionStore for later use
         useSessionStore.setState({ tappadsPublisher, tappadsClickId })
 
+        // Helper to load the fingerprint
+        const loadFingerprint = async (): Promise<string | null> => {
+            try {
+                const fp = await FingerprintJS.load()
+                const result = await fp.get()
+                return result.visitorId
+            } catch (err) {
+                console.error('Error loading fingerprint:', err)
+                return null
+            }
+        }
+
         const initializeUserSession = async () => {
             try {
                 const telegramUserId = initData.user.id
                 const username = initData.user.username || initData.user.firstName || initData.user.lastName || 'Guest'
                 const startParam = initData.startParam || null
 
+                // Capture fingerprint
+                const fingerprint = await loadFingerprint()
+                console.log('Fingerprint captured:', fingerprint)
+
+                // Temporarily set userId in session store
                 useSessionStore.setState({ userId: telegramUserId })
 
                 let userRoles: string[] = ['USER']
@@ -92,9 +113,10 @@ const IntroPage: React.FC<IntroPageProps> = ({ onComplete }) => {
                     const roles = useUserStore.getState().roles
                     userRoles = roles || ['USER']
                 } catch (error: any) {
+                    // If user does not exist (404), register with fingerprint
                     if (error.response && error.response.status === 404) {
                         // User not found, register
-                        await registerUser(telegramUserId, username, startParam)
+                        await registerUser(telegramUserId, username, startParam, fingerprint || undefined)
                         const roles = useUserStore.getState().roles
                         userRoles = roles || ['USER']
                     } else {
@@ -118,6 +140,7 @@ const IntroPage: React.FC<IntroPageProps> = ({ onComplete }) => {
                     }
                 }
 
+                // Start session
                 const sessionStartTime = Date.now()
                 startSession({
                     sessionStartTime,
@@ -126,12 +149,13 @@ const IntroPage: React.FC<IntroPageProps> = ({ onComplete }) => {
                     roles: userRoles
                 })
 
-                // Check for twitter auth
+                // Check if user came back from Twitter auth
                 if (startParam === 'twitterAuthSuccess') {
                     setTwitterAuthenticated(true)
                     await fetchTwitterAuthStatus()
                 }
 
+                // Attempt to load user level
                 await fetchUserLevel()
             } catch (e) {
                 console.error('Error initializing user session:', e)
@@ -155,8 +179,10 @@ const IntroPage: React.FC<IntroPageProps> = ({ onComplete }) => {
 
         const fetchData = async () => {
             try {
+                // Initialize user session
                 await initializeUserSession()
 
+                // Parallel data fetch
                 await Promise.all([
                     fetchAcademiesAndPreloadImages(),
                     fetchUserPoints(),
@@ -174,6 +200,7 @@ const IntroPage: React.FC<IntroPageProps> = ({ onComplete }) => {
             }
         }
 
+        // Once data is fetched, wait 4s then call onComplete
         fetchData().then(() => {
             setTimeout(() => {
                 onComplete()
@@ -198,6 +225,7 @@ const IntroPage: React.FC<IntroPageProps> = ({ onComplete }) => {
         startSession
     ])
 
+    // Notifications fetch if user is known
     useEffect(() => {
         const fetchNotificationsAsync = async () => {
             if (userId) {
@@ -221,6 +249,7 @@ const IntroPage: React.FC<IntroPageProps> = ({ onComplete }) => {
         fetchNotificationsAsync()
     }, [userId, addNotifications])
 
+    // Check referral completion if not done yet
     useEffect(() => {
         if (userId && !referralCompletionChecked) {
             checkReferralCompletion(userId)
