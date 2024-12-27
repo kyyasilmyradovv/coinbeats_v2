@@ -13,6 +13,7 @@ import coinbeats from '../images/coinbeats-l.svg'
 import axiosInstance from '~/api/axiosInstance'
 import useUserStore from '~/store/useUserStore'
 import { FaTimes } from 'react-icons/fa'
+import RaffleCountdown from '~/components/RaffleCountdownComponent'
 
 interface RaffleInterface {
     name: string
@@ -49,17 +50,18 @@ export default function BookmarksPage() {
                     const remainingTime = deadline.getTime() - today.getTime()
 
                     // Calculate remaining days, hours, and minutes
-                    const remainingDays = Math.floor(remainingTime / (1000 * 60 * 60 * 24))
-                    const remainingHours = Math.floor((remainingTime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
-                    const remainingMinutes = Math.floor((remainingTime % (1000 * 60 * 60)) / (1000 * 60))
+                    const days = Math.floor(remainingTime / (1000 * 60 * 60 * 24))
+                    const hours = Math.floor((remainingTime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+                    const minutes = Math.floor((remainingTime % (1000 * 60 * 60)) / (1000 * 60))
+                    const seconds = Math.floor((remainingTime % (1000 * 60)) / 1000)
 
-                    const countdown = `${remainingDays}d ${remainingHours}h ${remainingMinutes}m`
+                    const countdown = `${days}d ${hours}h ${minutes}m ${seconds}s`
 
                     rafflesList.push({
                         ...r,
                         deadline: deadline.toLocaleString().split('T')[0],
                         winners: `${r?.winnersCount} x ${r?.reward}`,
-                        remainingDays: countdown,
+                        countdown,
                         inMyRaffles: r.raffleCount > 0
                     })
                 }
@@ -81,6 +83,28 @@ export default function BookmarksPage() {
             fetchRaffles()
         }
     }, [])
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            const today = new Date()
+            const updatedRaffles = raffles.map((raffle) => {
+                const deadline = new Date(raffle.deadline)
+                const remainingTime = deadline.getTime() - today.getTime()
+
+                const days = Math.floor(remainingTime / (1000 * 60 * 60 * 24))
+                const hours = Math.floor((remainingTime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+                const minutes = Math.floor((remainingTime % (1000 * 60 * 60)) / (1000 * 60))
+                const seconds = Math.floor((remainingTime % (1000 * 60)) / 1000)
+
+                const countdown = `${days}d ${hours}h ${minutes}m ${seconds}s`
+                return { ...raffle, countdown }
+            })
+
+            setRaffles(updatedRaffles)
+        }, 1000)
+
+        return () => clearInterval(interval)
+    }, [raffles])
 
     // Filter raffles based on active tab
     const filteredRaffles = raffles?.filter((raffle) => headerTab === 'all' || (headerTab === 'my' && raffle.inMyRaffles))
@@ -211,7 +235,7 @@ export default function BookmarksPage() {
                                     <div className="text-sm font-bold flex items-center">
                                         <img src={moneyBag} className="h-6 w-6 mr-1" alt="Money bag icon" /> {raffle.reward}
                                     </div>
-                                    <div className="mt-1 text-xs text-purple-400">{raffle.remainingDays} remaining</div>
+                                    <RaffleCountdown raffle={raffle} />
                                 </div>
                             </div>
                         ))}
