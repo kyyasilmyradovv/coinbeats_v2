@@ -37,11 +37,14 @@ const discoverRoutes = require('./routes/discover');
 const contentRoutes = require('./routes/content');
 const surpriseBoxRoutes = require('./routes/surpriseBox');
 const raffleRoutes = require('./routes/raffle');
-const downloadRoutes = require('./routes/downloadRoutes'); // <-- Added this line
+const downloadRoutes = require('./routes/downloadRoutes'); // <--
 
 // Initialize Express app
 const app = express();
 const PORT = process.env.PORT || 4000;
+
+// Allow Express to trust the proxy (Nginx) for real client IP
+app.set('trust proxy', true);
 
 // Middleware
 app.use(cors());
@@ -51,17 +54,17 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // **Add Session Middleware Here**
 app.use(
   session({
-    secret: process.env.SESSION_SECRET || 'default_session_secret', // Use a strong secret in production
+    secret: process.env.SESSION_SECRET || 'default_session_secret',
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: false }, // Set to true if your app is served over HTTPS
+    cookie: { secure: false },
   })
 );
 
 // Custom middleware
 app.use(bigIntMiddleware);
 
-// Route configuration
+// Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/academies', academyRoutes);
@@ -85,34 +88,31 @@ app.use('/api/discover', discoverRoutes);
 app.use('/api/content', contentRoutes);
 app.use('/api/surprise-box', surpriseBoxRoutes);
 app.use('/api/raffle', raffleRoutes);
-app.use('/api', downloadRoutes); // <-- Added this line
+app.use('/api', downloadRoutes);
 
 // Serve static files
 app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
 app.use(
   '/downloads',
   express.static(path.join(__dirname, 'public', 'downloads'))
-); // <-- Added this line
+);
 
-// Add cron jobs
+// Cron jobs
 require('./utils/cronJobs.js');
 
-// Catch 404 and forward to error handler
+// Catch 404
 app.use((req, res, next) => {
   next(createError(404, 'Not Found'));
 });
 
-// Error handler middleware
+// Error handler
 app.use((err, req, res, next) => {
   console.error('Global Error Handler:', err.message);
-
   const response = {
     message: err.message,
     stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
   };
-
-  res.status(err.status || 500);
-  res.json(response);
+  res.status(err.status || 500).json(response);
 });
 
 // Start the server

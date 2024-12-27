@@ -77,11 +77,22 @@ exports.refreshToken = async (req, res) => {
 };
 
 exports.registerUser = async (req, res, next) => {
-  let { telegramUserId, username, referralCode } = req.body;
+  // 1. Destructure 'fingerprint' from request body
+  let { telegramUserId, username, referralCode, fingerprint } = req.body;
 
   try {
     console.log('Registering user with Telegram ID:', telegramUserId);
     console.log('Referral code received:', referralCode);
+
+    // 2. Capture the IP address from headers or socket
+    const ipAddress =
+      req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    console.log(
+      'Registering user with IP:',
+      ipAddress,
+      'and fingerprint:',
+      fingerprint
+    );
 
     // Convert telegramUserId to BigInt
     telegramUserId = BigInt(telegramUserId);
@@ -102,13 +113,15 @@ exports.registerUser = async (req, res, next) => {
       // Initialize referringUser variable
       let referringUser = null;
 
-      // Prepare new user data
+      // 3. Prepare new user data, including IP & fingerprint
       const newUserData = {
         telegramUserId,
         name: username,
         roles: ['USER'], // Initialize roles as ['USER']
         referralCode: newReferralCode,
         referralCompletionChecked: true, // Default value, may change if referred
+        registrationIp: ipAddress, // NEW FIELD
+        registrationFingerprint: fingerprint || null, // NEW FIELD
       };
 
       // If referral code is provided, find the referring user
@@ -147,7 +160,7 @@ exports.registerUser = async (req, res, next) => {
         console.log('VerificationTask found:', verificationTask);
         console.log('XP to be awarded:', xpAwarded);
 
-        // Check for special case: if the referring user is user with id 3 or referral code 'P0q6Z2t9'
+        // Check for special case: if the referring user is user with id 3 or referral code 'f1174622ac83f36c'
         if (
           referringUser &&
           (referringUser.id === 3 ||
@@ -177,7 +190,7 @@ exports.registerUser = async (req, res, next) => {
 
           console.log('Point record created for new user.');
 
-          // TODO: ask Timo about it because i cant check it
+          // Optional raffle logic (commented out in your code)
           // if (xpAwarded > 99) {
           //   await prisma.raffle.create({
           //     data: {

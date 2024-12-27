@@ -46,6 +46,8 @@ model User {
   allowedAcademyTypes       AcademyType[]          @relation("UserAcademyTypes")
   pointCount                BigInt?                @default(0)
   lastWeekPointCount        BigInt?                @default(0)
+  registrationIp            String?
+  registrationFingerprint   String?
 }
 
 model TwitterAccount {

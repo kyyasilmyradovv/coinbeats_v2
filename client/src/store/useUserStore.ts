@@ -284,12 +284,13 @@ const useUserStore = create<UserState>()(
         },
 
         // Registers a new user
-        registerUser: async (telegramUserId, username, referralCode = null) => {
+        registerUser: async (telegramUserId: number, username: string, referralCode: string | null = null, fingerprint: string | null = null) => {
             try {
                 const registerResponse = await axiosInstance.post('/api/auth/register', {
                     telegramUserId,
                     username,
-                    referralCode
+                    referralCode,
+                    fingerprint // Pass the fingerprint if available
                 })
 
                 // Log the API response
