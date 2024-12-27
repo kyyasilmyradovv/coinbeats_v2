@@ -445,6 +445,17 @@ export default function HomePage() {
         }
     }
 
+    const formatPoints = (points: number): string => {
+        if (points >= 1_000_000_000) {
+            return (points / 1_000_000_000).toFixed(1) + 'B'
+        } else if (points >= 1_000_000) {
+            return (points / 1_000_000).toFixed(1) + 'M'
+        } else if (points >= 1_000) {
+            return (points / 1_000).toFixed(1) + 'K'
+        }
+        return points.toString()
+    }
+
     return (
         <Page>
             <Navbar />
@@ -455,22 +466,22 @@ export default function HomePage() {
                 <div className="relative z-10">
                     {/* Header and Tasks */}
                     <div className="flex flex-row justify-center items-center mb-2 mt-2">
-                        <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-1 flex flex-col items-center px-0 m-2 border border-gray-300 dark:border-gray-600 h-auto ml-4">
+                        <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-1 flex flex-col items-center px-0 m-2 border border-gray-300 dark:border-gray-600 h-auto ml-4"
                             {/* "Your Coins" card */}
                             <div className="flex flex-row items-center justify-between w-full">
-                                <div className="w-10 h-10">
-                                    <Lottie options={coinsEarnedAnimation} height={40} width={40} />
+                                <div className="w-8 h-8">
+                                    <Lottie options={coinsEarnedAnimation} height={36} width={36} />
                                 </div>
-                                <div className="text-md font-bold text-black dark:text-white flex-grow text-end mr-2 mt-1">{totalPoints}</div>
+                                <div className="text-md font-bold text-black dark:text-white flex-grow text-end mr-2 mt-1"> {formatPoints(totalPoints)}</div>
                             </div>
                             {/* User Rank */}
                             {userRank && (
                                 <div className="flex flex-row items-center mt-2 w-full">
-                                    <div className="w-10 h-10 flex items-center justify-center ">
+                                    <div className="w-8 h-8 flex items-center justify-center ">
                                         {userRank !== '🔻500' ? (
-                                            <Lottie options={bunnyHappyAnimation} height={35} width={35} />
+                                            <Lottie options={bunnyHappyAnimation} height={32} width={32} />
                                         ) : (
-                                            <img src={bunnyImage} alt="Bunny Mascot" style={{ height: '30px' }} />
+                                            <img src={bunnyImage} alt="Bunny Mascot" style={{ height: '26px' }} />
                                         )}
                                     </div>
                                     <div className="flex flex-col file:text-md font-bold text-black dark:text-white flex-grow text-end mr-2 mt-1">
@@ -498,9 +509,9 @@ export default function HomePage() {
                                         >
                                             {/* Task card */}
                                             {task.verificationMethod === 'LEAVE_FEEDBACK' ? (
-                                                <div className="text-2xl mx-2">🙏</div>
+                                                <div className="text-[20px] mx-2">🙏</div>
                                             ) : (
-                                                <FaTelegramPlane size={30} className="text-blue-400 mx-2" />
+                                                <FaTelegramPlane size={26} className="text-blue-400 mx-2" />
                                             )}
                                             <div className="flex flex-col flex-grow ml-2">
                                                 <div className="text-[12px] text-gray-800 dark:text-gray-200 font-semibold mr-2">{task.name}</div>
