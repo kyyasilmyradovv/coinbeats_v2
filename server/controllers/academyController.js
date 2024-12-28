@@ -1245,12 +1245,9 @@ exports.submitQuizAnswers = async (req, res, next) => {
   }
 };
 
-// TODO: Task 2
 exports.checkAnswer = async (req, res, next) => {
   const { academyId, questionId, choiceId } = req.body;
-  let telegramUserId = req.user
-    ? req.user.telegramUserId
-    : req.body.telegramUserId;
+  let telegramUserId = req.user?.telegramUserId || req.body?.telegramUserId;
 
   if (!telegramUserId || !academyId || !questionId || !choiceId) {
     return res
@@ -1259,9 +1256,6 @@ exports.checkAnswer = async (req, res, next) => {
   }
 
   try {
-    // Convert telegramUserId to BigInt
-    telegramUserId = BigInt(telegramUserId);
-
     // Check if the user exists by telegramUserId
     let user = await prisma.user.findUnique({
       where: { telegramUserId: telegramUserId },
@@ -1282,12 +1276,7 @@ exports.checkAnswer = async (req, res, next) => {
 
     // Check if the user has already submitted an answer for this question
     const existingResponse = await prisma.userResponse.findFirst({
-      where: {
-        userId: userId,
-        choice: {
-          academyQuestionId: parseInt(questionId, 10),
-        },
-      },
+      where: { userId, choice: { academyQuestionId: questionId } },
     });
 
     if (existingResponse) {
@@ -1299,7 +1288,7 @@ exports.checkAnswer = async (req, res, next) => {
     // Find the correct choice for the question
     const correctChoice = await prisma.choice.findFirst({
       where: {
-        academyQuestionId: parseInt(questionId, 10),
+        academyQuestionId: questionId,
         isCorrect: true,
       },
     });
@@ -1311,18 +1300,32 @@ exports.checkAnswer = async (req, res, next) => {
     }
 
     // Check if the user's choice is correct
-    const isCorrect = correctChoice.id === parseInt(choiceId, 10);
+    const isCorrect = correctChoice.id === choiceId;
 
     // Get the maximum points for the question
     const question = await prisma.academyQuestion.findUnique({
-      where: { id: parseInt(questionId, 10) },
-      select: { xp: true },
+      where: { id: questionId },
+      select: {
+        xp: true,
+        academy: {
+          select: {
+            pointCount: true,
+            fomoNumber: true,
+          },
+        },
+      },
     });
+
+    // Set maxPoint
+    let maxPoints = question.xp;
+    if (question?.academy?.fomoNumber > question?.academy?.pointCount) {
+      maxPoints *= 2;
+    }
 
     // Return the result to the client with the correctChoiceId
     res.json({
       correct: isCorrect,
-      maxPoints: question.xp,
+      maxPoints,
       correctChoiceId: correctChoice.id,
     });
   } catch (error) {

@@ -980,7 +980,10 @@ export default function ProductPage() {
                                     toggleTooltip={toggleTooltip}
                                     visibleTooltip={visibleTooltip}
                                 />
-                                <PointsCollectedCard earnedPoints={earnedPoints} totalPoints={academy.xp} />
+                                <PointsCollectedCard
+                                    earnedPoints={earnedPoints}
+                                    totalPoints={academy?.fomoNumber > academy?.pointCount ? academy.fomoXp : academy.xp}
+                                />
                             </>
                         )}
 
