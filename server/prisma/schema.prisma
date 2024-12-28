@@ -102,7 +102,7 @@ model Academy {
   bookmarkedBy     User[]             @relation("BookmarkedAcademies")
   pointCount       BigInt?            @default(0)
   rejectionReason  String?
-  fomoNumber       Int?               @default(100)
+  fomoNumber       Int?               @default(50)
   fomoXp           Int?               @default(1000)
 }
 
