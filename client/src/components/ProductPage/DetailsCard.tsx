@@ -36,7 +36,9 @@ const DetailsCard: React.FC<DetailsCardProps> = ({ academy }) => {
                 <div className="flex items-center mb-2 text-md text-gray-900 dark:text-gray-200">
                     <img src={coinsIcon} className="h-7 w-7 mr-4" alt="coins to earn" />
                     <span className="text-gray-600 dark:text-gray-400 mr-2">Coins to earn:</span>
-                    <span className="text-black dark:text-gray-200 font-semibold">{academy.xp}</span>
+                    <span className="text-black dark:text-gray-200 font-semibold">
+                        {academy?.fomoNumber > academy?.pointCount ? academy.fomoXp : academy.xp}
+                    </span>
                 </div>
 
                 {/* Ticker */}

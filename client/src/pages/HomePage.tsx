@@ -900,17 +900,28 @@ export default function HomePage() {
                                         <div
                                             className={`flex items-center absolute top-1 right-1 px-1 py-[1px] ${
                                                 isCompleted ? 'bg-gradient-to-r from-teal-400 to-teal-100' : 'bg-gradient-to-r from-slate-400 to-slate-100'
-                                            } bg-opacity-75 rounded-full text-2xs font-bold text-gray-800`}
+                                            } bg-opacity-75 rounded-xl  text-2xs font-bold text-gray-800`}
                                         >
                                             {isCompleted ? (
                                                 <span className="text-xs">+{getCompletedAcademyPoints(academy.id)?.value} ✅</span>
                                             ) : (
-                                                <>
-                                                    <span className="text-xs">+{academy.xp}</span>
-                                                    <img src={coins} className="h-4 w-4" alt="coins icon" />
-                                                </>
+                                                <div className="text-center">
+                                                    <div className="flex space-x">
+                                                        <span className="text-xs">
+                                                            +{academy.xp}
+                                                            {academy.fomoNumber > academy.pointCount && '⤫2'}
+                                                        </span>
+                                                        <img src={coins} className="h-4 w-4" alt="coins icon" />
+                                                    </div>
+                                                    {academy.fomoNumber > academy.pointCount && (
+                                                        <div className="mt-0.5">
+                                                            <span className="text-xs">{academy.fomoNumber - academy.pointCount} 🚀</span>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             )}
                                         </div>
+
                                         {/* Coinbeats content (image, etc.) */}
                                         <div className="flex items-center justify-center w-full mt-1">
                                             <img

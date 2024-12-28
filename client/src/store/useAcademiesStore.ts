@@ -25,6 +25,9 @@ interface AcademyData {
     chains: any[]
     academyType: AcademyType
     createdAt: string
+    fomoNumber: number
+    fomoXp: number
+    pointCount: number
 }
 
 interface Choice {
