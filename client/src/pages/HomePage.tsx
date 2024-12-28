@@ -17,6 +17,7 @@ import useNotificationStore from '../store/useNotificationStore'
 import useSessionStore from '../store/useSessionStore'
 import coins from '../images/coin-stack.png'
 import NewIcon from '../images/new.png'
+import boostIcon from '../images/rocket-launch.png'
 import AnimatedNumber from '../components/AnimatedNumber'
 import Lottie from 'react-lottie'
 import bunnyAnimationData from '../animations/bunny.json'
@@ -905,20 +906,10 @@ export default function HomePage() {
                                             {isCompleted ? (
                                                 <span className="text-xs">+{getCompletedAcademyPoints(academy.id)?.value} ✅</span>
                                             ) : (
-                                                <div className="text-center">
-                                                    <div className="flex space-x">
-                                                        <span className="text-xs">
-                                                            +{academy.xp}
-                                                            {academy.fomoNumber > academy.pointCount && '⤫2'}
-                                                        </span>
-                                                        <img src={coins} className="h-4 w-4" alt="coins icon" />
-                                                    </div>
-                                                    {academy.fomoNumber > academy.pointCount && (
-                                                        <div className="mt-0.5">
-                                                            <span className="text-xs">{academy.fomoNumber - academy.pointCount} 🚀</span>
-                                                        </div>
-                                                    )}
-                                                </div>
+                                                <>
+                                                    <span className="text-xs">+{academy.xp}</span>
+                                                    <img src={coins} className="h-4 w-4" alt="coins icon" />
+                                                </>
                                             )}
                                         </div>
 
@@ -944,8 +935,16 @@ export default function HomePage() {
                                         >
                                             Study Now
                                         </Button>
-                                        <div className="flex absolute bottom-1 right-1 mr-1">
-                                            👨<span className="mt-[1px] ml-1">{academy.pointCount}</span>
+                                        <div className="flex absolute bottom-1 right-1 w-full justify-between items-center">
+                                            {academy.fomoNumber > academy.pointCount && (
+                                                <div className="flex items-center ml-2">
+                                                    <img src={boostIcon} className="h-4 w-4" alt="boost-icon" />
+                                                    <span className="ml-1">{academy.fomoNumber - academy.pointCount}</span>
+                                                </div>
+                                            )}
+                                            <div className="flex items-center">
+                                                👨<span className="ml-1">{academy.pointCount}</span>
+                                            </div>
                                         </div>
                                         {!isCoinbeats && new Date() - new Date(academy.createdAt) < 7 * 24 * 60 * 60 * 1000 && (
                                             <img src={NewIcon} alt="New" className="absolute left-7 -bottom-2 w-7 h-7 -translate-x-8" style={{ zIndex: 10 }} />
