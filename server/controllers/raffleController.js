@@ -221,6 +221,7 @@ exports.getRaffleWinners = async (req, res, next) => {
       where: {
         historyId: +id,
       },
+      orderBy: { id: 'desc' },
       include: {
         user: {
           select: {
