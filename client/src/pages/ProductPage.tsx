@@ -248,7 +248,7 @@ export default function ProductPage() {
     }
 
     const handlePrevClick = () => {
-        scrollToInitial()
+        // scrollToInitial()
         if (currentSlideIndex > 0 && swiperRef.current?.swiper) {
             swiperRef.current.swiper.slidePrev()
             setErrorMessage('')
@@ -256,7 +256,7 @@ export default function ProductPage() {
     }
 
     const handleNextClick = () => {
-        scrollToInitial()
+        // scrollToInitial()
         const isQuizSlide = currentSlideIndex % 2 === 1
         const questionIndex = Math.floor(currentSlideIndex / 2)
         if (isQuizSlide) {
@@ -418,7 +418,7 @@ export default function ProductPage() {
     }
 
     const handleNextQuestion = () => {
-        scrollToInitial()
+        // scrollToInitial()
         const totalSlides = initialAnswers.length * 2
         if (currentSlideIndex >= totalSlides - 1) {
             handleCompleteAcademy()
@@ -439,7 +439,6 @@ export default function ProductPage() {
     }, [userId])
 
     const handleCompleteAcademy = async () => {
-        scrollToInitial()
         if (loading) return
         setLoading(true)
         try {
@@ -481,7 +480,7 @@ export default function ProductPage() {
     }
 
     const handleSlideChange = (swiper: any) => {
-        scrollToInitial()
+        // scrollToInitial()
         const newIndex = swiper.activeIndex
         setCurrentSlideIndex(newIndex)
         const newQuestionIndex = Math.floor(newIndex / 2)
