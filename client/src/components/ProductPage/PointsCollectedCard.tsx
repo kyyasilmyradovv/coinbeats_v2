@@ -5,9 +5,10 @@ import coinsEarnedAnimationData from '../../animations/earned-coins.json'
 interface PointsCollectedCardProps {
     earnedPoints: number
     totalPoints: number
+    hasRaffle: boolean
 }
 
-const PointsCollectedCard: React.FC<PointsCollectedCardProps> = ({ earnedPoints, totalPoints }) => {
+const PointsCollectedCard: React.FC<PointsCollectedCardProps> = ({ earnedPoints, totalPoints, hasRaffle }) => {
     const coinsEarnedAnimation = {
         loop: true,
         autoplay: true,
@@ -18,7 +19,9 @@ const PointsCollectedCard: React.FC<PointsCollectedCardProps> = ({ earnedPoints,
     }
 
     return (
-        <div className="!mb-14 !p-2 bg-white dark:bg-zinc-900 !m-0 !rounded-2xl shadow-lg relative border border-gray-300 dark:border-gray-600">
+        <div
+            className={`!mb-${hasRaffle ? '4' : '14'} !p-2 bg-white dark:bg-zinc-900 !m-0 !rounded-2xl shadow-lg relative border border-gray-300 dark:border-gray-600`}
+        >
             <div className="flex flex-row text-gray-900 dark:text-gray-200 items-center justify-between">
                 <div className=" block md:flex ">
                     <div className="text-md text-gray-600 dark:text-gray-400 mr-2">Earned Coins:</div>
