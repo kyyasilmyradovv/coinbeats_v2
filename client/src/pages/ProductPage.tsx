@@ -659,7 +659,7 @@ export default function ProductPage() {
                 <Card className="!my-4 !mx-1 p-2 !rounded-2xl !bg-gray-50 dark:!bg-gray-800 !border !border-gray-200 dark:!border-gray-700 !shadow-sm">
                     <div style={{ marginBottom: '40px' }}>
                         <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">{question.quizQuestion}</p>
-                        <p style={{ color: 'rgba(255, 255, 255, 0.6)' }}>{question.question === 'Tokenomics details' ? '' : question.answer}</p>
+                        {/* <p style={{ color: 'rgba(255, 255, 255, 0.6)' }}>{question.question === 'Tokenomics details' ? '' : question.answer}</p> */}
                     </div>
                     {question.choices.map((choice: any, choiceIndex: number) => {
                         const isSelected = question.selectedChoice === choiceIndex
@@ -854,7 +854,7 @@ export default function ProductPage() {
             return (
                 <AcademyCompletionSlide
                     earnedPoints={earnedPoints}
-                    totalPoints={academy.xp}
+                    totalPoints={academy.fomoNumber > academy.pointCount ? academy.fomoXp : academy.xp}
                     academyName={academy.name}
                     academyId={academy.id}
                     academyTwitter={academy.twitter}

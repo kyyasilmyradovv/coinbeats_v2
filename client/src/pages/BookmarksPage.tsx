@@ -25,6 +25,7 @@ interface RaffleInterface {
     type: string
     raffleCount: string
     inMyRaffles: boolean
+    countdown: string
 }
 
 export default function BookmarksPage() {

@@ -13,7 +13,7 @@ const RaffleCountdown: React.FC<RaffleCountdownProps> = ({ raffle }) => {
 
     useEffect(() => {
         setAnimation(true)
-        const timer = setTimeout(() => setAnimation(false), 500) // Matches animation duration
+        const timer = setTimeout(() => setAnimation(false), 500)
         return () => clearTimeout(timer)
     }, [raffle.countdown])
 

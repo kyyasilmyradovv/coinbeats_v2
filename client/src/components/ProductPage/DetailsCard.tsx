@@ -37,6 +37,7 @@ const DetailsCard: React.FC<DetailsCardProps> = ({ academy }) => {
                     <p
                         className="text-black dark:text-gray-200 font-semibold"
                         style={{
+                            fontSize: '14px',
                             textAlign: 'center',
                             width: '100px',
                             display: '-webkit-box',
@@ -46,7 +47,7 @@ const DetailsCard: React.FC<DetailsCardProps> = ({ academy }) => {
                             textOverflow: 'ellipsis'
                         }}
                     >
-                        {academy.ticker}
+                        {academy.ticker || 'N/A'}
                     </p>
                     <div className="text-gray-600 dark:text-gray-400 ">Ticker</div>
                 </div>
@@ -69,6 +70,7 @@ const DetailsCard: React.FC<DetailsCardProps> = ({ academy }) => {
                     <p
                         className="text-black dark:text-gray-200 font-semibold"
                         style={{
+                            fontSize: '14px',
                             textAlign: 'center',
                             width: '100px',
                             display: '-webkit-box',
@@ -79,7 +81,13 @@ const DetailsCard: React.FC<DetailsCardProps> = ({ academy }) => {
                             wordBreak: 'break-all'
                         }}
                     >
-                        {academy.categories.map((c: any) => c.name).join(', ')}
+                        {academy.categories.slice(0, 3).map((c: any) => (
+                            <span key={c.name}>
+                                {c.name.slice(0, 13)}
+                                <br />
+                            </span>
+                        ))}
+                        {academy.categories?.length == 0 && 'N/A'}
                     </p>
                     <div className="text-gray-600 dark:text-gray-400">Categories</div>
                 </div>
@@ -102,6 +110,7 @@ const DetailsCard: React.FC<DetailsCardProps> = ({ academy }) => {
                     <p
                         className="text-black dark:text-gray-200 font-semibold"
                         style={{
+                            fontSize: '14px',
                             textAlign: 'center',
                             width: '100px',
                             display: '-webkit-box',
@@ -111,7 +120,13 @@ const DetailsCard: React.FC<DetailsCardProps> = ({ academy }) => {
                             textOverflow: 'ellipsis'
                         }}
                     >
-                        {academy.chains.map((c: any) => c.name).join(', ')}
+                        {academy.chains.slice(0, 3).map((c: any) => (
+                            <span key={c.name}>
+                                {c.name.slice(0, 13)}
+                                <br />
+                            </span>
+                        ))}
+                        {academy.chains?.length == 0 && 'N/A'}
                     </p>
                     <div className="text-gray-600 dark:text-gray-400">Chains</div>
                 </div>
