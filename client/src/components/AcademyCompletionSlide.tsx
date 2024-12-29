@@ -10,7 +10,7 @@ import useUserStore from '~/store/useUserStore'
 import useUserVerificationStore from '~/store/useUserVerificationStore'
 import useAcademiesStore from '~/store/useAcademiesStore'
 import useNotificationStore from '~/store/useNotificationStore'
-import { FaTwitter } from 'react-icons/fa'
+import xIcon from '../images/X 1.png'
 import bunnyLogo from '../images/bunny-mascot.png'
 import Lottie from 'react-lottie'
 import bunnyHappyAnimationData from '../animations/bunny-happy.json'
@@ -28,7 +28,7 @@ import bunnyAnimationData from '../animations/bunny.json'
 import coinsCreditedAnimationData from '../animations/coins-credited.json'
 import AnimatedNumber from '../components/AnimatedNumber'
 import { FaTimes } from 'react-icons/fa'
-import ticket from '../images/ticket.png'
+import ticket from '../images/tickets 1.png'
 
 const coinsCreditedAnimation = {
     loop: true,
@@ -273,45 +273,60 @@ const AcademyCompletionSlide: React.FC<AcademyCompletionSlideProps> = ({
 
     return (
         <div className="flex flex-col items-center justify-center h-full mb-12">
-            <h2 className="text-xl font-bold mb-4">In total you collected:</h2>
-            <div className="flex items-end justify-between text-2xl font-bold mb-8 gap-4">
-                <div className="flex items-center">
-                    {earnedPoints} / {totalPoints}
-                    <img src={coinStack} alt="coin stack" className="w-12 h-12 ml-2 mb-2" />
-                </div>
-                {earnedPoints + surprisePoint > 99 && (
+            <div
+                style={{
+                    width: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    background: '#1F2937',
+                    padding: '30px',
+                    borderRadius: '14px'
+                }}
+            >
+                <h2 className="text-xl font-bold mb-4">In total you collected:</h2>
+                <div className="flex items-center justify-center text-2xl font-bold mb-8 gap-4" style={{ flexDirection: 'column' }}>
                     <div className="flex items-center">
-                        +{Math.floor((earnedPoints + surprisePoint) / 100)}
-                        <img src={ticket} alt="ticket" className="w-12 h-12 ml-2 mb-2" />
+                        {earnedPoints} / {totalPoints}
+                        <img src={coinStack} alt="coin stack" className="w-12 h-12 ml-4 mb-2" />
                     </div>
-                )}
-            </div>
+                    {earnedPoints + surprisePoint > 99 && (
+                        <div className="flex items-center" style={{ gap: '5px' }}>
+                            +{Math.floor((earnedPoints + surprisePoint) / 100)}
+                            <img src={ticket} alt="ticket" className="w-10 h-10 ml-2 mb-2" />
+                        </div>
+                    )}
+                </div>
 
-            <Button
-                large
-                rounded
-                outline
-                disabled
-                className="mb-4"
-                style={{
-                    backgroundColor: 'gray',
-                    color: '#fff'
-                }}
-            >
-                Earn by doing quests
-            </Button>
-            <Button
-                large
-                rounded
-                outline
-                onClick={() => navigate('/')}
-                style={{
-                    background: 'linear-gradient(to left, #ff0077, #7700ff)',
-                    color: '#fff'
-                }}
-            >
-                Explore more academies
-            </Button>
+                <div style={{ width: '100%', gap: '20px' }} className="w-full flex flex-col-reverse md:flex-row gap-5">
+                    <Button
+                        large
+                        rounded
+                        outline
+                        onClick={() => navigate('/')}
+                        className="mb-4"
+                        style={{
+                            backgroundColor: '4F5763',
+                            color: 'rgba(255, 255, 255, 0.70)'
+                        }}
+                    >
+                        Explore more academies
+                    </Button>
+                    <Button
+                        large
+                        rounded
+                        outline
+                        disabled
+                        style={{
+                            background: 'linear-gradient(180deg, #D52AE9 0%, #2E3772 100%)',
+                            border: '1px solid #C400B2',
+                            color: '#fff'
+                        }}
+                    >
+                        Earn by doing quests
+                    </Button>
+                </div>
+            </div>
             {/* Surprise Box  */}
             {showSurpriseBoxDialog && (
                 <Dialog opened={true} onBackdropClick={() => setShowSurpriseBoxDialog(false)} className="!m-0 !p-0 !rounded-2xl !bg-opacity-80">
@@ -486,24 +501,26 @@ const AcademyCompletionSlide: React.FC<AcademyCompletionSlideProps> = ({
                 return (
                     <Card
                         key={task.id}
-                        className="!my-6 !mx-0 !p-1 !rounded-2xl border border-gray-400 dark:border-gray-700 shadow-lg flex items-center justify-between !w-full"
+                        className="!my-6 !mx-0 !p-1 !rounded-2xl border border-gray-400 dark:border-gray-700 shadow-lg flex items-center justify-center !w-full"
+                        style={{ background: '#1F2937' }}
                     >
-                        <div className="flex items-start w-full mb-4">
-                            <div className="w-9 h-9 mr-4 items-center justify-center text-center rounded-md">
-                                {platformIcons[task.platform] || <FaTwitter className="w-9 h-9 text-blue-500" />}
+                        <div className="flex items-center w-full mb-4" style={{ justifyContent: 'center' }}>
+                            <div className="w-9 h-9 mr-2 items-center justify-center text-center rounded-md">
+                                {platformIcons[task.platform] || <img src={xIcon} alt="coin stack" className="w-9 h-9" />}
                             </div>
-                            <div>
-                                <div className="flex items-center">
-                                    <p className="text-[16px] font-bold dark:text-gray-100 mb-2">
-                                        {task.name} +{task.xp}
-                                    </p>
-                                    <img src={coinStack} alt="coin stack" className="w-6 h-6 ml-2 mb-2" />
-                                </div>
-                                <p className="text-md dark:text-gray-100 mb-2">
-                                    🎉 I just completed {academyName} academy on CoinBeats Crypto School #CoinBeatsxyz
+                            {/* <div> */}
+                            <div className="flex items-center" style={{ gap: '10px' }}>
+                                <p className="text-[16px] font-bold dark:text-gray-100 ">
+                                    {task.name} +{task.xp}
                                 </p>
+                                <img src={coinStack} alt="coin stack" className="w-6 h-6 " />
                             </div>
+
+                            {/* </div> */}
                         </div>
+                        <p className="text-md dark:text-gray-100 my-6" style={{ textAlign: 'center', color: 'rgba(255, 255, 255, 0.70)' }}>
+                            🎉 I just completed {academyName} academy on CoinBeats Crypto School #CoinBeatsxyz
+                        </p>
                         <div className="flex flex-row gap-2 justify-center mr-2 mx-auto w-full">
                             {/* Action Button */}
                             <Button
@@ -511,8 +528,10 @@ const AcademyCompletionSlide: React.FC<AcademyCompletionSlideProps> = ({
                                 onClick={() => onActionClick(task)}
                                 className="!text-xs font-bold shadow-xl !w-30 !h-7"
                                 style={{
-                                    background: 'linear-gradient(to left, #16a34a, #3b82f6)',
-                                    color: '#fff'
+                                    background: 'linear-gradient(90deg, #02A2CF 0%, #4FB139 100%)',
+                                    color: '#fff',
+                                    borderRadius: '20px',
+                                    border: '1px solid #FFF'
                                 }}
                                 disabled={disableActionButton}
                             >
@@ -526,8 +545,8 @@ const AcademyCompletionSlide: React.FC<AcademyCompletionSlideProps> = ({
                                 onClick={() => handleVerify(task)}
                                 className="!text-xs font-bold shadow-xl !w-30 !h-7"
                                 style={{
-                                    borderColor: isVerified ? '#16a34a' : '#3b82f6',
-                                    backgroundColor: 'transparent',
+                                    border: isVerified ? '#16a34a' : '1px solid #FFF',
+                                    backgroundColor: '#4F5763',
                                     color: '#fff'
                                 }}
                                 disabled={disableVerifyButton}

@@ -29,12 +29,14 @@ const {
   getAllAcademiesSuperadmin,
   getAcademyDetailsSuperadmin,
   getCorrectChoicesForAnsweredQuestions,
+  getAcademyRaffle,
 } = require('../controllers/academyController');
 
 const router = express.Router();
 
 // Public route to fetch all academies
 router.get('/academies', asyncHandler(getAllAcademies));
+router.get('/raffle', asyncHandler(getAcademyRaffle));
 router.get('/my', authenticateToken, asyncHandler(listMyAcademies));
 router.get(
   '/',

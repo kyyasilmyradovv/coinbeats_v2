@@ -1,10 +1,10 @@
 // client/src/pages/ProductPage.tsx
 
-import React, { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useInitData } from '@telegram-apps/sdk-react'
 import { useLocation } from 'react-router-dom'
-import { FaTwitter, FaFacebook, FaInstagram, FaTelegramPlane, FaDiscord, FaYoutube, FaEnvelope } from 'react-icons/fa'
-import { Page, Card, Radio, Button, Block, Notification } from 'konsta/react'
+import { FaTwitter, FaFacebook, FaInstagram, FaTelegramPlane, FaDiscord, FaYoutube, FaEnvelope, FaExchangeAlt } from 'react-icons/fa'
+import { Page, Card, Radio, Button, Block, Notification, Preloader } from 'konsta/react'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import 'swiper/swiper-bundle.css'
 import Navbar from '../components/common/Navbar'
@@ -26,34 +26,14 @@ import useSurpriseBoxStore from '~/store/useSurpriseBoxStore'
 import useNotificationStore from '~/store/useNotificationStore'
 import coinStackIcon from '../images/coin-stack.png'
 import coinbeats from '../images/coinbeats-l.svg'
-import { Icon } from '@iconify/react'
 import coinStack from '../images/coin-stack.png'
-import bunnyImage from '../images/bunny-head.png'
 import Linkify from 'react-linkify'
 import { extractYouTubeVideoId } from '../utils/extractYouTubeVideoId'
-import Lottie from 'react-lottie'
 import coinsEarnedAnimationData from '../animations/earned-coins.json'
 import bunnyLogo from '../images/bunny-head.png'
-
-import xLogo from '../images/x.png'
-import telegramLogo from '../images/x.png'
-import youtubeLogo from '../images/x.png'
-import instagramLogo from '../images/x.png'
-import discordLogo from '../images/x.png'
-import emailLogo from '../images/x.png'
-import defaultLogo from '../images/x.png'
-import { X } from '@mui/icons-material'
-
-import { handleAction, getActionLabel, requiresInputField, getInputPlaceholder } from '../utils/actionHandlers' // Import from actionHandlers
-
-const platformLogos: { [key: string]: string } = {
-    X: xLogo,
-    Telegram: telegramLogo,
-    YouTube: youtubeLogo,
-    Instagram: instagramLogo,
-    Discord: discordLogo,
-    Email: emailLogo
-}
+import arrowDownIcon from '../images/down-arrow (1) 1.png'
+import { handleAction, getActionLabel } from '../utils/actionHandlers' // Import from actionHandlers
+import axiosInstance from '~/api/axiosInstance'
 
 const platformIcons: { [key: string]: JSX.Element } = {
     X: <FaTwitter className="w-8 h-8 text-blue-500" />,
@@ -74,7 +54,9 @@ export default function ProductPage() {
     const [currentSlideIndex, setCurrentSlideIndex] = useState(0)
     const [currentPoints, setCurrentPoints] = useState(0)
     const [showXPAnimation, setShowXPAnimation] = useState(false)
+    const [raffle, setRaffle] = useState<any>(null)
     const swiperRef = useRef<any>(null)
+    const [loading, setLoading] = useState(false)
     const { userId, referralCode, twitterAuthenticated } = useUserStore((state) => ({
         userId: state.userId,
         referralCode: state.referralCode,
@@ -120,24 +102,6 @@ export default function ProductPage() {
     const [initialAnswers, setInitialAnswers] = useState<Question[]>([])
     const [showIntro, setShowIntro] = useState(false)
     const [loadingQuests, setLoadingQuests] = useState(true)
-    const nextRaffleDate = new Date('2024-10-12T14:00:00')
-    const raffles = [
-        {
-            date: new Date('2024-10-12T14:00:00'),
-            reward: '200 USDC',
-            winners: '10 x 20 USDC'
-        },
-        {
-            date: new Date('2024-10-20T14:00:00'),
-            reward: '200 USDC',
-            winners: '10 x 20 USDC'
-        },
-        {
-            date: new Date('2024-10-28T14:00:00'),
-            reward: '200 USDC',
-            winners: '10 x 20 USDC'
-        }
-    ]
 
     const [timeRemainingList, setTimeRemainingList] = useState<string[]>([])
     const [visibleTooltip, setVisibleTooltip] = useState<number | null>(null)
@@ -200,6 +164,55 @@ export default function ProductPage() {
     }, [academy])
 
     useEffect(() => {
+        const fetchRaffle = async () => {
+            if (academy?.id) {
+                try {
+                    const overallRaffle = await axiosInstance.get(`/api/academies/raffle?academyId=${academy?.id}`)
+                    if (overallRaffle?.data) {
+                        const today = new Date()
+                        const deadline = new Date(overallRaffle.data.deadline)
+                        const remainingTime = deadline.getTime() - today.getTime()
+
+                        const days = Math.floor(remainingTime / (1000 * 60 * 60 * 24))
+                        const hours = Math.floor((remainingTime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+                        const minutes = Math.floor((remainingTime % (1000 * 60 * 60)) / (1000 * 60))
+                        const seconds = Math.floor((remainingTime % (1000 * 60)) / 1000)
+
+                        const countdown = `${days}d ${hours}h ${minutes}m ${seconds}s`
+
+                        setRaffle({ ...overallRaffle.data, countdown, overallRaffle })
+                    }
+                } catch (error) {}
+            }
+        }
+
+        fetchRaffle()
+    }, [])
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            const today = new Date()
+            const deadline = new Date(raffle?.deadline)
+            const remainingTime = deadline.getTime() - today.getTime()
+
+            const days = Math.floor(remainingTime / (1000 * 60 * 60 * 24))
+            const hours = Math.floor((remainingTime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+            const minutes = Math.floor((remainingTime % (1000 * 60 * 60)) / (1000 * 60))
+            const seconds = Math.floor((remainingTime % (1000 * 60)) / 1000)
+
+            const countdown = `${days}d ${hours}h ${minutes}m ${seconds}s`
+
+            // Update the raffle state with the countdown
+            setRaffle((prev: any) => ({
+                ...prev,
+                countdown
+            }))
+        }, 1000)
+
+        return () => clearInterval(interval)
+    }, [raffle])
+
+    useEffect(() => {
         if (questions.length > 0) {
             setInitialAnswers(questions)
             const userHasResponses = questions.some((question) => question.isCorrect !== undefined)
@@ -218,28 +231,6 @@ export default function ProductPage() {
     useEffect(() => {
         activeFilterRef.current = activeFilter
     }, [activeFilter])
-
-    useEffect(() => {
-        const updateTimer = () => {
-            const now = new Date()
-            const newTimeRemainingList = raffles.map((raffle) => {
-                const distance = raffle.date.getTime() - now.getTime()
-                if (distance < 0) {
-                    return 'Raffle has ended'
-                }
-                const days = Math.floor(distance / (1000 * 60 * 60 * 24))
-                const hours = Math.floor((distance / (1000 * 60 * 60)) % 24)
-                const minutes = Math.floor((distance / (1000 * 60)) % 60)
-                const seconds = Math.floor((distance / 1000) % 60)
-                return `${days}d ${hours}h ${minutes}m ${seconds}s`
-            })
-            setTimeRemainingList(newTimeRemainingList)
-        }
-
-        updateTimer()
-        const timerId = setInterval(updateTimer, 1000)
-        return () => clearInterval(timerId)
-    }, [])
 
     const handleNavigationAttempt = (newFilter: string | null, navigationAction: () => void) => {
         const currentFilter = activeFilterRef.current
@@ -343,7 +334,7 @@ export default function ProductPage() {
                     setFeedbackDialogOpen,
                     twitterAuthenticated: true, // Adjust if you have auth implemented
                     academyName: academy?.name,
-                    twitterHandle: '', // If needed, provide handle
+                    twitterHandle: '',
                     telegramUserId: initData.user.id
                 },
                 academy?.id
@@ -361,6 +352,7 @@ export default function ProductPage() {
     }
 
     const handleCheckAnswer = async (questionIndex: number) => {
+        if (loading) return
         const question = initialAnswers[questionIndex]
         const selectedChoiceId = question.choices[question.selectedChoice]?.id
         if (selectedChoiceId === undefined) {
@@ -368,6 +360,7 @@ export default function ProductPage() {
             return
         }
         setErrorMessage('')
+        setLoading(true)
         try {
             if (timerIntervalRef.current) {
                 clearInterval(timerIntervalRef.current)
@@ -391,7 +384,7 @@ export default function ProductPage() {
                 setCurrentPoints(pointsAwarded)
                 triggerXPAnimation()
             }
-            await saveResponse(academy.id, question.academyQuestionId, selectedChoiceId, initData.user.id, correct, pointsAwarded)
+            await saveResponse(academy.id, question.academyQuestionId, selectedChoiceId, initData.user.id, correct, pointsAwarded) // barde
             setInitialAnswers(
                 initialAnswers.map((q, qi) =>
                     qi === questionIndex
@@ -409,7 +402,9 @@ export default function ProductPage() {
             )
             setMaxAllowedSlide((prev) => Math.min(prev + 2, initialAnswers.length * 2 - 1))
             setErrorMessage('')
+            setLoading(false)
         } catch (error) {
+            setLoading(false)
             console.error('Error checking answer:', error)
         }
     }
@@ -435,6 +430,8 @@ export default function ProductPage() {
     }, [userId])
 
     const handleCompleteAcademy = async () => {
+        if (loading) return
+        setLoading(true)
         try {
             await submitQuiz(academy.id, userId)
             await fetchUserTotalPoints(userId)
@@ -458,7 +455,9 @@ export default function ProductPage() {
             }
 
             setActiveFilter('completion')
+            setLoading(false)
         } catch (error) {
+            setLoading(false)
             console.error('Error completing academy:', error)
         }
     }
@@ -505,13 +504,18 @@ export default function ProductPage() {
 
         return (
             <>
-                {showTimerBar && <TimerBar currentQuestion={currentQuestion} timer={timer} />}
                 <ProgressBar
                     totalSlides={totalSlides}
                     currentSlideIndex={currentSlideIndex}
                     handlePrevClick={handlePrevClick}
                     handleNextClick={handleNextClick}
                 />
+                {/* {showTimerBar && (
+                    <TimerBar currentQuestion={currentQuestion} timer={timer} totalSlides={initialAnswers?.length} currentSlideIndex={currentQuestionIndex} />
+                )} */}
+
+                <TimerBar currentQuestion={currentQuestion} timer={timer} totalSlides={initialAnswers?.length} currentSlideIndex={currentQuestionIndex} />
+
                 <Swiper
                     pagination={{ clickable: true }}
                     onSlideChange={handleSlideChange}
@@ -608,25 +612,41 @@ export default function ProductPage() {
 
         return (
             <SwiperSlide key={`initial-question-${questionIndex}`}>
-                <Card className="!my-2 !mx-1 !p-4 !rounded-2xl !bg-gray-50 dark:!bg-gray-800 !border !border-gray-200 dark:!border-gray-700 !shadow-sm !mb-12">
+                <Card className="!mt-2 !mx-1 !p-4 !rounded-2xl !bg-gray-50 dark:!bg-gray-800 !border !border-gray-200 dark:!border-gray-700 !shadow-sm !mb-4">
                     <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">{question.question}</h2>
-                    <p className="text-gray-900 dark:text-gray-100">
+                    <p className="text-gray-900 dark:text-gray-100" style={{ color: 'rgba(255, 255, 255, 0.60)' }}>
                         <Linkify componentDecorator={linkDecorator}>{question.answer || ''}</Linkify>
                     </p>
                 </Card>
+                <Button
+                    large
+                    rounded
+                    outline
+                    onClick={handleNextClick}
+                    className="mb-4"
+                    style={{
+                        background: 'linear-gradient(180deg, #D52AE9 0%, #2E3772 100%)',
+                        border: '1px solid #C400B2',
+                        color: '#fff'
+                    }}
+                >
+                    SEE QUESTION
+                </Button>
             </SwiperSlide>
         )
     }
 
     const renderQuizSlide = (questionIndex: number) => {
         const question = initialAnswers[questionIndex]
+
         if (!question) return null
         return (
             <SwiperSlide key={`quiz-question-${questionIndex}-${question.isCorrect}`}>
-                <Card className="!mx-1 !my-2 p-2 !rounded-2xl !bg-gray-50 dark:!bg-gray-800 !border !border-gray-200 dark:!border-gray-700 !shadow-sm">
-                    <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">{question.quizQuestion}</p>
-                </Card>
                 <Card className="!my-4 !mx-1 p-2 !rounded-2xl !bg-gray-50 dark:!bg-gray-800 !border !border-gray-200 dark:!border-gray-700 !shadow-sm">
+                    <div style={{ marginBottom: '40px' }}>
+                        <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">{question.quizQuestion}</p>
+                        <p style={{ color: 'rgba(255, 255, 255, 0.6)' }}>{question.question === 'Tokenomics details' ? '' : question.answer}</p>
+                    </div>
                     {question.choices.map((choice: any, choiceIndex: number) => {
                         const isSelected = question.selectedChoice === choiceIndex
                         const isCorrectChoice = choice.isCorrect
@@ -634,12 +654,12 @@ export default function ProductPage() {
                         let choiceClass = ''
                         if (question.isCorrect !== undefined) {
                             if (isCorrectChoice) {
-                                choiceClass = 'bg-green-200 border border-green-500'
+                                choiceClass = 'bg-green-200 border border-[#00FF00]'
                             } else if (isWrongChoice) {
                                 choiceClass = 'bg-red-200 border border-red-500'
                             }
                         } else if (isSelected) {
-                            choiceClass = 'bg-purple-200 border border-purple-500'
+                            choiceClass = 'bg-#C400B2-200 border border-[#C400B2]'
                         }
                         return (
                             <div
@@ -671,17 +691,20 @@ export default function ProductPage() {
                                 handleCheckAnswer(questionIndex)
                             }
                         }}
-                        className="mt-4 mb-12"
+                        className="mt-4 mb-14"
                         style={{
-                            background: 'linear-gradient(to left, #ff0077, #7700ff)',
+                            background: 'linear-gradient(180deg, #D52AE9 0%, #2E3772 100%)',
+                            border: '1px solid #C400B2',
                             color: '#fff'
                         }}
                     >
-                        {question.isCorrect !== undefined
-                            ? questionIndex === initialAnswers.length - 1
-                                ? 'Complete academy'
-                                : 'Next question'
-                            : 'Check Answer'}
+                        {!loading &&
+                            (question.isCorrect !== undefined
+                                ? questionIndex === initialAnswers.length - 1
+                                    ? 'Complete academy'
+                                    : 'Next question'
+                                : 'Check Answer')}
+                        {loading && <Preloader size="small" style={{ color: 'white' }} />}
                     </Button>
                 </div>
             </SwiperSlide>
@@ -866,41 +889,46 @@ export default function ProductPage() {
         <Page className="bg-white dark:bg-gray-900">
             <Navbar handleNavigationAttempt={handleNavigationAttempt} />
             <Sidebar />
-
             {academy && (
                 <div className="px-2">
                     <div
-                        className={`relative w-full ${headerExpanded ? 'h-48' : 'h-28'} bg-cover bg-center rounded-b-2xl transition-all duration-500`}
+                        className={`relative w-full h-28 bg-cover bg-center rounded-b-2xl transition-all duration-500`}
                         style={{
-                            backgroundImage: `url(${constructImageUrl(academy.coverPhotoUrl)})`
+                            backgroundImage: `url(${constructImageUrl(academy.coverPhotoUrl)})`,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
                         }}
                     >
                         <div className="absolute inset-0 bg-black opacity-50 rounded-b-2xl"></div>
-                        <div
-                            className={`relative text-center pt-4 flex items-center ${
-                                headerExpanded ? 'flex-col' : 'flex-row px-4'
-                            } justify-center transition-all duration-500`}
-                        >
+                        <div className={`relative text-center  flex items-center  justify-center transition-all duration-500`}>
                             <img
                                 alt={academy.name}
-                                className={`rounded-full z-10 relative ${headerExpanded ? 'h-20 w-20 mb-2' : 'h-10 w-10 mr-4'} transition-all duration-500`}
+                                className={`rounded-full z-10 relative h-15 w-15 mr-2 transition-all duration-500`}
                                 src={constructImageUrl(academy.logoUrl)}
                                 onClick={handleNavigateToDetail}
                             />
                             <h1
-                                className={`text-white z-10 relative cursor-pointer ${headerExpanded ? 'text-3xl' : 'text-xl'} transition-all duration-500`}
+                                className={`text-white z-10 relative cursor-pointer text-2xl transition-all duration-500 font-bold`}
                                 onClick={handleNavigateToDetail}
                             >
                                 {academy.name}
                             </h1>
                         </div>
-                        <div className="flex justify-center gap-2 mt-4 mx-4 relative z-10">
-                            <div className="relative flex-grow">
-                                {showArrow && (
-                                    <div className={`absolute ${!showArrow ? 'fade-out' : ''}`}>
-                                        <Icon icon="mdi:arrow-down-bold" className="bounce-arrow w-10 h-10 bottom-0 left-9" color="#DE47F0" />
-                                    </div>
-                                )}
+                    </div>
+                    {activeFilter === null ? (
+                        <div style={{ display: 'flex', marginTop: '20px', gap: '10px', position: 'relative' }}>
+                            {/* ${!showArrow ? 'fade-out' : ''} */}
+                            <div style={{ height: '40px' }}>
+                                <img
+                                    src={arrowDownIcon}
+                                    className={`bounce-arrow w-10 h-10 left-[13%] md:left-[15.5%]`}
+                                    alt="academy ticker"
+                                    style={{
+                                        top: '-50px'
+                                        // left: '13%'
+                                    }}
+                                />
                             </div>
                             <Button
                                 outline
@@ -909,10 +937,13 @@ export default function ProductPage() {
                                 className={`${activeFilter === 'read' ? 'active-gradient shadow-lg' : 'default-gradient shadow-lg'} rounded-full`}
                                 style={{
                                     background:
-                                        activeFilter === 'read' ? 'linear-gradient(to left, #ff77aa, #aa77ff)' : 'linear-gradient(to left, #ff0077, #7700ff)',
+                                        activeFilter === 'read'
+                                            ? 'linear-gradient(180deg, #B038A2 0%, #262881 100%)'
+                                            : 'linear-gradient(180deg, #B038A2, #262881)',
                                     color: '#fff',
-                                    border: activeFilter === 'read' ? '2px solid #DE47F0' : '2px solid #DE47F0',
-                                    borderRadius: '9999px'
+                                    border: activeFilter === 'read' ? '1px solid #C400B2' : '1px solid #C400B2',
+                                    borderRadius: '20px',
+                                    height: '40px'
                                 }}
                             >
                                 Read
@@ -934,11 +965,12 @@ export default function ProductPage() {
                                           : 'linear-gradient(to left, #ff0077, #7700ff)',
                                     color: '#fff',
                                     border: !initialAnswers.some((question) => question.video)
-                                        ? '2px solid #b3b3b3'
+                                        ? '1px solid #FFF'
                                         : activeFilter === 'watch'
                                           ? '2px solid #DE47F0'
                                           : '2px solid #DE47F0',
-                                    borderRadius: '9999px'
+                                    borderRadius: '20px',
+                                    height: '40px'
                                 }}
                             >
                                 Tutorial
@@ -960,30 +992,44 @@ export default function ProductPage() {
                                               ? 'linear-gradient(to left, #ff77aa, #aa77ff)'
                                               : 'linear-gradient(to left, #ff0077, #7700ff)',
                                     color: '#fff',
-                                    border: quests.length === 0 ? '2px solid #b3b3b3' : activeFilter === 'quests' ? '2px solid #DE47F0' : '2px solid #DE47F0',
-                                    borderRadius: '9999px'
+                                    border: quests.length === 0 ? '1px solid #FFF' : activeFilter === 'quests' ? '2px solid #DE47F0' : '2px solid #DE47F0',
+                                    borderRadius: '20px',
+                                    height: '40px'
                                 }}
                             >
                                 Quests
                             </Button>
                         </div>
-                    </div>
+                    ) : null}
 
-                    <div className="px-4 py-4">
+                    <div className="py-4">
                         {activeFilter === null && (
                             <>
                                 <DetailsCard academy={academy} />
                                 <SocialsCard academy={academy} />
-                                <RafflesCard
-                                    raffles={raffles}
-                                    timeRemainingList={timeRemainingList}
-                                    toggleTooltip={toggleTooltip}
-                                    visibleTooltip={visibleTooltip}
-                                />
+
+                                <Button
+                                    rounded
+                                    outline
+                                    onClick={() => window.open('https://t.me/tirador_bot?start=CoinBeats', '_blank')}
+                                    className="flex items-center justify-center  w-full !text-xs font-bold shadow-xl !border !border-blue-400 mb-4"
+                                    style={{
+                                        background: 'linear-gradient(to right,#1CBF4D,#1890CC)',
+                                        color: '#fff',
+                                        gap: '10px'
+                                    }}
+                                >
+                                    {/* Optional: Add an icon */}
+                                    <FaExchangeAlt className="w-4 h-4 text-gray-300" /> {/* Icon from react-icons */}
+                                    TRADE & SNIPE
+                                </Button>
+
                                 <PointsCollectedCard
                                     earnedPoints={earnedPoints}
                                     totalPoints={academy?.fomoNumber > academy?.pointCount ? academy.fomoXp : academy.xp}
                                 />
+
+                                {raffle?.id && <RafflesCard raffle={raffle} toggleTooltip={toggleTooltip} visibleTooltip={visibleTooltip} />}
                             </>
                         )}
 
@@ -991,7 +1037,6 @@ export default function ProductPage() {
                     </div>
                 </div>
             )}
-
             <BottomTabBar activeTab={activeFilter} setActiveTab={setActiveFilter} handleNavigationAttempt={handleNavigationAttempt} />
 
             {showXPAnimation && (
@@ -1000,7 +1045,6 @@ export default function ProductPage() {
                     <div className="text-gray-800 dark:text-white mt-4 text-md font-semibold">+{currentPoints}</div>
                 </div>
             )}
-
             <LeaveConfirmationDialog
                 opened={showLeaveConfirmation}
                 onConfirm={() => {
@@ -1015,7 +1059,6 @@ export default function ProductPage() {
                     setPendingNavigationAction(null)
                 }}
             />
-
             <Notification
                 className="fixed !mt-12 top-12 left-0 z-50 border"
                 opened={notificationOpen}
