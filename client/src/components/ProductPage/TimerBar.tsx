@@ -1,16 +1,18 @@
 import React from 'react'
-import coinStack from '../../images/coin-stack.png'
+import coinStack from '../../images/coin-stack.svg'
 
 interface TimerBarProps {
     currentQuestion: any // Replace 'any' with your specific type if available
     timer: number
+    totalSlides: number
+    currentSlideIndex: number
 }
 
-const TimerBar: React.FC<TimerBarProps> = ({ currentQuestion, timer }) => {
+const TimerBar: React.FC<TimerBarProps> = ({ currentQuestion, timer, totalSlides, currentSlideIndex }) => {
     // Do not display timer if question is already answered
-    if (currentQuestion && currentQuestion.isCorrect !== undefined) {
-        return null
-    }
+    // if (currentQuestion && currentQuestion.isCorrect !== undefined) {
+    //     return null
+    // }
 
     if (timer === 0) {
         return (
@@ -50,20 +52,38 @@ const TimerBar: React.FC<TimerBarProps> = ({ currentQuestion, timer }) => {
 
     return (
         <div className="flex items-center justify-between mb-2 gap-3">
-            <div className="text-gray-900 dark:text-gray-300 text-md font-semibold flex w-8 h-8 items-center justify-center text-center ml-1">
-                +{displayedPoints} <img src={coinStack} alt="coin stack" className="w-4 h-4 mr-2 ml-2 mb-[4px]" />
+            <div style={{ display: 'flex', gap: '5px', fontWeight: '700', marginLeft: '6px' }}>
+                <p style={{ color: '#D52AE9', fontSize: '14px', display: 'flex' }}>Lesson:</p>
+                <p style={{ color: '#D52AE9', fontSize: '14px', display: 'flex' }}>
+                    {currentSlideIndex + 1}/{totalSlides}
+                </p>
             </div>
-            <div className="relative flex-grow h-2 mx-2 bg-gray-200 rounded-full overflow-hidden">
+            <div style={{ display: 'flex', gap: '20px', justifyContent: 'right', width: '100%', alignItems: 'center' }}>
                 <div
-                    className="absolute top-0 left-0 h-full rounded-full mx-2"
+                    className="text-gray-900 dark:text-gray-300 text-md font-semibold flex w-8 h-8 items-center justify-center text-center ml-1"
+                    style={{ color: '#FFF' }}
+                >
+                    +{displayedPoints} <img src={coinStack} alt="coin stack" className="w-4 h-4 mr-2 ml-1 " />
+                </div>
+                <div
                     style={{
-                        width: `${timePercentage}%`,
-                        background: getBarColor()
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '5px',
+                        border: '1px solid #111827',
+                        borderRadius: '50px',
+                        background: `conic-gradient(#00FF00 ${timePercentage}%, black ${timePercentage}% 100%)`,
+                        marginRight: '10px'
                     }}
-                />
-            </div>
-            <div className="text-gray-900 dark:text-gray-300 dark:bg-slate-800 text-md font-semibold border-2 border-gray-600 rounded-full flex w-8 h-8 items-center justify-center text-center pt-[2px]">
-                {timer}
+                >
+                    <div
+                        className="text-gray-900 dark:text-gray-300 dark:bg-slate-800 text-md font-semibold rounded-full flex w-10 h-10 items-center justify-center text-center"
+                        style={{ zIndex: 10000, background: 'black', border: '1px solid #111827' }}
+                    >
+                        {timer}
+                    </div>
+                </div>
             </div>
         </div>
     )

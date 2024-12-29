@@ -1,29 +1,40 @@
 // client/src/components/ProductPage/SocialsCard.tsx
 
 import React from 'react'
-import { Card, Button } from 'konsta/react'
-import { Icon } from '@iconify/react'
+import { Button } from 'konsta/react'
 import gecko from '../../images/coingecko.svg'
-import { X } from '@mui/icons-material'
-import { FaExchangeAlt } from 'react-icons/fa' // Optional: Import an icon for Trade & Snipe
-
+import websiteIcon from '../../images/website.svg'
+import xIcon from '../../images/X 1.png'
+import discordIcon from '../../images/discord 1.svg'
+import telegramIcon from '../../images/telegram 1.svg'
 interface SocialsCardProps {
     academy: any
 }
 
 const SocialsCard: React.FC<SocialsCardProps> = ({ academy }) => {
     return (
-        <Card className="!mb-4 !p-0 !rounded-2xl shadow-lg !m-0 relative border border-gray-300 dark:border-gray-600">
-            <div className="grid grid-cols-2 gap-4 w-full">
+        <div className="!mb-4  !rounded-2xl shadow-lg !m-0 relative flex  justify-around">
+            <div className="grid grid-cols-4 md:grid-cols-5 gap-4 w-full sm:w-4/6 md:w-3/6 lg:w-4/12">
                 {academy.webpageUrl && (
                     <Button
                         clear
                         raised
                         rounded
-                        className="flex items-center !justify-start gap-2 w-full dark:text-gray-200 !text-xs bg-gradient-to-r from-gray-100 to-gray-300 dark:from-gray-700 dark:to-gray-900 border border-gray-200 dark:border-gray-700 rounded-full"
+                        className="w-full dark:text-gray-200 !text-xs bg-gradient-to-r from-gray-100 to-gray-300 dark:from-gray-700 dark:to-gray-900 border border-gray-200 dark:border-gray-700 "
+                        style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            height: '80px',
+                            borderRadius: '14px',
+                            // maxWidth: '100px',
+                            padding: '10px',
+                            width: '100%'
+                        }}
                         onClick={() => window.open(academy.webpageUrl, '_blank')}
                     >
-                        <Icon icon="mdi:web" color="#6c757d" className="w-5 h-5" />
+                        <img src={websiteIcon} className="w-7 h-7" alt="academy ticker" />
                         WEBSITE
                     </Button>
                 )}
@@ -32,10 +43,20 @@ const SocialsCard: React.FC<SocialsCardProps> = ({ academy }) => {
                         clear
                         raised
                         rounded
-                        className="flex items-center !justify-start gap-2 w-full dark:text-gray-200 !text-xs bg-gradient-to-r from-gray-100 to-gray-300 dark:from-gray-700 dark:to-gray-900 border border-gray-200 dark:border-gray-700 rounded-full"
+                        className="w-full dark:text-gray-200 !text-xs bg-gradient-to-r from-gray-100 to-gray-300 dark:from-gray-700 dark:to-gray-900 border border-gray-200 dark:border-gray-700 "
                         onClick={() => window.open(academy.twitter, '_blank')}
+                        style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            height: '80px',
+                            borderRadius: '14px',
+                            maxWidth: '100px',
+                            padding: '10px'
+                        }}
                     >
-                        <X className="w-6 h-6 text-blue-500 !p-1 !m-0" />X
+                        <img src={xIcon} className="w-7 h-7" alt="academy ticker" />X
                     </Button>
                 )}
                 {academy.telegram && (
@@ -43,10 +64,20 @@ const SocialsCard: React.FC<SocialsCardProps> = ({ academy }) => {
                         clear
                         raised
                         rounded
-                        className="flex items-center !justify-start gap-2 w-full dark:text-gray-200 !text-xs bg-gradient-to-r from-gray-100 to-gray-300 dark:from-gray-700 dark:to-gray-900 border border-gray-200 dark:border-gray-700 rounded-full"
+                        className=" w-full dark:text-gray-200 !text-xs bg-gradient-to-r from-gray-100 to-gray-300 dark:from-gray-700 dark:to-gray-900 border border-gray-200 dark:border-gray-700 "
                         onClick={() => window.open(academy.telegram, '_blank')}
+                        style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            height: '80px',
+                            borderRadius: '14px',
+                            maxWidth: '100px',
+                            padding: '10px'
+                        }}
                     >
-                        <Icon icon="mdi:telegram" color="#0088cc" className="w-5 h-5" />
+                        <img src={telegramIcon} className="w-7 h-7" alt="academy ticker" />
                         TELEGRAM
                     </Button>
                 )}
@@ -55,10 +86,20 @@ const SocialsCard: React.FC<SocialsCardProps> = ({ academy }) => {
                         clear
                         raised
                         rounded
-                        className="flex items-center !justify-start gap-2 w-full dark:text-gray-200 !text-xs bg-gradient-to-r from-gray-100 to-gray-300 dark:from-gray-700 dark:to-gray-900 border border-gray-200 dark:border-gray-700 rounded-full"
+                        className="w-full dark:text-gray-200 !text-xs bg-gradient-to-r from-gray-100 to-gray-300 dark:from-gray-700 dark:to-gray-900 border border-gray-200 dark:border-gray-700 rounded-full"
                         onClick={() => window.open(academy.discord, '_blank')}
+                        style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            height: '80px',
+                            borderRadius: '14px',
+                            maxWidth: '100px',
+                            padding: '10px'
+                        }}
                     >
-                        <Icon icon="mdi:discord" color="#7289DA" className="w-5 h-5" />
+                        <img src={discordIcon} className="w-7 h-7" alt="academy ticker" />
                         DISCORD
                     </Button>
                 )}
@@ -67,30 +108,26 @@ const SocialsCard: React.FC<SocialsCardProps> = ({ academy }) => {
                         clear
                         raised
                         rounded
-                        className="flex items-center !justify-start gap-2 w-full dark:text-gray-200 !text-xs bg-gradient-to-r from-gray-100 to-gray-300 dark:from-gray-700 dark:to-gray-900 border border-gray-200 dark:border-gray-700 rounded-full"
+                        className="w-full dark:text-gray-200 !text-xs bg-gradient-to-r from-gray-100 to-gray-300 dark:from-gray-700 dark:to-gray-900 border border-gray-200 dark:border-gray-700 rounded-full"
                         onClick={() => window.open(academy.coingecko, '_blank')}
+                        style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            height: '80px',
+                            borderRadius: '14px',
+                            maxWidth: '100px',
+                            padding: '10px'
+                        }}
                     >
                         <img src={gecko} className="h-5 w-5" alt="Coingecko logo" />
                         COINGECKO
                     </Button>
                 )}
                 {/* Updated Trade & Snipe Button */}
-                <Button
-                    rounded
-                    outline
-                    onClick={() => window.open('https://t.me/tirador_bot?start=CoinBeats', '_blank')}
-                    className="flex items-center justify-center gap-2 w-full !text-xs font-bold shadow-xl !border !border-blue-400"
-                    style={{
-                        background: 'linear-gradient(to left, #16a34a, #3b82f6)',
-                        color: '#fff'
-                    }}
-                >
-                    {/* Optional: Add an icon */}
-                    <FaExchangeAlt className="w-4 h-4 text-gray-300" /> {/* Icon from react-icons */}
-                    TRADE & SNIPE
-                </Button>
             </div>
-        </Card>
+        </div>
     )
 }
 

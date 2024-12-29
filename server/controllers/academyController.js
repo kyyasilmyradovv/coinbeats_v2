@@ -619,6 +619,12 @@ exports.listMyAcademies = async (req, res, next) => {
 };
 
 exports.getAcademyDetails = async (req, res, next) => {
+  console.log('-----------');
+  console.log('-----------');
+  console.log('academy detial fetch');
+  console.log('-----------');
+  console.log('-----------');
+
   const { id } = req.params;
   const { id: userId, roles } = req.user; // Get userId and roles from the request
   try {
@@ -1022,13 +1028,28 @@ exports.getAllAcademies = async (req, res, next) => {
         chains: true,
         academyType: true,
       },
-      // orderBy: [{ academyType: { name: 'asc' } }, { createdAt: 'desc' }],
     });
 
     res.json(academies);
   } catch (error) {
     console.error('Error fetching academies:', error);
     next(createError(500, 'Error fetching academies'));
+  }
+};
+
+exports.getAcademyRaffle = async (req, res, next) => {
+  try {
+    const { academyId } = req.query;
+    if (!academyId) res.status(400).json({ message: 'Invalid credentials' });
+
+    const raffle = await prisma.overallRaffle.findFirst({
+      where: { academyId: +academyId },
+    });
+
+    res.status(200).json(raffle);
+  } catch (error) {
+    console.error('Error fetching overall raffle of academy:', error);
+    next(createError(500, 'Error fetching overall raffle of academy'));
   }
 };
 

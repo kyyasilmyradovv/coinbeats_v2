@@ -104,6 +104,7 @@ model Academy {
   rejectionReason  String?
   fomoNumber       Int?               @default(50)
   fomoXp           Int?               @default(1000)
+  overallRaffle    OverallRaffle?
 }
 
 model Subscription {
@@ -408,6 +409,7 @@ model OverallRaffle {
   creatorId    Int?
   isActive     Boolean            @default(false)
   type         OverallRaffleType?
+  academy      Academy?            @relation(fields: [academyId], references: [id])
 }
 
 model RafflesHistory {

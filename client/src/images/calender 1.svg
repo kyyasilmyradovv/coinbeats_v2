@@ -1,0 +1,21 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="calender 1">
+<g id="Group">
+<path id="Vector" d="M6 6H24C25.108 6 26 6.892 26 8V13H4V8C4 6.892 4.892 6 6 6Z" fill="#F05542"/>
+<path id="Vector_2" d="M4 12V26C4 27.108 4.892 28 6 28H24C25.108 28 26 27.108 26 26V12H4Z" fill="#E9EDED"/>
+<path id="Vector_3" d="M10 5C10 4.44772 9.55228 4 9 4C8.44772 4 8 4.44772 8 5V9C8 9.55228 8.44772 10 9 10C9.55228 10 10 9.55228 10 9V5Z" fill="#34485C"/>
+<path id="Vector_4" d="M22 5C22 4.44772 21.5523 4 21 4C20.4477 4 20 4.44772 20 5V9C20 9.55228 20.4477 10 21 10C21.5523 10 22 9.55228 22 9V5Z" fill="#34485C"/>
+<path id="Vector_5" d="M22 14H20V16H22V14Z" fill="#CAD1D8"/>
+<path id="Vector_6" d="M18 14H16V16H18V14Z" fill="#CAD1D8"/>
+<path id="Vector_7" d="M14 14H12V16H14V14Z" fill="#CAD1D8"/>
+<path id="Vector_8" d="M10 14H8V16H10V14Z" fill="#CAD1D8"/>
+<path id="Vector_9" d="M22 18H20V20H22V18Z" fill="#CAD1D8"/>
+<path id="Vector_10" d="M18 18H16V20H18V18Z" fill="#CAD1D8"/>
+<path id="Vector_11" d="M14 18H12V20H14V18Z" fill="#CAD1D8"/>
+<path id="Vector_12" d="M10 18H8V20H10V18Z" fill="#CAD1D8"/>
+<path id="Vector_13" d="M18 22H16V24H18V22Z" fill="#CAD1D8"/>
+<path id="Vector_14" d="M14 22H12V24H14V22Z" fill="#CAD1D8"/>
+<path id="Vector_15" d="M10 22H8V24H10V22Z" fill="#CAD1D8"/>
+</g>
+</g>
+</svg>
