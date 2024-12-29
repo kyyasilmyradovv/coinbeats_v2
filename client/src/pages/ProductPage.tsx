@@ -1041,6 +1041,7 @@ export default function ProductPage() {
                                 <PointsCollectedCard
                                     earnedPoints={earnedPoints}
                                     totalPoints={academy?.fomoNumber > academy?.pointCount ? academy.fomoXp : academy.xp}
+                                    hasRaffle={!!raffle?.id}
                                 />
 
                                 {raffle?.id && <RafflesCard raffle={raffle} toggleTooltip={toggleTooltip} visibleTooltip={visibleTooltip} />}
