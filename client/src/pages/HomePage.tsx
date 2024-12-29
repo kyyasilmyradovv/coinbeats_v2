@@ -457,6 +457,12 @@ export default function HomePage() {
         return points.toString()
     }
 
+    const [tooltipNumber, setTooltipNumber] = useState<number>(0)
+
+    const handleTooltip = (number: number) => {
+        setTooltipNumber(number)
+    }
+
     return (
         <Page>
             <Navbar />
@@ -937,11 +943,18 @@ export default function HomePage() {
                                         </Button>
                                         <div className="flex absolute bottom-1 right-1 w-full justify-between items-center">
                                             {academy.fomoNumber > academy.pointCount && (
-                                                <div className="flex items-center ml-2">
+                                                <div
+                                                    className="flex items-center ml-2"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation()
+                                                        handleTooltip(academy.fomoNumber - academy.pointCount)
+                                                    }}
+                                                >
                                                     <img src={boostIcon} className="h-4 w-4" alt="boost-icon" />
                                                     <span className="ml-1">{academy.fomoNumber - academy.pointCount}</span>
                                                 </div>
                                             )}
+
                                             <div className="flex items-center">
                                                 👨<span className="ml-1">{academy.pointCount}</span>
                                             </div>
@@ -962,6 +975,16 @@ export default function HomePage() {
                         </div>
                     )}
                 </div>
+
+                <Notification
+                    opened={tooltipNumber > 0}
+                    icon={<img src={bunnyLogo} alt="Bunny Mascot" className="w-10 h-10" />}
+                    title={'Boost XP'}
+                    text={`${tooltipNumber} people get 2x XP for this academy!`}
+                    button={<Button onClick={() => setTooltipNumber(0)}>OK</Button>}
+                    onClose={() => setTooltipNumber(0)}
+                    className="fixed"
+                />
             </div>
         </Page>
     )

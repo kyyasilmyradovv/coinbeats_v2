@@ -332,8 +332,11 @@ exports.getTasksForHomepage = async (req, res, next) => {
 
 exports.getTasksForAcademypage = async (req, res, next) => {
   try {
+    const { academyId } = req.query;
+
     const tasks = await prisma.verificationTask.findMany({
       where: {
+        academyId: +academyId,
         displayLocation: 'END_OF_ACADEMY',
       },
       include: {
