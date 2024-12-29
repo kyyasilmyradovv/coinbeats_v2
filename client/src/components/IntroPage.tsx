@@ -19,7 +19,7 @@ import axiosInstance from '~/api/axiosInstance'
 import useRafflesStore from '~/store/useRafflesStore'
 import { Preloader } from 'konsta/react'
 // New import for fingerprint
-import FingerprintJS from '@fingerprintjs/fingerprintjs-pro'
+import FingerprintJS from '@fingerprintjs/fingerprintjs'
 
 interface IntroPageProps {
     onComplete: () => void
