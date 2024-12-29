@@ -384,7 +384,7 @@ export default function ProductPage() {
                 setCurrentPoints(pointsAwarded)
                 triggerXPAnimation()
             }
-            await saveResponse(academy.id, question.academyQuestionId, selectedChoiceId, initData.user.id, correct, pointsAwarded) // barde
+            await saveResponse(academy.id, question.academyQuestionId, selectedChoiceId, initData.user.id, correct, pointsAwarded)
             setInitialAnswers(
                 initialAnswers.map((q, qi) =>
                     qi === questionIndex
@@ -585,7 +585,7 @@ export default function ProductPage() {
             }
             return (
                 <SwiperSlide key={`initial-question-${questionIndex}`}>
-                    <Card className="!my-2 !mx-1 !p-4 !rounded-2xl !bg-gray-50 dark:!bg-gray-800 !border !border-gray-200 dark:!border-gray-700 !shadow-sm !mb-12">
+                    <Card className="!mt-2 mb-4 !mx-1 !p-4 pb-2 !rounded-2xl !bg-gray-50 dark:!bg-gray-800 !border !border-gray-200 dark:!border-gray-700 !shadow-sm ">
                         <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">{question.question}</h2>
                         <ul className="list-disc list-inside text-gray-900 dark:text-gray-100">
                             <li>
@@ -606,6 +606,20 @@ export default function ProductPage() {
                             })}
                         </ul>
                     </Card>
+                    <Button
+                        large
+                        rounded
+                        outline
+                        onClick={handleNextClick}
+                        className="mb-4"
+                        style={{
+                            background: 'linear-gradient(180deg, #D52AE9 0%, #2E3772 100%)',
+                            border: '1px solid #C400B2',
+                            color: '#fff'
+                        }}
+                    >
+                        SEE QUESTION
+                    </Button>
                 </SwiperSlide>
             )
         }
