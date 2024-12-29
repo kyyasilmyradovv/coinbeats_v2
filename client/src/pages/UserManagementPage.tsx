@@ -12,6 +12,7 @@ interface RowInterface {
     telegramUserId: number
     name: string
     roles: string[]
+    updatedAt: string
 }
 interface FiltersInterface {
     roles: string[]
@@ -262,12 +263,13 @@ const UserManagementPage: React.FC = () => {
                     scrollbarColor: '#555 #333'
                 }}
             >
-                <Table className="!w-full border">
+                <Table className="!w-full border" style={{ tableLayout: 'fixed' }}>
                     <thead style={{ position: 'sticky', top: 0, background: 'black', zIndex: 100 }}>
                         <TableRow>
-                            <TableCell style={{ fontWeight: 'bold', color: '#fff', width: '60%' }}>Name</TableCell>
-                            <TableCell style={{ fontWeight: 'bold', color: '#fff', width: '25%' }}>Roles</TableCell>
-                            <TableCell style={{ fontWeight: 'bold', color: '#fff', textAlign: 'center' }}>Actions</TableCell>
+                            <TableCell style={{ fontWeight: 'bold', color: '#fff', width: '35%' }}>Name</TableCell>
+                            <TableCell style={{ fontWeight: 'bold', color: '#fff', width: '20%' }}>Roles</TableCell>
+                            <TableCell style={{ fontWeight: 'bold', color: '#fff', width: '25%' }}>Login</TableCell>
+                            <TableCell style={{ fontWeight: 'bold', color: '#fff', width: '20%' }}>Actions</TableCell>
                         </TableRow>
                     </thead>
                     <tbody>
@@ -282,7 +284,7 @@ const UserManagementPage: React.FC = () => {
                                     e.currentTarget.style.backgroundColor = 'black'
                                 }}
                             >
-                                <TableCell>@{row.name}</TableCell>
+                                <TableCell style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>@{row.name}</TableCell>
                                 <TableCell>
                                     <div
                                         key={index}
@@ -307,7 +309,8 @@ const UserManagementPage: React.FC = () => {
                                         ))}
                                     </div>
                                 </TableCell>
-                                <TableCell className="flex items-center justify-center">
+                                <TableCell>{row.updatedAt && new Date(row.updatedAt).toLocaleDateString()}</TableCell>
+                                <TableCell className="flex items-center ml-4 ">
                                     <Icon
                                         icon="mdi:delete"
                                         className="w-6 h-6 text-red-400"
@@ -338,7 +341,7 @@ const UserManagementPage: React.FC = () => {
 
                         {loading && (
                             <TableRow>
-                                <TableCell className="text-center" colSpan={3}>
+                                <TableCell className="text-center" colSpan={4}>
                                     <Preloader size="small" />
                                 </TableCell>
                             </TableRow>
@@ -346,7 +349,7 @@ const UserManagementPage: React.FC = () => {
 
                         {!hasMore && !loading && (
                             <TableRow>
-                                <TableCell className="text-center" style={{ opacity: 0.7 }} colSpan={3}>
+                                <TableCell className="text-center" style={{ opacity: 0.7 }} colSpan={4}>
                                     No more data available
                                 </TableCell>
                             </TableRow>
