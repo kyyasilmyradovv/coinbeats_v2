@@ -57,6 +57,7 @@ export default function ProductPage() {
     const [raffle, setRaffle] = useState<any>(null)
     const swiperRef = useRef<any>(null)
     const [loading, setLoading] = useState(false)
+
     const { userId, referralCode, twitterAuthenticated } = useUserStore((state) => ({
         userId: state.userId,
         referralCode: state.referralCode,
@@ -135,6 +136,10 @@ export default function ProductPage() {
     const checkAnswerButtonRefs = useRef<(HTMLDivElement | null)[]>([])
     const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false)
     const [feedbackText, setFeedbackText] = useState('')
+
+    const scrollToInitial = () => {
+        window.scrollTo({ top: 0, left: 0, behavior: 'smooth' })
+    }
 
     const coinsEarnedAnimation = {
         loop: true,
@@ -243,6 +248,7 @@ export default function ProductPage() {
     }
 
     const handlePrevClick = () => {
+        scrollToInitial()
         if (currentSlideIndex > 0 && swiperRef.current?.swiper) {
             swiperRef.current.swiper.slidePrev()
             setErrorMessage('')
@@ -250,6 +256,7 @@ export default function ProductPage() {
     }
 
     const handleNextClick = () => {
+        scrollToInitial()
         const isQuizSlide = currentSlideIndex % 2 === 1
         const questionIndex = Math.floor(currentSlideIndex / 2)
         if (isQuizSlide) {
@@ -403,6 +410,7 @@ export default function ProductPage() {
             setMaxAllowedSlide((prev) => Math.min(prev + 2, initialAnswers.length * 2 - 1))
             setErrorMessage('')
             setLoading(false)
+            scrollToInitial()
         } catch (error) {
             setLoading(false)
             console.error('Error checking answer:', error)
@@ -410,6 +418,7 @@ export default function ProductPage() {
     }
 
     const handleNextQuestion = () => {
+        scrollToInitial()
         const totalSlides = initialAnswers.length * 2
         if (currentSlideIndex >= totalSlides - 1) {
             handleCompleteAcademy()
@@ -430,6 +439,7 @@ export default function ProductPage() {
     }, [userId])
 
     const handleCompleteAcademy = async () => {
+        scrollToInitial()
         if (loading) return
         setLoading(true)
         try {
@@ -471,6 +481,7 @@ export default function ProductPage() {
     }
 
     const handleSlideChange = (swiper: any) => {
+        scrollToInitial()
         const newIndex = swiper.activeIndex
         setCurrentSlideIndex(newIndex)
         const newQuestionIndex = Math.floor(newIndex / 2)
@@ -615,7 +626,8 @@ export default function ProductPage() {
                         style={{
                             background: 'linear-gradient(180deg, #D52AE9 0%, #2E3772 100%)',
                             border: '1px solid #C400B2',
-                            color: '#fff'
+                            color: '#fff',
+                            marginBottom: '60px'
                         }}
                     >
                         SEE QUESTION
@@ -898,9 +910,8 @@ export default function ProductPage() {
     const handleTabChange = (newFilter: string) => {
         handleNavigationAttempt(newFilter, () => setActiveFilter(newFilter))
     }
-
     return (
-        <Page className="bg-white dark:bg-gray-900">
+        <div className="bg-white dark:bg-gray-900">
             <Navbar handleNavigationAttempt={handleNavigationAttempt} />
             <Sidebar />
             {academy && (
@@ -1052,7 +1063,6 @@ export default function ProductPage() {
                     </div>
                 </div>
             )}
-            <BottomTabBar activeTab={activeFilter} setActiveTab={setActiveFilter} handleNavigationAttempt={handleNavigationAttempt} />
 
             {showXPAnimation && (
                 <div className="fixed inset-0 flex flex-col items-center justify-center z-50 animate-bookmark" style={{ pointerEvents: 'none' }}>
@@ -1083,6 +1093,6 @@ export default function ProductPage() {
                 button={<Button onClick={() => setNotificationOpen(false)}>Close</Button>}
                 onClose={() => setNotificationOpen(false)}
             />
-        </Page>
+        </div>
     )
 }
