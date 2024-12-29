@@ -1256,21 +1256,12 @@ exports.checkAnswer = async (req, res, next) => {
   }
 
   try {
-    // Check if the user exists by telegramUserId
+    // Check if the user exists
     let user = await prisma.user.findUnique({
       where: { telegramUserId: telegramUserId },
+      select: { id: true },
     });
-
-    // If the user doesn't exist, create a new user
-    if (!user) {
-      user = await prisma.user.create({
-        data: {
-          telegramUserId: telegramUserId,
-          roles: ['USER'],
-          name: '',
-        },
-      });
-    }
+    if (!user) return next(createError(401, 'Unauthorized'));
 
     const userId = user.id;
 
@@ -1299,9 +1290,6 @@ exports.checkAnswer = async (req, res, next) => {
         .json({ message: 'Correct choice not found for the question.' });
     }
 
-    // Check if the user's choice is correct
-    const isCorrect = correctChoice.id === choiceId;
-
     // Get the maximum points for the question
     const question = await prisma.academyQuestion.findUnique({
       where: { id: questionId },
@@ -1324,7 +1312,7 @@ exports.checkAnswer = async (req, res, next) => {
 
     // Return the result to the client with the correctChoiceId
     res.json({
-      correct: isCorrect,
+      correct: correctChoice.id === choiceId,
       maxPoints,
       correctChoiceId: correctChoice.id,
     });
@@ -1337,9 +1325,7 @@ exports.checkAnswer = async (req, res, next) => {
 exports.saveUserResponse = async (req, res, next) => {
   const { academyId, questionId, choiceId, isCorrect, pointsAwarded } =
     req.body;
-  let telegramUserId = req.user
-    ? req.user.telegramUserId
-    : req.body.telegramUserId;
+  let telegramUserId = req.user?.telegramUserId || req.body?.telegramUserId;
 
   if (!telegramUserId || !academyId || !questionId || !choiceId) {
     return res
@@ -1348,35 +1334,18 @@ exports.saveUserResponse = async (req, res, next) => {
   }
 
   try {
-    // Convert telegramUserId to BigInt
-    telegramUserId = BigInt(telegramUserId);
-
-    // Check if the user exists by telegramUserId
+    // Check if the user exists
     let user = await prisma.user.findUnique({
       where: { telegramUserId: telegramUserId },
+      select: { id: true },
     });
-
-    // If the user doesn't exist, create a new user
-    if (!user) {
-      user = await prisma.user.create({
-        data: {
-          telegramUserId: telegramUserId,
-          roles: ['USER'],
-          name: '',
-        },
-      });
-    }
+    if (!user) return next(createError(401, 'Unauthorized'));
 
     const userId = user.id;
 
-    // Check if the user has already submitted an answer for this question
+    /// Check if the user has already submitted an answer for this question
     const existingResponse = await prisma.userResponse.findFirst({
-      where: {
-        userId: userId,
-        choice: {
-          academyQuestionId: parseInt(questionId, 10),
-        },
-      },
+      where: { userId, choice: { academyQuestionId: questionId } },
     });
 
     if (existingResponse) {
@@ -1388,10 +1357,10 @@ exports.saveUserResponse = async (req, res, next) => {
     // Save the user's response with points
     await prisma.userResponse.create({
       data: {
-        userId: userId,
-        choiceId: parseInt(choiceId, 10),
-        isCorrect: isCorrect,
-        pointsAwarded: pointsAwarded,
+        userId,
+        choiceId,
+        isCorrect,
+        pointsAwarded,
       },
     });
 

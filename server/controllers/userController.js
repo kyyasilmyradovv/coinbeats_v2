@@ -75,6 +75,7 @@ exports.getAllUsers = async (req, res, next) => {
         telegramUserId: true,
         name: true,
         roles: true,
+        updatedAt: true,
       },
       take: +limit || 0,
       skip: +offset || 0,
