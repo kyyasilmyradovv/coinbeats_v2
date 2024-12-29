@@ -410,7 +410,7 @@ export default function ProductPage() {
             setMaxAllowedSlide((prev) => Math.min(prev + 2, initialAnswers.length * 2 - 1))
             setErrorMessage('')
             setLoading(false)
-            scrollToInitial()
+            // scrollToInitial()
         } catch (error) {
             setLoading(false)
             console.error('Error checking answer:', error)
@@ -418,7 +418,6 @@ export default function ProductPage() {
     }
 
     const handleNextQuestion = () => {
-        // scrollToInitial()
         const totalSlides = initialAnswers.length * 2
         if (currentSlideIndex >= totalSlides - 1) {
             handleCompleteAcademy()
@@ -430,6 +429,7 @@ export default function ProductPage() {
                 console.error('Swiper reference is not available.')
             }
         }
+        scrollToInitial()
     }
 
     useEffect(() => {
