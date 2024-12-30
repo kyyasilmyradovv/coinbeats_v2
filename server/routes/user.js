@@ -11,6 +11,7 @@ const {
   getUserDetailsById,
   getUserByTelegramId,
   updateUserRoles,
+  updateIpFingerprint,
   registerCreator,
   userInteraction,
   confirmEmail,
@@ -77,6 +78,10 @@ router.post(
   authenticateToken,
   authorizeRoles('ADMIN', 'SUPERADMIN'),
   asyncHandler(updateUserRoles)
+);
+router.post(
+  '/update-ip-fingerprint',
+  asyncHandler(updateIpFingerprint) // New controller function
 );
 router.post('/register-creator', asyncHandler(registerCreator));
 router.post('/interaction', asyncHandler(userInteraction));

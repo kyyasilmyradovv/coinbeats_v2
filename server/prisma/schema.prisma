@@ -48,6 +48,7 @@ model User {
   lastWeekPointCount        BigInt?                @default(0)
   registrationIp            String?
   registrationFingerprint   String?
+  isBanned                  Boolean       @default(false)
 }
 
 model TwitterAccount {

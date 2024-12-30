@@ -1452,3 +1452,58 @@ exports.updateWalletAddresses = async (req, res, next) => {
     next(createError(500, 'Internal Server Error'));
   }
 };
+
+exports.updateIpFingerprint = async (req, res, next) => {
+  try {
+    const telegramUserIdHeader = req.headers['x-telegram-user-id'];
+    if (!telegramUserIdHeader) {
+      return res.status(400).json({ error: 'Telegram User ID is required' });
+    }
+
+    // Convert to BigInt
+    const telegramUserId = BigInt(telegramUserIdHeader);
+
+    // The fingerprint from request body
+    const { fingerprint } = req.body;
+
+    // Attempt to find user
+    const user = await prisma.user.findUnique({
+      where: { telegramUserId },
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Capture IP from request
+    const ipAddress =
+      req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+
+    // Build an update object
+    // Only set ip or fingerprint if missing
+    let updateData = {};
+
+    if (!user.registrationIp) {
+      updateData['registrationIp'] = ipAddress;
+    }
+    if (!user.registrationFingerprint && fingerprint) {
+      updateData['registrationFingerprint'] = fingerprint;
+    }
+
+    // If nothing to update, just return the existing user
+    if (Object.keys(updateData).length === 0) {
+      return res.json({ user });
+    }
+
+    // Otherwise, update user
+    const updatedUser = await prisma.user.update({
+      where: { id: user.id },
+      data: updateData,
+    });
+
+    return res.json({ user: updatedUser });
+  } catch (error) {
+    console.error('Error in updateIpFingerprint:', error);
+    next(createError(500, 'Failed to update IP/fingerprint'));
+  }
+};

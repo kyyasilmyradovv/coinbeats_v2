@@ -18,8 +18,7 @@ import useNotificationStore from '../store/useNotificationStore'
 import axiosInstance from '~/api/axiosInstance'
 import useRafflesStore from '~/store/useRafflesStore'
 import { Preloader } from 'konsta/react'
-// New import for fingerprint
-import FingerprintJS from '@fingerprintjs/fingerprintjs'
+import FingerprintJS from '@fingerprintjs/fingerprintjs' // For fingerprint capturing
 
 interface IntroPageProps {
     onComplete: () => void
@@ -29,7 +28,7 @@ const IntroPage: React.FC<IntroPageProps> = ({ onComplete }) => {
     const initData = useInitData()
     const initializedRef = useRef(false)
 
-    // Existing store hooks
+    // Store hooks
     const { fetchAcademiesAndPreloadImages } = useAcademiesStore()
     const { fetchUserPoints } = usePointsStore()
     const { fetchUserRaffles } = useRafflesStore()
@@ -38,21 +37,25 @@ const IntroPage: React.FC<IntroPageProps> = ({ onComplete }) => {
     const { fetchUserVerificationTasks } = useUserVerificationStore()
     const { fetchCategoriesAndChains } = useCategoryChainStore()
 
+    // The main store from which we fetch user data
     const {
+        userId,
+        referralCompletionChecked,
+        registrationIp,
+        registrationFingerprint,
         fetchUser,
         registerUser,
         fetchTwitterAuthStatus,
         setTwitterAuthenticated,
-        referralCompletionChecked,
         checkReferralCompletion,
-        userId,
-        fetchUserLevel
+        fetchUserLevel,
+        updateUserIpFingerprint
     } = useUserStore()
+
     const { startSession } = useSessionStore()
     const { addNotifications } = useNotificationStore()
 
     useEffect(() => {
-        // Ensure we only run once and that initData is available
         if (!initData || !initData.user || initializedRef.current) return
         initializedRef.current = true
 
@@ -65,7 +68,7 @@ const IntroPage: React.FC<IntroPageProps> = ({ onComplete }) => {
         }
         removeSpinner()
 
-        // Parse TappAds parameters if any
+        // TappAds parameters
         let tappadsPublisher: string | null = null
         let tappadsClickId: string | null = null
 
@@ -76,11 +79,8 @@ const IntroPage: React.FC<IntroPageProps> = ({ onComplete }) => {
                 tappadsClickId = match[2]
             }
         }
-
-        // Store tappads info in sessionStore for later use
         useSessionStore.setState({ tappadsPublisher, tappadsClickId })
 
-        // Helper to load the fingerprint
         const loadFingerprint = async (): Promise<string | null> => {
             try {
                 const fp = await FingerprintJS.load()
@@ -98,7 +98,7 @@ const IntroPage: React.FC<IntroPageProps> = ({ onComplete }) => {
                 const username = initData.user.username || initData.user.firstName || initData.user.lastName || 'Guest'
                 const startParam = initData.startParam || null
 
-                // Capture fingerprint
+                // Capture the fingerprint first
                 const fingerprint = await loadFingerprint()
                 console.log('Fingerprint captured:', fingerprint)
 
@@ -108,14 +108,15 @@ const IntroPage: React.FC<IntroPageProps> = ({ onComplete }) => {
                 let userRoles: string[] = ['USER']
 
                 try {
-                    // Attempt to fetch existing user data
+                    // Attempt to fetch existing user
                     await fetchUser(telegramUserId)
+
                     const roles = useUserStore.getState().roles
                     userRoles = roles || ['USER']
                 } catch (error: any) {
-                    // If user does not exist (404), register with fingerprint
+                    // If user does not exist => 404
                     if (error.response && error.response.status === 404) {
-                        // User not found, register
+                        // Register with fingerprint
                         await registerUser(telegramUserId, username, startParam, fingerprint || undefined)
                         const roles = useUserStore.getState().roles
                         userRoles = roles || ['USER']
@@ -141,15 +142,14 @@ const IntroPage: React.FC<IntroPageProps> = ({ onComplete }) => {
                 }
 
                 // Start session
-                const sessionStartTime = Date.now()
                 startSession({
-                    sessionStartTime,
+                    sessionStartTime: Date.now(),
                     userId: telegramUserId,
                     username: username,
                     roles: userRoles
                 })
 
-                // Check if user came back from Twitter auth
+                // If user came back from Twitter auth
                 if (startParam === 'twitterAuthSuccess') {
                     setTwitterAuthenticated(true)
                     await fetchTwitterAuthStatus()
@@ -157,6 +157,21 @@ const IntroPage: React.FC<IntroPageProps> = ({ onComplete }) => {
 
                 // Attempt to load user level
                 await fetchUserLevel()
+
+                // After we have the user in the store,
+                // check if IP/fingerprint are missing
+                if (!registrationIp || !registrationFingerprint) {
+                    // We pass the local 'fingerprint' we loaded
+                    if (fingerprint) {
+                        console.log('IP or fingerprint is missing on the DB. Attempting update...')
+                        await updateUserIpFingerprint(fingerprint)
+
+                        // ---- LOGGING OUT AFTER UPDATE ----
+                        const updatedStore = useUserStore.getState()
+                        console.log('Fingerprint after update:', updatedStore.registrationFingerprint)
+                        console.log('IP after update:', updatedStore.registrationIp)
+                    }
+                }
             } catch (e) {
                 console.error('Error initializing user session:', e)
                 useUserStore.setState({
@@ -179,10 +194,8 @@ const IntroPage: React.FC<IntroPageProps> = ({ onComplete }) => {
 
         const fetchData = async () => {
             try {
-                // Initialize user session
                 await initializeUserSession()
 
-                // Parallel data fetch
                 await Promise.all([
                     fetchAcademiesAndPreloadImages(),
                     fetchUserPoints(),
@@ -200,7 +213,6 @@ const IntroPage: React.FC<IntroPageProps> = ({ onComplete }) => {
             }
         }
 
-        // Once data is fetched, wait 4s then call onComplete
         fetchData().then(() => {
             setTimeout(() => {
                 onComplete()
@@ -222,10 +234,13 @@ const IntroPage: React.FC<IntroPageProps> = ({ onComplete }) => {
         fetchUser,
         registerUser,
         setTwitterAuthenticated,
-        startSession
+        startSession,
+        registrationIp,
+        registrationFingerprint,
+        updateUserIpFingerprint
     ])
 
-    // Notifications fetch if user is known
+    // Notifications if user is known
     useEffect(() => {
         const fetchNotificationsAsync = async () => {
             if (userId) {
@@ -245,11 +260,10 @@ const IntroPage: React.FC<IntroPageProps> = ({ onComplete }) => {
                 }
             }
         }
-
         fetchNotificationsAsync()
     }, [userId, addNotifications])
 
-    // Check referral completion if not done yet
+    // Referral completion
     useEffect(() => {
         if (userId && !referralCompletionChecked) {
             checkReferralCompletion(userId)

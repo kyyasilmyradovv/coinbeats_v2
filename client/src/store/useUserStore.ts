@@ -8,18 +8,23 @@ import useSessionStore from './useSessionStore'
 type UserRole = 'USER' | 'CREATOR' | 'ADMIN' | 'SUPERADMIN'
 
 interface UserState {
+    // Basic user identity
     userId: number | null
     telegramUserId: bigint | null
     username: string
     email: string
     emailConfirmed: boolean
     roles: UserRole[]
+
+    // Points, raffles, tasks
     totalPoints: number
     totalRaffles: number
     points: any[]
     userPoints: any[]
     userRaffles: any[]
     bookmarks: Array<any>
+
+    // Auth & other state
     authenticated: boolean
     token: string | null
     hasAcademy: boolean
@@ -27,20 +32,33 @@ interface UserState {
     referralPointsAwarded: number
     referralCode: string | null
     loginStreakData: any
+
+    // Twitter auth
     twitterAuthenticated: boolean
     twitterUsername: string | null
     twitterUserId: string | null
 
+    // Wallet addresses
     erc20WalletAddress: string | null
     solanaWalletAddress: string | null
     tonWalletAddress: string | null
 
-    // New properties for level-up functionality
+    // Character level
     characterLevelId: number | null
     characterLevelName: string | null
 
+    // *** NEW FIELDS ***
+    registrationIp: string | null
+    registrationFingerprint: string | null
+    isBanned: boolean // default false
+
+    // Referral
+    referralCompletionChecked: boolean
+
+    // Methods
     setUser: (update: Partial<UserState> | ((state: UserState) => Partial<UserState>)) => void
     setBookmarks: (bookmarks: Array<any>) => void
+
     loginUser: (data: {
         userId: number
         telegramUserId: bigint
@@ -59,12 +77,13 @@ interface UserState {
         tonWalletAddress?: string | null
         characterLevelId?: number | null
         characterLevelName?: string | null
+        // Not strictly needed here, but you could add the new fields if you pass them in loginUser
     }) => void
+
     logoutUser: () => void
     updateUserRoles: (roles: UserRole[]) => void
     toggleSidebar: () => void
     resetReferralPointsAwarded: () => void
-    referralCompletionChecked: boolean
     setUserReferralCompletionChecked: (checked: boolean) => void
     checkReferralCompletion: (userId: number) => Promise<void>
     setTwitterAuthenticated: (authenticated: boolean) => void
@@ -72,9 +91,9 @@ interface UserState {
 
     updateWalletAddresses: (addresses: { erc20WalletAddress?: string; solanaWalletAddress?: string; tonWalletAddress?: string }) => Promise<void>
 
-    // API methods
+    // API
     fetchUser: (telegramUserId: number) => Promise<void>
-    registerUser: (telegramUserId: number, username: string, referralCode?: string | null) => Promise<void>
+    registerUser: (telegramUserId: number, username: string, referralCode?: string | null, fingerprint?: string | null) => Promise<void>
     handleLoginStreak: () => Promise<{ userVerification: any; point: any }>
     getCurrentUser: () => Promise<void>
     addBookmark: (academyId: number) => Promise<void>
@@ -83,45 +102,66 @@ interface UserState {
     fetchUserRaffles: (userId: number) => Promise<void>
     fetchTwitterAuthStatus: () => Promise<void>
     removeTwitterAccount: () => Promise<string>
-
-    fetchUserLevel: () => Promise<void> // New method to fetch user level
+    fetchUserLevel: () => Promise<void>
 
     updateTotalPoints: (points: number) => void
     updateTotalRaffles: (amount: number) => void
+
+    updateUserIpFingerprint: (fingerprint: string) => Promise<void>
 }
 
 const useUserStore = create<UserState>()(
     devtools((set, get) => ({
+        // Basic user identity
         userId: null,
         telegramUserId: null,
         username: '',
         email: '',
         emailConfirmed: false,
         roles: ['USER'],
+
+        // Points, raffles, tasks
         totalPoints: 0,
         totalRaffles: 0,
         points: [],
         userPoints: [],
         userRaffles: [],
         bookmarks: [],
+
+        // Auth & other state
         authenticated: false,
         token: null,
         hasAcademy: false,
         sidebarOpened: false,
         referralPointsAwarded: 0,
-        referralCompletionChecked: true,
         referralCode: null,
         loginStreakData: null,
+
+        // Twitter
         twitterAuthenticated: false,
         twitterUsername: null,
         twitterUserId: null,
 
+        // Wallet addresses
         erc20WalletAddress: null,
         solanaWalletAddress: null,
         tonWalletAddress: null,
 
-        characterLevelId: null, // New property
-        characterLevelName: null, // New property
+        // Character level
+        characterLevelId: null,
+        characterLevelName: null,
+
+        // *** NEW FIELDS ***
+        registrationIp: null,
+        registrationFingerprint: null,
+        isBanned: false, // default false
+
+        // Referral
+        referralCompletionChecked: true,
+
+        // ==========================
+        //           Methods
+        // ==========================
 
         setUser: (update) => set((state) => (typeof update === 'function' ? { ...state, ...update(state) } : { ...state, ...update })),
 
@@ -174,6 +214,8 @@ const useUserStore = create<UserState>()(
                 tonWalletAddress: tonWalletAddress || null,
                 characterLevelId: characterLevelId || null,
                 characterLevelName: characterLevelName || null
+                // If you want to set isBanned, registrationIp, or registrationFingerprint here,
+                // you can do so if your login endpoint returns them.
             }),
 
         logoutUser: () =>
@@ -200,7 +242,10 @@ const useUserStore = create<UserState>()(
                 solanaWalletAddress: null,
                 tonWalletAddress: null,
                 characterLevelId: null,
-                characterLevelName: null
+                characterLevelName: null,
+                registrationIp: null,
+                registrationFingerprint: null,
+                isBanned: false
             }),
 
         updateUserRoles: (roles) => set({ roles: roles.length > 0 ? roles : ['USER'] }),
@@ -213,8 +258,8 @@ const useUserStore = create<UserState>()(
             set({ referralCompletionChecked: checked })
         },
 
-        // API call to check referral completion for a user
-        checkReferralCompletion: async (userId) => {
+        // Check referral completion
+        checkReferralCompletion: async (userId: number) => {
             try {
                 const response = await axiosInstance.get(`/api/users/${userId}/check-referral-completion`)
                 if (response.status === 200) {
@@ -226,7 +271,11 @@ const useUserStore = create<UserState>()(
             }
         },
 
-        // Fetches user data by Telegram user ID
+        // ==========================
+        //           API
+        // ==========================
+
+        // 1) fetchUser
         fetchUser: async (telegramUserId) => {
             try {
                 const response = await axiosInstance.get(`/api/users/${telegramUserId}`)
@@ -245,10 +294,16 @@ const useUserStore = create<UserState>()(
                         erc20WalletAddress,
                         solanaWalletAddress,
                         tonWalletAddress,
-                        characterLevel, // Include character level
+                        characterLevel, // includes { id, levelName }
                         raffleAmount,
-                        pointCount
+                        pointCount,
+
+                        // *** NEW FIELDS from server ***
+                        registrationIp,
+                        registrationFingerprint,
+                        isBanned
                     } = response.data
+
                     const hasAcademy = academies && academies.length > 0
                     const totalPoints = pointCount || 0
 
@@ -274,7 +329,12 @@ const useUserStore = create<UserState>()(
                         solanaWalletAddress: solanaWalletAddress || null,
                         tonWalletAddress: tonWalletAddress || null,
                         characterLevelId: characterLevel?.id || null,
-                        characterLevelName: characterLevel?.levelName || null
+                        characterLevelName: characterLevel?.levelName || null,
+
+                        // *** SET NEW FIELDS IN STATE ***
+                        registrationIp: registrationIp || null,
+                        registrationFingerprint: registrationFingerprint || null,
+                        isBanned: typeof isBanned === 'boolean' ? isBanned : false
                     })
                 }
             } catch (error: any) {
@@ -283,28 +343,43 @@ const useUserStore = create<UserState>()(
             }
         },
 
-        // Registers a new user
+        // 2) registerUser
         registerUser: async (telegramUserId: number, username: string, referralCode: string | null = null, fingerprint: string | null = null) => {
             try {
+                // The server side captures IP, so we only pass the fingerprint (if any).
                 const registerResponse = await axiosInstance.post('/api/auth/register', {
                     telegramUserId,
                     username,
                     referralCode,
-                    fingerprint // Pass the fingerprint if available
+                    fingerprint
                 })
 
-                // Log the API response
                 console.log('Register Response Data:', registerResponse.data)
-
                 const { user: userData, pointsAwardedToUser } = registerResponse.data
-
-                // Log the points awarded
                 console.log('Points Awarded to User:', pointsAwardedToUser)
 
-                const hasAcademy = userData.academies && userData.academies.length > 0
-                const totalPoints = userData.points ? userData.points.reduce((sum: number, point: any) => sum + point.value, 0) : 0
+                const {
+                    id,
+                    name,
+                    email,
+                    emailConfirmed,
+                    roles,
+                    academies,
+                    points,
+                    referralCode: userReferralCode,
+                    raffleAmount,
+                    erc20WalletAddress,
+                    solanaWalletAddress,
+                    tonWalletAddress,
+                    characterLevel,
+                    registrationIp,
+                    registrationFingerprint,
+                    isBanned
+                } = userData
 
-                // Use functional set state to merge with existing state
+                const hasAcademy = academies && academies.length > 0
+                const totalPoints = points ? points.reduce((sum: number, p: any) => sum + p.value, 0) : 0
+
                 set((state) => ({
                     ...state,
                     userId: userData.id,
@@ -327,10 +402,14 @@ const useUserStore = create<UserState>()(
                     solanaWalletAddress: userData.solanaWalletAddress || null,
                     tonWalletAddress: userData.tonWalletAddress || null,
                     characterLevelId: userData.characterLevel?.id || null,
-                    characterLevelName: userData.characterLevel?.levelName || null
+                    characterLevelName: userData.characterLevel?.levelName || null,
+
+                    // *** SET NEW FIELDS ***
+                    registrationIp: registrationIp || null,
+                    registrationFingerprint: registrationFingerprint || null,
+                    isBanned: typeof isBanned === 'boolean' ? isBanned : false
                 }))
 
-                // Log the updated state
                 console.log('Updated User State:', get())
             } catch (error: any) {
                 console.error('Error registering user:', error)
@@ -338,7 +417,7 @@ const useUserStore = create<UserState>()(
             }
         },
 
-        // Handles the user's login streak
+        // 3) handleLoginStreak
         handleLoginStreak: async () => {
             try {
                 const response = await axiosInstance.post('/api/users/handle-login-streak')
@@ -350,16 +429,15 @@ const useUserStore = create<UserState>()(
 
                     set({
                         totalPoints,
-                        totalRaffles: get().totalRaffles || 0 + point / 100,
+                        totalRaffles: get().totalRaffles || 0 + point.value / 100,
                         points: [...currentPoints, point],
-                        loginStreakData: userVerification // Store login streak data if needed
+                        loginStreakData: userVerification
                     })
 
                     // Fetch updated user level after awarding points
                     await get().fetchUserLevel()
                 }
 
-                // Return userVerification and point so the component can use them
                 return { userVerification, point }
             } catch (error: any) {
                 console.error('Error handling login streak:', error)
@@ -367,7 +445,7 @@ const useUserStore = create<UserState>()(
             }
         },
 
-        // Fetches the current authenticated user's data
+        // 4) getCurrentUser
         getCurrentUser: async () => {
             try {
                 const response = await axiosInstance.get('/api/users/me')
@@ -380,9 +458,9 @@ const useUserStore = create<UserState>()(
                     email: userData.email,
                     emailConfirmed: userData.emailConfirmed,
                     roles: userData.roles,
-                    totalPoints: userData.points ? userData.points.reduce((sum: number, point: any) => sum + point.value, 0) : 0,
+                    totalPoints: userData.points ? userData.points.reduce((sum: number, p: any) => sum + p.value, 0) : 0,
                     points: userData.points || [],
-                    totalRaffles: userData?.raffleAmount,
+                    totalRaffles: userData.raffleAmount,
                     userPoints: [],
                     userRaffles: [],
                     bookmarks: userData.bookmarkedAcademies || [],
@@ -393,34 +471,38 @@ const useUserStore = create<UserState>()(
                     solanaWalletAddress: userData.solanaWalletAddress || null,
                     tonWalletAddress: userData.tonWalletAddress || null,
                     characterLevelId: userData.characterLevel?.id || null,
-                    characterLevelName: userData.characterLevel?.levelName || null
+                    characterLevelName: userData.characterLevel?.levelName || null,
+
+                    // If your back-end includes them in /me:
+                    registrationIp: userData.registrationIp || null,
+                    registrationFingerprint: userData.registrationFingerprint || null,
+                    isBanned: typeof userData.isBanned === 'boolean' ? userData.isBanned : false
                 })
             } catch (error: any) {
                 console.error('Error fetching current user:', error)
             }
         },
 
-        // Adds a bookmark to an academy for the user
-        addBookmark: async (academyId) => {
+        // 5) addBookmark
+        addBookmark: async (academyId: number) => {
             try {
                 const telegramUserId = get().telegramUserId
-                // Endpoint: POST /api/users/interaction (action 'bookmark')
                 await axiosInstance.post('/api/users/interaction', {
-                    telegramUserId: telegramUserId,
+                    telegramUserId,
                     action: 'bookmark',
-                    academyId: academyId
+                    academyId
                 })
-                // Optionally update bookmarks after adding
-                await get().fetchBookmarkedAcademies(telegramUserId!)
+                if (telegramUserId) {
+                    await get().fetchBookmarkedAcademies(Number(telegramUserId))
+                }
             } catch (error: any) {
                 console.error('Error adding bookmark:', error)
             }
         },
 
-        // Fetches the user's bookmarked academies
-        fetchBookmarkedAcademies: async (userId) => {
+        // 6) fetchBookmarkedAcademies
+        fetchBookmarkedAcademies: async (userId: number) => {
             try {
-                // Endpoint: GET /api/users/${userId}/bookmarked-academies
                 const response = await axiosInstance.get(`/api/users/${userId}/bookmarked-academies`)
                 set({ bookmarks: response.data })
             } catch (error: any) {
@@ -428,13 +510,12 @@ const useUserStore = create<UserState>()(
             }
         },
 
-        // Fetches user points breakdown
-        fetchUserPoints: async (userId) => {
+        // 7) fetchUserPoints
+        fetchUserPoints: async (userId: number) => {
             if (!userId) {
                 console.error('User ID is null or undefined, not fetching user points.')
                 return
             }
-
             try {
                 const response = await axiosInstance.get(`/api/points/breakdown/${userId}`)
                 console.log('Fetched Points:', response.data)
@@ -444,30 +525,36 @@ const useUserStore = create<UserState>()(
             }
         },
 
-        // Fetches user raffles
-        fetchUserRaffles: async (userId) => {
+        // 8) fetchUserRaffles
+        fetchUserRaffles: async (userId: number) => {
             if (!userId) {
-                console.error('User ID is null or undefined, not fetching user points.')
+                console.error('User ID is null or undefined, not fetching user raffles.')
                 return
             }
-
             try {
                 const response = await axiosInstance.get(`/api/raffle?userId=${userId}`)
                 console.log('Fetched Raffles:', response.data)
                 set({ userRaffles: response.data })
             } catch (error) {
-                console.error('Error fetching user points:', error)
+                console.error('Error fetching user raffles:', error)
             }
         },
 
-        updateTotalPoints: (points) => {
-            set((state) => ({ totalPoints: state.totalPoints + points, totalRaffles: state.totalRaffles + points / 100 }))
+        // Update total points/raffles in the store
+        updateTotalPoints: (points: number) => {
+            set((state) => ({
+                totalPoints: state.totalPoints + points,
+                totalRaffles: state.totalRaffles + points / 100
+            }))
         },
 
-        updateTotalRaffles: (amount) => {
-            set((state) => ({ totalRaffles: state.totalRaffles + amount }))
+        updateTotalRaffles: (amount: number) => {
+            set((state) => ({
+                totalRaffles: state.totalRaffles + amount
+            }))
         },
 
+        // 9) fetchTwitterAuthStatus
         fetchTwitterAuthStatus: async () => {
             try {
                 const telegramUserId = get().telegramUserId?.toString()
@@ -481,7 +568,6 @@ const useUserStore = create<UserState>()(
                     }
                 })
                 const { twitterAuthenticated, twitterUsername, twitterUserId } = response.data
-
                 set({
                     twitterAuthenticated,
                     twitterUsername,
@@ -492,6 +578,7 @@ const useUserStore = create<UserState>()(
             }
         },
 
+        // 10) removeTwitterAccount
         removeTwitterAccount: async () => {
             try {
                 const telegramUserId = get().telegramUserId?.toString()
@@ -504,7 +591,6 @@ const useUserStore = create<UserState>()(
                         'X-Telegram-User-Id': telegramUserId
                     }
                 })
-
                 if (response.status === 200) {
                     set({
                         twitterAuthenticated: false,
@@ -554,7 +640,7 @@ const useUserStore = create<UserState>()(
             }
         },
 
-        // New method to fetch user level
+        // 11) fetchUserLevel
         fetchUserLevel: async () => {
             try {
                 const telegramUserId = get().telegramUserId
@@ -562,7 +648,6 @@ const useUserStore = create<UserState>()(
                     console.error('Telegram User ID is required to fetch user level.')
                     return
                 }
-
                 const response = await axiosInstance.get(`/api/users/${telegramUserId}`)
                 if (response.status === 200 && response.data) {
                     const { characterLevel } = response.data
@@ -573,6 +658,38 @@ const useUserStore = create<UserState>()(
                 }
             } catch (error) {
                 console.error('Error fetching user level:', error)
+            }
+        },
+
+        updateUserIpFingerprint: async (fingerprint: string) => {
+            try {
+                const telegramUserId = get().telegramUserId
+                if (!telegramUserId) {
+                    console.error('Cannot update IP/fingerprint because user not found in store.')
+                    return
+                }
+
+                const response = await axiosInstance.post(
+                    '/api/users/update-ip-fingerprint',
+                    { fingerprint },
+                    {
+                        headers: {
+                            'X-Telegram-User-Id': telegramUserId.toString()
+                        }
+                    }
+                )
+                // The server returns { user: updatedUser } or something similar
+                const updatedUser = response.data.user
+                if (updatedUser) {
+                    // Merge new fields
+                    set({
+                        registrationIp: updatedUser.registrationIp || null,
+                        registrationFingerprint: updatedUser.registrationFingerprint || null,
+                        isBanned: updatedUser.isBanned ?? false
+                    })
+                }
+            } catch (error: any) {
+                console.error('Error updating IP/fingerprint:', error)
             }
         }
     }))
