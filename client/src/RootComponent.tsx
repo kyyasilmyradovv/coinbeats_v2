@@ -48,6 +48,9 @@ import useNotificationStore from './store/useNotificationStore'
 import OverallRaffleManagementPage from './pages/OverallRaffleManagementPage'
 import SurpriseBoxPage from './pages/SurpriseBoxPage'
 
+// 1) Import BannedPage
+import BannedPage from './components/BannedPage' // <-- You create this file
+
 function RootComponent() {
     const [isLoading, setIsLoading] = useState(true)
     const initData = useInitData()
@@ -133,6 +136,9 @@ function RootComponent() {
     // Import the telegramUserId from the session store
     const telegramUserId = useSessionStore((state) => state.userId)
 
+    // 2) Pull isBanned from user store
+    const isBanned = useUserStore((state) => state.isBanned)
+
     // Access notification store functions and state
     const { fetchNotifications } = useNotificationStore()
 
@@ -149,6 +155,11 @@ function RootComponent() {
                 <Spinner />
             </div>
         )
+    }
+
+    // 3) If isBanned is true, immediately render BannedPage
+    if (isBanned) {
+        return <BannedPage />
     }
 
     return (
