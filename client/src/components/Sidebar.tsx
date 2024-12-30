@@ -52,6 +52,7 @@ const Sidebar: React.FC = () => {
         SUPERADMIN: [
             { label: 'Dashboard', path: '/superadmin-dashboard' },
             { label: 'User Management', path: '/user-management' },
+            { label: 'Scam Management', path: '/scam-management' },
             { label: 'Academy Management', path: '/academy-management' },
             { label: 'Academy Statistics', path: '/academy-statistics' },
             { label: 'Academy Types', path: '/academy-types' },

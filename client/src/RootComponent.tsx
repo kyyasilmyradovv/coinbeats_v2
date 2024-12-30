@@ -15,6 +15,7 @@ import LoginPage from './pages/LoginPage'
 import SessionAnalysisPage from './pages/SessionAnalysisPage'
 import CreatorDashboardPage from './pages/CreatorDashboardPage'
 import UserManagementPage from './pages/UserManagementPage'
+import ScamManagementPage from './pages/ScamManagementPage'
 import InboxPage from './pages/InboxPage'
 import AcademyStatisticsPage from './pages/AcademyStatisticsPage'
 import UserProfilePage from './pages/UserProfilePage'
@@ -201,6 +202,14 @@ function RootComponent() {
                             element={
                                 <RouteGuard allowedRoles={['SUPERADMIN']}>
                                     <UserManagementPage theme={theme} setTheme={() => {}} setColorTheme={() => {}} />
+                                </RouteGuard>
+                            }
+                        />
+                        <Route
+                            path="/scam-management"
+                            element={
+                                <RouteGuard allowedRoles={['SUPERADMIN']}>
+                                    <ScamManagementPage />
                                 </RouteGuard>
                             }
                         />
