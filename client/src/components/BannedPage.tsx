@@ -34,6 +34,7 @@ const BannedPage: React.FC = () => {
                     textAlign: 'center',
                     color: 'white'
                 }}
+                className="m-10"
             >
                 <div style={{ marginBottom: '20px' }}>
                     <Lottie options={bunnyAnimationOptions} height={150} width={150} />
