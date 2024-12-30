@@ -79,10 +79,7 @@ router.post(
   authorizeRoles('ADMIN', 'SUPERADMIN'),
   asyncHandler(updateUserRoles)
 );
-router.post(
-  '/update-ip-fingerprint',
-  asyncHandler(updateIpFingerprint) // New controller function
-);
+router.post('/ip-fingerprint', asyncHandler(updateIpFingerprint));
 router.post('/register-creator', asyncHandler(registerCreator));
 router.post('/interaction', asyncHandler(userInteraction));
 router.get('/confirm-email', asyncHandler(confirmEmail));

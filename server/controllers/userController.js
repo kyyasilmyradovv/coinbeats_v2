@@ -1455,55 +1455,49 @@ exports.updateWalletAddresses = async (req, res, next) => {
 
 exports.updateIpFingerprint = async (req, res, next) => {
   try {
-    const telegramUserIdHeader = req.headers['x-telegram-user-id'];
-    if (!telegramUserIdHeader) {
-      return res.status(400).json({ error: 'Telegram User ID is required' });
+    let { telegramUserId, fingerprint } = req.body;
+    if (!telegramUserId) {
+      return next(createError(400, 'Missing telegramUserId'));
     }
 
     // Convert to BigInt
-    const telegramUserId = BigInt(telegramUserIdHeader);
+    telegramUserId = BigInt(telegramUserId);
 
-    // The fingerprint from request body
-    const { fingerprint } = req.body;
-
-    // Attempt to find user
+    // 1) find user
     const user = await prisma.user.findUnique({
       where: { telegramUserId },
     });
-
     if (!user) {
-      return res.status(404).json({ error: 'User not found' });
+      return next(createError(404, 'User not found'));
     }
 
-    // Capture IP from request
+    // 2) always overwrite
     const ipAddress =
       req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    console.log(
+      'Overwriting IP/fingerprint for user =>',
+      user.id,
+      ipAddress,
+      fingerprint
+    );
 
-    // Build an update object
-    // Only set ip or fingerprint if missing
-    let updateData = {};
-
-    if (!user.registrationIp) {
-      updateData['registrationIp'] = ipAddress;
-    }
-    if (!user.registrationFingerprint && fingerprint) {
-      updateData['registrationFingerprint'] = fingerprint;
-    }
-
-    // If nothing to update, just return the existing user
-    if (Object.keys(updateData).length === 0) {
-      return res.json({ user });
-    }
-
-    // Otherwise, update user
+    // 3) update user
     const updatedUser = await prisma.user.update({
       where: { id: user.id },
-      data: updateData,
+      data: {
+        registrationIp: ipAddress.toString(),
+        registrationFingerprint: fingerprint || null,
+      },
     });
 
-    return res.json({ user: updatedUser });
+    return res.json({
+      message: 'IP & fingerprint updated successfully',
+      userId: updatedUser.id,
+      ip: updatedUser.registrationIp,
+      fingerprint: updatedUser.registrationFingerprint,
+    });
   } catch (error) {
-    console.error('Error in updateIpFingerprint:', error);
+    console.error('Error updating IP/fingerprint:', error);
     next(createError(500, 'Failed to update IP/fingerprint'));
   }
 };

@@ -665,31 +665,22 @@ const useUserStore = create<UserState>()(
             try {
                 const telegramUserId = get().telegramUserId
                 if (!telegramUserId) {
-                    console.error('Cannot update IP/fingerprint because user not found in store.')
+                    console.error('No telegramUserId in store. Cannot update IP/fingerprint.')
                     return
                 }
 
-                const response = await axiosInstance.post(
-                    '/api/users/update-ip-fingerprint',
-                    { fingerprint },
-                    {
-                        headers: {
-                            'X-Telegram-User-Id': telegramUserId.toString()
-                        }
-                    }
-                )
-                // The server returns { user: updatedUser } or something similar
-                const updatedUser = response.data.user
-                if (updatedUser) {
-                    // Merge new fields
-                    set({
-                        registrationIp: updatedUser.registrationIp || null,
-                        registrationFingerprint: updatedUser.registrationFingerprint || null,
-                        isBanned: updatedUser.isBanned ?? false
-                    })
-                }
-            } catch (error: any) {
-                console.error('Error updating IP/fingerprint:', error)
+                // We'll assume you have an endpoint: POST /api/users/ip-fingerprint
+                // that captures the IP from req.headers / remoteAddress and overwrites the user.
+                await axiosInstance.post('/api/users/ip-fingerprint', {
+                    telegramUserId: telegramUserId.toString(), // or number
+                    fingerprint
+                })
+
+                // Optionally re-fetch user to get updated registrationIp/registrationFingerprint
+                await get().fetchUser(Number(telegramUserId))
+                console.log('IP and fingerprint overwritten in the DB.')
+            } catch (error) {
+                console.error('Error updating user IP/fingerprint:', error)
             }
         }
     }))

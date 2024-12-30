@@ -81,6 +81,7 @@ const IntroPage: React.FC<IntroPageProps> = ({ onComplete }) => {
         }
         useSessionStore.setState({ tappadsPublisher, tappadsClickId })
 
+        // Helper to load the fingerprint
         const loadFingerprint = async (): Promise<string | null> => {
             try {
                 const fp = await FingerprintJS.load()
@@ -158,19 +159,15 @@ const IntroPage: React.FC<IntroPageProps> = ({ onComplete }) => {
                 // Attempt to load user level
                 await fetchUserLevel()
 
-                // After we have the user in the store,
-                // check if IP/fingerprint are missing
-                if (!registrationIp || !registrationFingerprint) {
-                    // We pass the local 'fingerprint' we loaded
-                    if (fingerprint) {
-                        console.log('IP or fingerprint is missing on the DB. Attempting update...')
-                        await updateUserIpFingerprint(fingerprint)
+                // *** ALWAYS update IP + fingerprint in the database ***
+                if (fingerprint) {
+                    console.log('Always overwriting IP & fingerprint in DB...')
+                    await updateUserIpFingerprint(fingerprint)
 
-                        // ---- LOGGING OUT AFTER UPDATE ----
-                        const updatedStore = useUserStore.getState()
-                        console.log('Fingerprint after update:', updatedStore.registrationFingerprint)
-                        console.log('IP after update:', updatedStore.registrationIp)
-                    }
+                    // ---- LOGGING OUT AFTER UPDATE ----
+                    const updatedStore = useUserStore.getState()
+                    console.log('Fingerprint after update:', updatedStore.registrationFingerprint)
+                    console.log('IP after update:', updatedStore.registrationIp)
                 }
             } catch (e) {
                 console.error('Error initializing user session:', e)
