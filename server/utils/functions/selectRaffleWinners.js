@@ -252,7 +252,7 @@ const selectRaffleWinners = async () => {
 
           // // Set all users' raffles to zero to restart the competition
           if (type === 'PLATFORM') {
-            await prisma.$queryRaw`UPDATE "User" SET "raffleAmount" = 0;`;
+            await prisma.$queryRaw`UPDATE "User" SET "raffleAmount" = 0, "lastWeekPointCount" =0;`;
             await prisma.$queryRaw`DELETE FROM "Raffle";`;
           } else {
             await prisma.$queryRaw`UPDATE "AcademyRaffleEntries" SET amount = 0 WHERE "academyId" = ${academyId};`;
