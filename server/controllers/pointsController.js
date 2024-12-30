@@ -57,8 +57,11 @@ exports.getLeaderboard = async (req, res, next) => {
       ? { lastWeekPointCount: 'desc' }
       : { pointCount: 'desc' };
 
+  let where = period === 'weekly' ? { lastWeekPointCount: { gt: 0 } } : {};
+
   try {
     const leaderboardData = await prisma.user.findMany({
+      where,
       select: {
         id: true,
         name: true,
