@@ -955,13 +955,20 @@ export default function HomePage() {
                                                 </div>
                                             )}
 
-                                            <div className="flex items-center">
-                                                👨<span className="ml-1">{academy.pointCount}</span>
+                                            <div className="flex items-center justify-end ml-auto">
+                                                👨<span>{academy.pointCount}</span>
                                             </div>
                                         </div>
-                                        {!isCoinbeats && new Date() - new Date(academy.createdAt) < 7 * 24 * 60 * 60 * 1000 && (
-                                            <img src={NewIcon} alt="New" className="absolute left-7 -bottom-2 w-7 h-7 -translate-x-8" style={{ zIndex: 10 }} />
-                                        )}
+                                        {academy.fomoNumber <= academy.pointCount &&
+                                            !isCoinbeats &&
+                                            new Date() - new Date(academy.createdAt) > 7 * 24 * 60 * 60 * 1000 && (
+                                                <img
+                                                    src={NewIcon}
+                                                    alt="New"
+                                                    className="absolute left-7 -bottom-2 w-7 h-7 -translate-x-8"
+                                                    style={{ zIndex: 10 }}
+                                                />
+                                            )}
                                     </Card>
                                 </div>
                             )
