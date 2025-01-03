@@ -596,7 +596,7 @@ exports.listMyAcademies = async (req, res, next) => {
     const { id: userId } = req.user;
 
     const academies = await prisma.academy.findMany({
-      where: { creatorId: userId },
+      where: { creatorId: userId, status: 'approved' },
       select: {
         id: true,
         name: true,
@@ -619,12 +619,6 @@ exports.listMyAcademies = async (req, res, next) => {
 };
 
 exports.getAcademyDetails = async (req, res, next) => {
-  console.log('-----------');
-  console.log('-----------');
-  console.log('academy detial fetch');
-  console.log('-----------');
-  console.log('-----------');
-
   const { id } = req.params;
   const { id: userId, roles } = req.user; // Get userId and roles from the request
   try {
@@ -759,16 +753,42 @@ exports.approveAcademy = async (req, res, next) => {
         select: { id: true },
       });
 
-      const notifications = userIds.map(({ id }) => ({
-        type: 'ADMIN_BROADCAST',
-        message: `New Academy Added: ${academy?.name}`,
-        userId: id,
-      }));
+      // Check if already created some today
+      const startOfToday = new Date();
+      startOfToday.setHours(0, 0, 0, 0);
 
-      // Bulk create notifications
-      await prisma.notification.createMany({
-        data: notifications,
+      const existingNotification = await prisma.notification.findFirst({
+        where: {
+          message: {
+            contains: 'new academy added',
+            mode: 'insensitive',
+          },
+          createdAt: {
+            gte: startOfToday,
+          },
+        },
       });
+
+      if (existingNotification) {
+        await prisma.$executeRaw`
+          UPDATE "Notification"
+          SET message = CONCAT(message, ', ', ${academy?.name}),
+              read = false
+          WHERE message ILIKE '%new academy added%'
+            AND "createdAt" >= ${startOfToday};
+        `;
+      } else {
+        const notifications = userIds.map(({ id }) => ({
+          type: 'ADMIN_BROADCAST',
+          message: `New Academy Added: ${academy?.name}`,
+          userId: id,
+        }));
+
+        // Bulk create notifications
+        await prisma.notification.createMany({
+          data: notifications,
+        });
+      }
     }
 
     res.json({
