@@ -190,6 +190,23 @@ const OverallRaffleManagementPage: React.FC = () => {
         }
     }
 
+    const handleAffNewRaffle = () => {
+        setAddNewRaffle((prev) => !prev)
+
+        // try {
+        //     setSaveLoading(true)
+        //     await axiosInstance.put(`/api/raffle/overall/${overallRaffle.id}`, overallRaffle)
+        //     setUpdatedRaffleIds((prev) => prev?.filter((e) => e != overallRaffle?.id))
+        //     setNotification({ title: 'Success', text: 'Raffle settings updated' })
+        // } catch (error) {
+        //     console.error('Error updating raffle text:', error)
+        //     alert('Failed to update raffle text.')
+        // }
+        // setSaveLoading(false)
+
+        // <AddRafflesPage setOverallRaffles={setOverallRaffles} />
+    }
+
     if (loading) {
         return (
             <div className="flex justify-center items-center h-screen">
@@ -202,14 +219,15 @@ const OverallRaffleManagementPage: React.FC = () => {
         <Page>
             <Navbar />
             <Sidebar />
-            {overallRaffles?.length ? (
+            {!addNewRaffle && overallRaffles?.length ? (
                 <>
                     <BlockTitle large>
                         <p>Raffle Management </p>
-                        {/* <Button onClick={() => setAddNewRaffle(true)} style={{ width: '140px' }}>
-                            Add new raffle
-                        </Button> */}
+                        <Button onClick={() => handleAffNewRaffle()} style={{ width: '120px' }}>
+                            New raffle
+                        </Button>
                     </BlockTitle>
+
                     {overallRaffles.map((overallRaffle) => (
                         <List strong inset key={overallRaffle.id} className="p-3">
                             {overallRaffle?.type !== 'PLATFORM' && (
@@ -290,7 +308,7 @@ const OverallRaffleManagementPage: React.FC = () => {
                     ))}
                 </>
             ) : (
-                <AddRafflesPage setOverallRaffles={setOverallRaffles} />
+                (addNewRaffle || overallRaffles?.length == 0) && <AddRafflesPage setOverallRaffles={setOverallRaffles} />
             )}
 
             {selectedRaffle ? (

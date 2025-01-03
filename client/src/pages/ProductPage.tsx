@@ -445,15 +445,18 @@ export default function ProductPage() {
             await submitQuiz(academy.id, userId)
             await fetchUserTotalPoints(userId)
             fetchEarnedPoints(userId, academy.id)
-            const { increaseCompletedAcademies } = useSurpriseBoxStore.getState()
-            increaseCompletedAcademies(userId)
 
-            if (completedAcademies + 1 === nextBox) {
-                let randomSurprisePoint = (Math.floor(Math.random() * 10) + 1) * 500
-                setSurprisePoint(randomSurprisePoint)
-                setNextBox(userId, randomSurprisePoint)
-                const { totalPoints } = useUserStore.getState()
-                useUserStore.setState({ totalPoints: totalPoints + randomSurprisePoint })
+            if (earnedPoints == 0) {
+                const { increaseCompletedAcademies } = useSurpriseBoxStore.getState()
+                increaseCompletedAcademies(userId)
+
+                if (completedAcademies + 1 === nextBox) {
+                    let randomSurprisePoint = (Math.floor(Math.random() * 10) + 1) * 500
+                    setSurprisePoint(randomSurprisePoint)
+                    setNextBox(userId, randomSurprisePoint)
+                    const { totalPoints } = useUserStore.getState()
+                    useUserStore.setState({ totalPoints: totalPoints + randomSurprisePoint })
+                }
             }
 
             await fetchNotifications()
