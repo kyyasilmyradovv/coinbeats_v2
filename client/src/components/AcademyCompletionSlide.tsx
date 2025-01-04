@@ -1,9 +1,9 @@
 // src/components/AcademyCompletionSlide.tsx
-
+import { useInitData } from '@telegram-apps/sdk-react'
 import React, { useEffect, useState } from 'react'
-import { Button, Card, Dialog, ListInput, List, Notification } from 'konsta/react'
+import { Button, Card, Dialog, ListInput, List, Notification, Block } from 'konsta/react'
 import coinStack from '../images/coin-stack.png'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import axiosInstance from '../api/axiosInstance'
 import axios from 'axios'
 import useUserStore from '~/store/useUserStore'
@@ -29,6 +29,7 @@ import coinsCreditedAnimationData from '../animations/coins-credited.json'
 import AnimatedNumber from '../components/AnimatedNumber'
 import { FaTimes } from 'react-icons/fa'
 import ticket from '../images/tickets 1.png'
+import coinStackIcon from '../images/coin-stack.png'
 
 const coinsCreditedAnimation = {
     loop: true,
@@ -86,6 +87,9 @@ const AcademyCompletionSlide: React.FC<AcademyCompletionSlideProps> = ({
     surprisePoint
 }) => {
     const navigate = useNavigate()
+    const initData = useInitData()
+    const location = useLocation()
+    const { academy } = location.state || {}
     const [searchParams] = useSearchParams()
     const { userId, telegramUserId, twitterAuthenticated, referralCode, setTwitterAuthenticated } = useUserStore((state) => ({
         userId: state.userId,
@@ -102,7 +106,12 @@ const AcademyCompletionSlide: React.FC<AcademyCompletionSlideProps> = ({
     }))
     const { fetchUserTotalPoints } = useAcademiesStore.getState()
     const { fetchUserLevel } = useUserStore.getState()
+
     const { fetchNotifications, showNotification } = useNotificationStore.getState()
+    const { fetchQuests, quests } = useAcademiesStore((state) => ({
+        fetchQuests: state.fetchQuests,
+        quests: state.quests
+    }))
 
     const [notificationOpen, setNotificationOpen] = useState(false)
     const [notificationText, setNotificationText] = useState('')
@@ -114,6 +123,7 @@ const AcademyCompletionSlide: React.FC<AcademyCompletionSlideProps> = ({
     const [referralModalOpen, setReferralModalOpen] = useState(false)
     const [referralLink, setReferralLink] = useState('')
     const [visibleTooltip, setVisibleTooltip] = useState<number | null>(null)
+    const [openQuests, setOpenQuests] = useState(false)
 
     // Extract Twitter handle from academyTwitter prop
     const [twitterHandle, setTwitterHandle] = useState('')
@@ -271,7 +281,128 @@ const AcademyCompletionSlide: React.FC<AcademyCompletionSlideProps> = ({
 
     const [showSurpriseBoxDialog, setShowSurpriseBoxDialog] = useState(surprisePoint > 0)
 
-    return (
+    const handleActionClick = async (task: VerificationTask) => {
+        try {
+            await handleAction(
+                task,
+                {
+                    referralCode,
+                    setReferralLink,
+                    setReferralModalOpen,
+                    setNotificationText,
+                    setNotificationOpen,
+                    setSelectedTask,
+                    setFeedbackDialogOpen,
+                    twitterAuthenticated: true,
+                    academyName: academy?.name,
+                    twitterHandle: '',
+                    telegramUserId: initData?.user.id
+                },
+                academy?.id
+            )
+        } catch (error) {
+            console.error('Error handling action:', error)
+        }
+    }
+
+    const handleVerifyClick = async (quest: VerificationTask) => {
+        try {
+            const message = await completeTask(quest.id, academy.id)
+            setNotificationText(message)
+            setNotificationOpen(true)
+        } catch (error) {
+            console.error('Error verifying quest:', error)
+            const errorMessage = (error as any).response?.data?.message || 'Verification failed.'
+            setNotificationText(errorMessage)
+            setNotificationOpen(true)
+        }
+    }
+
+    return openQuests && quests.length > 0 ? (
+        <Block className="!m-0 !p-0">
+            {quests.map((quest) => {
+                const userVerification = userVerificationTasks.find(
+                    (uv) => uv.verificationTaskId === quest.id && uv.academyId === academy.id && uv.userId === userId
+                )
+                const isVerified = userVerification?.verified || false
+                return (
+                    <div
+                        key={quest.id}
+                        className="relative bg-white dark:bg-zinc-900 rounded-2xl shadow-lg py-1 flex flex-row items-center px-1 border border-gray-300 dark:border-gray-600 h-16 justify-between w-full mb-2"
+                    >
+                        <div className="w-12 h-16 flex items-center justify-center">
+                            {platformIcons[quest.platform] || <div className="w-8 h-8 text-gray-500">?</div>}
+                        </div>
+                        <div className="flex flex-col flex-grow mx-2 py-1">
+                            <h3 className="font-semibold text-left break-words whitespace-normal text-xs flex items-center relative">
+                                {quest.name}
+                                <button
+                                    className="ml-2 rounded-full bg-gray-700 text-white text-xs font-bold w-5 h-5 flex items-center justify-center"
+                                    onClick={() => toggleTooltip(quest.id)}
+                                >
+                                    ?
+                                </button>
+                                {visibleTooltip === quest.id && (
+                                    <div className="tooltip absolute bg-gray-700 text-white text-xs rounded-2xl p-4 mt-2 z-20">
+                                        {quest.description}
+                                        <button className="absolute top-0 right-0 text-white text-sm mt-1 mr-1" onClick={() => setVisibleTooltip(null)}>
+                                            &times;
+                                        </button>
+                                    </div>
+                                )}
+                            </h3>
+                            <div className="flex items-center mt-1">
+                                <div className="flex items-center">
+                                    <span className="mx-1 text-sm text-gray-100">+{quest.xp}</span>
+                                    <img src={coinStackIcon} alt="Coin Stack" className="w-4 h-4" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex flex-col space-y-1 justify-center mr-2">
+                            <Button
+                                rounded
+                                onClick={() => handleActionClick(quest)}
+                                className="!text-2xs font-bold shadow-xl !w-20 !h-6"
+                                style={{
+                                    background: 'linear-gradient(to left, #16a34a, #3b82f6)',
+                                    color: '#fff'
+                                }}
+                            >
+                                {getActionLabel(quest.verificationMethod, twitterAuthenticated)}
+                            </Button>
+
+                            {quest.verificationMethod !== 'LEAVE_FEEDBACK' && (
+                                <Button
+                                    rounded
+                                    outline
+                                    onClick={() => handleVerifyClick(quest)}
+                                    className="!text-2xs font-bold shadow-xl !w-20 !h-6"
+                                    style={{
+                                        borderColor: isVerified ? '#16a34a' : '#3b82f6',
+                                        backgroundColor: 'transparent',
+                                        color: '#fff'
+                                    }}
+                                    disabled={isVerified}
+                                >
+                                    {isVerified ? 'Completed' : 'Verify'}
+                                </Button>
+                            )}
+                        </div>
+                    </div>
+                )
+            })}
+            <Notification
+                className="fixed !mt-12 top-12 left-0 z-50 border"
+                opened={notificationOpen}
+                icon={<img src={bunnyLogo} alt="Bunny Mascot" className="w-10 h-10" />}
+                title="Message from CoinBeats Bunny"
+                text={notificationText}
+                button={<Button onClick={() => setNotificationOpen(false)}>Close</Button>}
+                onClose={() => setNotificationOpen(false)}
+            />
+        </Block>
+    ) : (
         <div className="flex flex-col items-center justify-center h-full mb-12">
             <div
                 style={{
@@ -316,12 +447,13 @@ const AcademyCompletionSlide: React.FC<AcademyCompletionSlideProps> = ({
                         large
                         rounded
                         outline
-                        disabled
                         style={{
+                            display: quests?.length > 0 ? 'block' : 'none',
                             background: 'linear-gradient(180deg, #D52AE9 0%, #2E3772 100%)',
                             border: '1px solid #C400B2',
                             color: '#fff'
                         }}
+                        onClick={() => setOpenQuests((prev) => !prev)}
                     >
                         Earn by doing quests
                     </Button>
