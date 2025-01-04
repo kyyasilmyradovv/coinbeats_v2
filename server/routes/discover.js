@@ -45,4 +45,36 @@ router.post(
   asyncHandler(discoverController.createTutorial)
 );
 
+// YOUTUBE CHANNELS
+router.get(
+  '/youtube-channels',
+  asyncHandler(discoverController.getAllYoutubeChannels)
+);
+router.get(
+  '/youtube-channels/:id',
+  asyncHandler(discoverController.getYoutubeChannelById)
+);
+router.post(
+  '/youtube-channels',
+  authenticateToken,
+  authorizeRoles('SUPERADMIN'),
+  asyncHandler(discoverController.createYoutubeChannel)
+);
+
+// TELEGRAM GROUPS
+router.get(
+  '/telegram-groups',
+  asyncHandler(discoverController.getAllTelegramGroups)
+);
+router.get(
+  '/telegram-groups/:id',
+  asyncHandler(discoverController.getTelegramGroupById)
+);
+router.post(
+  '/telegram-groups',
+  authenticateToken,
+  authorizeRoles('SUPERADMIN'),
+  asyncHandler(discoverController.createTelegramGroup)
+);
+
 module.exports = router;

@@ -302,3 +302,298 @@ exports.getTutorials = async (req, res, next) => {
     next(createError(500, 'Error fetching tutorials'));
   }
 };
+
+exports.createYoutubeChannel = async (req, res, next) => {
+  try {
+    const {
+      name,
+      description,
+      youtubeUrl = '',
+      categories = '[]',
+      chains = '[]',
+      contentOrigin,
+    } = req.body;
+
+    const categoryNames = JSON.parse(categories);
+    const chainNames = JSON.parse(chains);
+
+    const logoUrl = handleFileUpload(req.files, 'logo');
+    const coverPhotoUrl = handleFileUpload(req.files, 'coverPhoto');
+
+    if (!name) {
+      return next(createError(400, 'Name is required'));
+    }
+
+    // Validate categories
+    const categoryRecords = await Promise.all(
+      categoryNames.map(async (categoryName) => {
+        const category = await prisma.category.findUnique({
+          where: { name: categoryName },
+        });
+        if (!category) {
+          throw new Error(`Category "${categoryName}" not found`);
+        }
+        return category;
+      })
+    );
+
+    // Validate chains
+    const chainRecords = await Promise.all(
+      chainNames.map(async (chainName) => {
+        const chain = await prisma.chain.findUnique({
+          where: { name: chainName },
+        });
+        if (!chain) {
+          throw new Error(`Chain "${chainName}" not found`);
+        }
+        return chain;
+      })
+    );
+
+    const channel = await prisma.youtubeChannel.create({
+      data: {
+        name,
+        description,
+        youtubeUrl,
+        logoUrl,
+        coverPhotoUrl,
+        contentOrigin:
+          contentOrigin === 'PLATFORM_BASED'
+            ? 'PLATFORM_BASED'
+            : 'CREATOR_BASED',
+        categories: {
+          connect: categoryRecords.map((cat) => ({ id: cat.id })),
+        },
+        chains: {
+          connect: chainRecords.map((chain) => ({ id: chain.id })),
+        },
+      },
+    });
+
+    return res
+      .status(201)
+      .json({ message: 'YouTube Channel created successfully', channel });
+  } catch (error) {
+    console.error('Error creating YouTube Channel:', error);
+    return next(createError(500, 'Error creating YouTube Channel'));
+  }
+};
+
+exports.getYoutubeChannels = async (req, res, next) => {
+  try {
+    const channels = await prisma.youtubeChannel.findMany({
+      include: {
+        categories: true,
+        chains: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+    res.json(channels);
+  } catch (error) {
+    console.error('Error fetching YouTube channels:', error);
+    next(createError(500, 'Error fetching YouTube channels'));
+  }
+};
+
+// ============= TELEGRAM GROUPS (NEW) =============
+
+exports.createTelegramGroup = async (req, res, next) => {
+  try {
+    const {
+      name,
+      description,
+      telegramUrl = '',
+      categories = '[]',
+      chains = '[]',
+      contentOrigin,
+    } = req.body;
+
+    const categoryNames = JSON.parse(categories);
+    const chainNames = JSON.parse(chains);
+
+    const logoUrl = handleFileUpload(req.files, 'logo');
+    const coverPhotoUrl = handleFileUpload(req.files, 'coverPhoto');
+
+    if (!name) {
+      return next(createError(400, 'Name is required'));
+    }
+
+    // Validate categories
+    const categoryRecords = await Promise.all(
+      categoryNames.map(async (categoryName) => {
+        const category = await prisma.category.findUnique({
+          where: { name: categoryName },
+        });
+        if (!category) {
+          throw new Error(`Category "${categoryName}" not found`);
+        }
+        return category;
+      })
+    );
+
+    // Validate chains
+    const chainRecords = await Promise.all(
+      chainNames.map(async (chainName) => {
+        const chain = await prisma.chain.findUnique({
+          where: { name: chainName },
+        });
+        if (!chain) {
+          throw new Error(`Chain "${chainName}" not found`);
+        }
+        return chain;
+      })
+    );
+
+    const group = await prisma.telegramGroup.create({
+      data: {
+        name,
+        description,
+        telegramUrl,
+        logoUrl,
+        coverPhotoUrl,
+        contentOrigin:
+          contentOrigin === 'PLATFORM_BASED'
+            ? 'PLATFORM_BASED'
+            : 'CREATOR_BASED',
+        categories: {
+          connect: categoryRecords.map((cat) => ({ id: cat.id })),
+        },
+        chains: {
+          connect: chainRecords.map((chain) => ({ id: chain.id })),
+        },
+      },
+    });
+
+    return res
+      .status(201)
+      .json({ message: 'Telegram Group created successfully', group });
+  } catch (error) {
+    console.error('Error creating Telegram Group:', error);
+    return next(createError(500, 'Error creating Telegram Group'));
+  }
+};
+
+exports.getTelegramGroups = async (req, res, next) => {
+  try {
+    const groups = await prisma.telegramGroup.findMany({
+      include: {
+        categories: true,
+        chains: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+    res.json(groups);
+  } catch (error) {
+    console.error('Error fetching Telegram Groups:', error);
+    next(createError(500, 'Error fetching Telegram Groups'));
+  }
+};
+
+// 1) Delete Podcast
+exports.deletePodcast = async (req, res, next) => {
+  const { id } = req.params;
+  try {
+    const podcast = await prisma.podcast.findUnique({
+      where: { id: Number(id) },
+    });
+    if (!podcast) {
+      return next(createError(404, 'Podcast not found'));
+    }
+    await prisma.podcast.delete({ where: { id: Number(id) } });
+    return res.json({
+      message: 'Podcast deleted successfully',
+      id: Number(id),
+    });
+  } catch (error) {
+    console.error('Error deleting podcast:', error);
+    return next(createError(500, 'Error deleting podcast'));
+  }
+};
+
+// 2) Delete Educator
+exports.deleteEducator = async (req, res, next) => {
+  const { id } = req.params;
+  try {
+    const educator = await prisma.educator.findUnique({
+      where: { id: Number(id) },
+    });
+    if (!educator) {
+      return next(createError(404, 'Educator not found'));
+    }
+    await prisma.educator.delete({ where: { id: Number(id) } });
+    return res.json({
+      message: 'Educator deleted successfully',
+      id: Number(id),
+    });
+  } catch (error) {
+    console.error('Error deleting educator:', error);
+    return next(createError(500, 'Error deleting educator'));
+  }
+};
+
+// 3) Delete Tutorial
+exports.deleteTutorial = async (req, res, next) => {
+  const { id } = req.params;
+  try {
+    const tutorial = await prisma.tutorial.findUnique({
+      where: { id: Number(id) },
+    });
+    if (!tutorial) {
+      return next(createError(404, 'Tutorial not found'));
+    }
+    await prisma.tutorial.delete({ where: { id: Number(id) } });
+    return res.json({
+      message: 'Tutorial deleted successfully',
+      id: Number(id),
+    });
+  } catch (error) {
+    console.error('Error deleting tutorial:', error);
+    return next(createError(500, 'Error deleting tutorial'));
+  }
+};
+
+// 4) Delete YouTube Channel
+exports.deleteYoutubeChannel = async (req, res, next) => {
+  const { id } = req.params;
+  try {
+    const channel = await prisma.youtubeChannel.findUnique({
+      where: { id: Number(id) },
+    });
+    if (!channel) {
+      return next(createError(404, 'YouTube channel not found'));
+    }
+    await prisma.youtubeChannel.delete({ where: { id: Number(id) } });
+    return res.json({
+      message: 'YouTube Channel deleted successfully',
+      id: Number(id),
+    });
+  } catch (error) {
+    console.error('Error deleting YouTube channel:', error);
+    return next(createError(500, 'Error deleting YouTube channel'));
+  }
+};
+
+// 5) Delete Telegram Group
+exports.deleteTelegramGroup = async (req, res, next) => {
+  const { id } = req.params;
+  try {
+    const group = await prisma.telegramGroup.findUnique({
+      where: { id: Number(id) },
+    });
+    if (!group) {
+      return next(createError(404, 'Telegram group not found'));
+    }
+    await prisma.telegramGroup.delete({ where: { id: Number(id) } });
+    return res.json({
+      message: 'Telegram Group deleted successfully',
+      id: Number(id),
+    });
+  } catch (error) {
+    console.error('Error deleting Telegram group:', error);
+    return next(createError(500, 'Error deleting Telegram group'));
+  }
+};

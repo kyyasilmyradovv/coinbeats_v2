@@ -48,7 +48,7 @@ model User {
   lastWeekPointCount        BigInt?                @default(0)
   registrationIp            String?
   registrationFingerprint   String?
-  isBanned                  Boolean       @default(false)
+  isBanned                  Boolean                @default(false)
 }
 
 model TwitterAccount {
@@ -286,22 +286,54 @@ model Tutorial {
   chains        Chain[]       @relation("TutorialChains")
 }
 
+model YoutubeChannel {
+  id            Int           @id @default(autoincrement())
+  name          String
+  description   String?
+  youtubeUrl    String?
+  coverPhotoUrl String?
+  logoUrl       String?
+  contentOrigin ContentOrigin
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  categories    Category[]    @relation("YoutubeChannelCategories")
+  chains        Chain[]       @relation("YoutubeChannelChains")
+}
+
+model TelegramGroup {
+  id            Int           @id @default(autoincrement())
+  name          String
+  description   String?
+  telegramUrl   String?
+  coverPhotoUrl String?
+  logoUrl       String?
+  contentOrigin ContentOrigin
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  categories    Category[]    @relation("TelegramGroupCategories")
+  chains        Chain[]       @relation("TelegramGroupChains")
+}
+
 model Category {
-  id        Int        @id @default(autoincrement())
-  name      String     @unique
-  academies Academy[]  @relation("AcademyToCategory")
-  educators Educator[] @relation("EducatorCategories")
-  podcasts  Podcast[]  @relation("PodcastCategories")
-  tutorials Tutorial[] @relation("TutorialCategories")
+  id              Int              @id @default(autoincrement())
+  name            String           @unique
+  academies       Academy[]        @relation("AcademyToCategory")
+  educators       Educator[]       @relation("EducatorCategories")
+  podcasts        Podcast[]        @relation("PodcastCategories")
+  tutorials       Tutorial[]       @relation("TutorialCategories")
+  youtubeChannels YoutubeChannel[] @relation("YoutubeChannelCategories")
+  telegramGroups  TelegramGroup[]  @relation("TelegramGroupCategories")
 }
 
 model Chain {
-  id        Int        @id @default(autoincrement())
-  name      String     @unique
-  academies Academy[]  @relation("AcademyToChain")
-  educators Educator[] @relation("EducatorChains")
-  podcasts  Podcast[]  @relation("PodcastChains")
-  tutorials Tutorial[] @relation("TutorialChains")
+  id              Int              @id @default(autoincrement())
+  name            String           @unique
+  academies       Academy[]        @relation("AcademyToChain")
+  educators       Educator[]       @relation("EducatorChains")
+  podcasts        Podcast[]        @relation("PodcastChains")
+  tutorials       Tutorial[]       @relation("TutorialChains")
+  youtubeChannels YoutubeChannel[] @relation("YoutubeChannelChains")
+  telegramGroups  TelegramGroup[]  @relation("TelegramGroupChains")
 }
 
 model VerificationTask {
@@ -410,7 +442,7 @@ model OverallRaffle {
   creatorId    Int?
   isActive     Boolean            @default(false)
   type         OverallRaffleType?
-  academy      Academy?            @relation(fields: [academyId], references: [id])
+  academy      Academy?           @relation(fields: [academyId], references: [id])
 }
 
 model RafflesHistory {

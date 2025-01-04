@@ -11,40 +11,30 @@ import useCategoryChainStore from '../store/useCategoryChainStore'
 import { Icon } from '@iconify/react'
 import axios from '../api/axiosInstance'
 
-interface ContentItem {
-    id: number
-    name?: string // For Podcast/Educator
-    title?: string // For Tutorial
-    description?: string
-    spotifyUrl?: string
-    appleUrl?: string
-    youtubeUrl?: string
-    bio?: string
-    telegramUrl?: string
-    twitterUrl?: string
-    discordUrl?: string
-    contentUrl?: string
-    type?: string
-    logoUrl?: string
-    coverPhotoUrl?: string
-    categories?: string[]
-    chains?: string[]
-}
-
-const constructImageUrl = (url: string | null | undefined) => {
-    if (!url) return ''
-    return `https://telegram.coinbeats.xyz/${url}`
-}
-
 const ContentCreationPage: React.FC = () => {
     const navigate = useNavigate()
-    const { contentType, setContentType, podcastData, educatorData, tutorialData, setField, submitContent, resetContentData } = useContentStore()
 
+    // Pull state & actions from store
+    const {
+        contentType,
+        setContentType,
+        podcastData,
+        educatorData,
+        tutorialData,
+        youtubeChannelData,
+        telegramGroupData,
+        setField,
+        submitContent,
+        resetContentData
+    } = useContentStore()
+
+    // Category & chain lists
     const { categories: categoryList = [], chains: chainList = [], fetchCategoriesAndChains } = useCategoryChainStore()
 
+    // For notifications & popovers
     const [notificationOpen, setNotificationOpen] = useState(false)
     const [notificationText, setNotificationText] = useState('')
-    const [items, setItems] = useState<ContentItem[]>([])
+    const [items, setItems] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
 
     const [popoverOpen, setPopoverOpen] = useState(false)
@@ -56,34 +46,65 @@ const ContentCreationPage: React.FC = () => {
         fetchCategoriesAndChains()
     }, [fetchCategoriesAndChains])
 
-    const handleFileChange = (field: string, file: File | null) => {
-        setField(field, file)
-    }
-
-    const handleImagePreview = (file: File | null | string) => {
-        if (file instanceof File) {
-            return URL.createObjectURL(file)
-        }
-        if (typeof file === 'string') {
-            return constructImageUrl(file)
-        }
-        return null
-    }
-
+    // Helper to auto-resize textarea
     const autoresize = (e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
         const target = e.target as HTMLTextAreaElement
         target.style.height = 'auto'
         target.style.height = `${target.scrollHeight}px`
     }
 
+    // Helper to handle file input
+    const handleFileChange = (field: string, file: File | null) => {
+        setField(field, file)
+    }
+
+    // Show image preview
+    const handleImagePreview = (file: File | null | string) => {
+        if (file instanceof File) {
+            return URL.createObjectURL(file)
+        }
+        if (typeof file === 'string') {
+            // Example: if your server returns just the partial path, adjust as needed
+            return file
+        }
+        return null
+    }
+
+    // Load items from server
     const loadItems = async () => {
         if (!contentType) return
         setLoading(true)
 
+        // Decide which endpoint to call
+        // e.g. /api/content/podcasts, /api/content/educators, /api/content/tutorials
+        // plus our new youtube-channels, telegram-groups
         let endpoint = ''
-        if (contentType === 'Podcast') endpoint = '/api/content/podcasts'
-        if (contentType === 'Educator') endpoint = '/api/content/educators'
-        if (contentType === 'Tutorial') endpoint = '/api/content/tutorials'
+        switch (contentType) {
+            case 'Podcast':
+                endpoint = '/api/content/podcasts'
+                break
+            case 'Educator':
+                endpoint = '/api/content/educators'
+                break
+            case 'Tutorial':
+                endpoint = '/api/content/tutorials'
+                break
+            case 'YoutubeChannel':
+                endpoint = '/api/content/youtube-channels'
+                break
+            case 'TelegramGroup':
+                endpoint = '/api/content/telegram-groups'
+                break
+            default:
+                endpoint = ''
+                break
+        }
+
+        if (!endpoint) {
+            setItems([])
+            setLoading(false)
+            return
+        }
 
         try {
             const response = await axios.get(endpoint)
@@ -97,87 +118,148 @@ const ContentCreationPage: React.FC = () => {
     }
 
     useEffect(() => {
-        // Load items whenever contentType changes
         loadItems()
     }, [contentType])
 
+    // Submit form for create/update
     const handleSubmit = async () => {
         try {
-            await submitContent(selectedItemId) // pass selectedItemId to handle update vs create
-            resetContentData()
+            await submitContent(selectedItemId)
             setNotificationText(`${contentType} ${selectedItemId ? 'updated' : 'created'} successfully`)
             setNotificationOpen(true)
             setSelectedItemId(null)
-            loadItems() // reload items to show updated list
+            loadItems() // reload list
         } catch (error) {
-            console.error(`Error ${selectedItemId ? 'updating' : 'creating'} ${contentType?.toLowerCase()}:`, error)
+            console.error(`Error ${selectedItemId ? 'updating' : 'creating'} ${contentType}:`, error)
             setNotificationText(`Failed to ${selectedItemId ? 'update' : 'create'} ${contentType}`)
             setNotificationOpen(true)
         }
     }
 
+    // Remove a category from the array
     const removeCategory = (index: number) => {
-        let updatedCategories = []
-        if (contentType === 'Tutorial') {
-            updatedCategories = tutorialData.categories.filter((_, i) => i !== index)
-        } else if (contentType === 'Podcast') {
-            updatedCategories = podcastData.categories.filter((_, i) => i !== index)
-        } else if (contentType === 'Educator') {
-            updatedCategories = educatorData.categories.filter((_, i) => i !== index)
+        if (!contentType) return
+        // figure out which data set
+        let arr: string[] = []
+        switch (contentType) {
+            case 'Podcast':
+                arr = [...podcastData.categories]
+                break
+            case 'Educator':
+                arr = [...educatorData.categories]
+                break
+            case 'Tutorial':
+                arr = [...tutorialData.categories]
+                break
+            case 'YoutubeChannel':
+                arr = [...youtubeChannelData.categories]
+                break
+            case 'TelegramGroup':
+                arr = [...telegramGroupData.categories]
+                break
+            default:
+                return
         }
-        setField('categories', updatedCategories)
+        arr.splice(index, 1)
+        setField('categories', arr)
     }
 
+    // Remove a chain from the array
     const removeChain = (index: number) => {
-        let updatedChains = []
-        if (contentType === 'Tutorial') {
-            updatedChains = tutorialData.chains.filter((_, i) => i !== index)
-        } else if (contentType === 'Podcast') {
-            updatedChains = podcastData.chains.filter((_, i) => i !== index)
-        } else if (contentType === 'Educator') {
-            updatedChains = educatorData.chains.filter((_, i) => i !== index)
+        if (!contentType) return
+        let arr: string[] = []
+        switch (contentType) {
+            case 'Podcast':
+                arr = [...podcastData.chains]
+                break
+            case 'Educator':
+                arr = [...educatorData.chains]
+                break
+            case 'Tutorial':
+                arr = [...tutorialData.chains]
+                break
+            case 'YoutubeChannel':
+                arr = [...youtubeChannelData.chains]
+                break
+            case 'TelegramGroup':
+                arr = [...telegramGroupData.chains]
+                break
+            default:
+                return
         }
-        setField('chains', updatedChains)
+        arr.splice(index, 1)
+        setField('chains', arr)
     }
 
-    const fillFormForEditing = (item: ContentItem) => {
-        // Reset form first
+    // Fill form for editing
+    const fillFormForEditing = (item: any) => {
+        // Reset first
         resetContentData()
 
-        // Set fields according to the current contentType
-        if (contentType === 'Podcast') {
-            setField('name', item.name || '')
-            setField('description', item.description || '')
-            setField('spotifyUrl', item.spotifyUrl || '')
-            setField('appleUrl', item.appleUrl || '')
-            setField('youtubeUrl', item.youtubeUrl || '')
-            setField('logo', item.logoUrl || null)
-            setField('coverPhoto', item.coverPhotoUrl || null)
-            setField('categories', item.categories || [])
-            setField('chains', item.chains || [])
-        } else if (contentType === 'Educator') {
-            setField('name', item.name || '')
-            setField('bio', item.bio || '')
-            setField('youtubeUrl', item.youtubeUrl || '')
-            setField('twitterUrl', item.twitterUrl || '')
-            setField('telegramUrl', item.telegramUrl || '')
-            setField('discordUrl', item.discordUrl || '')
-            setField('logo', item.logoUrl || null)
-            setField('coverPhoto', item.coverPhotoUrl || null)
-            setField('categories', item.categories || [])
-            setField('chains', item.chains || [])
-        } else if (contentType === 'Tutorial') {
-            setField('title', item.title || '')
-            setField('description', item.description || '')
-            setField('contentUrl', item.contentUrl || '')
-            setField('type', item.type || '')
-            setField('logo', item.logoUrl || null)
-            setField('coverPhoto', item.coverPhotoUrl || null)
-            setField('categories', item.categories || [])
-            setField('chains', item.chains || [])
+        // For now, we rely on contentType to decide which form to fill
+        switch (contentType) {
+            case 'Podcast':
+                setField('name', item.name)
+                setField('description', item.description || '')
+                setField('spotifyUrl', item.spotifyUrl || '')
+                setField('appleUrl', item.appleUrl || '')
+                setField('youtubeUrl', item.youtubeUrl || '')
+                setField('logo', item.logoUrl || null)
+                setField('coverPhoto', item.coverPhotoUrl || null)
+                setField('categories', item.categories?.map((c: any) => c.name) || [])
+                setField('chains', item.chains?.map((c: any) => c.name) || [])
+                break
+
+            case 'Educator':
+                setField('name', item.name)
+                setField('bio', item.bio || '')
+                setField('youtubeUrl', item.youtubeUrl || '')
+                setField('twitterUrl', item.twitterUrl || '')
+                setField('telegramUrl', item.telegramUrl || '')
+                setField('discordUrl', item.discordUrl || '')
+                setField('logo', item.logoUrl || null)
+                setField('coverPhoto', item.coverPhotoUrl || null)
+                setField('categories', item.categories?.map((c: any) => c.name) || [])
+                setField('chains', item.chains?.map((c: any) => c.name) || [])
+                break
+
+            case 'Tutorial':
+                setField('title', item.title || '')
+                setField('description', item.description || '')
+                setField('contentUrl', item.contentUrl || '')
+                setField('type', item.type || '')
+                setField('logo', item.logoUrl || null)
+                setField('coverPhoto', item.coverPhotoUrl || null)
+                setField('categories', item.categories?.map((c: any) => c.name) || [])
+                setField('chains', item.chains?.map((c: any) => c.name) || [])
+                break
+
+            case 'YoutubeChannel':
+                setField('name', item.name)
+                setField('description', item.description || '')
+                setField('youtubeUrl', item.youtubeUrl || '')
+                setField('logo', item.logoUrl || null)
+                setField('coverPhoto', item.coverPhotoUrl || null)
+                setField('categories', item.categories?.map((c: any) => c.name) || [])
+                setField('chains', item.chains?.map((c: any) => c.name) || [])
+                break
+
+            case 'TelegramGroup':
+                setField('name', item.name)
+                setField('description', item.description || '')
+                setField('telegramUrl', item.telegramUrl || '')
+                setField('logo', item.logoUrl || null)
+                setField('coverPhoto', item.coverPhotoUrl || null)
+                setField('categories', item.categories?.map((c: any) => c.name) || [])
+                setField('chains', item.chains?.map((c: any) => c.name) || [])
+                break
+
+            default:
+                break
         }
     }
 
+    // Popover & item actions
     const openPopoverForItem = (id: number, event: React.MouseEvent<HTMLButtonElement>) => {
         setSelectedItemId(id)
         setPopoverTarget(event.currentTarget)
@@ -194,10 +276,29 @@ const ContentCreationPage: React.FC = () => {
 
     const handleDeleteItem = async () => {
         if (!selectedItemId || !contentType) return
+
         let endpoint = ''
-        if (contentType === 'Podcast') endpoint = `/api/content/podcasts/${selectedItemId}`
-        if (contentType === 'Educator') endpoint = `/api/content/educators/${selectedItemId}`
-        if (contentType === 'Tutorial') endpoint = `/api/content/tutorials/${selectedItemId}`
+        switch (contentType) {
+            case 'Podcast':
+                endpoint = `/api/content/podcasts/${selectedItemId}`
+                break
+            case 'Educator':
+                endpoint = `/api/content/educators/${selectedItemId}`
+                break
+            case 'Tutorial':
+                endpoint = `/api/content/tutorials/${selectedItemId}`
+                break
+            case 'YoutubeChannel':
+                endpoint = `/api/content/youtube-channels/${selectedItemId}`
+                break
+            case 'TelegramGroup':
+                endpoint = `/api/content/telegram-groups/${selectedItemId}`
+                break
+            default:
+                break
+        }
+
+        if (!endpoint) return
 
         try {
             await axios.delete(endpoint)
@@ -215,11 +316,11 @@ const ContentCreationPage: React.FC = () => {
         }
     }
 
+    // ========== FORMS ==========
+
     const renderPodcastForm = () => (
-        <Card key="podcast-form" className="!mb-4 !p-4 !rounded-2xl shadow-lg !mx-4 relative border border-gray-300 dark:border-gray-600">
+        <Card className="!mb-4 !p-4 !rounded-2xl shadow-lg !mx-4 relative border border-gray-300 dark:border-gray-600">
             <BlockTitle>{selectedItemId ? 'Edit Podcast' : 'Create Podcast'}</BlockTitle>
-            {/* Podcast form inputs here (like in the original code, omitted for brevity) */}
-            {/* ...Same fields as before... */}
             <List>
                 <ListInput
                     label="Name"
@@ -266,48 +367,49 @@ const ContentCreationPage: React.FC = () => {
                     value={podcastData.youtubeUrl}
                     onChange={(e) => setField('youtubeUrl', e.target.value)}
                 />
-                {/* Category & Chain selection as before */}
+
+                {/* Category */}
                 <ListInput
                     label="Add Category"
                     type="select"
                     outline
                     onChange={(e) => {
                         if (e.target.value) {
-                            setField('categories', [...(podcastData.categories || []), e.target.value])
+                            setField('categories', [...podcastData.categories, e.target.value])
                         }
                     }}
                     value=""
                     placeholder="Select Category"
-                    inputClassName="!bg-[#1c1c1d] !text-white !m-1 !pl-2"
                 >
                     <option value="">Select Category</option>
-                    {(categoryList || []).map((category) => (
-                        <option key={category.id} value={category.name}>
-                            {category.name}
+                    {(categoryList || []).map((c) => (
+                        <option key={c.id} value={c.name}>
+                            {c.name}
                         </option>
                     ))}
                 </ListInput>
                 <div className="flex flex-wrap gap-2 mb-4">
-                    {(podcastData.categories || []).map((category, index) => (
-                        <div key={index} className="relative">
-                            <span onClick={() => removeCategory(index)} className="dark:bg-blue-600 bg-blue-200 px-2 py-1 rounded-lg cursor-pointer">
+                    {podcastData.categories.map((category, idx) => (
+                        <div key={idx}>
+                            <span onClick={() => removeCategory(idx)} className="dark:bg-blue-600 bg-blue-200 px-2 py-1 rounded-lg cursor-pointer">
                                 {category}
                             </span>
                         </div>
                     ))}
                 </div>
+
+                {/* Chain */}
                 <ListInput
                     label="Add Chain"
                     type="select"
                     outline
                     onChange={(e) => {
                         if (e.target.value) {
-                            setField('chains', [...(podcastData.chains || []), e.target.value])
+                            setField('chains', [...podcastData.chains, e.target.value])
                         }
                     }}
                     value=""
                     placeholder="Select Chain"
-                    inputClassName="!bg-[#1c1c1d] !text-white !m-1 !pl-2"
                 >
                     <option value="">Select Chain</option>
                     {(chainList || []).map((chain) => (
@@ -317,14 +419,16 @@ const ContentCreationPage: React.FC = () => {
                     ))}
                 </ListInput>
                 <div className="flex flex-wrap gap-2 mb-4">
-                    {(podcastData.chains || []).map((chain, index) => (
-                        <div key={index} className="relative">
-                            <span onClick={() => removeChain(index)} className="bg-green-200 dark:bg-green-600 px-2 py-1 rounded-lg cursor-pointer">
+                    {podcastData.chains.map((chain, idx) => (
+                        <div key={idx}>
+                            <span onClick={() => removeChain(idx)} className="bg-green-200 dark:bg-green-600 px-2 py-1 rounded-lg cursor-pointer">
                                 {chain}
                             </span>
                         </div>
                     ))}
                 </div>
+
+                {/* Logo & Cover Photo */}
                 <div className="relative mb-4">
                     <label className="block font-medium mb-2">Upload Logo</label>
                     <input type="file" accept="image/*" onChange={(e) => handleFileChange('logo', e.target.files ? e.target.files[0] : null)} />
@@ -370,9 +474,8 @@ const ContentCreationPage: React.FC = () => {
     )
 
     const renderEducatorForm = () => (
-        <Card key="educator-form" className="!mb-4 !p-4 !rounded-2xl shadow-lg !mx-4 relative border border-gray-300 dark:border-gray-600">
+        <Card className="!mb-4 !p-4 !rounded-2xl shadow-lg !mx-4 relative border border-gray-300 dark:border-gray-600">
             <BlockTitle>{selectedItemId ? 'Edit Educator' : 'Create Educator'}</BlockTitle>
-            {/* Similar form inputs for Educator as before, omitted for brevity */}
             <List>
                 <ListInput
                     label="Name"
@@ -399,49 +502,49 @@ const ContentCreationPage: React.FC = () => {
                 <ListInput label="Twitter URL" type="url" outline value={educatorData.twitterUrl} onChange={(e) => setField('twitterUrl', e.target.value)} />
                 <ListInput label="Telegram URL" type="url" outline value={educatorData.telegramUrl} onChange={(e) => setField('telegramUrl', e.target.value)} />
                 <ListInput label="Discord URL" type="url" outline value={educatorData.discordUrl} onChange={(e) => setField('discordUrl', e.target.value)} />
-                {/* Category & Chain selection as similar to Podcast */}
+
+                {/* Category */}
                 <ListInput
                     label="Add Category"
                     type="select"
                     outline
                     onChange={(e) => {
                         if (e.target.value) {
-                            setField('categories', [...(educatorData.categories || []), e.target.value])
+                            setField('categories', [...educatorData.categories, e.target.value])
                         }
                     }}
                     value=""
                     placeholder="Select Category"
-                    inputClassName="!bg-[#1c1c1d] !text-white !m-1 !pl-2"
                 >
                     <option value="">Select Category</option>
-                    {(categoryList || []).map((category) => (
-                        <option key={category.id} value={category.name}>
-                            {category.name}
+                    {(categoryList || []).map((c) => (
+                        <option key={c.id} value={c.name}>
+                            {c.name}
                         </option>
                     ))}
                 </ListInput>
                 <div className="flex flex-wrap gap-2 mb-4">
-                    {(educatorData.categories || []).map((category, index) => (
-                        <div key={index} className="relative">
-                            <span onClick={() => removeCategory(index)} className="dark:bg-blue-600 bg-blue-200 px-2 py-1 rounded-lg cursor-pointer">
+                    {educatorData.categories.map((category, idx) => (
+                        <div key={idx}>
+                            <span onClick={() => removeCategory(idx)} className="dark:bg-blue-600 bg-blue-200 px-2 py-1 rounded-lg cursor-pointer">
                                 {category}
                             </span>
                         </div>
                     ))}
                 </div>
 
+                {/* Chain */}
                 <ListInput
                     label="Add Chain"
                     type="select"
                     outline
                     onChange={(e) => {
                         if (e.target.value) {
-                            setField('chains', [...(educatorData.chains || []), e.target.value])
+                            setField('chains', [...educatorData.chains, e.target.value])
                         }
                     }}
                     value=""
                     placeholder="Select Chain"
-                    inputClassName="!bg-[#1c1c1d] !text-white !m-1 !pl-2"
                 >
                     <option value="">Select Chain</option>
                     {(chainList || []).map((chain) => (
@@ -451,14 +554,16 @@ const ContentCreationPage: React.FC = () => {
                     ))}
                 </ListInput>
                 <div className="flex flex-wrap gap-2 mb-4">
-                    {(educatorData.chains || []).map((chain, index) => (
-                        <div key={index} className="relative">
-                            <span onClick={() => removeChain(index)} className="bg-green-200 dark:bg-green-600 px-2 py-1 rounded-lg cursor-pointer">
+                    {educatorData.chains.map((chain, idx) => (
+                        <div key={idx}>
+                            <span onClick={() => removeChain(idx)} className="bg-green-200 dark:bg-green-600 px-2 py-1 rounded-lg cursor-pointer">
                                 {chain}
                             </span>
                         </div>
                     ))}
                 </div>
+
+                {/* Logo & Cover Photo */}
                 <div className="relative mb-4">
                     <label className="block font-medium mb-2">Upload Logo</label>
                     <input type="file" accept="image/*" onChange={(e) => handleFileChange('logo', e.target.files ? e.target.files[0] : null)} />
@@ -504,7 +609,7 @@ const ContentCreationPage: React.FC = () => {
     )
 
     const renderTutorialForm = () => (
-        <Card key="tutorial-form" className="!mb-4 !p-4 !rounded-2xl shadow-lg !mx-4 relative border border-gray-300 dark:border-gray-600">
+        <Card className="!mb-4 !p-4 !rounded-2xl shadow-lg !mx-4 relative border border-gray-300 dark:border-gray-600">
             <BlockTitle>{selectedItemId ? 'Edit Tutorial' : 'Create Tutorial'}</BlockTitle>
             <List>
                 <ListInput
@@ -543,7 +648,6 @@ const ContentCreationPage: React.FC = () => {
                     outline
                     value={tutorialData.type}
                     onChange={(e) => setField('type', e.target.value)}
-                    inputClassName="!bg-[#1c1c1d] !text-white !m-1 !pl-2"
                 >
                     <option value="">Select Type</option>
                     <option value="WALLET_SETUP">Wallet Setup</option>
@@ -552,47 +656,49 @@ const ContentCreationPage: React.FC = () => {
                     <option value="RESEARCH_TUTORIAL">Research Tutorial</option>
                     <option value="OTHER">Other</option>
                 </ListInput>
+
+                {/* Category */}
                 <ListInput
                     label="Add Category"
                     type="select"
                     outline
                     onChange={(e) => {
                         if (e.target.value) {
-                            setField('categories', [...(tutorialData.categories || []), e.target.value])
+                            setField('categories', [...tutorialData.categories, e.target.value])
                         }
                     }}
                     value=""
                     placeholder="Select Category"
-                    inputClassName="!bg-[#1c1c1d] !text-white !m-1 !pl-2"
                 >
                     <option value="">Select Category</option>
-                    {(categoryList || []).map((category) => (
-                        <option key={category.id} value={category.name}>
-                            {category.name}
+                    {(categoryList || []).map((c) => (
+                        <option key={c.id} value={c.name}>
+                            {c.name}
                         </option>
                     ))}
                 </ListInput>
                 <div className="flex flex-wrap gap-2 mb-4">
-                    {(tutorialData.categories || []).map((category, index) => (
-                        <div key={index} className="relative">
-                            <span onClick={() => removeCategory(index)} className="dark:bg-blue-600 bg-blue-200 px-2 py-1 rounded-lg cursor-pointer">
+                    {tutorialData.categories.map((category, idx) => (
+                        <div key={idx}>
+                            <span onClick={() => removeCategory(idx)} className="dark:bg-blue-600 bg-blue-200 px-2 py-1 rounded-lg cursor-pointer">
                                 {category}
                             </span>
                         </div>
                     ))}
                 </div>
+
+                {/* Chain */}
                 <ListInput
                     label="Add Chain"
                     type="select"
                     outline
                     onChange={(e) => {
                         if (e.target.value) {
-                            setField('chains', [...(tutorialData.chains || []), e.target.value])
+                            setField('chains', [...tutorialData.chains, e.target.value])
                         }
                     }}
                     value=""
                     placeholder="Select Chain"
-                    inputClassName="!bg-[#1c1c1d] !text-white !m-1 !pl-2"
                 >
                     <option value="">Select Chain</option>
                     {(chainList || []).map((chain) => (
@@ -602,14 +708,16 @@ const ContentCreationPage: React.FC = () => {
                     ))}
                 </ListInput>
                 <div className="flex flex-wrap gap-2 mb-4">
-                    {(tutorialData.chains || []).map((chain, index) => (
-                        <div key={index} className="relative">
-                            <span onClick={() => removeChain(index)} className="bg-green-200 dark:bg-green-600 px-2 py-1 rounded-lg cursor-pointer">
+                    {tutorialData.chains.map((chain, idx) => (
+                        <div key={idx}>
+                            <span onClick={() => removeChain(idx)} className="bg-green-200 dark:bg-green-600 px-2 py-1 rounded-lg cursor-pointer">
                                 {chain}
                             </span>
                         </div>
                     ))}
                 </div>
+
+                {/* Logo & Cover Photo */}
                 <div className="relative mb-4">
                     <label className="block font-medium mb-2">Upload Logo</label>
                     <input type="file" accept="image/*" onChange={(e) => handleFileChange('logo', e.target.files ? e.target.files[0] : null)} />
@@ -654,6 +762,287 @@ const ContentCreationPage: React.FC = () => {
         </Card>
     )
 
+    // NEW: YouTube Channel form
+    const renderYoutubeChannelForm = () => (
+        <Card className="!mb-4 !p-4 !rounded-2xl shadow-lg !mx-4 relative border border-gray-300 dark:border-gray-600">
+            <BlockTitle>{selectedItemId ? 'Edit YouTube Channel' : 'Create YouTube Channel'}</BlockTitle>
+            <List>
+                <ListInput
+                    label="Name"
+                    type="text"
+                    outline
+                    placeholder="Enter Channel Name"
+                    value={youtubeChannelData.name}
+                    onChange={(e) => setField('name', e.target.value)}
+                    required
+                />
+                <ListInput
+                    label="Description"
+                    type="textarea"
+                    outline
+                    placeholder="Enter Description"
+                    inputClassName="!resize-none"
+                    value={youtubeChannelData.description}
+                    onChange={(e) => {
+                        setField('description', e.target.value)
+                        autoresize(e)
+                    }}
+                />
+                <ListInput
+                    label="YouTube URL"
+                    type="url"
+                    outline
+                    placeholder="Enter Channel URL"
+                    value={youtubeChannelData.youtubeUrl}
+                    onChange={(e) => setField('youtubeUrl', e.target.value)}
+                />
+
+                {/* Category */}
+                <ListInput
+                    label="Add Category"
+                    type="select"
+                    outline
+                    onChange={(e) => {
+                        if (e.target.value) {
+                            setField('categories', [...youtubeChannelData.categories, e.target.value])
+                        }
+                    }}
+                    value=""
+                    placeholder="Select Category"
+                >
+                    <option value="">Select Category</option>
+                    {(categoryList || []).map((c) => (
+                        <option key={c.id} value={c.name}>
+                            {c.name}
+                        </option>
+                    ))}
+                </ListInput>
+                <div className="flex flex-wrap gap-2 mb-4">
+                    {youtubeChannelData.categories.map((category, idx) => (
+                        <div key={idx}>
+                            <span onClick={() => removeCategory(idx)} className="dark:bg-blue-600 bg-blue-200 px-2 py-1 rounded-lg cursor-pointer">
+                                {category}
+                            </span>
+                        </div>
+                    ))}
+                </div>
+
+                {/* Chain */}
+                <ListInput
+                    label="Add Chain"
+                    type="select"
+                    outline
+                    onChange={(e) => {
+                        if (e.target.value) {
+                            setField('chains', [...youtubeChannelData.chains, e.target.value])
+                        }
+                    }}
+                    value=""
+                    placeholder="Select Chain"
+                >
+                    <option value="">Select Chain</option>
+                    {(chainList || []).map((chain) => (
+                        <option key={chain.id} value={chain.name}>
+                            {chain.name}
+                        </option>
+                    ))}
+                </ListInput>
+                <div className="flex flex-wrap gap-2 mb-4">
+                    {youtubeChannelData.chains.map((chain, idx) => (
+                        <div key={idx}>
+                            <span onClick={() => removeChain(idx)} className="bg-green-200 dark:bg-green-600 px-2 py-1 rounded-lg cursor-pointer">
+                                {chain}
+                            </span>
+                        </div>
+                    ))}
+                </div>
+
+                {/* Logo & Cover Photo */}
+                <div className="relative mb-4">
+                    <label className="block font-medium mb-2">Upload Logo</label>
+                    <input type="file" accept="image/*" onChange={(e) => handleFileChange('logo', e.target.files ? e.target.files[0] : null)} />
+                    {youtubeChannelData.logo && (
+                        <div className="relative mt-2">
+                            <img src={handleImagePreview(youtubeChannelData.logo) ?? ''} alt="Logo Preview" className="w-32 h-32 object-cover" />
+                            <button className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-full" onClick={() => setField('logo', null)}>
+                                &times;
+                            </button>
+                        </div>
+                    )}
+                </div>
+                <div className="relative mb-10">
+                    <label className="block font-medium mb-2">Upload Cover Photo</label>
+                    <input type="file" accept="image/*" onChange={(e) => handleFileChange('coverPhoto', e.target.files ? e.target.files[0] : null)} />
+                    {youtubeChannelData.coverPhoto && (
+                        <div className="relative mt-2">
+                            <img src={handleImagePreview(youtubeChannelData.coverPhoto) ?? ''} alt="Cover Photo Preview" className="w-full h-48 object-cover" />
+                            <button className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-full" onClick={() => setField('coverPhoto', null)}>
+                                &times;
+                            </button>
+                        </div>
+                    )}
+                </div>
+            </List>
+            <div className="flex justify-between">
+                <Button
+                    onClick={() => {
+                        resetContentData()
+                        setSelectedItemId(null)
+                    }}
+                    className="w-1/2 bg-gray-500 text-white rounded-full mr-2"
+                    large
+                    raised
+                >
+                    Back
+                </Button>
+                <Button onClick={handleSubmit} className="w-1/2 bg-brand-primary text-white rounded-full ml-2" large raised>
+                    {selectedItemId ? 'Update YouTube Channel' : 'Submit YouTube Channel'}
+                </Button>
+            </div>
+        </Card>
+    )
+
+    // NEW: Telegram Group form
+    const renderTelegramGroupForm = () => (
+        <Card className="!mb-4 !p-4 !rounded-2xl shadow-lg !mx-4 relative border border-gray-300 dark:border-gray-600">
+            <BlockTitle>{selectedItemId ? 'Edit Telegram Group' : 'Create Telegram Group'}</BlockTitle>
+            <List>
+                <ListInput
+                    label="Name"
+                    type="text"
+                    outline
+                    placeholder="Enter Group Name"
+                    value={telegramGroupData.name}
+                    onChange={(e) => setField('name', e.target.value)}
+                    required
+                />
+                <ListInput
+                    label="Description"
+                    type="textarea"
+                    outline
+                    placeholder="Enter Description"
+                    inputClassName="!resize-none"
+                    value={telegramGroupData.description}
+                    onChange={(e) => {
+                        setField('description', e.target.value)
+                        autoresize(e)
+                    }}
+                />
+                <ListInput
+                    label="Telegram URL"
+                    type="url"
+                    outline
+                    placeholder="Enter Group URL"
+                    value={telegramGroupData.telegramUrl}
+                    onChange={(e) => setField('telegramUrl', e.target.value)}
+                />
+
+                {/* Category */}
+                <ListInput
+                    label="Add Category"
+                    type="select"
+                    outline
+                    onChange={(e) => {
+                        if (e.target.value) {
+                            setField('categories', [...telegramGroupData.categories, e.target.value])
+                        }
+                    }}
+                    value=""
+                    placeholder="Select Category"
+                >
+                    <option value="">Select Category</option>
+                    {(categoryList || []).map((c) => (
+                        <option key={c.id} value={c.name}>
+                            {c.name}
+                        </option>
+                    ))}
+                </ListInput>
+                <div className="flex flex-wrap gap-2 mb-4">
+                    {telegramGroupData.categories.map((category, idx) => (
+                        <div key={idx}>
+                            <span onClick={() => removeCategory(idx)} className="dark:bg-blue-600 bg-blue-200 px-2 py-1 rounded-lg cursor-pointer">
+                                {category}
+                            </span>
+                        </div>
+                    ))}
+                </div>
+
+                {/* Chain */}
+                <ListInput
+                    label="Add Chain"
+                    type="select"
+                    outline
+                    onChange={(e) => {
+                        if (e.target.value) {
+                            setField('chains', [...telegramGroupData.chains, e.target.value])
+                        }
+                    }}
+                    value=""
+                    placeholder="Select Chain"
+                >
+                    <option value="">Select Chain</option>
+                    {(chainList || []).map((chain) => (
+                        <option key={chain.id} value={chain.name}>
+                            {chain.name}
+                        </option>
+                    ))}
+                </ListInput>
+                <div className="flex flex-wrap gap-2 mb-4">
+                    {telegramGroupData.chains.map((chain, idx) => (
+                        <div key={idx}>
+                            <span onClick={() => removeChain(idx)} className="bg-green-200 dark:bg-green-600 px-2 py-1 rounded-lg cursor-pointer">
+                                {chain}
+                            </span>
+                        </div>
+                    ))}
+                </div>
+
+                {/* Logo & Cover Photo */}
+                <div className="relative mb-4">
+                    <label className="block font-medium mb-2">Upload Logo</label>
+                    <input type="file" accept="image/*" onChange={(e) => handleFileChange('logo', e.target.files ? e.target.files[0] : null)} />
+                    {telegramGroupData.logo && (
+                        <div className="relative mt-2">
+                            <img src={handleImagePreview(telegramGroupData.logo) ?? ''} alt="Logo Preview" className="w-32 h-32 object-cover" />
+                            <button className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-full" onClick={() => setField('logo', null)}>
+                                &times;
+                            </button>
+                        </div>
+                    )}
+                </div>
+                <div className="relative mb-10">
+                    <label className="block font-medium mb-2">Upload Cover Photo</label>
+                    <input type="file" accept="image/*" onChange={(e) => handleFileChange('coverPhoto', e.target.files ? e.target.files[0] : null)} />
+                    {telegramGroupData.coverPhoto && (
+                        <div className="relative mt-2">
+                            <img src={handleImagePreview(telegramGroupData.coverPhoto) ?? ''} alt="Cover Photo Preview" className="w-full h-48 object-cover" />
+                            <button className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-full" onClick={() => setField('coverPhoto', null)}>
+                                &times;
+                            </button>
+                        </div>
+                    )}
+                </div>
+            </List>
+            <div className="flex justify-between">
+                <Button
+                    onClick={() => {
+                        resetContentData()
+                        setSelectedItemId(null)
+                    }}
+                    className="w-1/2 bg-gray-500 text-white rounded-full mr-2"
+                    large
+                    raised
+                >
+                    Back
+                </Button>
+                <Button onClick={handleSubmit} className="w-1/2 bg-brand-primary text-white rounded-full ml-2" large raised>
+                    {selectedItemId ? 'Update Telegram Group' : 'Submit Telegram Group'}
+                </Button>
+            </div>
+        </Card>
+    )
+
+    // Renders whichever form matches current contentType
     const renderContentForm = () => {
         switch (contentType) {
             case 'Podcast':
@@ -662,13 +1051,18 @@ const ContentCreationPage: React.FC = () => {
                 return renderEducatorForm()
             case 'Tutorial':
                 return renderTutorialForm()
+            case 'YoutubeChannel':
+                return renderYoutubeChannelForm()
+            case 'TelegramGroup':
+                return renderTelegramGroupForm()
             default:
                 return null
         }
     }
 
+    // Renders tabs for each content type
     const renderContentTypeTabs = () => (
-        <div className="flex space-x-2 mb-4 justify-center">
+        <div className="flex flex-wrap gap-2 mb-4 justify-center">
             <Button
                 outline={contentType !== 'Podcast'}
                 onClick={() => {
@@ -677,7 +1071,7 @@ const ContentCreationPage: React.FC = () => {
                     resetContentData()
                 }}
                 raised
-                className={`w-1/3 rounded-full ${contentType === 'Podcast' ? 'bg-brand-primary text-white' : ''}`}
+                className={`w-1/2 rounded-full ${contentType === 'Podcast' ? 'bg-brand-primary text-white' : ''}`}
             >
                 Podcast
             </Button>
@@ -689,7 +1083,7 @@ const ContentCreationPage: React.FC = () => {
                     resetContentData()
                 }}
                 raised
-                className={`w-1/3 rounded-full ${contentType === 'Educator' ? 'bg-brand-primary text-white' : ''}`}
+                className={`w-1/2 rounded-full ${contentType === 'Educator' ? 'bg-brand-primary text-white' : ''}`}
             >
                 Educator
             </Button>
@@ -701,30 +1095,56 @@ const ContentCreationPage: React.FC = () => {
                     resetContentData()
                 }}
                 raised
-                className={`w-1/3 rounded-full ${contentType === 'Tutorial' ? 'bg-brand-primary text-white' : ''}`}
+                className={`w-1/2 rounded-full ${contentType === 'Tutorial' ? 'bg-brand-primary text-white' : ''}`}
             >
                 Tutorial
+            </Button>
+
+            {/* NEW TABS */}
+            <Button
+                outline={contentType !== 'YoutubeChannel'}
+                onClick={() => {
+                    setContentType('YoutubeChannel')
+                    setSelectedItemId(null)
+                    resetContentData()
+                }}
+                raised
+                className={`w-1/2 rounded-full ${contentType === 'YoutubeChannel' ? 'bg-brand-primary text-white' : ''}`}
+            >
+                YouTube Channel
+            </Button>
+            <Button
+                outline={contentType !== 'TelegramGroup'}
+                onClick={() => {
+                    setContentType('TelegramGroup')
+                    setSelectedItemId(null)
+                    resetContentData()
+                }}
+                raised
+                className={`w-1/2 rounded-full ${contentType === 'TelegramGroup' ? 'bg-brand-primary text-white' : ''}`}
+            >
+                Telegram Group
             </Button>
         </div>
     )
 
+    // Render the existing items list
     const renderItemsList = () => {
         if (loading) {
             return <p className="text-center">Loading {contentType?.toLowerCase()}s...</p>
         }
-
         if (items.length === 0) {
             return <p className="text-center">No {contentType?.toLowerCase()}s found.</p>
         }
 
         return items.map((item) => {
-            const titleForItem = contentType === 'Tutorial' ? item.title : item.name
+            const titleForItem = item.title || item.name
             return (
                 <Block key={item.id}>
                     <Card
                         className="!mb-2 !p-0 !rounded-2xl shadow-lg !mx-2 relative border border-gray-300 dark:border-gray-600"
                         style={{
-                            backgroundImage: `url(${constructImageUrl(item.coverPhotoUrl)})`,
+                            backgroundImage: `url(${item.coverPhotoUrl || ''})`,
                             backgroundSize: 'cover',
                             backgroundPosition: 'center'
                         }}
@@ -737,7 +1157,7 @@ const ContentCreationPage: React.FC = () => {
                                     <h3 className="font-bold text-xl mb-2">{titleForItem}</h3>
                                     {item.description && <p className="text-sm">{item.description}</p>}
                                 </div>
-                                {item.logoUrl && <img alt={titleForItem || ''} className="h-16 w-16 rounded-full" src={constructImageUrl(item.logoUrl)} />}
+                                {item.logoUrl && <img alt={titleForItem || ''} className="h-16 w-16 rounded-full" src={item.logoUrl} />}
                             </div>
                         </div>
 
@@ -779,6 +1199,7 @@ const ContentCreationPage: React.FC = () => {
                     onClose={() => setNotificationOpen(false)}
                 />
 
+                {/* Action Popover */}
                 <Popover opened={popoverOpen} target={popoverTarget} onBackdropClick={() => setPopoverOpen(false)} onClose={() => setPopoverOpen(false)} angle>
                     <div className="text-center">
                         <List>
@@ -798,6 +1219,7 @@ const ContentCreationPage: React.FC = () => {
                     </div>
                 </Popover>
 
+                {/* Delete Confirmation Popover */}
                 <Popover
                     opened={confirmDeleteOpen}
                     target={popoverTarget}

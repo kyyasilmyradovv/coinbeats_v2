@@ -16,7 +16,7 @@ const DiscoverPage: React.FC = () => {
     const [chain, setChain] = useState('')
     const [searchQuery, setSearchQuery] = useState('')
     const [activeFilter, setActiveFilter] = useState('All')
-    const [activeTab, setActiveTab] = useState('tab-5') // Set active tab to Points
+    const [activeTab, setActiveTab] = useState('tab-5') // Example usage for bottom tab bar
 
     const { categories, chains, fetchCategories, fetchChains } = useCategoryChainStore((state) => ({
         categories: state.categories,
@@ -25,28 +25,49 @@ const DiscoverPage: React.FC = () => {
         fetchChains: state.fetchChains
     }))
 
-    const { educators, podcasts, tutorials, fetchEducators, fetchPodcasts, fetchTutorials } = useDiscoverStore((state) => ({
+    const {
+        educators,
+        podcasts,
+        tutorials,
+        youtubeChannels,
+        telegramGroups,
+        fetchEducators,
+        fetchPodcasts,
+        fetchTutorials,
+        fetchYoutubeChannels,
+        fetchTelegramGroups
+    } = useDiscoverStore((state) => ({
         educators: state.educators,
         podcasts: state.podcasts,
         tutorials: state.tutorials,
+        youtubeChannels: state.youtubeChannels,
+        telegramGroups: state.telegramGroups,
         fetchEducators: state.fetchEducators,
         fetchPodcasts: state.fetchPodcasts,
-        fetchTutorials: state.fetchTutorials
+        fetchTutorials: state.fetchTutorials,
+        fetchYoutubeChannels: state.fetchYoutubeChannels,
+        fetchTelegramGroups: state.fetchTelegramGroups
     }))
 
+    // Fetch categories/chains on mount
     useEffect(() => {
         fetchCategories()
         fetchChains()
     }, [fetchCategories, fetchChains])
 
+    // Fetch all content on mount
     useEffect(() => {
         fetchEducators()
         fetchPodcasts()
         fetchTutorials()
-    }, [fetchEducators, fetchPodcasts, fetchTutorials])
+        fetchYoutubeChannels()
+        fetchTelegramGroups()
+    }, [fetchEducators, fetchPodcasts, fetchTutorials, fetchYoutubeChannels, fetchTelegramGroups])
 
+    // Tab filters
     const tabs = ['All', 'Top Educators', 'Top Podcasts', 'Top Youtube Channels', 'Top TG Groups', 'Tutorials']
 
+    // Filter the data based on activeFilter, category, chain, search query
     const filteredData = useMemo(() => {
         let data: any[] = []
 
@@ -58,18 +79,21 @@ const DiscoverPage: React.FC = () => {
                 data = podcasts.map((item) => ({ ...item, contentType: 'Podcast' }))
                 break
             case 'Top Youtube Channels':
-                data = educators.filter((edu) => edu.youtubeUrl).map((item) => ({ ...item, contentType: 'Educator' }))
+                data = youtubeChannels.map((item) => ({ ...item, contentType: 'YoutubeChannel' }))
                 break
             case 'Top TG Groups':
-                data = educators.filter((edu) => edu.telegramUrl).map((item) => ({ ...item, contentType: 'Educator' }))
+                data = telegramGroups.map((item) => ({ ...item, contentType: 'TelegramGroup' }))
                 break
             case 'Tutorials':
                 data = tutorials.map((item) => ({ ...item, contentType: 'Tutorial' }))
                 break
             default:
+                // 'All' includes everything
                 data = [
                     ...educators.map((item) => ({ ...item, contentType: 'Educator' })),
                     ...podcasts.map((item) => ({ ...item, contentType: 'Podcast' })),
+                    ...youtubeChannels.map((item) => ({ ...item, contentType: 'YoutubeChannel' })),
+                    ...telegramGroups.map((item) => ({ ...item, contentType: 'TelegramGroup' })),
                     ...tutorials.map((item) => ({ ...item, contentType: 'Tutorial' }))
                 ]
         }
@@ -96,12 +120,16 @@ const DiscoverPage: React.FC = () => {
 
         // Apply search query
         if (searchQuery) {
-            data = data.filter((item) => (item.name || item.title || '').toLowerCase().includes(searchQuery.toLowerCase()))
+            data = data.filter((item) => {
+                const nameOrTitle = item.name || item.title || ''
+                return nameOrTitle.toLowerCase().includes(searchQuery.toLowerCase())
+            })
         }
 
         return data
-    }, [activeFilter, category, chain, searchQuery, educators, podcasts, tutorials])
+    }, [activeFilter, category, chain, searchQuery, educators, podcasts, tutorials, youtubeChannels, telegramGroups])
 
+    // Handle navigation to detail page
     const handleMoreClick = (item: any) => {
         switch (item.contentType) {
             case 'Educator':
@@ -113,13 +141,19 @@ const DiscoverPage: React.FC = () => {
             case 'Tutorial':
                 navigate(`/discover/tutorials/${item.id}`, { state: { item } })
                 break
+            case 'YoutubeChannel':
+                navigate(`/discover/youtube-channels/${item.id}`, { state: { item } })
+                break
+            case 'TelegramGroup':
+                navigate(`/discover/telegram-groups/${item.id}`, { state: { item } })
+                break
             default:
                 navigate(`/discover/${item.id}`, { state: { item } })
                 break
         }
     }
 
-    // Function to construct image URLs
+    // Construct full URL for images
     const constructImageUrl = (url: string) => {
         return `https://telegram.coinbeats.xyz/${url}`
     }
@@ -149,9 +183,9 @@ const DiscoverPage: React.FC = () => {
                                 onChange={(e) => setCategory(e.target.value)}
                             >
                                 <option value="">All</option>
-                                {categories.map((category) => (
-                                    <option key={category.id} value={category.name}>
-                                        {category.name}
+                                {categories.map((cat) => (
+                                    <option key={cat.id} value={cat.name}>
+                                        {cat.name}
                                     </option>
                                 ))}
                             </ListInput>
@@ -171,9 +205,9 @@ const DiscoverPage: React.FC = () => {
                                 onChange={(e) => setChain(e.target.value)}
                             >
                                 <option value="">All</option>
-                                {chains.map((chain) => (
-                                    <option key={chain.id} value={chain.name}>
-                                        {chain.name}
+                                {chains.map((ch) => (
+                                    <option key={ch.id} value={ch.name}>
+                                        {ch.name}
                                     </option>
                                 ))}
                             </ListInput>
@@ -245,9 +279,9 @@ const DiscoverPage: React.FC = () => {
                                     <div className="text-md font-bold">{item.name}</div>
                                 </>
                             )}
+
                             {item.contentType === 'Podcast' && (
                                 <>
-                                    {/* Display podcast image or placeholder */}
                                     {item.logoUrl ? (
                                         <div className="flex items-center justify-center w-full mt-1">
                                             <img alt={item.name} className="h-16 w-16 rounded-full mb-2" src={constructImageUrl(item.logoUrl)} loading="lazy" />
@@ -258,9 +292,9 @@ const DiscoverPage: React.FC = () => {
                                     <div className="text-md font-bold">{item.name}</div>
                                 </>
                             )}
+
                             {item.contentType === 'Tutorial' && (
                                 <>
-                                    {/* Display tutorial image or placeholder */}
                                     {item.logoUrl ? (
                                         <div className="flex items-center justify-center w-full mt-1">
                                             <img
@@ -276,6 +310,35 @@ const DiscoverPage: React.FC = () => {
                                     <div className="text-md font-bold">{item.title}</div>
                                 </>
                             )}
+
+                            {/* NEW: YouTubeChannel */}
+                            {item.contentType === 'YoutubeChannel' && (
+                                <>
+                                    {item.logoUrl ? (
+                                        <div className="flex items-center justify-center w-full mt-1">
+                                            <img alt={item.name} className="h-16 w-16 rounded-full mb-2" src={constructImageUrl(item.logoUrl)} loading="lazy" />
+                                        </div>
+                                    ) : (
+                                        <div className="h-16 w-16 rounded-full bg-gray-300 mb-2"></div>
+                                    )}
+                                    <div className="text-md font-bold">{item.name}</div>
+                                </>
+                            )}
+
+                            {/* NEW: TelegramGroup */}
+                            {item.contentType === 'TelegramGroup' && (
+                                <>
+                                    {item.logoUrl ? (
+                                        <div className="flex items-center justify-center w-full mt-1">
+                                            <img alt={item.name} className="h-16 w-16 rounded-full mb-2" src={constructImageUrl(item.logoUrl)} loading="lazy" />
+                                        </div>
+                                    ) : (
+                                        <div className="h-16 w-16 rounded-full bg-gray-300 mb-2"></div>
+                                    )}
+                                    <div className="text-md font-bold">{item.name}</div>
+                                </>
+                            )}
+
                             <Button
                                 outline
                                 rounded
@@ -288,20 +351,21 @@ const DiscoverPage: React.FC = () => {
                             >
                                 View Details
                             </Button>
+
                             {/* Display selected categories and chains as tags */}
                             <div className="flex flex-wrap gap-1 justify-center mt-1 mb-2">
                                 {/* Categories */}
                                 {item.categories &&
-                                    item.categories.map((category: any, index: number) => (
+                                    item.categories.map((cat: any, index: number) => (
                                         <span key={`category-${index}`} className="bg-blue-200 dark:bg-blue-600 !px-[4px] rounded-full text-2xs">
-                                            {category.name}
+                                            {cat.name}
                                         </span>
                                     ))}
                                 {/* Chains */}
                                 {item.chains &&
-                                    item.chains.map((chain: any, index: number) => (
+                                    item.chains.map((ch: any, index: number) => (
                                         <span key={`chain-${index}`} className="bg-green-200 dark:bg-green-600 !px-[4px] rounded-full text-2xs">
-                                            {chain.name}
+                                            {ch.name}
                                         </span>
                                     ))}
                             </div>

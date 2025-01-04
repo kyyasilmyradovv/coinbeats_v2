@@ -3,6 +3,8 @@
 import React, { useLayoutEffect, useEffect, useState, useRef } from 'react'
 import { Route, Routes, useLocation } from 'react-router-dom'
 import { App as KonstaApp, KonstaProvider } from 'konsta/react'
+
+// Existing pages
 import MainPage from './pages/MainPage'
 import NotFoundPage from './pages/NotFoundPage'
 import ProductPage from './pages/ProductPage'
@@ -34,23 +36,30 @@ import AddVideoLessonsPage from './pages/AddVideoLessonsPage'
 import AllocateXpPage from './pages/AllocateXpPage'
 import AcademyManagementPage from './pages/AcademyManagementPage'
 import AcademyDetailPage from './pages/AcademyDetailPage'
+import ScholarshipManagementPage from './pages/ScholarshipManagementPage'
+import CharacterLevelManagementPage from './pages/CharacterLevelManagementPage'
+import OverallRaffleManagementPage from './pages/OverallRaffleManagementPage'
+import SurpriseBoxPage from './pages/SurpriseBoxPage'
+
+// NEW: Import your detail pages for content items
+import EducatorDetailPage from './pages/EducatorDetailPage'
+import PodcastDetailPage from './pages/PodcastDetailPage'
+import TutorialDetailPage from './pages/TutorialDetailPage'
+import YoutubeChannelDetailPage from './pages/YoutubeChannelDetailPage'
+import TelegramGroupDetailPage from './pages/TelegramGroupDetailPage'
+
+// Contexts & components
 import { BookmarkProvider } from './contexts/BookmarkContext'
 import { useInitData } from '@telegram-apps/sdk-react'
 import useSessionStore from './store/useSessionStore'
 import useUserStore from './store/useUserStore'
 import RouteGuard from './components/RouteGuard'
 import Spinner from './components/Spinner'
-import ScholarshipManagementPage from './pages/ScholarshipManagementPage'
-import CharacterLevelManagementPage from './pages/CharacterLevelManagementPage'
-
-// Import the NotificationDialog component and the notification store
 import NotificationDialog from './components/NotificationDialog'
 import useNotificationStore from './store/useNotificationStore'
-import OverallRaffleManagementPage from './pages/OverallRaffleManagementPage'
-import SurpriseBoxPage from './pages/SurpriseBoxPage'
 
 // 1) Import BannedPage
-import BannedPage from './components/BannedPage' // <-- You create this file
+import BannedPage from './components/BannedPage' // <-- if you have this file
 
 function RootComponent() {
     const [isLoading, setIsLoading] = useState(true)
@@ -75,7 +84,6 @@ function RootComponent() {
     }))
 
     const location = useLocation()
-
     const inIFrame = window.parent !== window
 
     useLayoutEffect(() => {
@@ -132,7 +140,7 @@ function RootComponent() {
             window.removeEventListener('beforeunload', handleSessionEnd)
             updateRouteDuration()
         }
-    }, [initData]) // Include initData in the dependency array
+    }, [initData, location.pathname, addRouteDuration, setCurrentRoute, startSession, endSession])
 
     // Import the telegramUserId from the session store
     const telegramUserId = useSessionStore((state) => state.userId)
@@ -360,6 +368,13 @@ function RootComponent() {
                                 </RouteGuard>
                             }
                         />
+
+                        {/* NEW: Detail routes for each content type */}
+                        <Route path="/discover/educators/:id" element={<EducatorDetailPage />} />
+                        <Route path="/discover/podcasts/:id" element={<PodcastDetailPage />} />
+                        <Route path="/discover/tutorials/:id" element={<TutorialDetailPage />} />
+                        <Route path="/discover/youtube-channels/:id" element={<YoutubeChannelDetailPage />} />
+                        <Route path="/discover/telegram-groups/:id" element={<TelegramGroupDetailPage />} />
                     </Routes>
                 </BookmarkProvider>
             </KonstaApp>
