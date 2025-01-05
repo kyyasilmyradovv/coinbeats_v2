@@ -32,7 +32,6 @@ const EducatorDetailPage: React.FC = () => {
     const [educator, setEducator] = useState<Educator | null>(null)
     const { educators, fetchEducators } = useDiscoverStore()
 
-    // Tabs
     const [activeTab, setActiveTab] = useState<'overview' | 'tasks'>('overview')
 
     useEffect(() => {
@@ -72,9 +71,9 @@ const EducatorDetailPage: React.FC = () => {
         ]
         return (
             <div className="flex gap-3 mt-4 flex-wrap">
-                {links.map((linkItem, idx) => {
-                    if (!linkItem.url) return null
-                    const config = linkIcons[linkItem.field] || {
+                {links.map((item, idx) => {
+                    if (!item.url) return null
+                    const config = linkIcons[item.field] || {
                         icon: 'mdi:link-variant',
                         label: 'Link',
                         iconColor: 'rgba(255,255,255,0.8)'
@@ -82,7 +81,7 @@ const EducatorDetailPage: React.FC = () => {
                     return (
                         <button
                             key={idx}
-                            onClick={() => window.open(linkItem.url, '_blank')}
+                            onClick={() => window.open(item.url, '_blank')}
                             title={config.label}
                             className="p-2 rounded-full hover:opacity-80 transition-all"
                             style={{ backgroundColor: '#444' }}
@@ -99,8 +98,8 @@ const EducatorDetailPage: React.FC = () => {
         if (!educator) return <p className="text-center mt-4">Loading educator...</p>
 
         return (
-            <Card className="mx-4 mt-4 p-0 rounded-xl shadow-lg overflow-hidden bg-white dark:bg-zinc-900 border border-gray-300 dark:border-gray-600">
-                {/* Cover Photo (if any) */}
+            <div className="!p-0 mx-4 !mb-20 mt-4 rounded-xl shadow-lg overflow-hidden bg-white dark:bg-zinc-900 border border-gray-300 dark:border-gray-600 pb-16">
+                {/* Cover Photo */}
                 {educator.coverPhotoUrl && (
                     <div className="relative w-full h-40 overflow-hidden rounded-b-2xl">
                         <img src={constructImageUrl(educator.coverPhotoUrl)} alt="Cover" className="w-full h-full object-cover" />
@@ -163,7 +162,7 @@ const EducatorDetailPage: React.FC = () => {
                         </button>
                     </div>
                 </div>
-            </Card>
+            </div>
         )
     }
 
@@ -177,7 +176,7 @@ const EducatorDetailPage: React.FC = () => {
     }
 
     return (
-        <Page>
+        <Page className="overflow-auto">
             <Navbar />
             <Sidebar />
 

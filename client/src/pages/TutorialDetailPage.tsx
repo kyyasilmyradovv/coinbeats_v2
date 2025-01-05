@@ -29,7 +29,6 @@ const TutorialDetailPage: React.FC = () => {
     const [tutorial, setTutorial] = useState<Tutorial | null>(null)
     const { tutorials, fetchTutorials } = useDiscoverStore()
 
-    // Tabs
     const [activeTab, setActiveTab] = useState<'overview' | 'tasks'>('overview')
 
     useEffect(() => {
@@ -51,10 +50,6 @@ const TutorialDetailPage: React.FC = () => {
 
     const constructImageUrl = (url?: string) => (url ? `https://telegram.coinbeats.xyz/${url}` : '')
 
-    // Single fallback color for the link
-    const linkBg = '#444'
-    const linkColor = 'rgba(255,255,255,0.8)'
-
     const renderLinkButtons = () => {
         if (!tutorial?.contentUrl) return null
         return (
@@ -62,10 +57,10 @@ const TutorialDetailPage: React.FC = () => {
                 <button
                     onClick={() => window.open(tutorial.contentUrl, '_blank')}
                     className="p-2 rounded-full hover:opacity-80 transition-all"
-                    style={{ backgroundColor: linkBg }}
+                    style={{ backgroundColor: '#444' }}
                     title="Open Tutorial Link"
                 >
-                    <Icon icon="mdi:link-variant" style={{ color: linkColor }} className="w-8 h-8" />
+                    <Icon icon="mdi:link-variant" style={{ color: 'rgba(255,255,255,0.8)' }} className="w-8 h-8" />
                 </button>
             </div>
         )
@@ -75,7 +70,7 @@ const TutorialDetailPage: React.FC = () => {
         if (!tutorial) return <p className="text-center mt-4">Loading tutorial...</p>
 
         return (
-            <Card className="mx-4 mt-4 p-0 rounded-xl shadow-lg overflow-hidden bg-white dark:bg-zinc-900 border border-gray-300 dark:border-gray-600">
+            <div className="!p-0 mx-4 mt-4 !mb-20 rounded-xl shadow-lg overflow-hidden bg-white dark:bg-zinc-900 border border-gray-300 dark:border-gray-600 pb-16">
                 {tutorial.coverPhotoUrl && (
                     <div className="relative w-full h-40 overflow-hidden rounded-b-2xl">
                         <img src={constructImageUrl(tutorial.coverPhotoUrl)} alt="Cover" className="w-full h-full object-cover" />
@@ -139,7 +134,7 @@ const TutorialDetailPage: React.FC = () => {
                         </button>
                     </div>
                 </div>
-            </Card>
+            </div>
         )
     }
 
@@ -153,11 +148,10 @@ const TutorialDetailPage: React.FC = () => {
     }
 
     return (
-        <Page>
+        <Page className="overflow-auto">
             <Navbar />
             <Sidebar />
 
-            {/* Tabs */}
             <div className="flex gap-2 px-4 mt-4">
                 <button
                     onClick={() => setActiveTab('overview')}

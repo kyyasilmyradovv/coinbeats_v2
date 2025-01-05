@@ -28,7 +28,6 @@ const YoutubeChannelDetailPage: React.FC = () => {
     const [channel, setChannel] = useState<YoutubeChannel | null>(null)
     const { youtubeChannels, fetchYoutubeChannels } = useDiscoverStore()
 
-    // Tabs
     const [activeTab, setActiveTab] = useState<'overview' | 'tasks'>('overview')
 
     useEffect(() => {
@@ -73,7 +72,7 @@ const YoutubeChannelDetailPage: React.FC = () => {
         if (!channel) return <p className="text-center mt-4">Loading YouTube Channel...</p>
 
         return (
-            <Card className="mx-4 mt-4 p-0 rounded-xl shadow-lg overflow-hidden bg-white dark:bg-zinc-900 border border-gray-300 dark:border-gray-600">
+            <div className="!p-0 mx-4 mt-4 !mb-20 rounded-xl shadow-lg overflow-hidden bg-white dark:bg-zinc-900 border border-gray-300 dark:border-gray-600 pb-16">
                 {channel.coverPhotoUrl && (
                     <div className="relative w-full h-40 overflow-hidden rounded-b-2xl">
                         <img src={constructImageUrl(channel.coverPhotoUrl)} alt="Cover" className="w-full h-full object-cover" />
@@ -131,7 +130,7 @@ const YoutubeChannelDetailPage: React.FC = () => {
                         </button>
                     </div>
                 </div>
-            </Card>
+            </div>
         )
     }
 
@@ -145,11 +144,10 @@ const YoutubeChannelDetailPage: React.FC = () => {
     }
 
     return (
-        <Page>
+        <Page className="overflow-auto">
             <Navbar />
             <Sidebar />
 
-            {/* Tabs */}
             <div className="flex gap-2 px-4 mt-4">
                 <button
                     onClick={() => setActiveTab('overview')}
