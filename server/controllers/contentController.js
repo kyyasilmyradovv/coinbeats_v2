@@ -597,3 +597,459 @@ exports.deleteTelegramGroup = async (req, res, next) => {
     return next(createError(500, 'Error deleting Telegram group'));
   }
 };
+
+exports.updatePodcast = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const podcastId = Number(id);
+
+    // 1) Check if it exists
+    const existing = await prisma.podcast.findUnique({
+      where: { id: podcastId },
+    });
+    if (!existing) {
+      return next(createError(404, 'Podcast not found'));
+    }
+
+    // 2) Extract fields from req.body
+    const {
+      name,
+      description,
+      spotifyUrl,
+      appleUrl,
+      youtubeUrl,
+      categories = '[]',
+      chains = '[]',
+      contentOrigin,
+    } = req.body;
+
+    // Convert category/chain arrays
+    const categoryNames = JSON.parse(categories);
+    const chainNames = JSON.parse(chains);
+
+    // 3) Handle new file uploads if present
+    let logoUrl = existing.logoUrl;
+    let coverPhotoUrl = existing.coverPhotoUrl;
+
+    const newLogo = handleFileUpload(req.files, 'logo');
+    if (newLogo) logoUrl = newLogo;
+
+    const newCover = handleFileUpload(req.files, 'coverPhoto');
+    if (newCover) coverPhotoUrl = newCover;
+
+    // 4) Validate categories and chains
+    const categoryRecords = await Promise.all(
+      categoryNames.map(async (catName) => {
+        const cat = await prisma.category.findUnique({
+          where: { name: catName },
+        });
+        if (!cat) throw new Error(`Category "${catName}" not found`);
+        return cat;
+      })
+    );
+
+    const chainRecords = await Promise.all(
+      chainNames.map(async (chainName) => {
+        const chain = await prisma.chain.findUnique({
+          where: { name: chainName },
+        });
+        if (!chain) throw new Error(`Chain "${chainName}" not found`);
+        return chain;
+      })
+    );
+
+    // 5) Update record
+    const updated = await prisma.podcast.update({
+      where: { id: podcastId },
+      data: {
+        name: name !== undefined ? name : existing.name,
+        description,
+        spotifyUrl,
+        appleUrl,
+        youtubeUrl,
+        logoUrl,
+        coverPhotoUrl,
+        contentOrigin:
+          contentOrigin === 'PLATFORM_BASED'
+            ? 'PLATFORM_BASED'
+            : 'CREATOR_BASED',
+
+        // Reset and reconnect categories/chains
+        categories: {
+          set: [],
+          connect: categoryRecords.map((c) => ({ id: c.id })),
+        },
+        chains: {
+          set: [],
+          connect: chainRecords.map((c) => ({ id: c.id })),
+        },
+      },
+    });
+
+    res.json({ message: 'Podcast updated successfully', updated });
+  } catch (error) {
+    console.error('Error updating podcast:', error);
+    next(createError(500, 'Error updating podcast'));
+  }
+};
+
+/**
+ * UPDATE Educator
+ */
+exports.updateEducator = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const educatorId = Number(id);
+
+    const existing = await prisma.educator.findUnique({
+      where: { id: educatorId },
+    });
+    if (!existing) {
+      return next(createError(404, 'Educator not found'));
+    }
+
+    const {
+      name,
+      bio,
+      youtubeUrl,
+      twitterUrl,
+      telegramUrl,
+      discordUrl,
+      categories = '[]',
+      chains = '[]',
+      contentOrigin,
+    } = req.body;
+
+    const categoryNames = JSON.parse(categories);
+    const chainNames = JSON.parse(chains);
+
+    // handle files
+    let logoUrl = existing.logoUrl;
+    let coverPhotoUrl = existing.coverPhotoUrl;
+
+    const newLogo = handleFileUpload(req.files, 'logo');
+    if (newLogo) logoUrl = newLogo;
+
+    const newCover = handleFileUpload(req.files, 'coverPhoto');
+    if (newCover) coverPhotoUrl = newCover;
+
+    // Validate categories/chains
+    const categoryRecords = await Promise.all(
+      categoryNames.map(async (catName) => {
+        const cat = await prisma.category.findUnique({
+          where: { name: catName },
+        });
+        if (!cat) throw new Error(`Category "${catName}" not found`);
+        return cat;
+      })
+    );
+
+    const chainRecords = await Promise.all(
+      chainNames.map(async (chainName) => {
+        const chain = await prisma.chain.findUnique({
+          where: { name: chainName },
+        });
+        if (!chain) throw new Error(`Chain "${chainName}" not found`);
+        return chain;
+      })
+    );
+
+    const updated = await prisma.educator.update({
+      where: { id: educatorId },
+      data: {
+        name: name !== undefined ? name : existing.name,
+        bio,
+        youtubeUrl,
+        twitterUrl,
+        telegramUrl,
+        discordUrl,
+        logoUrl,
+        coverPhotoUrl,
+        contentOrigin:
+          contentOrigin === 'PLATFORM_BASED'
+            ? 'PLATFORM_BASED'
+            : 'CREATOR_BASED',
+
+        categories: {
+          set: [],
+          connect: categoryRecords.map((c) => ({ id: c.id })),
+        },
+        chains: {
+          set: [],
+          connect: chainRecords.map((c) => ({ id: c.id })),
+        },
+      },
+    });
+
+    res.json({ message: 'Educator updated successfully', updated });
+  } catch (error) {
+    console.error('Error updating educator:', error);
+    next(createError(500, 'Error updating educator'));
+  }
+};
+
+/**
+ * UPDATE Tutorial
+ */
+exports.updateTutorial = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const tutorialId = Number(id);
+
+    const existing = await prisma.tutorial.findUnique({
+      where: { id: tutorialId },
+    });
+    if (!existing) {
+      return next(createError(404, 'Tutorial not found'));
+    }
+
+    const {
+      title,
+      description,
+      contentUrl,
+      type,
+      categories = '[]',
+      chains = '[]',
+      contentOrigin,
+    } = req.body;
+
+    const categoryNames = JSON.parse(categories);
+    const chainNames = JSON.parse(chains);
+
+    let logoUrl = existing.logoUrl;
+    let coverPhotoUrl = existing.coverPhotoUrl;
+
+    const newLogo = handleFileUpload(req.files, 'logo');
+    if (newLogo) logoUrl = newLogo;
+
+    const newCover = handleFileUpload(req.files, 'coverPhoto');
+    if (newCover) coverPhotoUrl = newCover;
+
+    // Validate categories/chains
+    const categoryRecords = await Promise.all(
+      categoryNames.map(async (catName) => {
+        const cat = await prisma.category.findUnique({
+          where: { name: catName },
+        });
+        if (!cat) throw new Error(`Category "${catName}" not found`);
+        return cat;
+      })
+    );
+
+    const chainRecords = await Promise.all(
+      chainNames.map(async (chainName) => {
+        const chain = await prisma.chain.findUnique({
+          where: { name: chainName },
+        });
+        if (!chain) throw new Error(`Chain "${chainName}" not found`);
+        return chain;
+      })
+    );
+
+    const updated = await prisma.tutorial.update({
+      where: { id: tutorialId },
+      data: {
+        title: title !== undefined ? title : existing.title,
+        description,
+        contentUrl,
+        type,
+        logoUrl,
+        coverPhotoUrl,
+        contentOrigin:
+          contentOrigin === 'PLATFORM_BASED'
+            ? 'PLATFORM_BASED'
+            : 'CREATOR_BASED',
+
+        categories: {
+          set: [],
+          connect: categoryRecords.map((c) => ({ id: c.id })),
+        },
+        chains: {
+          set: [],
+          connect: chainRecords.map((c) => ({ id: c.id })),
+        },
+      },
+    });
+
+    res.json({ message: 'Tutorial updated successfully', updated });
+  } catch (error) {
+    console.error('Error updating tutorial:', error);
+    next(createError(500, 'Error updating tutorial'));
+  }
+};
+
+/**
+ * UPDATE YouTube Channel
+ */
+exports.updateYoutubeChannel = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const channelId = Number(id);
+
+    const existing = await prisma.youtubeChannel.findUnique({
+      where: { id: channelId },
+    });
+    if (!existing) {
+      return next(createError(404, 'YouTube channel not found'));
+    }
+
+    const {
+      name,
+      description,
+      youtubeUrl,
+      categories = '[]',
+      chains = '[]',
+      contentOrigin,
+    } = req.body;
+
+    const categoryNames = JSON.parse(categories);
+    const chainNames = JSON.parse(chains);
+
+    let logoUrl = existing.logoUrl;
+    let coverPhotoUrl = existing.coverPhotoUrl;
+
+    const newLogo = handleFileUpload(req.files, 'logo');
+    if (newLogo) logoUrl = newLogo;
+
+    const newCover = handleFileUpload(req.files, 'coverPhoto');
+    if (newCover) coverPhotoUrl = newCover;
+
+    // Validate categories/chains
+    const categoryRecords = await Promise.all(
+      categoryNames.map(async (catName) => {
+        const cat = await prisma.category.findUnique({
+          where: { name: catName },
+        });
+        if (!cat) throw new Error(`Category "${catName}" not found`);
+        return cat;
+      })
+    );
+
+    const chainRecords = await Promise.all(
+      chainNames.map(async (chainName) => {
+        const chain = await prisma.chain.findUnique({
+          where: { name: chainName },
+        });
+        if (!chain) throw new Error(`Chain "${chainName}" not found`);
+        return chain;
+      })
+    );
+
+    const updated = await prisma.youtubeChannel.update({
+      where: { id: channelId },
+      data: {
+        name: name !== undefined ? name : existing.name,
+        description,
+        youtubeUrl,
+        logoUrl,
+        coverPhotoUrl,
+        contentOrigin:
+          contentOrigin === 'PLATFORM_BASED'
+            ? 'PLATFORM_BASED'
+            : 'CREATOR_BASED',
+
+        categories: {
+          set: [],
+          connect: categoryRecords.map((c) => ({ id: c.id })),
+        },
+        chains: {
+          set: [],
+          connect: chainRecords.map((c) => ({ id: c.id })),
+        },
+      },
+    });
+
+    res.json({ message: 'YouTube Channel updated successfully', updated });
+  } catch (error) {
+    console.error('Error updating YouTube channel:', error);
+    next(createError(500, 'Error updating YouTube channel'));
+  }
+};
+
+/**
+ * UPDATE Telegram Group
+ */
+exports.updateTelegramGroup = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const groupId = Number(id);
+
+    const existing = await prisma.telegramGroup.findUnique({
+      where: { id: groupId },
+    });
+    if (!existing) {
+      return next(createError(404, 'Telegram group not found'));
+    }
+
+    const {
+      name,
+      description,
+      telegramUrl,
+      categories = '[]',
+      chains = '[]',
+      contentOrigin,
+    } = req.body;
+
+    const categoryNames = JSON.parse(categories);
+    const chainNames = JSON.parse(chains);
+
+    let logoUrl = existing.logoUrl;
+    let coverPhotoUrl = existing.coverPhotoUrl;
+
+    const newLogo = handleFileUpload(req.files, 'logo');
+    if (newLogo) logoUrl = newLogo;
+
+    const newCover = handleFileUpload(req.files, 'coverPhoto');
+    if (newCover) coverPhotoUrl = newCover;
+
+    // Validate categories/chains
+    const categoryRecords = await Promise.all(
+      categoryNames.map(async (catName) => {
+        const cat = await prisma.category.findUnique({
+          where: { name: catName },
+        });
+        if (!cat) throw new Error(`Category "${catName}" not found`);
+        return cat;
+      })
+    );
+
+    const chainRecords = await Promise.all(
+      chainNames.map(async (chainName) => {
+        const chain = await prisma.chain.findUnique({
+          where: { name: chainName },
+        });
+        if (!chain) throw new Error(`Chain "${chainName}" not found`);
+        return chain;
+      })
+    );
+
+    const updated = await prisma.telegramGroup.update({
+      where: { id: groupId },
+      data: {
+        name: name !== undefined ? name : existing.name,
+        description,
+        telegramUrl,
+        logoUrl,
+        coverPhotoUrl,
+        contentOrigin:
+          contentOrigin === 'PLATFORM_BASED'
+            ? 'PLATFORM_BASED'
+            : 'CREATOR_BASED',
+
+        categories: {
+          set: [],
+          connect: categoryRecords.map((c) => ({ id: c.id })),
+        },
+        chains: {
+          set: [],
+          connect: chainRecords.map((c) => ({ id: c.id })),
+        },
+      },
+    });
+
+    res.json({ message: 'Telegram Group updated successfully', updated });
+  } catch (error) {
+    console.error('Error updating Telegram Group:', error);
+    next(createError(500, 'Error updating Telegram Group'));
+  }
+};

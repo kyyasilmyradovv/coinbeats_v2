@@ -2,7 +2,8 @@
 
 import React, { useEffect, useState } from 'react'
 import { useParams, useLocation, useNavigate } from 'react-router-dom'
-import { Page, Card, Block, Button } from 'konsta/react'
+import { Page, Card, Block } from 'konsta/react'
+import { Icon } from '@iconify/react'
 import Navbar from '../components/common/Navbar'
 import Sidebar from '../components/common/Sidebar'
 import BottomTabBar from '../components/BottomTabBar'
@@ -24,22 +25,21 @@ interface Educator {
 }
 
 const EducatorDetailPage: React.FC = () => {
-    const { id } = useParams() // "id" from URL
+    const { id } = useParams()
     const location = useLocation()
     const navigate = useNavigate()
 
     const [educator, setEducator] = useState<Educator | null>(null)
-
-    // We can fetch from store
     const { educators, fetchEducators } = useDiscoverStore()
 
+    // Tabs
+    const [activeTab, setActiveTab] = useState<'overview' | 'tasks'>('overview')
+
     useEffect(() => {
-        // First, try location.state
         const stateItem = location.state?.item as Educator | undefined
         if (stateItem) {
             setEducator(stateItem)
         } else {
-            // If not found in state, fetch from store
             if (educators.length === 0) {
                 fetchEducators().then(() => {
                     const found = educators.find((e) => e.id === Number(id))
@@ -54,53 +54,158 @@ const EducatorDetailPage: React.FC = () => {
 
     const constructImageUrl = (url?: string) => (url ? `https://telegram.coinbeats.xyz/${url}` : '')
 
+    // Subtle brand icon styling
+    const linkIcons: Record<string, { icon: string; label: string; iconColor: string }> = {
+        youtubeUrl: { icon: 'mdi:youtube', label: 'YouTube', iconColor: 'rgba(255,0,0,0.9)' },
+        twitterUrl: { icon: 'mdi:twitter', label: 'Twitter', iconColor: 'rgba(29,161,242,0.9)' },
+        telegramUrl: { icon: 'mdi:telegram', label: 'Telegram', iconColor: 'rgba(34,158,217,0.9)' },
+        discordUrl: { icon: 'mdi:discord', label: 'Discord', iconColor: 'rgba(88,101,242,0.9)' }
+    }
+
+    const renderLinkButtons = () => {
+        if (!educator) return null
+        const links = [
+            { field: 'youtubeUrl', url: educator.youtubeUrl },
+            { field: 'twitterUrl', url: educator.twitterUrl },
+            { field: 'telegramUrl', url: educator.telegramUrl },
+            { field: 'discordUrl', url: educator.discordUrl }
+        ]
+        return (
+            <div className="flex gap-3 mt-4 flex-wrap">
+                {links.map((linkItem, idx) => {
+                    if (!linkItem.url) return null
+                    const config = linkIcons[linkItem.field] || {
+                        icon: 'mdi:link-variant',
+                        label: 'Link',
+                        iconColor: 'rgba(255,255,255,0.8)'
+                    }
+                    return (
+                        <button
+                            key={idx}
+                            onClick={() => window.open(linkItem.url, '_blank')}
+                            title={config.label}
+                            className="p-2 rounded-full hover:opacity-80 transition-all"
+                            style={{ backgroundColor: '#444' }}
+                        >
+                            <Icon icon={config.icon} style={{ color: config.iconColor }} className="w-8 h-8" />
+                        </button>
+                    )
+                })}
+            </div>
+        )
+    }
+
+    const renderOverviewTab = () => {
+        if (!educator) return <p className="text-center mt-4">Loading educator...</p>
+
+        return (
+            <Card className="mx-4 mt-4 p-0 rounded-xl shadow-lg overflow-hidden bg-white dark:bg-zinc-900 border border-gray-300 dark:border-gray-600">
+                {/* Cover Photo (if any) */}
+                {educator.coverPhotoUrl && (
+                    <div className="relative w-full h-40 overflow-hidden">
+                        <img src={constructImageUrl(educator.coverPhotoUrl)} alt="Cover" className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-black bg-opacity-40"></div>
+                    </div>
+                )}
+
+                {/* Logo + Name */}
+                {(educator.avatarUrl || educator.name) && (
+                    <div className="flex items-center gap-3 px-4 pt-4">
+                        {educator.avatarUrl && (
+                            <img
+                                src={constructImageUrl(educator.avatarUrl)}
+                                alt="Logo"
+                                className="w-20 h-20 rounded-full object-cover border-2 border-white dark:border-gray-800"
+                            />
+                        )}
+                        {educator.name && <h2 className="text-lg font-bold text-gray-800 dark:text-gray-200">{educator.name}</h2>}
+                    </div>
+                )}
+
+                <div className="px-4 pb-4">
+                    {/* About */}
+                    {(educator.categories?.length || 0) > 0 || (educator.chains?.length || 0) > 0 ? (
+                        <Block className="mt-4 !p-0">
+                            <h3 className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">About:</h3>
+                            <div className="flex flex-wrap gap-2">
+                                {educator.categories?.map((cat) => (
+                                    <span key={cat.id} className="bg-blue-200 dark:bg-blue-700 text-xs px-2 py-1 rounded-full">
+                                        {cat.name}
+                                    </span>
+                                ))}
+                                {educator.chains?.map((chain) => (
+                                    <span key={chain.id} className="bg-green-200 dark:bg-green-700 text-xs px-2 py-1 rounded-full">
+                                        {chain.name}
+                                    </span>
+                                ))}
+                            </div>
+                        </Block>
+                    ) : null}
+
+                    {/* Description */}
+                    {educator.bio && (
+                        <div className="mt-4">
+                            <h3 className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Description:</h3>
+                            <p className="text-sm text-gray-700 dark:text-gray-300">{educator.bio}</p>
+                        </div>
+                    )}
+
+                    {/* Social links */}
+                    {renderLinkButtons()}
+
+                    {/* Go Back */}
+                    <div className="mt-6">
+                        <button
+                            onClick={() => navigate(-1)}
+                            className="px-4 py-2 bg-gradient-to-t from-[#ff0077] to-[#7700ff] text-white border-[#9c27b0] font-bold rounded-full border-2 shadow-md transition-all"
+                        >
+                            Go Back
+                        </button>
+                    </div>
+                </div>
+            </Card>
+        )
+    }
+
+    const renderTasksTab = () => {
+        return (
+            <Card className="mx-4 mt-4 p-4 rounded-xl shadow-lg bg-white dark:bg-zinc-900 border border-gray-300 dark:border-gray-600">
+                <h2 className="text-lg font-bold mb-2 text-gray-800 dark:text-gray-200">Tasks</h2>
+                <p className="text-sm text-gray-700 dark:text-gray-300">No tasks yet!</p>
+            </Card>
+        )
+    }
+
     return (
         <Page>
             <Navbar />
             <Sidebar />
 
-            {educator ? (
-                <Card className="m-4 p-4 rounded-xl shadow-lg bg-white dark:bg-zinc-900 border border-gray-300 dark:border-gray-600">
-                    <h2 className="text-xl font-bold mb-2">{educator.name}</h2>
+            {/* Tabs */}
+            <div className="flex gap-2 px-4 mt-4">
+                <button
+                    onClick={() => setActiveTab('overview')}
+                    className={`px-4 py-1 rounded-full border text-sm font-bold transition-all ${
+                        activeTab === 'overview'
+                            ? 'bg-gradient-to-t from-[#ff0077] to-[#7700ff] text-white border-[#9c27b0]'
+                            : 'bg-gray-800 text-white border-gray-600'
+                    }`}
+                >
+                    Overview
+                </button>
+                <button
+                    onClick={() => setActiveTab('tasks')}
+                    className={`px-4 py-1 rounded-full border text-sm font-bold transition-all ${
+                        activeTab === 'tasks'
+                            ? 'bg-gradient-to-t from-[#ff0077] to-[#7700ff] text-white border-[#9c27b0]'
+                            : 'bg-gray-800 text-white border-gray-600'
+                    }`}
+                >
+                    Tasks
+                </button>
+            </div>
 
-                    <div className="flex items-center gap-4">
-                        {educator.avatarUrl && (
-                            <img src={constructImageUrl(educator.avatarUrl)} alt={educator.name} className="w-24 h-24 rounded-full object-cover" />
-                        )}
-                        {educator.coverPhotoUrl && (
-                            <img src={constructImageUrl(educator.coverPhotoUrl)} alt="cover" className="w-32 h-32 object-cover rounded-lg" />
-                        )}
-                    </div>
-
-                    {educator.bio && <p className="text-sm text-gray-700 dark:text-gray-300 mt-4">{educator.bio}</p>}
-
-                    <Block className="mt-4 space-y-1 text-sm text-gray-600 dark:text-gray-300">
-                        {educator.youtubeUrl && <p>YouTube: {educator.youtubeUrl}</p>}
-                        {educator.twitterUrl && <p>Twitter: {educator.twitterUrl}</p>}
-                        {educator.telegramUrl && <p>Telegram: {educator.telegramUrl}</p>}
-                        {educator.discordUrl && <p>Discord: {educator.discordUrl}</p>}
-                    </Block>
-
-                    <div className="flex flex-wrap gap-2 mt-4">
-                        {educator.categories?.map((cat) => (
-                            <span key={cat.id} className="bg-blue-200 dark:bg-blue-700 text-xs px-2 py-1 rounded-full">
-                                {cat.name}
-                            </span>
-                        ))}
-                        {educator.chains?.map((chain) => (
-                            <span key={chain.id} className="bg-green-200 dark:bg-green-700 text-xs px-2 py-1 rounded-full">
-                                {chain.name}
-                            </span>
-                        ))}
-                    </div>
-
-                    <Button outline rounded className="mt-4" onClick={() => navigate(-1)}>
-                        Go Back
-                    </Button>
-                </Card>
-            ) : (
-                <p className="text-center mt-4">Loading educator...</p>
-            )}
+            {activeTab === 'overview' ? renderOverviewTab() : renderTasksTab()}
 
             <BottomTabBar activeTab="tab-1" setActiveTab={() => {}} />
         </Page>

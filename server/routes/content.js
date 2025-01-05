@@ -3,32 +3,41 @@
 const express = require('express');
 const { authenticateToken, authorizeRoles } = require('../middleware/auth');
 const asyncHandler = require('express-async-handler');
-const { upload } = require('../uploadConfig'); // Multer config
+const { upload } = require('../uploadConfig');
 
 const {
+  // existing create
   createPodcast,
   createEducator,
   createTutorial,
+  createYoutubeChannel,
+  createTelegramGroup,
+
+  // existing get
   getPodcasts,
   getEducators,
   getTutorials,
+  getYoutubeChannels,
+  getTelegramGroups,
 
-  // NEW: import your delete controllers
+  // existing delete
   deletePodcast,
   deleteEducator,
   deleteTutorial,
-
-  createYoutubeChannel,
-  createTelegramGroup,
-  getYoutubeChannels,
-  getTelegramGroups,
   deleteYoutubeChannel,
   deleteTelegramGroup,
+
+  // NEW update controllers
+  updatePodcast,
+  updateEducator,
+  updateTutorial,
+  updateYoutubeChannel,
+  updateTelegramGroup,
 } = require('../controllers/contentController');
 
 const router = express.Router();
 
-// ---------------- PODCASTS ----------------
+// ================== PODCAST ==================
 router.post(
   '/podcasts',
   authenticateToken,
@@ -39,10 +48,17 @@ router.post(
   ]),
   asyncHandler(createPodcast)
 );
-
 router.get('/podcasts', authenticateToken, asyncHandler(getPodcasts));
-
-// NEW: Delete Podcast
+router.put(
+  '/podcasts/:id',
+  authenticateToken,
+  authorizeRoles('SUPERADMIN'),
+  upload.fields([
+    { name: 'logo', maxCount: 1 },
+    { name: 'coverPhoto', maxCount: 1 },
+  ]),
+  asyncHandler(updatePodcast)
+);
 router.delete(
   '/podcasts/:id',
   authenticateToken,
@@ -50,7 +66,7 @@ router.delete(
   asyncHandler(deletePodcast)
 );
 
-// ---------------- EDUCATORS ----------------
+// ================== EDUCATOR ==================
 router.post(
   '/educators',
   authenticateToken,
@@ -61,10 +77,17 @@ router.post(
   ]),
   asyncHandler(createEducator)
 );
-
 router.get('/educators', authenticateToken, asyncHandler(getEducators));
-
-// NEW: Delete Educator
+router.put(
+  '/educators/:id',
+  authenticateToken,
+  authorizeRoles('SUPERADMIN'),
+  upload.fields([
+    { name: 'logo', maxCount: 1 },
+    { name: 'coverPhoto', maxCount: 1 },
+  ]),
+  asyncHandler(updateEducator)
+);
 router.delete(
   '/educators/:id',
   authenticateToken,
@@ -72,7 +95,7 @@ router.delete(
   asyncHandler(deleteEducator)
 );
 
-// ---------------- TUTORIALS ----------------
+// ================== TUTORIAL ==================
 router.post(
   '/tutorials',
   authenticateToken,
@@ -83,10 +106,17 @@ router.post(
   ]),
   asyncHandler(createTutorial)
 );
-
 router.get('/tutorials', authenticateToken, asyncHandler(getTutorials));
-
-// NEW: Delete Tutorial
+router.put(
+  '/tutorials/:id',
+  authenticateToken,
+  authorizeRoles('SUPERADMIN'),
+  upload.fields([
+    { name: 'logo', maxCount: 1 },
+    { name: 'coverPhoto', maxCount: 1 },
+  ]),
+  asyncHandler(updateTutorial)
+);
 router.delete(
   '/tutorials/:id',
   authenticateToken,
@@ -94,7 +124,7 @@ router.delete(
   asyncHandler(deleteTutorial)
 );
 
-// ---------------- YOUTUBE CHANNELS ----------------
+// ================== YOUTUBE CHANNEL ==================
 router.post(
   '/youtube-channels',
   authenticateToken,
@@ -105,14 +135,21 @@ router.post(
   ]),
   asyncHandler(createYoutubeChannel)
 );
-
 router.get(
   '/youtube-channels',
   authenticateToken,
   asyncHandler(getYoutubeChannels)
 );
-
-// NEW: Delete YouTube Channel
+router.put(
+  '/youtube-channels/:id',
+  authenticateToken,
+  authorizeRoles('SUPERADMIN'),
+  upload.fields([
+    { name: 'logo', maxCount: 1 },
+    { name: 'coverPhoto', maxCount: 1 },
+  ]),
+  asyncHandler(updateYoutubeChannel)
+);
 router.delete(
   '/youtube-channels/:id',
   authenticateToken,
@@ -120,7 +157,7 @@ router.delete(
   asyncHandler(deleteYoutubeChannel)
 );
 
-// ---------------- TELEGRAM GROUPS ----------------
+// ================== TELEGRAM GROUP ==================
 router.post(
   '/telegram-groups',
   authenticateToken,
@@ -131,14 +168,21 @@ router.post(
   ]),
   asyncHandler(createTelegramGroup)
 );
-
 router.get(
   '/telegram-groups',
   authenticateToken,
   asyncHandler(getTelegramGroups)
 );
-
-// NEW: Delete Telegram Group
+router.put(
+  '/telegram-groups/:id',
+  authenticateToken,
+  authorizeRoles('SUPERADMIN'),
+  upload.fields([
+    { name: 'logo', maxCount: 1 },
+    { name: 'coverPhoto', maxCount: 1 },
+  ]),
+  asyncHandler(updateTelegramGroup)
+);
 router.delete(
   '/telegram-groups/:id',
   authenticateToken,

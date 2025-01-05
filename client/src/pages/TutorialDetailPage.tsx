@@ -2,7 +2,8 @@
 
 import React, { useEffect, useState } from 'react'
 import { useParams, useLocation, useNavigate } from 'react-router-dom'
-import { Page, Card, Block, Button } from 'konsta/react'
+import { Page, Card, Block } from 'konsta/react'
+import { Icon } from '@iconify/react'
 import Navbar from '../components/common/Navbar'
 import Sidebar from '../components/common/Sidebar'
 import BottomTabBar from '../components/BottomTabBar'
@@ -12,8 +13,8 @@ interface Tutorial {
     id: number
     title: string
     description?: string
-    contentUrl: string
-    type: string
+    contentUrl?: string
+    type?: string
     logoUrl?: string
     coverPhotoUrl?: string
     categories?: { id: number; name: string }[]
@@ -26,8 +27,10 @@ const TutorialDetailPage: React.FC = () => {
     const navigate = useNavigate()
 
     const [tutorial, setTutorial] = useState<Tutorial | null>(null)
-
     const { tutorials, fetchTutorials } = useDiscoverStore()
+
+    // Tabs
+    const [activeTab, setActiveTab] = useState<'overview' | 'tasks'>('overview')
 
     useEffect(() => {
         const stateItem = location.state?.item as Tutorial | undefined
@@ -48,46 +51,137 @@ const TutorialDetailPage: React.FC = () => {
 
     const constructImageUrl = (url?: string) => (url ? `https://telegram.coinbeats.xyz/${url}` : '')
 
+    // Single fallback color for the link
+    const linkBg = '#444'
+    const linkColor = 'rgba(255,255,255,0.8)'
+
+    const renderLinkButtons = () => {
+        if (!tutorial?.contentUrl) return null
+        return (
+            <div className="flex gap-3 mt-4 flex-wrap">
+                <button
+                    onClick={() => window.open(tutorial.contentUrl, '_blank')}
+                    className="p-2 rounded-full hover:opacity-80 transition-all"
+                    style={{ backgroundColor: linkBg }}
+                    title="Open Tutorial Link"
+                >
+                    <Icon icon="mdi:link-variant" style={{ color: linkColor }} className="w-8 h-8" />
+                </button>
+            </div>
+        )
+    }
+
+    const renderOverviewTab = () => {
+        if (!tutorial) return <p className="text-center mt-4">Loading tutorial...</p>
+
+        return (
+            <Card className="mx-4 mt-4 p-0 rounded-xl shadow-lg overflow-hidden bg-white dark:bg-zinc-900 border border-gray-300 dark:border-gray-600">
+                {tutorial.coverPhotoUrl && (
+                    <div className="relative w-full h-40 overflow-hidden">
+                        <img src={constructImageUrl(tutorial.coverPhotoUrl)} alt="Cover" className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-black bg-opacity-40"></div>
+                    </div>
+                )}
+
+                {(tutorial.logoUrl || tutorial.title) && (
+                    <div className="flex items-center gap-3 px-4 pt-4">
+                        {tutorial.logoUrl && (
+                            <img
+                                src={constructImageUrl(tutorial.logoUrl)}
+                                alt="Logo"
+                                className="w-20 h-20 rounded-full object-cover border-2 border-white dark:border-gray-800"
+                            />
+                        )}
+                        {tutorial.title && <h2 className="text-lg font-bold text-gray-800 dark:text-gray-200">{tutorial.title}</h2>}
+                    </div>
+                )}
+
+                <div className="px-4 pb-4">
+                    {(tutorial.categories?.length || 0) > 0 || (tutorial.chains?.length || 0) > 0 ? (
+                        <Block className="mt-4 !p-0">
+                            <h3 className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">About:</h3>
+                            <div className="flex flex-wrap gap-2">
+                                {tutorial.categories?.map((cat) => (
+                                    <span key={cat.id} className="bg-blue-200 dark:bg-blue-700 text-xs px-2 py-1 rounded-full">
+                                        {cat.name}
+                                    </span>
+                                ))}
+                                {tutorial.chains?.map((chain) => (
+                                    <span key={chain.id} className="bg-green-200 dark:bg-green-700 text-xs px-2 py-1 rounded-full">
+                                        {chain.name}
+                                    </span>
+                                ))}
+                            </div>
+                        </Block>
+                    ) : null}
+
+                    {tutorial.description && (
+                        <div className="mt-4">
+                            <h3 className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Description:</h3>
+                            <p className="text-sm text-gray-700 dark:text-gray-300">{tutorial.description}</p>
+                        </div>
+                    )}
+
+                    {tutorial.type && (
+                        <div className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+                            <strong>Type:</strong> {tutorial.type}
+                        </div>
+                    )}
+
+                    {renderLinkButtons()}
+
+                    <div className="mt-6">
+                        <button
+                            onClick={() => navigate(-1)}
+                            className="px-4 py-2 bg-gradient-to-t from-[#ff0077] to-[#7700ff] text-white border-[#9c27b0] font-bold rounded-full border-2 shadow-md transition-all"
+                        >
+                            Go Back
+                        </button>
+                    </div>
+                </div>
+            </Card>
+        )
+    }
+
+    const renderTasksTab = () => {
+        return (
+            <Card className="mx-4 mt-4 p-4 rounded-xl shadow-lg bg-white dark:bg-zinc-900 border border-gray-300 dark:border-gray-600">
+                <h2 className="text-lg font-bold mb-2 text-gray-800 dark:text-gray-200">Tasks</h2>
+                <p className="text-sm text-gray-700 dark:text-gray-300">No tasks yet!</p>
+            </Card>
+        )
+    }
+
     return (
         <Page>
             <Navbar />
             <Sidebar />
 
-            {tutorial ? (
-                <Card className="m-4 p-4 rounded-xl shadow-lg bg-white dark:bg-zinc-900 border border-gray-300 dark:border-gray-600">
-                    <h2 className="text-xl font-bold mb-2">{tutorial.title}</h2>
+            {/* Tabs */}
+            <div className="flex gap-2 px-4 mt-4">
+                <button
+                    onClick={() => setActiveTab('overview')}
+                    className={`px-4 py-1 rounded-full border text-sm font-bold transition-all ${
+                        activeTab === 'overview'
+                            ? 'bg-gradient-to-t from-[#ff0077] to-[#7700ff] text-white border-[#9c27b0]'
+                            : 'bg-gray-800 text-white border-gray-600'
+                    }`}
+                >
+                    Overview
+                </button>
+                <button
+                    onClick={() => setActiveTab('tasks')}
+                    className={`px-4 py-1 rounded-full border text-sm font-bold transition-all ${
+                        activeTab === 'tasks'
+                            ? 'bg-gradient-to-t from-[#ff0077] to-[#7700ff] text-white border-[#9c27b0]'
+                            : 'bg-gray-800 text-white border-gray-600'
+                    }`}
+                >
+                    Tasks
+                </button>
+            </div>
 
-                    {tutorial.coverPhotoUrl && (
-                        <img src={constructImageUrl(tutorial.coverPhotoUrl)} alt={tutorial.title} className="w-full h-32 object-cover rounded-lg" />
-                    )}
-
-                    {tutorial.description && <p className="text-sm text-gray-700 dark:text-gray-300 mt-4">{tutorial.description}</p>}
-
-                    <Block className="mt-4 space-y-1 text-sm text-gray-600 dark:text-gray-300">
-                        <p>Type: {tutorial.type}</p>
-                        {tutorial.contentUrl && <p>Content URL: {tutorial.contentUrl}</p>}
-                    </Block>
-
-                    <div className="flex flex-wrap gap-2 mt-4">
-                        {tutorial.categories?.map((cat) => (
-                            <span key={cat.id} className="bg-blue-200 dark:bg-blue-700 text-xs px-2 py-1 rounded-full">
-                                {cat.name}
-                            </span>
-                        ))}
-                        {tutorial.chains?.map((ch) => (
-                            <span key={ch.id} className="bg-green-200 dark:bg-green-700 text-xs px-2 py-1 rounded-full">
-                                {ch.name}
-                            </span>
-                        ))}
-                    </div>
-
-                    <Button outline rounded className="mt-4" onClick={() => navigate(-1)}>
-                        Go Back
-                    </Button>
-                </Card>
-            ) : (
-                <p className="text-center mt-4">Loading tutorial...</p>
-            )}
+            {activeTab === 'overview' ? renderOverviewTab() : renderTasksTab()}
 
             <BottomTabBar activeTab="tab-1" setActiveTab={() => {}} />
         </Page>
