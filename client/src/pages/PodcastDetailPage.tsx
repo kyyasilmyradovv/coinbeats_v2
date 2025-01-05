@@ -52,13 +52,14 @@ const PodcastDetailPage: React.FC = () => {
 
     const constructImageUrl = (url?: string) => (url ? `https://telegram.coinbeats.xyz/${url}` : '')
 
-    // Subtle brand icon styling
+    // Link icons (Spotify, Apple, YouTube)
     const linkIcons: Record<string, { icon: string; label: string; iconColor: string }> = {
         spotifyUrl: { icon: 'mdi:spotify', label: 'Spotify', iconColor: 'rgba(29,185,84,0.9)' },
         appleUrl: { icon: 'mdi:apple', label: 'Apple', iconColor: 'rgba(153,153,153,0.9)' },
         youtubeUrl: { icon: 'mdi:youtube', label: 'YouTube', iconColor: 'rgba(255,0,0,0.9)' }
     }
 
+    // Show platform icons
     const renderLinkButtons = () => {
         if (!podcast) return null
         const links = [
@@ -91,21 +92,45 @@ const PodcastDetailPage: React.FC = () => {
         )
     }
 
-    const renderOverviewTab = () => {
+    const renderMainCard = () => {
         if (!podcast) return <p className="text-center mt-4">Loading podcast...</p>
 
         return (
-            <div className="!p-0 mx-4 mt-4 !mb-20 rounded-xl shadow-lg overflow-hidden bg-white dark:bg-zinc-900 border border-gray-300 dark:border-gray-600 pb-16">
-                {/* Cover Photo */}
+            <div className="!p-0 mx-4 mt-4 rounded-xl shadow-lg overflow-hidden bg-white dark:bg-zinc-900 border border-gray-300 dark:border-gray-600 pb-16">
+                {/* Cover Photo always */}
                 {podcast.coverPhotoUrl && (
                     <div className="relative w-full h-40 overflow-hidden rounded-b-2xl">
                         <img src={constructImageUrl(podcast.coverPhotoUrl)} alt="Cover" className="w-full h-full object-cover" />
                         <div className="absolute inset-0 bg-black bg-opacity-40"></div>
+
+                        {/* Tabs bottom-left */}
+                        <div className="absolute bottom-2 left-4 flex gap-2">
+                            <button
+                                onClick={() => setActiveTab('overview')}
+                                className={`px-4 py-1 rounded-full border text-sm font-bold transition-all ${
+                                    activeTab === 'overview'
+                                        ? 'bg-gradient-to-t from-[#ff0077] to-[#7700ff] text-white border-[#9c27b0]'
+                                        : 'bg-gray-800 text-white border-gray-600'
+                                }`}
+                            >
+                                Overview
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('tasks')}
+                                className={`px-4 py-1 rounded-full border text-sm font-bold transition-all ${
+                                    activeTab === 'tasks'
+                                        ? 'bg-gradient-to-t from-[#ff0077] to-[#7700ff] text-white border-[#9c27b0]'
+                                        : 'bg-gray-800 text-white border-gray-600'
+                                }`}
+                            >
+                                Tasks
+                            </button>
+                        </div>
                     </div>
                 )}
 
-                {/* Logo + Name */}
-                {(podcast.logoUrl || podcast.name) && (
+                {/* Only show logo+name in overview tab */}
+                {activeTab === 'overview' && (podcast.logoUrl || podcast.name) && (
                     <div className="flex items-center gap-3 px-4 pt-4">
                         {podcast.logoUrl && (
                             <img
@@ -118,39 +143,50 @@ const PodcastDetailPage: React.FC = () => {
                     </div>
                 )}
 
-                <div className="px-4 pb-4">
-                    {/* About */}
-                    {(podcast.categories?.length || 0) > 0 || (podcast.chains?.length || 0) > 0 ? (
-                        <Block className="mt-4 !p-0">
-                            <h3 className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">About:</h3>
-                            <div className="flex flex-wrap gap-2">
-                                {podcast.categories?.map((cat) => (
-                                    <span key={cat.id} className="bg-blue-200 dark:bg-blue-700 text-xs px-2 py-1 rounded-full">
-                                        {cat.name}
-                                    </span>
-                                ))}
-                                {podcast.chains?.map((chain) => (
-                                    <span key={chain.id} className="bg-green-200 dark:bg-green-700 text-xs px-2 py-1 rounded-full">
-                                        {chain.name}
-                                    </span>
-                                ))}
-                            </div>
-                        </Block>
-                    ) : null}
+                <div className="px-4">
+                    {activeTab === 'overview' && (
+                        <>
+                            {/* 1) About */}
+                            {(podcast.categories?.length || 0) > 0 || (podcast.chains?.length || 0) > 0 ? (
+                                <Block className="mt-3 !p-0">
+                                    <h3 className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">About:</h3>
+                                    <div className="flex flex-wrap gap-1">
+                                        {podcast.categories?.map((cat) => (
+                                            <span key={cat.id} className="bg-blue-200 dark:bg-blue-700 text-2xs px-1 py-0.5 rounded-full">
+                                                {cat.name}
+                                            </span>
+                                        ))}
+                                        {podcast.chains?.map((chain) => (
+                                            <span key={chain.id} className="bg-green-200 dark:bg-green-700 text-2xs px-1 py-0.5 rounded-full">
+                                                {chain.name}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </Block>
+                            ) : null}
 
-                    {/* Description */}
-                    {podcast.description && (
-                        <div className="mt-4">
-                            <h3 className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Description:</h3>
-                            <p className="text-sm text-gray-700 dark:text-gray-300">{podcast.description}</p>
+                            {/* 2) Description */}
+                            {podcast.description && (
+                                <div className="mt-3">
+                                    <h3 className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Description:</h3>
+                                    <p className="text-sm text-gray-700 dark:text-gray-300">{podcast.description}</p>
+                                </div>
+                            )}
+
+                            {/* 3) Links */}
+                            {renderLinkButtons()}
+                        </>
+                    )}
+
+                    {activeTab === 'tasks' && (
+                        <div className="mt-4 text-sm text-gray-700 dark:text-gray-300">
+                            <h2 className="text-lg font-bold mb-2 text-gray-800 dark:text-gray-200">Tasks</h2>
+                            <p>No tasks yet!</p>
                         </div>
                     )}
 
-                    {/* Links */}
-                    {renderLinkButtons()}
-
-                    {/* Go Back */}
-                    <div className="mt-6">
+                    {/* Go Back w/ extra margin */}
+                    <div className="mt-6 mb-4">
                         <button
                             onClick={() => navigate(-1)}
                             className="px-4 py-2 bg-gradient-to-t from-[#ff0077] to-[#7700ff] text-white border-[#9c27b0] font-bold rounded-full border-2 shadow-md transition-all"
@@ -163,45 +199,12 @@ const PodcastDetailPage: React.FC = () => {
         )
     }
 
-    const renderTasksTab = () => {
-        return (
-            <Card className="mx-4 mt-4 p-4 rounded-xl shadow-lg bg-white dark:bg-zinc-900 border border-gray-300 dark:border-gray-600">
-                <h2 className="text-lg font-bold mb-2 text-gray-800 dark:text-gray-200">Tasks</h2>
-                <p className="text-sm text-gray-700 dark:text-gray-300">No tasks yet!</p>
-            </Card>
-        )
-    }
-
     return (
         <Page className="overflow-auto">
             <Navbar />
             <Sidebar />
 
-            {/* Tabs */}
-            <div className="flex gap-2 px-4 mt-4">
-                <button
-                    onClick={() => setActiveTab('overview')}
-                    className={`px-4 py-1 rounded-full border text-sm font-bold transition-all ${
-                        activeTab === 'overview'
-                            ? 'bg-gradient-to-t from-[#ff0077] to-[#7700ff] text-white border-[#9c27b0]'
-                            : 'bg-gray-800 text-white border-gray-600'
-                    }`}
-                >
-                    Overview
-                </button>
-                <button
-                    onClick={() => setActiveTab('tasks')}
-                    className={`px-4 py-1 rounded-full border text-sm font-bold transition-all ${
-                        activeTab === 'tasks'
-                            ? 'bg-gradient-to-t from-[#ff0077] to-[#7700ff] text-white border-[#9c27b0]'
-                            : 'bg-gray-800 text-white border-gray-600'
-                    }`}
-                >
-                    Tasks
-                </button>
-            </div>
-
-            {activeTab === 'overview' ? renderOverviewTab() : renderTasksTab()}
+            {renderMainCard()}
 
             <BottomTabBar activeTab="tab-1" setActiveTab={() => {}} />
         </Page>

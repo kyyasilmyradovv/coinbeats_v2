@@ -413,24 +413,6 @@ const DiscoverPage: React.FC = () => {
                                     </>
                                 )}
 
-                                {/* Smaller badges */}
-                                <div className="flex flex-wrap gap-1 justify-center mt-1 mb-2">
-                                    {/* Categories */}
-                                    {item.categories &&
-                                        item.categories.map((cat: any, index: number) => (
-                                            <span key={`category-${index}`} className="bg-blue-200 dark:bg-blue-800 px-1.5 py-0 rounded-full text-2xs">
-                                                {cat.name}
-                                            </span>
-                                        ))}
-                                    {/* Chains */}
-                                    {item.chains &&
-                                        item.chains.map((ch: any, index: number) => (
-                                            <span key={`chain-${index}`} className="bg-green-200 dark:bg-green-800 px-1.5 py-0 rounded-full text-2xs">
-                                                {ch.name}
-                                            </span>
-                                        ))}
-                                </div>
-
                                 {/* Icons for any platform links */}
                                 {links.length > 0 && (
                                     <div className="flex gap-1 mt-1 mb-2 justify-center">
@@ -451,6 +433,24 @@ const DiscoverPage: React.FC = () => {
                                         ))}
                                     </div>
                                 )}
+
+                                {/* Smaller badges */}
+                                <div className="flex flex-wrap gap-1 justify-center mt-1 mb-2">
+                                    {/* Categories */}
+                                    {item.categories &&
+                                        item.categories.map((cat: any, index: number) => (
+                                            <span key={`category-${index}`} className="bg-blue-200 dark:bg-blue-800 px-1 !py-0 rounded-full text-[0.5rem]">
+                                                {cat.name}
+                                            </span>
+                                        ))}
+                                    {/* Chains */}
+                                    {item.chains &&
+                                        item.chains.map((ch: any, index: number) => (
+                                            <span key={`chain-${index}`} className="bg-green-200 dark:bg-green-800 px-1 py-0 rounded-full text-[0.5rem]">
+                                                {ch.name}
+                                            </span>
+                                        ))}
+                                </div>
                             </Card>
                         </div>
                     )
