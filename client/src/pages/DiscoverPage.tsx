@@ -2,13 +2,13 @@
 
 import React, { useEffect, useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Page, List, ListInput, Card, Button, Searchbar } from 'konsta/react'
+import { Page, List, ListInput, Card, Searchbar } from 'konsta/react'
 import Navbar from '../components/common/Navbar'
 import Sidebar from '../components/common/Sidebar'
 import useDiscoverStore from '../store/useDiscoverStore'
 import useCategoryChainStore from '../store/useCategoryChainStore'
 import BottomTabBar from '../components/BottomTabBar'
-import coming from '../images/svgs/coming-soon3.svg'
+import { Icon } from '@iconify/react'
 
 const DiscoverPage: React.FC = () => {
     const navigate = useNavigate()
@@ -16,7 +16,7 @@ const DiscoverPage: React.FC = () => {
     const [chain, setChain] = useState('')
     const [searchQuery, setSearchQuery] = useState('')
     const [activeFilter, setActiveFilter] = useState('All')
-    const [activeTab, setActiveTab] = useState('tab-5') // Example usage for bottom tab bar
+    const [activeTab, setActiveTab] = useState('tab-5') // for BottomTabBar usage
 
     const { categories, chains, fetchCategories, fetchChains } = useCategoryChainStore((state) => ({
         categories: state.categories,
@@ -64,24 +64,23 @@ const DiscoverPage: React.FC = () => {
         fetchTelegramGroups()
     }, [fetchEducators, fetchPodcasts, fetchTutorials, fetchYoutubeChannels, fetchTelegramGroups])
 
-    // Tab filters
-    const tabs = ['All', 'Top Educators', 'Top Podcasts', 'Top Youtube Channels', 'Top TG Groups', 'Tutorials']
+    // We remove "Top" from the tab labels
+    const tabs = ['All', 'Educators', 'Podcasts', 'Youtube Channels', 'TG Groups', 'Tutorials']
 
-    // Filter the data based on activeFilter, category, chain, search query
+    // Filter data
     const filteredData = useMemo(() => {
         let data: any[] = []
-
         switch (activeFilter) {
-            case 'Top Educators':
+            case 'Educators':
                 data = educators.map((item) => ({ ...item, contentType: 'Educator' }))
                 break
-            case 'Top Podcasts':
+            case 'Podcasts':
                 data = podcasts.map((item) => ({ ...item, contentType: 'Podcast' }))
                 break
-            case 'Top Youtube Channels':
+            case 'Youtube Channels':
                 data = youtubeChannels.map((item) => ({ ...item, contentType: 'YoutubeChannel' }))
                 break
-            case 'Top TG Groups':
+            case 'TG Groups':
                 data = telegramGroups.map((item) => ({ ...item, contentType: 'TelegramGroup' }))
                 break
             case 'Tutorials':
@@ -98,7 +97,7 @@ const DiscoverPage: React.FC = () => {
                 ]
         }
 
-        // Apply category filter
+        // Category filter
         if (category) {
             data = data.filter((item) => {
                 if (item.categories) {
@@ -108,7 +107,7 @@ const DiscoverPage: React.FC = () => {
             })
         }
 
-        // Apply chain filter
+        // Chain filter
         if (chain) {
             data = data.filter((item) => {
                 if (item.chains) {
@@ -118,7 +117,7 @@ const DiscoverPage: React.FC = () => {
             })
         }
 
-        // Apply search query
+        // Search
         if (searchQuery) {
             data = data.filter((item) => {
                 const nameOrTitle = item.name || item.title || ''
@@ -129,8 +128,8 @@ const DiscoverPage: React.FC = () => {
         return data
     }, [activeFilter, category, chain, searchQuery, educators, podcasts, tutorials, youtubeChannels, telegramGroups])
 
-    // Handle navigation to detail page
-    const handleMoreClick = (item: any) => {
+    // Card click => navigate to details
+    const handleCardClick = (item: any) => {
         switch (item.contentType) {
             case 'Educator':
                 navigate(`/discover/educators/${item.id}`, { state: { item } })
@@ -153,9 +152,86 @@ const DiscoverPage: React.FC = () => {
         }
     }
 
-    // Construct full URL for images
-    const constructImageUrl = (url: string) => {
-        return `https://telegram.coinbeats.xyz/${url}`
+    // Construct image URLs
+    const constructImageUrl = (url: string) => `https://telegram.coinbeats.xyz/${url}`
+
+    // We can show icons if the item has links (like youtubeUrl, spotifyUrl, telegramUrl, etc.)
+    // We'll define logic similar to detail pages
+    const detectPlatformLinks = (item: any) => {
+        // You can add more if you like (Spotify, Apple, etc.)
+        const links: Array<{ icon: string; color: string; url: string; label: string }> = []
+
+        if (item.youtubeUrl) {
+            links.push({
+                icon: 'mdi:youtube',
+                color: 'rgba(255,0,0,0.9)',
+                url: item.youtubeUrl,
+                label: 'YouTube'
+            })
+        }
+        if (item.spotifyUrl) {
+            links.push({
+                icon: 'mdi:spotify',
+                color: 'rgba(29,185,84,0.9)',
+                url: item.spotifyUrl,
+                label: 'Spotify'
+            })
+        }
+        if (item.appleUrl) {
+            links.push({
+                icon: 'mdi:apple',
+                color: 'rgba(153,153,153,0.9)',
+                url: item.appleUrl,
+                label: 'Apple'
+            })
+        }
+        if (item.telegramUrl) {
+            links.push({
+                icon: 'mdi:telegram',
+                color: 'rgba(34,158,217,0.9)',
+                url: item.telegramUrl,
+                label: 'Telegram'
+            })
+        }
+        if (item.twitterUrl) {
+            links.push({
+                icon: 'mdi:twitter',
+                color: 'rgba(29,161,242,0.9)',
+                url: item.twitterUrl,
+                label: 'Twitter'
+            })
+        }
+        if (item.discordUrl) {
+            links.push({
+                icon: 'mdi:discord',
+                color: 'rgba(88,101,242,0.9)',
+                url: item.discordUrl,
+                label: 'Discord'
+            })
+        }
+
+        return links
+    }
+
+    // New tab styling logic, like on detail pages
+    const renderTabButtons = () => {
+        return (
+            <div className="flex gap-2 px-4 mt-4 flex-wrap">
+                {tabs.map((tab) => (
+                    <button
+                        key={tab}
+                        onClick={() => setActiveFilter(tab)}
+                        className={`px-4 py-1 rounded-full border text-sm font-bold transition-all ${
+                            activeFilter === tab
+                                ? 'bg-gradient-to-t from-[#ff0077] to-[#7700ff] text-white border-[#9c27b0]'
+                                : 'bg-gray-800 text-white border-gray-600'
+                        }`}
+                    >
+                        {tab}
+                    </button>
+                ))}
+            </div>
+        )
     }
 
     return (
@@ -227,154 +303,160 @@ const DiscoverPage: React.FC = () => {
             </div>
 
             {/* Tabs */}
-            <div className="px-4 mt-4">
-                <div className="flex flex-wrap gap-2">
-                    {tabs.map((tab) => (
-                        <Button
-                            key={tab}
-                            rounded
-                            outline
-                            small
-                            onClick={() => setActiveFilter(tab)}
-                            className={`${
-                                activeFilter === tab
-                                    ? '!bg-gray-100 dark:!bg-gray-800 !shadow-lg !text-2xs !w-auto !px-2 !min-w-0'
-                                    : '!bg-white dark:!bg-gray-900 !shadow-lg !text-2xs !w-auto !px-2 !min-w-0'
-                            }`}
-                            style={{
-                                color: '#fff'
-                            }}
-                        >
-                            {tab}
-                        </Button>
-                    ))}
-                </div>
-            </div>
+            {renderTabButtons()}
 
-            {/* Render the total number of items */}
+            {/* Render total items */}
             <div className="text-gray-300 text-xs mt-2 ml-6">
                 <span className="text-white font-bold">{filteredData.length} </span> Items
             </div>
 
             {/* Grid Layout */}
             <div className="grid grid-cols-3 gap-0 px-2 pt-1 pb-16">
-                {filteredData.map((item) => (
-                    <div key={`${item.contentType}-${item.id}`} className="relative">
-                        <Card
-                            className={`relative flex flex-col items-center text-center p-0 !mb-4 !m-2 rounded-2xl shadow-lg overflow-visible z-10 bg-white dark:bg-zinc-900 border border-gray-300 dark:border-gray-600`}
-                        >
-                            {/* Display item content based on contentType */}
-                            {item.contentType === 'Educator' && (
-                                <>
-                                    {item.avatarUrl && (
-                                        <div className="flex items-center justify-center w-full mt-1">
-                                            <img
-                                                alt={item.name}
-                                                className="h-16 w-16 rounded-full mb-2"
-                                                src={constructImageUrl(item.avatarUrl)}
-                                                loading="lazy"
-                                            />
-                                        </div>
-                                    )}
-                                    <div className="text-md font-bold">{item.name}</div>
-                                </>
-                            )}
+                {filteredData.map((item) => {
+                    // detect links
+                    const links = detectPlatformLinks(item)
 
-                            {item.contentType === 'Podcast' && (
-                                <>
-                                    {item.logoUrl ? (
-                                        <div className="flex items-center justify-center w-full mt-1">
-                                            <img alt={item.name} className="h-16 w-16 rounded-full mb-2" src={constructImageUrl(item.logoUrl)} loading="lazy" />
-                                        </div>
-                                    ) : (
-                                        <div className="h-16 w-16 rounded-full bg-gray-300 mb-2"></div>
-                                    )}
-                                    <div className="text-md font-bold">{item.name}</div>
-                                </>
-                            )}
-
-                            {item.contentType === 'Tutorial' && (
-                                <>
-                                    {item.logoUrl ? (
-                                        <div className="flex items-center justify-center w-full mt-1">
-                                            <img
-                                                alt={item.title}
-                                                className="h-16 w-16 rounded-full mb-2"
-                                                src={constructImageUrl(item.logoUrl)}
-                                                loading="lazy"
-                                            />
-                                        </div>
-                                    ) : (
-                                        <div className="h-16 w-16 rounded-full bg-gray-300 mb-2"></div>
-                                    )}
-                                    <div className="text-md font-bold">{item.title}</div>
-                                </>
-                            )}
-
-                            {/* NEW: YouTubeChannel */}
-                            {item.contentType === 'YoutubeChannel' && (
-                                <>
-                                    {item.logoUrl ? (
-                                        <div className="flex items-center justify-center w-full mt-1">
-                                            <img alt={item.name} className="h-16 w-16 rounded-full mb-2" src={constructImageUrl(item.logoUrl)} loading="lazy" />
-                                        </div>
-                                    ) : (
-                                        <div className="h-16 w-16 rounded-full bg-gray-300 mb-2"></div>
-                                    )}
-                                    <div className="text-md font-bold">{item.name}</div>
-                                </>
-                            )}
-
-                            {/* NEW: TelegramGroup */}
-                            {item.contentType === 'TelegramGroup' && (
-                                <>
-                                    {item.logoUrl ? (
-                                        <div className="flex items-center justify-center w-full mt-1">
-                                            <img alt={item.name} className="h-16 w-16 rounded-full mb-2" src={constructImageUrl(item.logoUrl)} loading="lazy" />
-                                        </div>
-                                    ) : (
-                                        <div className="h-16 w-16 rounded-full bg-gray-300 mb-2"></div>
-                                    )}
-                                    <div className="text-md font-bold">{item.name}</div>
-                                </>
-                            )}
-
-                            <Button
-                                outline
-                                rounded
-                                onClick={() => handleMoreClick(item)}
-                                className="!text-xs !w-24 !mx-auto mt-1 font-bold shadow-xl !h-6 !mb-1 !whitespace-nowrap"
-                                style={{
-                                    background: 'linear-gradient(to left, #ff0077, #7700ff)',
-                                    color: '#fff'
-                                }}
+                    return (
+                        <div key={`${item.contentType}-${item.id}`} className="relative cursor-pointer" onClick={() => handleCardClick(item)}>
+                            <Card
+                                className={`relative flex flex-col items-center text-center p-0 !mb-4 !m-2 rounded-2xl shadow-lg overflow-visible z-10 bg-white dark:bg-zinc-900 border border-gray-300 dark:border-gray-600`}
                             >
-                                View Details
-                            </Button>
+                                {/* Type label at top-left */}
+                                <span className="absolute top-1 left-1 text-2xs bg-black bg-opacity-70 text-white px-1 py-0 rounded">{item.contentType}</span>
 
-                            {/* Display selected categories and chains as tags */}
-                            <div className="flex flex-wrap gap-1 justify-center mt-1 mb-2">
-                                {/* Categories */}
-                                {item.categories &&
-                                    item.categories.map((cat: any, index: number) => (
-                                        <span key={`category-${index}`} className="bg-blue-200 dark:bg-blue-600 !px-[4px] rounded-full text-2xs">
-                                            {cat.name}
-                                        </span>
-                                    ))}
-                                {/* Chains */}
-                                {item.chains &&
-                                    item.chains.map((ch: any, index: number) => (
-                                        <span key={`chain-${index}`} className="bg-green-200 dark:bg-green-600 !px-[4px] rounded-full text-2xs">
-                                            {ch.name}
-                                        </span>
-                                    ))}
-                            </div>
-                        </Card>
-                    </div>
-                ))}
+                                {/* Main image / name */}
+                                {item.contentType === 'Educator' && (
+                                    <>
+                                        {item.avatarUrl && (
+                                            <div className="flex items-center justify-center w-full mt-2">
+                                                <img
+                                                    alt={item.name}
+                                                    className="h-20 w-20 rounded-full mb-2"
+                                                    src={constructImageUrl(item.avatarUrl)}
+                                                    loading="lazy"
+                                                />
+                                            </div>
+                                        )}
+                                        <div className="text-md font-bold mb-2">{item.name}</div>
+                                    </>
+                                )}
+
+                                {item.contentType === 'Podcast' && (
+                                    <>
+                                        {item.logoUrl ? (
+                                            <div className="flex items-center justify-center w-full mt-2">
+                                                <img
+                                                    alt={item.name}
+                                                    className="h-20 w-20 rounded-full mb-2"
+                                                    src={constructImageUrl(item.logoUrl)}
+                                                    loading="lazy"
+                                                />
+                                            </div>
+                                        ) : (
+                                            <div className="h-16 w-16 rounded-full bg-gray-300 mb-2 mt-1"></div>
+                                        )}
+                                        <div className="text-md font-bold mb-2">{item.name}</div>
+                                    </>
+                                )}
+
+                                {item.contentType === 'Tutorial' && (
+                                    <>
+                                        {item.logoUrl ? (
+                                            <div className="flex items-center justify-center w-full mt-2">
+                                                <img
+                                                    alt={item.title}
+                                                    className="h-20 w-20 rounded-full mb-2"
+                                                    src={constructImageUrl(item.logoUrl)}
+                                                    loading="lazy"
+                                                />
+                                            </div>
+                                        ) : (
+                                            <div className="h-16 w-16 rounded-full bg-gray-300 mb-2 mt-1"></div>
+                                        )}
+                                        <div className="text-md font-bold mb-2">{item.title}</div>
+                                    </>
+                                )}
+
+                                {item.contentType === 'YoutubeChannel' && (
+                                    <>
+                                        {item.logoUrl ? (
+                                            <div className="flex items-center justify-center w-full mt-2">
+                                                <img
+                                                    alt={item.name}
+                                                    className="h-20 w-20 rounded-full mb-2"
+                                                    src={constructImageUrl(item.logoUrl)}
+                                                    loading="lazy"
+                                                />
+                                            </div>
+                                        ) : (
+                                            <div className="h-16 w-16 rounded-full bg-gray-300 mb-2 mt-1"></div>
+                                        )}
+                                        <div className="text-md font-bold mb-2">{item.name}</div>
+                                    </>
+                                )}
+
+                                {item.contentType === 'TelegramGroup' && (
+                                    <>
+                                        {item.logoUrl ? (
+                                            <div className="flex items-center justify-center w-full mt-2">
+                                                <img
+                                                    alt={item.name}
+                                                    className="h-20 w-20 rounded-full mb-2"
+                                                    src={constructImageUrl(item.logoUrl)}
+                                                    loading="lazy"
+                                                />
+                                            </div>
+                                        ) : (
+                                            <div className="h-16 w-16 rounded-full bg-gray-300 mb-2 mt-1"></div>
+                                        )}
+                                        <div className="text-md font-bold mb-2">{item.name}</div>
+                                    </>
+                                )}
+
+                                {/* Smaller badges */}
+                                <div className="flex flex-wrap gap-1 justify-center mt-1 mb-2">
+                                    {/* Categories */}
+                                    {item.categories &&
+                                        item.categories.map((cat: any, index: number) => (
+                                            <span key={`category-${index}`} className="bg-blue-200 dark:bg-blue-800 px-1.5 py-0 rounded-full text-2xs">
+                                                {cat.name}
+                                            </span>
+                                        ))}
+                                    {/* Chains */}
+                                    {item.chains &&
+                                        item.chains.map((ch: any, index: number) => (
+                                            <span key={`chain-${index}`} className="bg-green-200 dark:bg-green-800 px-1.5 py-0 rounded-full text-2xs">
+                                                {ch.name}
+                                            </span>
+                                        ))}
+                                </div>
+
+                                {/* Icons for any platform links */}
+                                {links.length > 0 && (
+                                    <div className="flex gap-1 mt-1 mb-2 justify-center">
+                                        {links.map((link, i) => (
+                                            <div
+                                                key={i}
+                                                title={link.label}
+                                                className="p-1 rounded-full"
+                                                style={{ backgroundColor: '#444' }}
+                                                onClick={(e) => {
+                                                    // Prevent card click from also navigating
+                                                    e.stopPropagation()
+                                                    window.open(link.url, '_blank')
+                                                }}
+                                            >
+                                                <Icon icon={link.icon} style={{ color: link.color }} className="w-5 h-5" />
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </Card>
+                        </div>
+                    )
+                })}
             </div>
 
-            {/* Bottom Tab Bar */}
             <BottomTabBar activeTab={activeTab} setActiveTab={setActiveTab} />
         </Page>
     )

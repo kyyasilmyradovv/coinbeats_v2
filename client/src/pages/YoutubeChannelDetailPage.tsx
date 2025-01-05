@@ -75,7 +75,7 @@ const YoutubeChannelDetailPage: React.FC = () => {
         return (
             <Card className="mx-4 mt-4 p-0 rounded-xl shadow-lg overflow-hidden bg-white dark:bg-zinc-900 border border-gray-300 dark:border-gray-600">
                 {channel.coverPhotoUrl && (
-                    <div className="relative w-full h-40 overflow-hidden">
+                    <div className="relative w-full h-40 overflow-hidden rounded-b-2xl">
                         <img src={constructImageUrl(channel.coverPhotoUrl)} alt="Cover" className="w-full h-full object-cover" />
                         <div className="absolute inset-0 bg-black bg-opacity-40"></div>
                     </div>
