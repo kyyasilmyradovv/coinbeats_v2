@@ -17,8 +17,8 @@ const DiscoverPage: React.FC = () => {
     const [category, setCategory] = useState('')
     const [chain, setChain] = useState('')
     const [searchQuery, setSearchQuery] = useState('')
-    const [activeFilter, setActiveFilter] = useState('Educators') // <-- default is "Educators"
-    const [activeTab, setActiveTab] = useState('tab-5') // for BottomTabBar usage
+    const [activeFilter, setActiveFilter] = useState('Educators') // default is "Educators"
+    const [activeTab, setActiveTab] = useState('tab-5') // For BottomTabBar usage
 
     const { categories, chains, fetchCategories, fetchChains } = useCategoryChainStore((state) => ({
         categories: state.categories,
@@ -115,7 +115,7 @@ const DiscoverPage: React.FC = () => {
             })
         }
 
-        // Search
+        // Search filter
         if (searchQuery) {
             data = data.filter((item) => {
                 const nameOrTitle = item.name || item.title || ''
@@ -230,6 +230,46 @@ const DiscoverPage: React.FC = () => {
         )
     }
 
+    //
+    //  Match Heights Effect
+    //
+    //  We'll match all .same-height-card elements to the tallest card
+    //  every time 'filteredData' changes (which includes tab changes, search, etc.)
+    //
+    useEffect(() => {
+        // Wait a moment so images can load, etc.
+        // You can also do this in a requestAnimationFrame or setTimeout if needed
+        const matchHeights = () => {
+            const cards = document.querySelectorAll('.same-height-card')
+            if (!cards.length) return
+
+            // First reset heights to auto
+            cards.forEach((card) => {
+                ;(card as HTMLElement).style.height = 'auto'
+            })
+
+            // Find the max height
+            let maxHeight = 0
+            cards.forEach((card) => {
+                const cardHeight = (card as HTMLElement).offsetHeight
+                if (cardHeight > maxHeight) {
+                    maxHeight = cardHeight
+                }
+            })
+
+            // Set each to max height
+            cards.forEach((card) => {
+                ;(card as HTMLElement).style.height = `${maxHeight}px`
+            })
+        }
+
+        // We can trigger once everything is loaded
+        // For simplicity, a short setTimeout after the DOM updates
+        setTimeout(() => {
+            matchHeights()
+        }, 100)
+    }, [filteredData])
+
     return (
         <Page>
             <Navbar />
@@ -317,18 +357,13 @@ const DiscoverPage: React.FC = () => {
                             const links = detectPlatformLinks(item)
 
                             return (
-                                <div
-                                    key={`${item.contentType}-${item.id}`}
-                                    className="relative cursor-pointer"
-                                    // Force a uniform card height
-                                    style={{ minHeight: '220px' }}
-                                    onClick={() => handleCardClick(item)}
-                                >
+                                <div key={`${item.contentType}-${item.id}`} className="relative cursor-pointer" onClick={() => handleCardClick(item)}>
                                     <div
-                                        className="relative flex flex-col items-center text-center
-                               p-0.5 mb-4 m-2 rounded-2xl shadow-lg overflow-visible z-10
-                               bg-white dark:bg-zinc-900 border border-gray-300 dark:border-gray-600
-                               min-h-[220px]"
+                                        className={`
+                      same-height-card relative flex flex-col items-center text-center
+                      p-0.5 mb-4 m-2 rounded-2xl shadow-lg overflow-visible z-10
+                      bg-white dark:bg-zinc-900 border border-gray-300 dark:border-gray-600
+                    `}
                                     >
                                         {/* Type label at top-left */}
                                         <span className="absolute top-1 left-1 text-2xs bg-black bg-opacity-70 text-white px-1 py-0 rounded">
