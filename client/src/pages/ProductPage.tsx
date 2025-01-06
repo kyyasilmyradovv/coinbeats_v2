@@ -944,8 +944,7 @@ export default function ProductPage() {
                         </div>
                     </div>
                     {activeFilter === null ? (
-                        <div style={{ display: 'flex', marginTop: '20px', gap: '10px', position: 'relative' }}>
-                            {/* ${!showArrow ? 'fade-out' : ''} */}
+                        <div style={{ display: 'flex', marginTop: '20px', justifyContent: 'space-around', position: 'relative' }}>
                             <div style={{ height: '40px' }}>
                                 <img
                                     src={arrowDownIcon}
@@ -953,7 +952,6 @@ export default function ProductPage() {
                                     alt="academy ticker"
                                     style={{
                                         top: '-50px'
-                                        // left: '13%'
                                     }}
                                 />
                             </div>
@@ -985,6 +983,7 @@ export default function ProductPage() {
                                 } ${!initialAnswers.some((question) => question.video) ? 'disabled-gradient cursor-not-allowed' : ''} rounded-full`}
                                 disabled={!initialAnswers.some((question) => question.video)}
                                 style={{
+                                    margin: '0 10px',
                                     background: !initialAnswers.some((question) => question.video)
                                         ? 'linear-gradient(to left, #808080, #b3b3b3)'
                                         : activeFilter === 'watch'
