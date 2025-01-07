@@ -13,7 +13,7 @@ import { Icon } from '@iconify/react'
 const DiscoverPage: React.FC = () => {
     const navigate = useNavigate()
 
-    // Change default filter to "Educators"
+    // Default filter to "Educators"
     const [category, setCategory] = useState('')
     const [chain, setChain] = useState('')
     const [searchQuery, setSearchQuery] = useState('')
@@ -153,7 +153,7 @@ const DiscoverPage: React.FC = () => {
     // Construct image URLs
     const constructImageUrl = (url: string) => `https://telegram.coinbeats.xyz/${url}`
 
-    // Detect platform links
+    // Detect platform links (including webpage & substack)
     const detectPlatformLinks = (item: any) => {
         const links: Array<{ icon: string; color: string; url: string; label: string }> = []
 
@@ -205,11 +205,28 @@ const DiscoverPage: React.FC = () => {
                 label: 'Discord'
             })
         }
+        // NEW: Webpage / Substack
+        if (item.webpageUrl) {
+            links.push({
+                icon: 'mdi:web',
+                color: 'rgba(30,150,250,0.9)',
+                url: item.webpageUrl,
+                label: 'Website'
+            })
+        }
+        if (item.substackUrl) {
+            links.push({
+                icon: 'simple-icons:substack',
+                color: 'rgba(255,130,0,0.9)',
+                url: item.substackUrl,
+                label: 'Substack'
+            })
+        }
 
         return links
     }
 
-    // Render tab buttons (no "All" tab anymore)
+    // Render tab buttons
     const renderTabButtons = () => {
         return (
             <div className="flex gap-2 px-4 mt-4 flex-wrap">
@@ -230,25 +247,18 @@ const DiscoverPage: React.FC = () => {
         )
     }
 
-    //
-    //  Match Heights Effect
-    //
-    //  We'll match all .same-height-card elements to the tallest card
-    //  every time 'filteredData' changes (which includes tab changes, search, etc.)
-    //
+    // Match heights effect
     useEffect(() => {
-        // Wait a moment so images can load, etc.
-        // You can also do this in a requestAnimationFrame or setTimeout if needed
         const matchHeights = () => {
             const cards = document.querySelectorAll('.same-height-card')
             if (!cards.length) return
 
-            // First reset heights to auto
+            // Reset heights
             cards.forEach((card) => {
                 ;(card as HTMLElement).style.height = 'auto'
             })
 
-            // Find the max height
+            // Find the max
             let maxHeight = 0
             cards.forEach((card) => {
                 const cardHeight = (card as HTMLElement).offsetHeight
@@ -257,14 +267,12 @@ const DiscoverPage: React.FC = () => {
                 }
             })
 
-            // Set each to max height
+            // Apply
             cards.forEach((card) => {
                 ;(card as HTMLElement).style.height = `${maxHeight}px`
             })
         }
 
-        // We can trigger once everything is loaded
-        // For simplicity, a short setTimeout after the DOM updates
         setTimeout(() => {
             matchHeights()
         }, 100)
@@ -275,7 +283,6 @@ const DiscoverPage: React.FC = () => {
             <Navbar />
             <Sidebar />
 
-            {/* Background wrapper, just like GamesPage */}
             <div className="relative min-h-screen bg-cosmos-bg bg-fixed bg-center bg-no-repeat bg-cover">
                 <div className="absolute inset-0 bg-black opacity-50 z-0"></div>
                 <div className="relative z-10">
@@ -342,7 +349,6 @@ const DiscoverPage: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Tabs */}
                     {renderTabButtons()}
 
                     {/* Render total items */}
@@ -359,11 +365,11 @@ const DiscoverPage: React.FC = () => {
                             return (
                                 <div key={`${item.contentType}-${item.id}`} className="relative cursor-pointer" onClick={() => handleCardClick(item)}>
                                     <div
-                                        className={`
+                                        className="
                       same-height-card relative flex flex-col items-center text-center
                       p-0.5 mb-4 m-2 rounded-2xl shadow-lg overflow-visible z-10
                       bg-white dark:bg-zinc-900 border border-gray-300 dark:border-gray-600
-                    `}
+                    "
                                     >
                                         {/* Type label at top-left */}
                                         <span className="absolute top-1 left-1 text-2xs bg-black bg-opacity-70 text-white px-1 py-0 rounded">
@@ -461,22 +467,29 @@ const DiscoverPage: React.FC = () => {
 
                                         {/* Icons for any platform links */}
                                         {links.length > 0 && (
-                                            <div className="flex gap-1 mt-1 mb-2 justify-center">
-                                                {links.map((link, i) => (
-                                                    <div
-                                                        key={i}
-                                                        title={link.label}
-                                                        className="p-1 rounded-full"
-                                                        style={{ backgroundColor: '#444' }}
-                                                        onClick={(e) => {
-                                                            // Prevent card click from also navigating
-                                                            e.stopPropagation()
-                                                            window.open(link.url, '_blank')
-                                                        }}
-                                                    >
-                                                        <Icon icon={link.icon} style={{ color: link.color }} className="w-5 h-5" />
-                                                    </div>
-                                                ))}
+                                            <div className="flex gap-1 mt-1 mb-2 justify-center items-center">
+                                                {links.map((link, i) => {
+                                                    // Make substack icon a bit smaller
+                                                    const iconSize =
+                                                        link.label === 'Substack'
+                                                            ? { width: '1.5rem', height: '1.5rem', padding: '0.2rem' }
+                                                            : { width: '1.5rem', height: '1.5rem' }
+                                                    return (
+                                                        <div
+                                                            key={i}
+                                                            title={link.label}
+                                                            className="p-1 rounded-full"
+                                                            style={{ backgroundColor: '#444' }}
+                                                            onClick={(e) => {
+                                                                // Prevent card click from also navigating
+                                                                e.stopPropagation()
+                                                                window.open(link.url, '_blank')
+                                                            }}
+                                                        >
+                                                            <Icon icon={link.icon} style={{ color: link.color, ...iconSize }} />
+                                                        </div>
+                                                    )
+                                                })}
                                             </div>
                                         )}
 

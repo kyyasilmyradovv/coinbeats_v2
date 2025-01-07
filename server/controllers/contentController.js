@@ -99,6 +99,8 @@ exports.createEducator = async (req, res, next) => {
       categories = '[]',
       chains = '[]',
       contentOrigin,
+      webpageUrl = '',
+      substackUrl = '',
     } = req.body;
 
     const categoryNames = JSON.parse(categories);
@@ -149,6 +151,8 @@ exports.createEducator = async (req, res, next) => {
           contentOrigin === 'PLATFORM_BASED'
             ? 'PLATFORM_BASED'
             : 'CREATOR_BASED',
+        webpageUrl,
+        substackUrl,
         categories: {
           connect: categoryRecords.map((category) => ({ id: category.id })),
         },
@@ -718,6 +722,8 @@ exports.updateEducator = async (req, res, next) => {
       categories = '[]',
       chains = '[]',
       contentOrigin,
+      webpageUrl,
+      substackUrl,
     } = req.body;
 
     const categoryNames = JSON.parse(categories);
@@ -769,7 +775,8 @@ exports.updateEducator = async (req, res, next) => {
           contentOrigin === 'PLATFORM_BASED'
             ? 'PLATFORM_BASED'
             : 'CREATOR_BASED',
-
+        webpageUrl,
+        substackUrl,
         categories: {
           set: [],
           connect: categoryRecords.map((c) => ({ id: c.id })),

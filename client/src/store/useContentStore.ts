@@ -27,6 +27,8 @@ interface EducatorData {
     twitterUrl: string
     telegramUrl: string
     discordUrl: string
+    webpageUrl: string
+    substackUrl: string
     logo: File | null | string
     coverPhoto: File | null | string
     categories: string[]
@@ -106,6 +108,8 @@ const useContentStore = create<ContentState>()(
             twitterUrl: '',
             telegramUrl: '',
             discordUrl: '',
+            webpageUrl: '',
+            substackUrl: '',
             logo: null,
             coverPhoto: null,
             categories: [],

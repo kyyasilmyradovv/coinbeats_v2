@@ -26,7 +26,7 @@ if (import.meta.env.DEV) {
             [
                 'user',
                 JSON.stringify({
-                    id: 1352161150,
+                    id: 99281932,
                     first_name: 'Timo',
                     last_name: 'Lambing',
                     username: 'HaldjasRistiisa',

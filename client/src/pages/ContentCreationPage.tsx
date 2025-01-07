@@ -502,6 +502,22 @@ const ContentCreationPage: React.FC = () => {
                 <ListInput label="Twitter URL" type="url" outline value={educatorData.twitterUrl} onChange={(e) => setField('twitterUrl', e.target.value)} />
                 <ListInput label="Telegram URL" type="url" outline value={educatorData.telegramUrl} onChange={(e) => setField('telegramUrl', e.target.value)} />
                 <ListInput label="Discord URL" type="url" outline value={educatorData.discordUrl} onChange={(e) => setField('discordUrl', e.target.value)} />
+                <ListInput
+                    label="Webpage URL"
+                    type="url"
+                    outline
+                    placeholder="Enter Webpage URL"
+                    value={educatorData.webpageUrl}
+                    onChange={(e) => setField('webpageUrl', e.target.value)}
+                />
+                <ListInput
+                    label="Substack URL"
+                    type="url"
+                    outline
+                    placeholder="Enter Substack URL"
+                    value={educatorData.substackUrl}
+                    onChange={(e) => setField('substackUrl', e.target.value)}
+                />
 
                 {/* Category */}
                 <ListInput

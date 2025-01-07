@@ -9,6 +9,11 @@ import Sidebar from '../components/common/Sidebar'
 import BottomTabBar from '../components/BottomTabBar'
 import useDiscoverStore from '../store/useDiscoverStore'
 
+interface CategoryOrChain {
+    id: number
+    name: string
+}
+
 interface Educator {
     id: number
     name: string
@@ -20,8 +25,11 @@ interface Educator {
     discordUrl?: string
     coverPhotoUrl?: string
     logoUrl?: string
-    categories?: { id: number; name: string }[]
-    chains?: { id: number; name: string }[]
+    categories?: CategoryOrChain[]
+    chains?: CategoryOrChain[]
+    // NEW FIELDS
+    webpageUrl?: string
+    substackUrl?: string
 }
 
 const EducatorDetailPage: React.FC = () => {
@@ -53,12 +61,16 @@ const EducatorDetailPage: React.FC = () => {
 
     const constructImageUrl = (url?: string) => (url ? `https://telegram.coinbeats.xyz/${url}` : '')
 
-    // Brand icons
+    // Link icon mapping
     const linkIcons: Record<string, { icon: string; label: string; iconColor: string }> = {
         youtubeUrl: { icon: 'mdi:youtube', label: 'YouTube', iconColor: 'rgba(255,0,0,0.9)' },
         twitterUrl: { icon: 'mdi:twitter', label: 'Twitter', iconColor: 'rgba(29,161,242,0.9)' },
         telegramUrl: { icon: 'mdi:telegram', label: 'Telegram', iconColor: 'rgba(34,158,217,0.9)' },
-        discordUrl: { icon: 'mdi:discord', label: 'Discord', iconColor: 'rgba(88,101,242,0.9)' }
+        discordUrl: { icon: 'mdi:discord', label: 'Discord', iconColor: 'rgba(88,101,242,0.9)' },
+
+        // NEW: webpage & substack
+        webpageUrl: { icon: 'mdi:web', label: 'Website', iconColor: 'rgba(30,150,250,0.9)' },
+        substackUrl: { icon: 'simple-icons:substack', label: 'Substack', iconColor: 'rgba(255,130,0,0.9)' }
     }
 
     const renderLinkButtons = () => {
@@ -67,8 +79,13 @@ const EducatorDetailPage: React.FC = () => {
             { field: 'youtubeUrl', url: educator.youtubeUrl },
             { field: 'twitterUrl', url: educator.twitterUrl },
             { field: 'telegramUrl', url: educator.telegramUrl },
-            { field: 'discordUrl', url: educator.discordUrl }
+            { field: 'discordUrl', url: educator.discordUrl },
+
+            // New
+            { field: 'webpageUrl', url: educator.webpageUrl },
+            { field: 'substackUrl', url: educator.substackUrl }
         ]
+
         return (
             <div className="flex gap-3 mt-4 flex-wrap">
                 {links.map((item, idx) => {
@@ -78,6 +95,11 @@ const EducatorDetailPage: React.FC = () => {
                         label: 'Link',
                         iconColor: 'rgba(255,255,255,0.8)'
                     }
+
+                    // If substack => smaller icon
+                    const iconSize =
+                        config.label === 'Substack' ? { width: '1.75rem', height: '1.75rem', padding: '0.2rem' } : { width: '1.75rem', height: '1.75rem' }
+
                     return (
                         <button
                             key={idx}
@@ -86,7 +108,7 @@ const EducatorDetailPage: React.FC = () => {
                             className="p-2 rounded-full hover:opacity-80 transition-all"
                             style={{ backgroundColor: '#444' }}
                         >
-                            <Icon icon={config.icon} style={{ color: config.iconColor }} className="w-8 h-8" />
+                            <Icon icon={config.icon} style={{ color: config.iconColor, ...iconSize }} />
                         </button>
                     )
                 })}
@@ -131,7 +153,6 @@ const EducatorDetailPage: React.FC = () => {
                     </div>
                 )}
 
-                {/* Only show logo+name in overview */}
                 {activeTab === 'overview' && (educator.avatarUrl || educator.name) && (
                     <div className="flex items-center gap-3 px-4 pt-4">
                         {educator.avatarUrl && (
@@ -148,7 +169,7 @@ const EducatorDetailPage: React.FC = () => {
                 <div className="px-4">
                     {activeTab === 'overview' && (
                         <>
-                            {/* 1) About */}
+                            {/* Categories / Chains */}
                             {(educator.categories?.length || 0) > 0 || (educator.chains?.length || 0) > 0 ? (
                                 <Block className="mt-3 !p-0">
                                     <h3 className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">About:</h3>
@@ -167,7 +188,7 @@ const EducatorDetailPage: React.FC = () => {
                                 </Block>
                             ) : null}
 
-                            {/* 2) Description */}
+                            {/* Bio */}
                             {educator.bio && (
                                 <div className="mt-3">
                                     <h3 className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Description:</h3>
@@ -175,7 +196,7 @@ const EducatorDetailPage: React.FC = () => {
                                 </div>
                             )}
 
-                            {/* 3) Links */}
+                            {/* Link icons */}
                             {renderLinkButtons()}
                         </>
                     )}
