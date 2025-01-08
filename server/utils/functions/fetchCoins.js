@@ -85,10 +85,17 @@ const integrateCoingecko = async (page) => {
   }
 };
 
-for (let i = 21; i < 40; i++) {
+for (let i = 1; i < 20; i++) {
   integrateCoingecko(i)
     .then(async (data) => {
       for (let coin of data) {
+        let price_change_24h;
+        if (coin?.price_change_24h) {
+          price_change_24h = String(coin.price_change_24h)?.slice(0, 5);
+          if (['-0.00', '0.000'].include(price_change_24h))
+            price_change_24h = null;
+        }
+
         await prisma.coins.upsert({
           where: {
             name: coin?.name,
@@ -105,7 +112,7 @@ for (let i = 21; i < 40; i++) {
             ath_date: coin?.ath_date,
             atl: String(coin?.atl),
             atl_date: coin?.atl_date,
-            price_change_24h: String(coin?.price_change_24h)?.slice(0, 5),
+            price_change_24h,
             gecko_id: coin?.id,
           },
           create: {
@@ -120,7 +127,7 @@ for (let i = 21; i < 40; i++) {
             ath_date: coin?.ath_date,
             atl: String(coin?.atl),
             atl_date: coin?.atl_date,
-            price_change_24h: String(coin?.price_change_24h)?.slice(0, 5),
+            price_change_24h,
             gecko_id: coin?.id,
           },
         });
