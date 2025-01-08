@@ -64,7 +64,7 @@ const ContentCreationPage: React.FC = () => {
             return URL.createObjectURL(file)
         }
         if (typeof file === 'string') {
-            // Example: if your server returns just the partial path, adjust as needed
+            // If your server returns just the partial path, adjust as needed
             return file
         }
         return null
@@ -76,8 +76,6 @@ const ContentCreationPage: React.FC = () => {
         setLoading(true)
 
         // Decide which endpoint to call
-        // e.g. /api/content/podcasts, /api/content/educators, /api/content/tutorials
-        // plus our new youtube-channels, telegram-groups
         let endpoint = ''
         switch (contentType) {
             case 'Podcast':
@@ -139,7 +137,6 @@ const ContentCreationPage: React.FC = () => {
     // Remove a category from the array
     const removeCategory = (index: number) => {
         if (!contentType) return
-        // figure out which data set
         let arr: string[] = []
         switch (contentType) {
             case 'Podcast':
@@ -217,6 +214,8 @@ const ContentCreationPage: React.FC = () => {
                 setField('twitterUrl', item.twitterUrl || '')
                 setField('telegramUrl', item.telegramUrl || '')
                 setField('discordUrl', item.discordUrl || '')
+                setField('webpageUrl', item.webpageUrl || '')
+                setField('substackUrl', item.substackUrl || '')
                 setField('logo', item.logoUrl || null)
                 setField('coverPhoto', item.coverPhotoUrl || null)
                 setField('categories', item.categories?.map((c: any) => c.name) || [])
@@ -272,6 +271,12 @@ const ContentCreationPage: React.FC = () => {
         if (!item) return
         fillFormForEditing(item)
         setPopoverOpen(false)
+    }
+
+    const handleAddTasks = () => {
+        if (!selectedItemId || !contentType) return
+        // Now we pass both contentType & selectedItemId in the route
+        navigate(`/add-content-tasks/${contentType}/${selectedItemId}`)
     }
 
     const handleDeleteItem = async () => {
@@ -1222,6 +1227,17 @@ const ContentCreationPage: React.FC = () => {
                             <ListButton onClick={handleEditItem}>
                                 <span className="text-primary text-lg">Edit {contentType}</span>
                             </ListButton>
+
+                            {/* NEW: Add Tasks */}
+                            <ListButton
+                                onClick={() => {
+                                    setPopoverOpen(false)
+                                    handleAddTasks()
+                                }}
+                            >
+                                <span className="text-green-600 text-lg">Add Tasks</span>
+                            </ListButton>
+
                             <ListButton
                                 className="!text-red-600"
                                 onClick={() => {

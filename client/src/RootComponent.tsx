@@ -34,6 +34,7 @@ import AddQuestsPage from './pages/AddQuestsPage'
 import EditAcademyPage from './pages/EditAcademyPage'
 import AddVideoLessonsPage from './pages/AddVideoLessonsPage'
 import AllocateXpPage from './pages/AllocateXpPage'
+import AddTasksForContentPage from './pages/AddTasksForContentPage'
 import AcademyManagementPage from './pages/AcademyManagementPage'
 import AcademyDetailPage from './pages/AcademyDetailPage'
 import ScholarshipManagementPage from './pages/ScholarshipManagementPage'
@@ -349,6 +350,14 @@ function RootComponent() {
                             element={
                                 <RouteGuard allowedRoles={['CREATOR']}>
                                     <AddQuestsPage />
+                                </RouteGuard>
+                            }
+                        />
+                        <Route
+                            path="/add-content-tasks/:contentType/:contentId"
+                            element={
+                                <RouteGuard allowedRoles={['CREATOR', 'SUPERADMIN']}>
+                                    <AddTasksForContentPage />
                                 </RouteGuard>
                             }
                         />
