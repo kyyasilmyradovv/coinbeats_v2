@@ -116,7 +116,7 @@ export default function CoinsPage() {
                                                     style={{ top: '-5px', left: '-15px' }}
                                                 >
                                                     {row.price_change_24h[0] != '-' && '+'}
-                                                    {row.price_change_24h.slice(0, 4)}%
+                                                    {row.price_change_24h.slice(0, 5)}%
                                                 </div>
                                             )}
                                         </div>
@@ -187,6 +187,31 @@ export default function CoinsPage() {
                     )}
                 </div>
             </div>
+
+            {/* Move to Top Button */}
+            {containerRef.current && containerRef.current.scrollTop > 100 && (
+                <button
+                    onClick={() => {
+                        if (containerRef.current) {
+                            containerRef.current.scrollTo({ top: 0, behavior: 'smooth' })
+                        }
+                    }}
+                    style={{
+                        position: 'fixed',
+                        bottom: '20px',
+                        right: '20px',
+                        backgroundColor: '#5d6670',
+                        border: 'none',
+                        borderRadius: '50%',
+                        width: '50px',
+                        height: '50px',
+                        cursor: 'pointer',
+                        zIndex: 1000
+                    }}
+                >
+                    ↑
+                </button>
+            )}
         </Page>
     )
 }

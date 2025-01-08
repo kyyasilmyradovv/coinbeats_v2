@@ -9,13 +9,14 @@ import logoDark from '../../images/coinbeats-dark.svg'
 import avatar from '../../images/bunny-head.png'
 import useUserStore from '../../store/useUserStore'
 import useSessionStore from '../../store/useSessionStore'
-import NotificationBell from '../NotificationBell'
+import StorefrontIcon from '@mui/icons-material/Storefront'
 
 interface NavbarProps {
     handleNavigationAttempt?: (newFilter: string | null, navigationAction: () => void) => void
+    page: string
 }
 
-const Navbar: React.FC<NavbarProps> = ({ handleNavigationAttempt }) => {
+const Navbar: React.FC<Partial<NavbarProps>> = ({ handleNavigationAttempt, page }) => {
     const initData = useInitData()
     const navigate = useNavigate()
     const { toggleSidebar, username } = useUserStore((state) => ({
@@ -49,7 +50,13 @@ const Navbar: React.FC<NavbarProps> = ({ handleNavigationAttempt }) => {
                 </a>
             }
             className="top-0 sticky"
-            left={canGoBack ? <NavbarBackLink onClick={() => navigate(-1)} /> : <div onClick={() => navigate('/coins')}>Market</div>} // remove yuzlenme
+            left={
+                canGoBack && page !== 'home' ? (
+                    <NavbarBackLink onClick={() => navigate(-1)} />
+                ) : (
+                    <StorefrontIcon className="text-green-600 ml-1" onClick={() => navigate('/coins')} />
+                )
+            }
             right={
                 <Chip
                     className="m-0.5 !pr-1"

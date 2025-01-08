@@ -465,7 +465,7 @@ export default function HomePage() {
 
     return (
         <Page>
-            <Navbar />
+            <Navbar page={'home'} />
             <Sidebar />
 
             <div className="relative min-h-screen bg-cosmos-bg bg-fixed bg-center bg-no-repeat bg-cover">
