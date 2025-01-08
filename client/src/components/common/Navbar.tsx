@@ -49,7 +49,7 @@ const Navbar: React.FC<NavbarProps> = ({ handleNavigationAttempt }) => {
                 </a>
             }
             className="top-0 sticky"
-            left={canGoBack ? <NavbarBackLink onClick={() => navigate(-1)} /> : null}
+            left={canGoBack ? <NavbarBackLink onClick={() => navigate(-1)} /> : <div onClick={() => navigate('/coins')}>Market</div>} // remove yuzlenme
             right={
                 <Chip
                     className="m-0.5 !pr-1"

@@ -783,7 +783,7 @@ export default function ProductPage() {
     }
 
     const renderQuestTab = () => (
-        <Block className="!m-0 !p-0">
+        <Block className="!m-0 !p-0" style={{ height: '100vh' }}>
             {quests.length > 0 ? (
                 quests.map((quest) => {
                     const userVerification = userVerificationTasks.find(
@@ -943,7 +943,8 @@ export default function ProductPage() {
                             </h1>
                         </div>
                     </div>
-                    {activeFilter === null ? (
+
+                    {activeFilter !== 'read' ? (
                         <div style={{ display: 'flex', marginTop: '20px', justifyContent: 'space-around', position: 'relative' }}>
                             <div style={{ height: '40px' }}>
                                 <img

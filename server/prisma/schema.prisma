@@ -479,6 +479,30 @@ model AcademyRaffleEntries {
   @@unique([userId, academyId])
 }
 
+
+model Coins {
+  id                    Int                       @id @default(autoincrement())
+  name                  String                    @unique
+  symbol                String
+  image                 String?
+  price                 String?
+  price_date            DateTime?
+  market_cap            String?
+  market_cup_rank       Int?
+  ath                   String?
+  ath_date              DateTime?
+  atl                   String?
+  atl_date              DateTime?
+  listed_date           String?
+  price_change_24h      String?
+  created_at            DateTime @default(now())
+  updated_at            DateTime @updatedAt
+  gecko_id              String?                     @unique
+  coinranking_uuid      String?                     @unique
+  contract_addresses    String[]
+  view_count            Float?                      @default(0)
+}
+
 enum OverallRaffleType {
   PLATFORM
   ACADEMY
