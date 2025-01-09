@@ -41,7 +41,7 @@ const router = express.Router();
 router.post(
   '/podcasts',
   authenticateToken,
-  authorizeRoles('SUPERADMIN'),
+  authorizeRoles('SUPERADMIN', 'ADMIN', 'CREATOR'),
   upload.fields([
     { name: 'logo', maxCount: 1 },
     { name: 'coverPhoto', maxCount: 1 },
@@ -52,7 +52,7 @@ router.get('/podcasts', authenticateToken, asyncHandler(getPodcasts));
 router.put(
   '/podcasts/:id',
   authenticateToken,
-  authorizeRoles('SUPERADMIN'),
+  authorizeRoles('SUPERADMIN', 'ADMIN', 'CREATOR'),
   upload.fields([
     { name: 'logo', maxCount: 1 },
     { name: 'coverPhoto', maxCount: 1 },
@@ -62,7 +62,7 @@ router.put(
 router.delete(
   '/podcasts/:id',
   authenticateToken,
-  authorizeRoles('SUPERADMIN'),
+  authorizeRoles('SUPERADMIN', 'ADMIN', 'CREATOR'),
   asyncHandler(deletePodcast)
 );
 
@@ -70,7 +70,7 @@ router.delete(
 router.post(
   '/educators',
   authenticateToken,
-  authorizeRoles('SUPERADMIN'),
+  authorizeRoles('SUPERADMIN', 'ADMIN', 'CREATOR'),
   upload.fields([
     { name: 'logo', maxCount: 1 },
     { name: 'coverPhoto', maxCount: 1 },
@@ -81,7 +81,7 @@ router.get('/educators', authenticateToken, asyncHandler(getEducators));
 router.put(
   '/educators/:id',
   authenticateToken,
-  authorizeRoles('SUPERADMIN'),
+  authorizeRoles('SUPERADMIN', 'ADMIN', 'CREATOR'),
   upload.fields([
     { name: 'logo', maxCount: 1 },
     { name: 'coverPhoto', maxCount: 1 },
@@ -91,7 +91,7 @@ router.put(
 router.delete(
   '/educators/:id',
   authenticateToken,
-  authorizeRoles('SUPERADMIN'),
+  authorizeRoles('SUPERADMIN', 'ADMIN', 'CREATOR'),
   asyncHandler(deleteEducator)
 );
 
@@ -99,7 +99,7 @@ router.delete(
 router.post(
   '/tutorials',
   authenticateToken,
-  authorizeRoles('SUPERADMIN'),
+  authorizeRoles('SUPERADMIN', 'ADMIN', 'CREATOR'),
   upload.fields([
     { name: 'logo', maxCount: 1 },
     { name: 'coverPhoto', maxCount: 1 },
@@ -110,7 +110,7 @@ router.get('/tutorials', authenticateToken, asyncHandler(getTutorials));
 router.put(
   '/tutorials/:id',
   authenticateToken,
-  authorizeRoles('SUPERADMIN'),
+  authorizeRoles('SUPERADMIN', 'ADMIN', 'CREATOR'),
   upload.fields([
     { name: 'logo', maxCount: 1 },
     { name: 'coverPhoto', maxCount: 1 },
@@ -120,7 +120,7 @@ router.put(
 router.delete(
   '/tutorials/:id',
   authenticateToken,
-  authorizeRoles('SUPERADMIN'),
+  authorizeRoles('SUPERADMIN', 'ADMIN', 'CREATOR'),
   asyncHandler(deleteTutorial)
 );
 
@@ -128,7 +128,7 @@ router.delete(
 router.post(
   '/youtube-channels',
   authenticateToken,
-  authorizeRoles('SUPERADMIN'),
+  authorizeRoles('SUPERADMIN', 'ADMIN', 'CREATOR'),
   upload.fields([
     { name: 'logo', maxCount: 1 },
     { name: 'coverPhoto', maxCount: 1 },
@@ -143,7 +143,7 @@ router.get(
 router.put(
   '/youtube-channels/:id',
   authenticateToken,
-  authorizeRoles('SUPERADMIN'),
+  authorizeRoles('SUPERADMIN', 'ADMIN', 'CREATOR'),
   upload.fields([
     { name: 'logo', maxCount: 1 },
     { name: 'coverPhoto', maxCount: 1 },
@@ -153,7 +153,7 @@ router.put(
 router.delete(
   '/youtube-channels/:id',
   authenticateToken,
-  authorizeRoles('SUPERADMIN'),
+  authorizeRoles('SUPERADMIN', 'ADMIN', 'CREATOR'),
   asyncHandler(deleteYoutubeChannel)
 );
 
@@ -161,7 +161,7 @@ router.delete(
 router.post(
   '/telegram-groups',
   authenticateToken,
-  authorizeRoles('SUPERADMIN'),
+  authorizeRoles('SUPERADMIN', 'ADMIN', 'CREATOR'),
   upload.fields([
     { name: 'logo', maxCount: 1 },
     { name: 'coverPhoto', maxCount: 1 },
@@ -176,7 +176,7 @@ router.get(
 router.put(
   '/telegram-groups/:id',
   authenticateToken,
-  authorizeRoles('SUPERADMIN'),
+  authorizeRoles('SUPERADMIN', 'ADMIN', 'CREATOR'),
   upload.fields([
     { name: 'logo', maxCount: 1 },
     { name: 'coverPhoto', maxCount: 1 },
@@ -186,7 +186,7 @@ router.put(
 router.delete(
   '/telegram-groups/:id',
   authenticateToken,
-  authorizeRoles('SUPERADMIN'),
+  authorizeRoles('SUPERADMIN', 'ADMIN', 'CREATOR'),
   asyncHandler(deleteTelegramGroup)
 );
 
