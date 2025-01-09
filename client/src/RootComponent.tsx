@@ -318,7 +318,7 @@ function RootComponent() {
                         <Route
                             path="/create-content"
                             element={
-                                <RouteGuard allowedRoles={['SUPERADMIN']}>
+                                <RouteGuard allowedRoles={['CREATOR', 'SUPERADMIN']}>
                                     <ContentCreationPage />
                                 </RouteGuard>
                             }
