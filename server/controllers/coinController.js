@@ -23,7 +23,7 @@ exports.getAllCoins = async (req, res, next) => {
         symbol: true,
         image: true,
         price: true,
-        market_cap: true,
+        fdv: true,
         market_cap_rank: true,
         price_change_1h: true,
         price_change_24h: true,

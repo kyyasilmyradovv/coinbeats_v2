@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Coins" ADD COLUMN     "fdv" DOUBLE PRECISION;
