@@ -4,29 +4,22 @@ import { Page, Button, Preloader, Card } from 'konsta/react'
 import Navbar from '../components/common/Navbar'
 import Sidebar from '../components/common/Sidebar'
 import axiosInstance from '~/api/axiosInstance'
-import AttachMoneyIcon from '@mui/icons-material/AttachMoney'
-import VisibilityIcon from '@mui/icons-material/Visibility'
-import TagIcon from '@mui/icons-material/Tag'
 import SearchIcon from '@mui/icons-material/Search'
-import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown'
-import ArrowDropUpIcon from '@mui/icons-material/ArrowDropUp'
 import NoDataFoundComponent from '~/components/common/NoDataFound'
 import { FiChevronDown, FiChevronUp } from 'react-icons/fi'
 import NorthRoundedIcon from '@mui/icons-material/NorthRounded'
 import SouthRoundedIcon from '@mui/icons-material/SouthRounded'
-import VerticalAlignTopRoundedIcon from '@mui/icons-material/VerticalAlignTopRounded'
-import VerticalAlignBottomRoundedIcon from '@mui/icons-material/VerticalAlignBottomRounded'
 
 interface RowInterface {
     name: string
     symbol: string
     image: string
-    price: string
-    view_count: number
-    market_cup_rank: number
-    price_change_24h: string
-    ath: string
-    atl: string
+    price: number
+    market_cap: number
+    market_cap_rank: number
+    price_change_1h: number
+    price_change_24h: number
+    price_change_7d: number
 }
 
 export default function CoinsPage() {
@@ -117,6 +110,30 @@ export default function CoinsPage() {
         fetchRows(true)
     }
 
+    function cutNumbers(value: number, length = 5, isPrice: boolean = false) {
+        if (isPrice && value < 0.0001) {
+            return '<0.000'
+        }
+
+        let newValue = value.toString()
+        newValue = newValue.slice(0, length - (newValue.endsWith('.') ? 1 : newValue.endsWith('.0') ? 2 : 0))
+
+        return newValue
+    }
+
+    function formatPrice(number: any): string {
+        if (number == null) return 'N/A'
+
+        if (number >= 1_000_000_000) {
+            return '$' + (number / 1_000_000_000).toFixed(1) + 'B'
+        } else if (number >= 1_000_000) {
+            return '$' + (number / 1_000_000).toFixed(1) + 'M'
+        } else if (number >= 1_000) {
+            return '$' + (number / 1_000).toFixed(1) + 'K'
+        }
+        return '$' + number.toString()
+    }
+
     return (
         <Page>
             <Navbar />
@@ -189,7 +206,7 @@ export default function CoinsPage() {
                                         <option value="id">Added Date</option>
                                         <option value="price">Price</option>
                                         <option value="market_cap">Market Cap</option>
-                                        <option value="market_cup_rank">Market Cap Rank</option>
+                                        <option value="market_cap_rank">Market Cap Rank</option>
                                         <option value="price_change_24h">24h Price Change</option>
                                         <option value="ath">All Time High</option>
                                         <option value="atl">All Time Low</option>
@@ -223,63 +240,100 @@ export default function CoinsPage() {
                         <div className="flex flex-col flex-grow">
                             {rows.map((row, index) => (
                                 <div key={index}>
+                                    {/* Card Content */}
                                     <Card className="rounded-2xl shadow-lg border dark:border-gray-600" style={{ marginBottom: 0, overflow: 'hidden' }}>
-                                        {/* Card Content */}
-                                        <div className="flex items-center">
-                                            <div className="relative">
-                                                {/* Image */}
+                                        {/* Image & Name*/}
+                                        <div className="flex flex-col lg:text-center">
+                                            <div className="flex flex-col items-center">
                                                 <img
                                                     src={row.image}
                                                     alt={row.name}
-                                                    className="w-12 h-12 rounded-full border border-gray-300 dark:border-gray-600 mr-3"
+                                                    className="w-12 h-12 rounded-full border border-gray-300 dark:border-gray-600"
                                                 />
+                                                <h3 className="text-lg font-bold">{row.name?.slice(0, 36)}</h3>
                                             </div>
 
-                                            {/* Name & Price & View count */}
-                                            <div className="flex-grow">
-                                                {/* Name */}
-                                                <h3 className="text-lg font-bold">{row.name?.slice(0, 18)}</h3>
+                                            {/* Divider */}
+                                            <div className="w-full border-t border-gray-300 my-4 dark:border-gray-600"></div>
 
-                                                {/* Price & 24h Price Change */}
-                                                <div className="flex items-center mt-1">
-                                                    <AttachMoneyIcon className="text-green-500 mr-2" />
-                                                    <span className="truncate">{row.price.slice(0, 7)}</span>
+                                            {/* Infos (Lines) */}
+                                            <div style={{ width: '100%' }} className="flex flex-col gap-2">
+                                                {/* Price & Market Cap & Market Cap Rank */}
+                                                <div className="flex gap-[1.5%]">
+                                                    {/* Price */}
+                                                    <div className="flex flex-col w-[32%]">
+                                                        <span className="text-sm text-gray-300">Price:</span>
+                                                        <span className="text-lg font-semibold text-gray-250">
+                                                            {row.price != null && '$'}
+                                                            {cutNumbers(row.price, 6, true) || 'N/A'}
+                                                        </span>
+                                                    </div>
 
-                                                    {row.price_change_24h != null && (
-                                                        <div className="flex items-center">
-                                                            {row.price_change_24h[0] == '-' ? (
-                                                                <ArrowDropDownIcon className="text-red-500 ml-1" />
-                                                            ) : (
-                                                                <ArrowDropUpIcon className="text-green-500 ml-1" />
-                                                            )}
-                                                            <span
-                                                                className={
-                                                                    row.price_change_24h[0] == '-' ? 'text-red-500 font-bold' : 'text-green-500 font-bold'
-                                                                }
-                                                            >
-                                                                {row.price_change_24h.slice(
-                                                                    row.price_change_24h[0] == '-' ? 1 : 0,
-                                                                    row.price_change_24h[4] == '.' ? 4 : 5
-                                                                )}
-                                                                %
-                                                            </span>
-                                                        </div>
-                                                    )}
+                                                    {/* Market Cap */}
+                                                    <div className="flex flex-col w-[32%]">
+                                                        <span className="text-sm text-gray-300">Market Cap:</span>
+                                                        <span className="text-lg font-semibold text-gray-250">{formatPrice(row.market_cap)}</span>
+                                                    </div>
+
+                                                    {/* Market Cap Rank */}
+                                                    <div className="flex flex-col w-[32%]">
+                                                        <span className="text-sm text-gray-300">Market Rank:</span>
+                                                        <span className="text-lg font-semibold text-gray-250">
+                                                            {' '}
+                                                            {row.market_cap_rank != null && '#'}
+                                                            {row.market_cap_rank || 'N/A'}
+                                                        </span>
+                                                    </div>
                                                 </div>
 
-                                                {/* ATH & ATL & MCR */}
-                                                <div className="flex items-center mt-1 gap-1">
-                                                    <div className="flex items-center w-[38%] lg:w-[20%]">
-                                                        <VerticalAlignTopRoundedIcon className="text-blue-500" />
-                                                        <span>{row.ath?.slice(0, 8) || 'N/A'}</span>
+                                                {/* Price Changes */}
+                                                <div className="flex gap-[1.5%]">
+                                                    {/* 1h Change */}
+                                                    <div className="flex flex-col w-[32%]">
+                                                        <span className="text-sm text-gray-300">1h Change:</span>
+                                                        <span
+                                                            className="text-lg font-bold"
+                                                            style={{
+                                                                color: row.price_change_1h != null ? (row.price_change_1h < 0 ? '#8d1010' : 'green') : 'white'
+                                                            }}
+                                                        >
+                                                            {row.price_change_1h != null && (
+                                                                <span className="text-sm mr-1">{row.price_change_1h < 0 ? '▼' : '▲'}</span>
+                                                            )}
+                                                            {row.price_change_1h != null ? `${cutNumbers(row.price_change_1h)}%` : 'N/A'}
+                                                        </span>
                                                     </div>
-                                                    <div className="flex items-center w-[38%] lg:w-[20%]">
-                                                        <VerticalAlignBottomRoundedIcon className="text-red-500" />
-                                                        <span>{row.atl?.slice(0, 8) || 'N/A'}</span>
+
+                                                    {/* 24h Change */}
+                                                    <div className="flex flex-col w-[32%]">
+                                                        <span className="text-sm text-gray-300">24h Change:</span>
+                                                        <span
+                                                            className="text-lg font-bold"
+                                                            style={{
+                                                                color: row.price_change_24h != null ? (row.price_change_24h < 0 ? '#8d1010' : 'green') : 'white'
+                                                            }}
+                                                        >
+                                                            {row.price_change_24h != null && (
+                                                                <span className="text-sm mr-1">{row.price_change_24h < 0 ? '▼' : '▲'}</span>
+                                                            )}
+                                                            {row.price_change_24h != null ? `${cutNumbers(row.price_change_24h)}%` : 'N/A'}
+                                                        </span>
                                                     </div>
-                                                    <div className="flex items-center w-[24%] lg:w-[10%]">
-                                                        <TagIcon className="text-blue-500" />
-                                                        <span>{row.market_cup_rank || 'N/A'}</span>
+
+                                                    {/* 7d Change */}
+                                                    <div className="flex flex-col w-[32%]">
+                                                        <span className="text-sm text-gray-300">7d Change:</span>
+                                                        <span
+                                                            className="text-lg font-bold"
+                                                            style={{
+                                                                color: row.price_change_7d != null ? (row.price_change_7d < 0 ? '#8d1010' : 'green') : 'white'
+                                                            }}
+                                                        >
+                                                            {row.price_change_7d != null && (
+                                                                <span className="text-sm mr-1">{row.price_change_7d < 0 ? '▼' : '▲'}</span>
+                                                            )}
+                                                            {row.price_change_7d != null ? `${cutNumbers(row.price_change_7d)}%` : 'N/A'}
+                                                        </span>
                                                     </div>
                                                 </div>
                                             </div>

@@ -485,22 +485,30 @@ model Coins {
   name                  String                    @unique
   symbol                String
   image                 String?
-  price                 String?
+  price                 Float?
   price_date            DateTime?
-  market_cap            String?
-  market_cup_rank       Int?
-  ath                   String?
+  market_cap            Float?
+  market_cap_rank       Int?
+  ath                   Float?
   ath_date              DateTime?
-  atl                   String?
+  atl                   Float?
   atl_date              DateTime?
   listed_date           String?
-  price_change_24h      String?
   created_at            DateTime @default(now())
   updated_at            DateTime @updatedAt
   gecko_id              String?                     @unique
   coinranking_uuid      String?                     @unique
   contract_addresses    String[]
-  view_count            Float?                      @default(0)
+  view_count            Int?                        @default(0)
+  homepage_links        String[]
+  official_forum_urls   String[]   
+  twitter_screen_name   String?
+  price_change_1h       Float?
+  price_change_24h      Float?
+  price_change_7d       Float?
+  price_change_14d      Float?
+  price_change_30d      Float?
+  price_change_1y       Float?
 }
 
 enum OverallRaffleType {
