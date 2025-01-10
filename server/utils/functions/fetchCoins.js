@@ -85,7 +85,7 @@ const integrateCoingecko = async (page) => {
   }
 };
 
-for (let i = 1; i < 20; i++) {
+for (let i = 1; i < 1; i++) {
   integrateCoingecko(i)
     .then(async (data) => {
       for (let coin of data) {
@@ -153,7 +153,9 @@ const fetchCoinFromCoingecko = async (id) => {
       price_change_14d: response.data?.market_data?.price_change_percentage_14d,
       price_change_30d: response.data?.market_data?.price_change_percentage_30d,
       price_change_1y: response.data?.market_data?.price_change_percentage_1y,
+      market_cap: response.data?.market_data?.market_cap?.usd,
       market_cap_rank: response.data?.market_data?.market_cap_rank,
+      fdv: response.data?.market_data?.fully_diluted_valuation?.usd,
       price_date: response.data?.market_data?.last_updated,
     };
   } catch (error) {
