@@ -263,7 +263,7 @@ export default function CoinsPage() {
                                                     {/* Price */}
                                                     <div className="flex flex-col w-[32%]">
                                                         <span className="text-sm text-gray-300">Price:</span>
-                                                        <span className="text-lg font-semibold text-gray-250">
+                                                        <span className="text-lg font-semibold" style={{ color: '#ea8d0b' }}>
                                                             {row.price != null && '$'}
                                                             {cutNumbers(row.price, 6, true) || 'N/A'}
                                                         </span>
@@ -272,13 +272,15 @@ export default function CoinsPage() {
                                                     {/* Market Cap */}
                                                     <div className="flex flex-col w-[32%]">
                                                         <span className="text-sm text-gray-300">Market Cap:</span>
-                                                        <span className="text-lg font-semibold text-gray-250">{formatPrice(row.market_cap)}</span>
+                                                        <span className="text-lg font-semibold" style={{ color: '#ea8d0b' }}>
+                                                            {formatPrice(row.market_cap)}
+                                                        </span>
                                                     </div>
 
                                                     {/* Market Cap Rank */}
                                                     <div className="flex flex-col w-[32%]">
                                                         <span className="text-sm text-gray-300">Market Rank:</span>
-                                                        <span className="text-lg font-semibold text-gray-250">
+                                                        <span className="text-lg font-semibold" style={{ color: '#0d30de' }}>
                                                             {' '}
                                                             {row.market_cap_rank != null && '#'}
                                                             {row.market_cap_rank || 'N/A'}
