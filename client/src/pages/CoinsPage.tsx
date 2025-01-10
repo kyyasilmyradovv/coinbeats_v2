@@ -15,7 +15,7 @@ interface RowInterface {
     symbol: string
     image: string
     price: number
-    market_cap: number
+    fdv: number
     market_cap_rank: number
     price_change_1h: number
     price_change_24h: number
@@ -196,7 +196,7 @@ export default function CoinsPage() {
                                     >
                                         <option value="id">Added Date</option>
                                         <option value="price">Price</option>
-                                        <option value="market_cap">Market Cap</option>
+                                        <option value="fdv">FDV</option>
                                         <option value="market_cap_rank">Market Cap Rank</option>
                                         <option value="price_change_1h">1h Price Change</option>
                                         <option value="price_change_24h">24h Price Change</option>
@@ -254,7 +254,7 @@ export default function CoinsPage() {
                                                     {/* Price */}
                                                     <div className="flex flex-col w-[32%]">
                                                         <span className="text-sm text-gray-300">Price:</span>
-                                                        <span className="text-lg font-semibold" style={{ color: '#ea8d0b' }}>
+                                                        <span className="text-[16px] md:text-lg font-semibold">
                                                             {row.price != null && '$'}
                                                             {cutNumbers(row.price, 6, true) || 'N/A'}
                                                         </span>
@@ -262,16 +262,14 @@ export default function CoinsPage() {
 
                                                     {/* Market Cap */}
                                                     <div className="flex flex-col w-[32%]">
-                                                        <span className="text-sm text-gray-300">Market Cap:</span>
-                                                        <span className="text-lg font-semibold" style={{ color: '#ea8d0b' }}>
-                                                            {formatPrice(row.market_cap)}
-                                                        </span>
+                                                        <span className="text-sm text-gray-300">FDV:</span>
+                                                        <span className="text-[16px] md:text-lg font-semibold">{formatPrice(row.fdv)}</span>
                                                     </div>
 
                                                     {/* Market Cap Rank */}
                                                     <div className="flex flex-col w-[32%]">
                                                         <span className="text-sm text-gray-300">Market Rank:</span>
-                                                        <span className="text-lg font-semibold" style={{ color: '#0c56b0' }}>
+                                                        <span className="text-[16px] md:text-lg font-semibold">
                                                             {' '}
                                                             {row.market_cap_rank != null && '#'}
                                                             {row.market_cap_rank || 'N/A'}
@@ -285,9 +283,9 @@ export default function CoinsPage() {
                                                     <div className="flex flex-col w-[32%]">
                                                         <span className="text-sm text-gray-300">1h Change:</span>
                                                         <span
-                                                            className="text-lg font-bold"
+                                                            className="text-[16px] md:text-[16px] md:text-lg font-bold"
                                                             style={{
-                                                                color: row.price_change_1h != null ? (row.price_change_1h < 0 ? '#8d1010' : 'green') : 'white'
+                                                                color: row.price_change_1h != null ? (row.price_change_1h < 0 ? '#ff0000' : '#32cd32') : 'white'
                                                             }}
                                                         >
                                                             {row.price_change_1h != null && (
@@ -301,9 +299,10 @@ export default function CoinsPage() {
                                                     <div className="flex flex-col w-[32%]">
                                                         <span className="text-sm text-gray-300">24h Change:</span>
                                                         <span
-                                                            className="text-lg font-bold"
+                                                            className="text-[16px] md:text-lg font-bold"
                                                             style={{
-                                                                color: row.price_change_24h != null ? (row.price_change_24h < 0 ? '#8d1010' : 'green') : 'white'
+                                                                color:
+                                                                    row.price_change_24h != null ? (row.price_change_24h < 0 ? '#ff0000' : '#32cd32') : 'white'
                                                             }}
                                                         >
                                                             {row.price_change_24h != null && (
@@ -317,9 +316,9 @@ export default function CoinsPage() {
                                                     <div className="flex flex-col w-[32%]">
                                                         <span className="text-sm text-gray-300">7d Change:</span>
                                                         <span
-                                                            className="text-lg font-bold"
+                                                            className="text-[16px] md:text-lg font-bold"
                                                             style={{
-                                                                color: row.price_change_7d != null ? (row.price_change_7d < 0 ? '#8d1010' : 'green') : 'white'
+                                                                color: row.price_change_7d != null ? (row.price_change_7d < 0 ? '#ff0000' : '#32cd32') : 'white'
                                                             }}
                                                         >
                                                             {row.price_change_7d != null && (

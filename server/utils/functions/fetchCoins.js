@@ -85,7 +85,7 @@ const integrateCoingecko = async (page) => {
   }
 };
 
-for (let i = 5; i < 4; i++) {
+for (let i = 1; i < 20; i++) {
   integrateCoingecko(i)
     .then(async (data) => {
       for (let coin of data) {
@@ -95,6 +95,7 @@ for (let i = 5; i < 4; i++) {
           image: coin?.image,
           price: coin?.current_price,
           price_date: coin?.last_updated,
+          fdv: coin?.fully_diluted_valuation,
           market_cap: coin?.market_cap,
           market_cap_rank: coin?.market_cap_rank,
           ath: coin?.ath,
@@ -168,7 +169,7 @@ const integrateCoinsOneByOneWithCoingecko = async () => {
 
   for (let i = 1; (i - 1) * 1000 < coinsCount; i++) {
     const coins = await prisma.coins.findMany({
-      where: { gecko_id: { not: null } },
+      where: { gecko_id: { not: null }, price_change_1h: null },
       select: {
         id: true,
         gecko_id: true,
