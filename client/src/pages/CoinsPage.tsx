@@ -174,17 +174,8 @@ export default function CoinsPage() {
                         className="flex items-center justify-center mt-4 text-sm text-gray-600 dark:text-gray-300 focus:outline-none"
                         onClick={() => setIsExpanded(!isExpanded)}
                     >
-                        {isExpanded ? (
-                            <>
-                                <FiChevronUp className="mr-2" />
-                                Hide Filters & Sort
-                            </>
-                        ) : (
-                            <>
-                                <FiChevronDown className="mr-2" />
-                                Show Filters & Sort
-                            </>
-                        )}
+                        {isExpanded ? <FiChevronUp className="mr-2" /> : <FiChevronDown className="mr-2" />}
+                        Filter {3.7}K Coins
                     </button>
 
                     {/* Filter and Sort */}
@@ -207,9 +198,9 @@ export default function CoinsPage() {
                                         <option value="price">Price</option>
                                         <option value="market_cap">Market Cap</option>
                                         <option value="market_cap_rank">Market Cap Rank</option>
+                                        <option value="price_change_1h">1h Price Change</option>
                                         <option value="price_change_24h">24h Price Change</option>
-                                        <option value="ath">All Time High</option>
-                                        <option value="atl">All Time Low</option>
+                                        <option value="price_change_7d">7d Price Change</option>
                                     </select>
 
                                     <button
@@ -280,7 +271,7 @@ export default function CoinsPage() {
                                                     {/* Market Cap Rank */}
                                                     <div className="flex flex-col w-[32%]">
                                                         <span className="text-sm text-gray-300">Market Rank:</span>
-                                                        <span className="text-lg font-semibold" style={{ color: '#0d30de' }}>
+                                                        <span className="text-lg font-semibold" style={{ color: '#0c56b0' }}>
                                                             {' '}
                                                             {row.market_cap_rank != null && '#'}
                                                             {row.market_cap_rank || 'N/A'}
