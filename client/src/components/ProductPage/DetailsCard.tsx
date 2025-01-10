@@ -20,37 +20,76 @@ const DetailsCard: React.FC<DetailsCardProps> = ({ academy }) => {
             {/* Content Wrapper with padding */}
             <div className="grid grid-cols-3 gap-4 w-full sm:w-4/6 md:w-3/6 lg:w-4/12	 ">
                 {/* Ticker */}
-                <div
-                    className="flex items-center mb-2 text-md text-gray-900 dark:text-gray-200 justify-center "
-                    style={{
-                        background: '#2E3772',
-                        height: '190px',
-                        margin: 0,
-                        maxWidth: '134px',
-                        borderRadius: '8px',
-                        flexDirection: 'column',
-                        justifyContent: 'space-between',
-                        padding: '18px'
-                    }}
-                >
-                    <img src={tickerIcon} className="h-10 w-10 " alt="academy ticker" />
-                    <p
-                        className="text-black dark:text-gray-200 font-semibold"
+                {academy.ticker ? (
+                    <a
+                        href={`https://x.com/search?q=${encodeURIComponent(academy.ticker)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center mb-2 text-md text-gray-900 dark:text-gray-200 justify-center"
                         style={{
-                            fontSize: '14px',
-                            textAlign: 'center',
-                            width: '100px',
-                            display: '-webkit-box',
-                            WebkitLineClamp: 3,
-                            WebkitBoxOrient: 'vertical',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis'
+                            background: '#2E3772',
+                            height: '190px',
+                            margin: 0,
+                            maxWidth: '134px',
+                            borderRadius: '8px',
+                            flexDirection: 'column',
+                            justifyContent: 'space-between',
+                            padding: '18px',
+                            textDecoration: 'none', // ensure no default link underline
+                            color: 'inherit' // keep text color from parent styles
                         }}
                     >
-                        {academy.ticker || 'N/A'}
-                    </p>
-                    <div className="text-gray-600 dark:text-gray-400 ">Ticker</div>
-                </div>
+                        <img src={tickerIcon} className="h-10 w-10" alt="academy ticker" />
+                        <p
+                            className="text-black dark:text-gray-200 font-semibold"
+                            style={{
+                                fontSize: '14px',
+                                textAlign: 'center',
+                                width: '100px',
+                                display: '-webkit-box',
+                                WebkitLineClamp: 3,
+                                WebkitBoxOrient: 'vertical',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis'
+                            }}
+                        >
+                            {academy.ticker}
+                        </p>
+                        <div className="text-gray-600 dark:text-gray-400">Ticker</div>
+                    </a>
+                ) : (
+                    <div
+                        className="flex items-center mb-2 text-md text-gray-900 dark:text-gray-200 justify-center"
+                        style={{
+                            background: '#2E3772',
+                            height: '190px',
+                            margin: 0,
+                            maxWidth: '134px',
+                            borderRadius: '8px',
+                            flexDirection: 'column',
+                            justifyContent: 'space-between',
+                            padding: '18px'
+                        }}
+                    >
+                        <img src={tickerIcon} className="h-10 w-10" alt="academy ticker" />
+                        <p
+                            className="text-black dark:text-gray-200 font-semibold"
+                            style={{
+                                fontSize: '14px',
+                                textAlign: 'center',
+                                width: '100px',
+                                display: '-webkit-box',
+                                WebkitLineClamp: 3,
+                                WebkitBoxOrient: 'vertical',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis'
+                            }}
+                        >
+                            N/A
+                        </p>
+                        <div className="text-gray-600 dark:text-gray-400">Ticker</div>
+                    </div>
+                )}
 
                 {/* Categories */}
                 <div
