@@ -32,7 +32,6 @@ export default function PointsControlPage() {
         if (reset) setRows([])
 
         try {
-            console.log('offset------- ', offset)
             const response = await axiosInstance.get(`/api/points-control?limit=20&offset=${reset ? 0 : offset}&keyword=${encodeURIComponent(searchKeyword)}`)
             const newRows = response?.data
 
@@ -138,14 +137,13 @@ export default function PointsControlPage() {
                                             <div className="flex gap-[2%]">
                                                 <div className="flex flex-col w-[49%]">
                                                     <span className="text-sm text-gray-300">Xp:</span>
-                                                    <span className="text-[16px] md:text-lg font-semibold">{row.value}</span>
+                                                    <span className="text-[15px] md:text-lg font-semibold">{row.value}</span>
                                                 </div>
                                                 <div className="flex flex-col w-[49%]">
                                                     <span className="text-sm text-gray-300">Desc:</span>
-                                                    <span className="text-[16px] md:text-lg font-semibold">
-                                                        {row?.description?.slice(0, 15) ||
-                                                            row?.task_name?.slice(0.15) ||
-                                                            row?.academy_name?.slice(0.15) + ' academy'}
+                                                    <span className="text-[14px] md:text-lg font-semibold">
+                                                        {row?.description?.slice(0, 15) || row?.task_name?.slice(0.15)}
+                                                        {row?.academy_name?.length && row?.academy_name?.slice(0.15) + ' academy'}
                                                     </span>
                                                 </div>
                                             </div>
@@ -154,7 +152,7 @@ export default function PointsControlPage() {
                                             <div>
                                                 <div className="flex flex-col">
                                                     <span className="text-sm text-gray-300">Date:</span>
-                                                    <span className="text-[16px] md:text-lg font-semibold">{new Date(row.createdAt).toLocaleString()}</span>
+                                                    <span className="text-[15px] md:text-lg font-semibold">{new Date(row.createdAt).toLocaleString()}</span>
                                                 </div>
                                             </div>
 
@@ -162,7 +160,7 @@ export default function PointsControlPage() {
                                             <div>
                                                 <div className="flex flex-col ">
                                                     <span className="text-sm text-gray-300">User:</span>
-                                                    <span className="text-[16px] md:text-lg font-semibold">@{row.user_name?.slice(0, 50)}</span>
+                                                    <span className="text-[15px] md:text-lg font-semibold">@{row.user_name?.slice(0, 50)}</span>
                                                 </div>
                                             </div>
                                         </div>
