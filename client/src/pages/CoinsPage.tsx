@@ -1,4 +1,4 @@
-// src/pages/MarketsPage.js
+// src/pages/CoinsPage.js
 import { useEffect, useRef, useState } from 'react'
 import { Page, Button, Preloader, Card } from 'konsta/react'
 import Navbar from '../components/common/Navbar'
@@ -232,11 +232,7 @@ export default function CoinsPage() {
                 </div>
 
                 {/* Cards */}
-                <div
-                    className="relative min-h-screen bg-cosmos-bg bg-fixed bg-center bg-no-repeat bg-cover overflow-y-auto"
-                    // style={{ height: '100vh', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-                    // ref={containerRef}
-                >
+                <div className="relative min-h-screen bg-cosmos-bg bg-fixed bg-center bg-no-repeat bg-cover overflow-y-auto">
                     <div className="relative z-10">
                         {/* Map over rows to display all coins */}
                         <div className="flex flex-col flex-grow">
@@ -281,7 +277,6 @@ export default function CoinsPage() {
                                                     <div className="flex flex-col w-[32%]">
                                                         <span className="text-sm text-gray-300">Market Rank:</span>
                                                         <span className="text-[16px] md:text-lg font-semibold">
-                                                            {' '}
                                                             {row.market_cap_rank != null && '#'}
                                                             {row.market_cap_rank || 'N/A'}
                                                         </span>

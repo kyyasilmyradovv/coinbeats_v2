@@ -63,6 +63,7 @@ const Sidebar: React.FC = () => {
             { label: 'Scholarship Management', path: '/scholarship-management' },
             { label: 'Raffle Management', path: '/overall-raffle-management' },
             { label: 'Surprise Box', path: '/surprise-box' },
+            { label: 'Points Control', path: '/points-control' },
             { label: 'Character Management', path: '/character-management' }, // Added this line
             { label: 'Create Content', path: '/create-content' }
         ],
