@@ -33,6 +33,7 @@ export default function CoinsPage() {
     const [sortColumn, setSortColumn] = useState('id')
     const [sortDirection, setSortDirection] = useState('desc')
     const [showScrollToTopButton, setShowScrollToTopButton] = useState(false)
+    const [coinsCount, setCoinsCount] = useState(0)
 
     const fetchRows = async (reset = false) => {
         if (loading || (!hasMore && !reset)) return
@@ -62,7 +63,17 @@ export default function CoinsPage() {
         }
     }
 
+    const fetchCoinsCount = async () => {
+        try {
+            const response = await axiosInstance.get('/api/coins/count')
+            setCoinsCount(response?.data)
+        } catch (error) {
+            console.error('Error fetching coins count:', error)
+        }
+    }
+
     useEffect(() => {
+        fetchCoinsCount()
         fetchRows()
     }, [])
 
@@ -175,7 +186,7 @@ export default function CoinsPage() {
                         onClick={() => setIsExpanded(!isExpanded)}
                     >
                         {isExpanded ? <FiChevronUp className="mr-2" /> : <FiChevronDown className="mr-2" />}
-                        Filter {3.7}K Coins
+                        Filter {formatPrice(coinsCount).slice(1)} Coins
                     </button>
 
                     {/* Filter and Sort */}
