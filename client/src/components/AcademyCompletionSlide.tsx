@@ -124,6 +124,7 @@ const AcademyCompletionSlide: React.FC<AcademyCompletionSlideProps> = ({
     const [referralLink, setReferralLink] = useState('')
     const [visibleTooltip, setVisibleTooltip] = useState<number | null>(null)
     const [openQuests, setOpenQuests] = useState(false)
+    const [verifyLoading, setVerifyLoading] = useState(false)
 
     // Extract Twitter handle from academyTwitter prop
     const [twitterHandle, setTwitterHandle] = useState('')
@@ -201,6 +202,9 @@ const AcademyCompletionSlide: React.FC<AcademyCompletionSlideProps> = ({
 
     // Handle verify button click
     const handleVerify = async (task: VerificationTask) => {
+        if (verifyLoading) return
+        setVerifyLoading(true)
+
         const userVerification = userVerificationTasks.find(
             (verification) => verification.verificationTaskId === task.id && verification.academyId === academyId
         )
@@ -208,12 +212,14 @@ const AcademyCompletionSlide: React.FC<AcademyCompletionSlideProps> = ({
         if (!userVerification) {
             setNotificationText('You have not started this task yet. Please perform the task before verifying.')
             setNotificationOpen(true)
+            setVerifyLoading(false)
             return
         }
 
         if (userVerification.verified) {
             setNotificationText('You have already completed this task.')
             setNotificationOpen(true)
+            setVerifyLoading(false)
             return
         }
 
@@ -264,6 +270,7 @@ const AcademyCompletionSlide: React.FC<AcademyCompletionSlideProps> = ({
             setNotificationText(errorMessage)
             setNotificationOpen(true)
         }
+        setVerifyLoading(false)
     }
 
     const toggleTooltip = (tooltipIndex: number) => {
@@ -681,7 +688,6 @@ const AcademyCompletionSlide: React.FC<AcademyCompletionSlideProps> = ({
                                     backgroundColor: '#4F5763',
                                     color: '#fff'
                                 }}
-                                disabled={disableVerifyButton}
                             >
                                 {isVerified ? 'Completed' : 'Verify'}
                             </Button>

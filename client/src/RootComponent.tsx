@@ -62,6 +62,7 @@ import useNotificationStore from './store/useNotificationStore'
 // 1) Import BannedPage
 import BannedPage from './components/BannedPage' // <-- if you have this file
 import CoinsPage from './pages/CoinsPage'
+import PointsControlPage from './pages/PointsControlPage'
 
 function RootComponent() {
     const [isLoading, setIsLoading] = useState(true)
@@ -287,6 +288,14 @@ function RootComponent() {
                             element={
                                 <RouteGuard allowedRoles={['ADMIN', 'SUPERADMIN']}>
                                     <SurpriseBoxPage />
+                                </RouteGuard>
+                            }
+                        />
+                        <Route
+                            path="/points-control"
+                            element={
+                                <RouteGuard allowedRoles={['ADMIN', 'SUPERADMIN']}>
+                                    <PointsControlPage />
                                 </RouteGuard>
                             }
                         />
