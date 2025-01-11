@@ -135,32 +135,37 @@ export default function PointsControlPage() {
                                         <div style={{ width: '100%' }} className="flex flex-col gap-2">
                                             {/* Xp & Description */}
                                             <div className="flex gap-[2%]">
-                                                <div className="flex flex-col w-[49%]">
+                                                <div className="flex flex-col w-[46%]">
                                                     <span className="text-sm text-gray-300">Xp:</span>
                                                     <span className="text-[15px] md:text-lg font-semibold">{row.value}</span>
                                                 </div>
-                                                <div className="flex flex-col w-[49%]">
+                                                <div className="flex flex-col w-[52%]">
                                                     <span className="text-sm text-gray-300">Desc:</span>
                                                     <span className="text-[14px] md:text-lg font-semibold">
                                                         {row?.description?.slice(0, 15) || row?.task_name?.slice(0.15)}
-                                                        {row?.academy_name?.length && row?.academy_name?.slice(0.15) + ' academy'}
+                                                        {row?.academy_name?.length && ` ${row?.academy_name?.slice(0.15)}`}
                                                     </span>
                                                 </div>
                                             </div>
 
-                                            {/* Date */}
-                                            <div>
-                                                <div className="flex flex-col">
+                                            {/* Date & Username*/}
+                                            <div className="flex gap-[2%]">
+                                                <div className="flex flex-col w-[46%]">
                                                     <span className="text-sm text-gray-300">Date:</span>
-                                                    <span className="text-[15px] md:text-lg font-semibold">{new Date(row.createdAt).toLocaleString()}</span>
+                                                    <span className="text-[15px] md:text-lg font-semibold">
+                                                        {new Date(row.createdAt).toLocaleString('en-US', {
+                                                            year: '2-digit',
+                                                            month: '2-digit',
+                                                            day: '2-digit',
+                                                            hour: '2-digit',
+                                                            minute: '2-digit'
+                                                        })}
+                                                    </span>
                                                 </div>
-                                            </div>
 
-                                            {/* User */}
-                                            <div>
-                                                <div className="flex flex-col ">
+                                                <div className="flex flex-col w-[52%]">
                                                     <span className="text-sm text-gray-300">User:</span>
-                                                    <span className="text-[15px] md:text-lg font-semibold">@{row.user_name?.slice(0, 50)}</span>
+                                                    <span className="text-[15px] md:text-lg font-semibold">{row.user_name?.slice(0, 15)}</span>
                                                 </div>
                                             </div>
                                         </div>
