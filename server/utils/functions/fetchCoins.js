@@ -143,6 +143,7 @@ const fetchCoinFromCoingecko = async (id) => {
     });
 
     return {
+      categories: response.data?.categories,
       homepage_links: response.data?.links?.homepage,
       official_forum_urls: response.data?.links?.official_forum_url,
       twitter_screen_name: response.data?.links?.twitter_screen_name,
@@ -186,7 +187,7 @@ const integrateCoinsOneByOneWithCoingecko = async () => {
       const data = await fetchCoinFromCoingecko(coin.gecko_id);
       await prisma.coins.update({ where: { id: coin.id }, data });
       console.log(++k);
-      await new Promise((resolve) => setTimeout(resolve, 3 * 1000));
+      await new Promise((resolve) => setTimeout(resolve, 2 * 1000));
     }
   }
 

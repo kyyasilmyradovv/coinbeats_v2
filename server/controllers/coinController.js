@@ -40,6 +40,17 @@ exports.getAllCoins = async (req, res, next) => {
   }
 };
 
+exports.getCoinsCount = async (req, res, next) => {
+  try {
+    let coinsCount = await prisma.coins.count();
+
+    res.status(200).json(coinsCount);
+  } catch (error) {
+    console.error('Error counting  coins:', error);
+    next(createError(500, 'Error counting coins'));
+  }
+};
+
 exports.getMyTotalCoins = async (req, res, next) => {
   try {
     const userId = +req.query?.userId;
