@@ -96,7 +96,7 @@ const PodcastDetailPage: React.FC = () => {
         if (!podcast) return <p className="text-center mt-4">Loading podcast...</p>
 
         return (
-            <div className="!p-0 mx-4 mt-4 rounded-xl shadow-lg overflow-hidden bg-white dark:bg-zinc-900 border border-gray-300 dark:border-gray-600 pb-16">
+            <div className="!p-0 mx-4 mt-4 rounded-xl shadow-lg overflow-hidden bg-white dark:bg-zinc-900 border border-gray-300 dark:border-gray-600 !mb-20">
                 {/* Cover Photo always */}
                 {podcast.coverPhotoUrl && (
                     <div className="relative w-full h-40 overflow-hidden rounded-b-2xl">

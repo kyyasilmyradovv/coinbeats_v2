@@ -28,6 +28,12 @@ import { platformIcons, getActionLabel, requiresInputField, getInputPlaceholder,
 // IMPORTANT: use your axios instance
 import axios from '../api/axiosInstance'
 
+// Function to extract YouTube video ID
+const extractYouTubeVideoId = (url: string): string | null => {
+    const match = url.match(/(?:https?:\/\/)?(?:www\.)?youtu(?:\.be\/|be\.com\/(?:watch\?v=|v\/|embed\/|shorts\/))([\w-]{11})/)
+    return match ? match[1] : null
+}
+
 // ==========================
 // BUNNY ANIMATION CONFIG
 // ==========================
@@ -356,7 +362,7 @@ const EducatorDetailPage: React.FC = () => {
         }
 
         return (
-            <div className="mt-4">
+            <div className="mt-4 !mb-20">
                 {tasks.map((task) => {
                     const completed = isTaskCompleted(task)
                     return (
@@ -456,6 +462,9 @@ const EducatorDetailPage: React.FC = () => {
 
     const renderLinkButtons = () => {
         if (!educator) return null
+
+        const youtubeVideoId = educator.youtubeUrl ? extractYouTubeVideoId(educator.youtubeUrl) : null
+
         const links = [
             { field: 'youtubeUrl', url: educator.youtubeUrl },
             { field: 'twitterUrl', url: educator.twitterUrl },
@@ -466,30 +475,46 @@ const EducatorDetailPage: React.FC = () => {
         ]
 
         return (
-            <div className="flex gap-3 mt-4 flex-wrap">
-                {links.map((item, idx) => {
-                    if (!item.url) return null
-                    const config = linkIcons[item.field] || {
-                        icon: 'mdi:link-variant',
-                        label: 'Link',
-                        iconColor: 'rgba(255,255,255,0.8)'
-                    }
-                    // substack => smaller icon
-                    const iconSize =
-                        config.label === 'Substack' ? { width: '1.75rem', height: '1.75rem', padding: '0.2rem' } : { width: '1.75rem', height: '1.75rem' }
+            <div className="flex flex-col gap-4 mt-4">
+                <div className="flex gap-3 flex-wrap">
+                    {links.map((item, idx) => {
+                        if (!item.url) return null
+                        const config = linkIcons[item.field] || {
+                            icon: 'mdi:link-variant',
+                            label: 'Link',
+                            iconColor: 'rgba(255,255,255,0.8)'
+                        }
+                        // substack => smaller icon
+                        const iconSize =
+                            config.label === 'Substack' ? { width: '1.75rem', height: '1.75rem', padding: '0.2rem' } : { width: '1.75rem', height: '1.75rem' }
 
-                    return (
-                        <button
-                            key={idx}
-                            onClick={() => window.open(item.url, '_blank')}
-                            title={config.label}
-                            className="p-2 rounded-full hover:opacity-80 transition-all"
-                            style={{ backgroundColor: '#444' }}
-                        >
-                            <Icon icon={config.icon} style={{ color: config.iconColor, ...iconSize }} />
-                        </button>
-                    )
-                })}
+                        return (
+                            <button
+                                key={idx}
+                                onClick={() => window.open(item.url, '_blank')}
+                                title={config.label}
+                                className="p-2 rounded-full hover:opacity-80 transition-all"
+                                style={{ backgroundColor: '#444' }}
+                            >
+                                <Icon icon={config.icon} style={{ color: config.iconColor, width: '1.75rem', height: '1.75rem' }} />
+                            </button>
+                        )
+                    })}
+                </div>
+
+                {/* Embed YouTube Video */}
+                {youtubeVideoId && (
+                    <div className="mt-4">
+                        <iframe
+                            width="100%"
+                            height="315"
+                            src={`https://www.youtube.com/embed/${youtubeVideoId}`}
+                            title="YouTube Video"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                        />
+                    </div>
+                )}
             </div>
         )
     }
@@ -508,7 +533,7 @@ const EducatorDetailPage: React.FC = () => {
         }
 
         return (
-            <div className="!p-0 mx-4 mt-4 rounded-xl shadow-lg overflow-hidden bg-white dark:bg-zinc-900 border border-gray-300 dark:border-gray-600 pb-16">
+            <div className="!p-0 mx-4 mt-4 rounded-xl shadow-lg overflow-hidden bg-white dark:bg-zinc-900 border border-gray-300 dark:border-gray-600 !mb-20">
                 {/* Cover */}
                 {educator.coverPhotoUrl && (
                     <div className="relative w-full h-40 overflow-hidden rounded-b-2xl">
@@ -542,11 +567,11 @@ const EducatorDetailPage: React.FC = () => {
                 )}
 
                 {/* Overview Tab */}
-                {activeTab === 'overview' && (educator.avatarUrl || educator.name) && (
+                {activeTab === 'overview' && (educator.logoUrl || educator.name) && (
                     <div className="flex items-center gap-3 px-4 pt-4">
-                        {educator.avatarUrl && (
+                        {educator.logoUrl && (
                             <img
-                                src={constructImageUrl(educator.avatarUrl)}
+                                src={constructImageUrl(educator.logoUrl)}
                                 alt="Logo"
                                 className="w-20 h-20 rounded-full object-cover border-2 border-white dark:border-gray-800"
                             />

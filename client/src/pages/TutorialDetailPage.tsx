@@ -1,13 +1,12 @@
-// src/pages/TutorialDetailPage.tsx
-
 import React, { useEffect, useState } from 'react'
 import { useParams, useLocation, useNavigate } from 'react-router-dom'
-import { Page, Card, Block } from 'konsta/react'
+import { Page, Block } from 'konsta/react'
 import { Icon } from '@iconify/react'
 import Navbar from '../components/common/Navbar'
 import Sidebar from '../components/common/Sidebar'
 import BottomTabBar from '../components/BottomTabBar'
 import useDiscoverStore from '../store/useDiscoverStore'
+import { extractYouTubeVideoId } from '../utils/extractYouTubeVideoId'
 
 interface Tutorial {
     id: number
@@ -19,6 +18,14 @@ interface Tutorial {
     coverPhotoUrl?: string
     categories?: { id: number; name: string }[]
     chains?: { id: number; name: string }[]
+}
+
+const typeMapping: { [key: string]: string } = {
+    WALLET_SETUP: 'Wallet Setup',
+    CEX_TUTORIAL: 'CEX Tutorial',
+    APP_TUTORIAL: 'App Tutorial',
+    RESEARCH_TUTORIAL: 'Research Tutorial',
+    OTHER: 'Other'
 }
 
 const TutorialDetailPage: React.FC = () => {
@@ -52,16 +59,34 @@ const TutorialDetailPage: React.FC = () => {
 
     const renderLinkButtons = () => {
         if (!tutorial?.contentUrl) return null
+
+        const youtubeVideoId = extractYouTubeVideoId(tutorial.contentUrl)
+        const isYouTubeLink = Boolean(youtubeVideoId)
+
         return (
-            <div className="flex gap-3 mt-4 flex-wrap">
-                <button
-                    onClick={() => window.open(tutorial.contentUrl, '_blank')}
-                    className="p-2 rounded-full hover:opacity-80 transition-all"
-                    style={{ backgroundColor: '#444' }}
-                    title="Open Tutorial Link"
-                >
-                    <Icon icon="mdi:link-variant" style={{ color: 'rgba(255,255,255,0.8)' }} className="w-8 h-8" />
-                </button>
+            <div className="flex flex-col gap-4 mt-4">
+                <div className="flex gap-3 flex-wrap">
+                    <button
+                        onClick={() => window.open(tutorial.contentUrl, '_blank')}
+                        className="p-2 rounded-full hover:opacity-80 transition-all"
+                        style={{ backgroundColor: '#444' }}
+                        title="Open Tutorial Link"
+                    >
+                        <Icon icon="mdi:link-variant" style={{ color: 'rgba(255,255,255,0.8)' }} className="w-8 h-8" />
+                    </button>
+                </div>
+                {isYouTubeLink && (
+                    <div className="mt-4">
+                        <iframe
+                            width="100%"
+                            height="315"
+                            src={`https://www.youtube.com/embed/${youtubeVideoId}`}
+                            title="YouTube Video"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                        />
+                    </div>
+                )}
             </div>
         )
     }
@@ -70,13 +95,12 @@ const TutorialDetailPage: React.FC = () => {
         if (!tutorial) return <p className="text-center mt-4">Loading tutorial...</p>
 
         return (
-            <div className="!p-0 mx-4 mt-4 rounded-xl shadow-lg overflow-hidden bg-white dark:bg-zinc-900 border border-gray-300 dark:border-gray-600 pb-16">
+            <div className="!p-0 mx-4 mt-4 rounded-xl shadow-lg overflow-hidden bg-white dark:bg-zinc-900 border border-gray-300 dark:border-gray-600 !mb-20">
                 {tutorial.coverPhotoUrl && (
                     <div className="relative w-full h-40 overflow-hidden rounded-b-2xl">
                         <img src={constructImageUrl(tutorial.coverPhotoUrl)} alt="Cover" className="w-full h-full object-cover" />
                         <div className="absolute inset-0 bg-black bg-opacity-40"></div>
 
-                        {/* Tabs bottom-left */}
                         <div className="absolute bottom-2 left-4 flex gap-2">
                             <button
                                 onClick={() => setActiveTab('overview')}
@@ -102,7 +126,6 @@ const TutorialDetailPage: React.FC = () => {
                     </div>
                 )}
 
-                {/* Only show logo+name in overview */}
                 {activeTab === 'overview' && (tutorial.logoUrl || tutorial.title) && (
                     <div className="flex items-center gap-3 px-4 pt-4">
                         {tutorial.logoUrl && (
@@ -119,7 +142,6 @@ const TutorialDetailPage: React.FC = () => {
                 <div className="px-4">
                     {activeTab === 'overview' && (
                         <>
-                            {/* 1) About */}
                             {(tutorial.categories?.length || 0) > 0 || (tutorial.chains?.length || 0) > 0 ? (
                                 <Block className="mt-3 !p-0">
                                     <h3 className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">About:</h3>
@@ -138,7 +160,6 @@ const TutorialDetailPage: React.FC = () => {
                                 </Block>
                             ) : null}
 
-                            {/* 2) Description */}
                             {tutorial.description && (
                                 <div className="mt-3">
                                     <h3 className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Description:</h3>
@@ -146,12 +167,11 @@ const TutorialDetailPage: React.FC = () => {
                                 </div>
                             )}
 
-                            {/* 3) Links */}
                             {renderLinkButtons()}
 
                             {tutorial.type && (
                                 <div className="mt-2 text-sm text-gray-600 dark:text-gray-300">
-                                    <strong>Type:</strong> {tutorial.type}
+                                    <strong>Type:</strong> {typeMapping[tutorial.type] || tutorial.type}
                                 </div>
                             )}
                         </>

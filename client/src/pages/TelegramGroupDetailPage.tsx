@@ -72,7 +72,7 @@ const TelegramGroupDetailPage: React.FC = () => {
         if (!group) return <p className="text-center mt-4">Loading Telegram Group...</p>
 
         return (
-            <div className="!p-0 mx-4 mt-4 rounded-xl shadow-lg overflow-hidden bg-white dark:bg-zinc-900 border border-gray-300 dark:border-gray-600 pb-16">
+            <div className="!p-0 mx-4 mt-4 rounded-xl shadow-lg overflow-hidden bg-white dark:bg-zinc-900 border border-gray-300 dark:border-gray-600 !mb-20">
                 {group.coverPhotoUrl && (
                     <div className="relative w-full h-40 overflow-hidden rounded-b-2xl">
                         <img src={constructImageUrl(group.coverPhotoUrl)} alt="Cover" className="w-full h-full object-cover" />
