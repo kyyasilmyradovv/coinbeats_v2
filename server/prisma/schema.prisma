@@ -132,7 +132,7 @@ model AcademyType {
   updatedAt        DateTime          @default(now()) @updatedAt @db.Timestamp(6)
   restricted       Boolean           @default(false)
   academies        Academy[]
-  initialQuestions InitialQuestion[] @relation("AcademyTypeQuestions")
+  initialQuestions InitialQuestion[] @relation("InitialQuestionToAcademyType")
   allowedUsers     User[]            @relation("UserAcademyTypes")
 }
 
@@ -140,8 +140,25 @@ model InitialQuestion {
   id               Int               @id @default(autoincrement())
   question         String
   academyTypeId    Int
-  academyQuestions AcademyQuestion[]
-  academyType      AcademyType       @relation("AcademyTypeQuestions", fields: [academyTypeId], references: [id], onDelete: Cascade)
+  // Link to AcademyType (renamed relation)
+  academyType      AcademyType       @relation("InitialQuestionToAcademyType", fields: [academyTypeId], references: [id], onDelete: Cascade)
+  // Link to AcademyQuestion (renamed relation so it won't conflict)
+  academyQuestions AcademyQuestion[] @relation("InitialQuestionToAcademyQuestion")
+}
+
+model AcademyQuestion {
+  id                Int             @id @default(autoincrement())
+  question          String
+  academyId         Int
+  answer            String?
+  initialQuestionId Int
+  quizQuestion      String
+  xp                Int             @default(0)
+  video             String?
+  academy           Academy         @relation(fields: [academyId], references: [id])
+  // Opposite side of the InitialQuestion relation
+  initialQuestion   InitialQuestion @relation("InitialQuestionToAcademyQuestion", fields: [initialQuestionId], references: [id])
+  choices           Choice[]
 }
 
 model Choice {
@@ -161,20 +178,6 @@ model UserResponse {
   pointsAwarded Int
   choice        Choice  @relation(fields: [choiceId], references: [id], onDelete: Cascade)
   user          User    @relation(fields: [userId], references: [id])
-}
-
-model AcademyQuestion {
-  id                Int             @id @default(autoincrement())
-  question          String
-  academyId         Int
-  answer            String?
-  initialQuestionId Int
-  quizQuestion      String
-  xp                Int             @default(0)
-  video             String?
-  academy           Academy         @relation(fields: [academyId], references: [id])
-  initialQuestion   InitialQuestion @relation(fields: [initialQuestionId], references: [id])
-  choices           Choice[]
 }
 
 model Raffle {
@@ -244,6 +247,9 @@ model Educator {
   lessons       Lesson[]      @relation("EducatorLessons")
   categories    Category[]    @relation("EducatorCategories")
   chains        Chain[]       @relation("EducatorChains")
+
+  // Opposite side of VerificationTask => Educator
+  verificationTasks VerificationTask[]
 }
 
 model Lesson {
@@ -270,6 +276,9 @@ model Podcast {
   updatedAt     DateTime      @updatedAt
   categories    Category[]    @relation("PodcastCategories")
   chains        Chain[]       @relation("PodcastChains")
+
+  // Opposite side of VerificationTask => Podcast
+  verificationTasks VerificationTask[]
 }
 
 model Tutorial {
@@ -286,6 +295,9 @@ model Tutorial {
   updatedAt     DateTime      @updatedAt
   categories    Category[]    @relation("TutorialCategories")
   chains        Chain[]       @relation("TutorialChains")
+
+  // Opposite side of VerificationTask => Tutorial
+  verificationTasks VerificationTask[]
 }
 
 model YoutubeChannel {
@@ -300,6 +312,9 @@ model YoutubeChannel {
   updatedAt     DateTime      @updatedAt
   categories    Category[]    @relation("YoutubeChannelCategories")
   chains        Chain[]       @relation("YoutubeChannelChains")
+
+  // Opposite side of VerificationTask => YoutubeChannel
+  verificationTasks VerificationTask[]
 }
 
 model TelegramGroup {
@@ -314,6 +329,9 @@ model TelegramGroup {
   updatedAt     DateTime      @updatedAt
   categories    Category[]    @relation("TelegramGroupCategories")
   chains        Chain[]       @relation("TelegramGroupChains")
+
+  // Opposite side of VerificationTask => TelegramGroup
+  verificationTasks VerificationTask[]
 }
 
 model Category {
@@ -360,6 +378,20 @@ model VerificationTask {
   userTaskSubmissions UserTaskSubmission[]
   userVerification    UserVerification[]
   academy             Academy?             @relation(fields: [academyId], references: [id])
+
+  // Optional foreign keys for each content type
+  educatorId          Int?
+  tutorialId          Int?
+  podcastId           Int?
+  youtubeChannelId    Int?
+  telegramGroupId     Int?
+
+  // Opposite sides
+  educator            Educator?        @relation(fields: [educatorId], references: [id])
+  tutorial            Tutorial?        @relation(fields: [tutorialId], references: [id])
+  podcast             Podcast?         @relation(fields: [podcastId], references: [id])
+  youtubeChannel      YoutubeChannel?  @relation(fields: [youtubeChannelId], references: [id])
+  telegramGroup       TelegramGroup?   @relation(fields: [telegramGroupId], references: [id])
 }
 
 model UserVerification {
@@ -526,6 +558,7 @@ enum ContentOrigin {
 enum TaskType {
   PLATFORM_SPECIFIC
   ACADEMY_SPECIFIC
+  CONTENT_SPECIFIC
 }
 
 enum IntervalType {
@@ -540,6 +573,7 @@ enum DisplayLocation {
   GAMES_PAGE
   HOME_PAGE
   POINTS_PAGE
+  CONTENT_PAGE
 }
 
 enum Platform {

@@ -1,5 +1,8 @@
+// server/routes/verificationTask.js
+
 const express = require('express');
 const { authenticateToken, authorizeRoles } = require('../middleware/auth');
+const asyncHandler = require('express-async-handler');
 const {
   createVerificationTask,
   getVerificationTasks,
@@ -10,8 +13,11 @@ const {
   getTasksForHomepage,
   getTasksForAcademypage,
   getVerificationTasksForAcademy,
+
+  // NEW controller functions for content tasks
+  createVerificationTaskForContent,
+  getVerificationTasksForContent,
 } = require('../controllers/verificationTaskController');
-const asyncHandler = require('express-async-handler');
 
 const router = express.Router();
 
@@ -37,7 +43,19 @@ router.post(
   asyncHandler(createVerificationTask)
 );
 
-// Allow unauthenticated access to GET academy tasks
+// NEW: Content-specific routes
+router.post(
+  '/content',
+  authenticateToken,
+  authorizeRoles('CREATOR', 'SUPERADMIN'),
+  asyncHandler(createVerificationTaskForContent)
+);
+router.get(
+  '/content/:contentType/:contentId',
+  asyncHandler(getVerificationTasksForContent)
+);
+
+// Allow unauthenticated access to GET some tasks
 router.get('/games', asyncHandler(getTasksForGamesPage));
 router.get('/homepage', asyncHandler(getTasksForHomepage));
 router.get('/end-of-academy', asyncHandler(getTasksForAcademypage));
@@ -49,7 +67,6 @@ router.get(
   authenticateToken,
   asyncHandler(getVerificationTaskById)
 );
-
 router.put(
   '/:taskId',
   authenticateToken,

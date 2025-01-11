@@ -63,8 +63,8 @@ const Sidebar: React.FC = () => {
             { label: 'Scholarship Management', path: '/scholarship-management' },
             { label: 'Raffle Management', path: '/overall-raffle-management' },
             { label: 'Surprise Box', path: '/surprise-box' },
-            { label: 'Character Management', path: '/character-management' } // Added this line
             { label: 'Points Control', path: '/points-control' },
+            { label: 'Character Management', path: '/character-management' },
         ],
         ADMIN: [
             { label: 'Admin Dashboard', path: '/admin-dashboard' },
@@ -75,6 +75,7 @@ const Sidebar: React.FC = () => {
         CREATOR: [
             { label: 'Creator Dashboard', path: '/creator-dashboard' },
             { label: 'Create Academy', path: '/create-academy' },
+            { label: 'Create Content', path: '/create-content' },
             { label: 'My Academies', path: '/my-academies' },
             { label: 'User Profile', path: '/user-profile' },
             { label: 'Academy Statistics', path: '/academy-statistics' },
