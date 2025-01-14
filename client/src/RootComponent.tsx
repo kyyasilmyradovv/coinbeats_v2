@@ -63,6 +63,7 @@ import useNotificationStore from './store/useNotificationStore'
 import BannedPage from './components/BannedPage' // <-- if you have this file
 import CoinsPage from './pages/CoinsPage'
 import PointsControlPage from './pages/PointsControlPage'
+import CoinShowPage from './pages/CoinShowPage'
 
 function RootComponent() {
     const [isLoading, setIsLoading] = useState(true)
@@ -190,6 +191,7 @@ function RootComponent() {
                         <Route path="/points" element={<PointsPage />} />
                         <Route path="/discover" element={<DiscoverPage />} />
                         <Route path="/coins" element={<CoinsPage />} />
+                        <Route path="/coins/:id" element={<CoinShowPage />} />
                         <Route path="/register-creator" element={<RegisterCreatorPage />} />
                         <Route path="/login" element={<LoginPage />} />
                         <Route path="/session-analyses" element={<SessionAnalysisPage />} />

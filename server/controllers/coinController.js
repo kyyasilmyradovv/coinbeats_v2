@@ -51,45 +51,16 @@ exports.getCoinsCount = async (req, res, next) => {
   }
 };
 
-exports.getMyTotalCoins = async (req, res, next) => {
-  try {
-    const userId = +req.query?.userId;
-
-    // Try to find the existing Coin for the user
-    let user = await prisma.user.findFirst({
-      where: { id: userId },
-    });
-
-    res.status(200).json(user?.coinAmount);
-  } catch (error) {
-    console.error('Error fetching surprise box:', error);
-    next(createError(500, 'Error fetching surprise box'));
-  }
-};
-
-// Admin controllers
 exports.getCoin = async (req, res, next) => {
   try {
-    // Check user type and construct where condition accordingly
-    let where = {};
-    if (req?.user?.roles?.includes('SUPERADMIN')) {
-      where.type = 'PLATFORM';
-    } else if (req?.user?.roles?.includes('CREATOR')) {
-      where.creatorId = req.user.id;
-    } else {
-      return next(createError(403, 'Forbidden'));
-    }
+    let coin = await prisma.coins.findFirst({ where: { id: +req.params?.id } });
 
-    let coins = await prisma.coin.findMany({ where });
+    console.log(coin);
 
-    for (let r of coins) {
-      if (r.deadline) r.deadline = r.deadline.toString();
-    }
-
-    res.status(200).json(coins);
+    res.status(200).json(coin);
   } catch (error) {
-    console.error('Error fetching overall coin:', error);
-    next(createError(500, 'Error fetching overall coin'));
+    console.error('Error fetching coin:', error);
+    next(createError(500, 'Error fetching coin'));
   }
 };
 

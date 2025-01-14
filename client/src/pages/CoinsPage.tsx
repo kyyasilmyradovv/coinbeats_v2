@@ -1,5 +1,6 @@
 // src/pages/CoinsPage.js
 import { useEffect, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Page, Button, Preloader, Card } from 'konsta/react'
 import Navbar from '../components/common/Navbar'
 import Sidebar from '../components/common/Sidebar'
@@ -11,6 +12,7 @@ import NorthRoundedIcon from '@mui/icons-material/NorthRounded'
 import SouthRoundedIcon from '@mui/icons-material/SouthRounded'
 
 interface RowInterface {
+    id: number
     name: string
     symbol: string
     image: string
@@ -23,6 +25,7 @@ interface RowInterface {
 }
 
 export default function CoinsPage() {
+    const navigate = useNavigate()
     const containerRef = useRef<HTMLDivElement | null>(null)
     const [rows, setRows] = useState<RowInterface[]>([])
     const [loading, setLoading] = useState(false)
@@ -239,7 +242,13 @@ export default function CoinsPage() {
                             {rows.map((row, index) => (
                                 <div key={index}>
                                     {/* Card Content */}
-                                    <Card className="rounded-2xl shadow-lg border dark:border-gray-600" style={{ marginBottom: 0, overflow: 'hidden' }}>
+                                    <Card
+                                        className="rounded-2xl shadow-lg border dark:border-gray-600"
+                                        style={{ marginBottom: 0, overflow: 'hidden' }}
+                                        onClick={() => {
+                                            navigate(`/coins/${row?.id}`)
+                                        }}
+                                    >
                                         {/* Image & Name*/}
                                         <div className="flex flex-col lg:text-center">
                                             <div className="flex flex-col items-center">

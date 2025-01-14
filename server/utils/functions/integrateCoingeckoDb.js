@@ -2,66 +2,6 @@ const axios = require('axios');
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-// COIN-RANKING
-// const integrateCoinranking = async (offset) => {
-//   try {
-//     const url = 'https://api.coinranking.com/v2/coins';
-//     const response = await axios.get(url, {
-//       params: {
-//         limit: 100,
-//         offset: offset * 100,
-//       },
-//     });
-
-//     return response.data.data.coins;
-//   } catch (error) {
-//     console.error('Error fetching coins from Coinranking:', error.message);
-//     throw new Error(error.message);
-//   }
-// };
-
-// for (let i = 51; i < 55; i++) {
-//   integrateCoinranking(i)
-//     .then(async (data) => {
-//       for (let coin of data) {
-//         await prisma.coins.upsert({
-//           where: { name: coin?.name },
-//           update: {
-//             name: coin?.name,
-//             symbol: coin?.symbol,
-//             image: coin?.iconUrl,
-//             price: coin?.price,
-//             price_date: null,
-//             market_cap: coin?.marketCap,
-//             market_cap_rank: coin?.rank,
-//             listed_date: new Date(coin?.listedAt * 1000).toLocaleDateString(),
-//             contract_addresses: coin?.contractAddresses,
-//           },
-//           create: {
-//             name: coin?.name,
-//             symbol: coin?.symbol,
-//             image: coin?.iconUrl,
-//             price: coin?.price,
-//             price_date: null,
-//             market_cap: coin?.marketCap,
-//             market_cap_rank: coin?.rank,
-//             listed_date: new Date(coin?.listedAt * 1000).toLocaleDateString(),
-//             coinranking_uuid: coin?.uuid,
-//             contract_addresses: coin?.contractAddresses,
-//           },
-//         });
-//       }
-
-//       console.log(
-//         'Coins integrated successfully with Coinranking:',
-//         data?.length
-//       );
-//     })
-//     .catch((error) => {
-//       console.error('Failed to integrate coins with Coinranking:', error);
-//     });
-// }
-
 // // COIN-GECKO
 const integrateCoingecko = async (page) => {
   try {
@@ -80,7 +20,7 @@ const integrateCoingecko = async (page) => {
 
     return response.data;
   } catch (error) {
-    console.error('Error fetching coins from Coinranking:', error.message);
+    console.error('Error fetching coins from Coingecko:', error.message);
     throw new Error(error.message);
   }
 };
@@ -142,6 +82,8 @@ const fetchCoinFromCoingecko = async (id) => {
       },
     });
 
+    console.log(response?.data);
+
     return {
       categories: response.data?.categories,
       homepage_links: response.data?.links?.homepage,
@@ -160,7 +102,7 @@ const fetchCoinFromCoingecko = async (id) => {
       price_date: response.data?.market_data?.last_updated,
     };
   } catch (error) {
-    console.error('Error fetching coins from Coinranking:', error.message);
+    console.error('Error fetching coin from Coingecko:', error.message);
     throw new Error(error.message);
   }
 };
@@ -196,4 +138,4 @@ const integrateCoinsOneByOneWithCoingecko = async () => {
   );
 };
 
-integrateCoinsOneByOneWithCoingecko();
+// integrateCoinsOneByOneWithCoingecko();
