@@ -4,7 +4,7 @@ import axiosInstance from '~/api/axiosInstance'
 import { Page, Button, Preloader, Card } from 'konsta/react'
 import Navbar from '../components/common/Navbar'
 import Tabs from '../components/common/Tabs'
-import { IconCaretDownFilled, IconCaretUpFilled, IconAlertCircle, IconChevronDown } from '@tabler/icons-react'
+import { IconCaretDownFilled, IconCaretUpFilled, IconAlertCircle, IconChevronDown, IconChevronUp } from '@tabler/icons-react'
 import CoinPriceChart from '~/components/Chart'
 
 interface CoinProps {
@@ -40,6 +40,11 @@ const CoinShowPage: React.FC = () => {
     const [loading, setLoading] = useState<boolean>(true)
     const [activeTab, setActiveTab] = useState('Hour')
     const [tooltip, setTooltip] = useState('')
+    const [dropdown, setDropdown] = useState('')
+    const [expandCategories, setExpandCategories] = useState(false)
+    const [expandAddresses, setExpandAddresses] = useState(false)
+    const [expandHomepages, setExpandHomepages] = useState(false)
+
     const [priceData, setPriceData] = useState([
         { time: '2PM', price: 8345 },
         { time: '1PM', price: 8004.23 },
@@ -106,9 +111,8 @@ const CoinShowPage: React.FC = () => {
     }
 
     const handleClickOutside = (event: MouseEvent) => {
-        if (detailsCardRef.current && !detailsCardRef.current.contains(event.target as Node)) {
-            setTooltip('')
-        }
+        // if (detailsCardRef.current && !detailsCardRef.current.contains(event.target as Node)) {}
+        setTooltip('')
     }
 
     useEffect(() => {
@@ -128,7 +132,7 @@ const CoinShowPage: React.FC = () => {
                     <Preloader />
                 </div>
             ) : (
-                <div className="relative min-h-screen overflow-y-auto">
+                <div className="relative min-h-screen overflow-y-auto mb-14">
                     {coin && (
                         <Card className="rounded-2xl shadow-lg border border-gray-600" style={{ marginBottom: 0, overflow: 'hidden' }}>
                             {/* Header Card */}
@@ -184,6 +188,7 @@ const CoinShowPage: React.FC = () => {
                                         onClick={(event) => {
                                             event.stopPropagation()
                                             setTooltip('market_cap')
+                                            setDropdown('')
                                         }}
                                     />
                                 </div>
@@ -211,6 +216,7 @@ const CoinShowPage: React.FC = () => {
                                         onClick={(event) => {
                                             event.stopPropagation()
                                             setTooltip('fdv')
+                                            setDropdown('')
                                         }}
                                     />
                                 </div>
@@ -239,6 +245,7 @@ const CoinShowPage: React.FC = () => {
                                         onClick={(event) => {
                                             event.stopPropagation()
                                             setTooltip('ath')
+                                            setDropdown('')
                                         }}
                                     />
                                 </div>
@@ -248,7 +255,7 @@ const CoinShowPage: React.FC = () => {
                                         value and is often a benchmark for performance.
                                     </div>
                                 )}
-                                <span className="text-[13px] font-bold">{coin.ath ? `$${formatNumber(coin.ath)}` : 'N/A'}</span>
+                                <span className="text-[13px] font-bold">{coin.ath ? `$${cutNumbers(coin.ath)}` : 'N/A'}</span>
                             </div>
                             <div className="w-full border-t border-gray-300 my-3 dark:border-gray-600" />
 
@@ -262,6 +269,7 @@ const CoinShowPage: React.FC = () => {
                                         onClick={(event) => {
                                             event.stopPropagation()
                                             setTooltip('atl')
+                                            setDropdown('')
                                         }}
                                     />
                                 </div>
@@ -271,35 +279,243 @@ const CoinShowPage: React.FC = () => {
                                         highlight significant market downturns.
                                     </div>
                                 )}
-                                <span className="text-[13px] font-bold">{coin.atl ? `$${formatNumber(coin.atl)}` : 'N/A'}</span>
+                                <span className="text-[13px] font-bold">{coin.atl ? `$${cutNumbers(coin.atl)}` : 'N/A'}</span>
                             </div>
                             <div className="w-full border-t border-gray-300 my-3 dark:border-gray-600" />
 
                             {/* Categories */}
                             <div className="flex justify-between">
-                                <div className="flex items-center gap-1 text-gray-200">
-                                    <span className="text-[13px]">Categories</span>
+                                <div>
+                                    <div className="mt-1 flex items-center gap-1 text-gray-200">
+                                        <span className="text-[13px]">Categories</span>
+                                        <IconAlertCircle
+                                            className="cursor-pointer"
+                                            size={14}
+                                            onClick={(event) => {
+                                                event.stopPropagation()
+                                                setTooltip('categories')
+                                            }}
+                                        />
+                                    </div>
                                 </div>
-                                <div className="flex gap-2">
-                                    <span className="text-[13px] bg-gray-700 px-2 py-1 rounded">Arbitrum Ecosystem</span>
-                                    <span className="flex items-center text-[13px] bg-gray-700 px-2 py-1 rounded ">
-                                        3 more <IconChevronDown className="mt-0.5 ml-1" size={13} />
-                                    </span>
-                                </div>
+                                {tooltip == 'categories' && (
+                                    <div className="absolute left-1/2 transform -translate-x-1/2 mt-2 bg-gray-800 text-white text-xs rounded-lg px-3 py-2 z-10">
+                                        Contract addresses of the Coin.
+                                    </div>
+                                )}
+
+                                {coin?.categories?.length > 0 && (
+                                    <div>
+                                        <div className="flex flex-col gap-1">
+                                            {/* Display the first contract address */}
+                                            <div className="flex gap-2">
+                                                <span className="text-[13px] bg-gray-700 px-2 py-1 rounded">
+                                                    {coin.categories[0].length > 24 ? `${coin.categories[0].slice(0, 20)}...` : coin.categories[0]}
+                                                </span>
+
+                                                {/* Display the "X more" button and handle the toggle */}
+                                                {coin.categories.length > 1 && (
+                                                    <span
+                                                        className="flex items-center text-[13px] bg-gray-700 px-2 py-1 rounded cursor-pointer text-gray-300"
+                                                        onClick={(event) => {
+                                                            event.stopPropagation()
+                                                            setExpandCategories((prev) => !prev)
+                                                            setTooltip('')
+                                                        }}
+                                                    >
+                                                        {coin.categories.length - 1} more
+                                                        {expandCategories ? (
+                                                            <IconChevronUp className="ml-1" size={13} />
+                                                        ) : (
+                                                            <IconChevronDown className="ml-1" size={13} />
+                                                        )}
+                                                    </span>
+                                                )}
+                                            </div>
+
+                                            {/* Display the remaining addresses in a column */}
+                                            {expandCategories && (
+                                                <div className="flex flex-col items-end gap-1">
+                                                    {coin.categories.slice(1).map((e, index) => (
+                                                        <span className="px-2 py-1 text-[13px] rounded bg-gray-700">
+                                                            {e.length > 32 ? `${e.slice(0, 31)}...` : e}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                             <div className="w-full border-t border-gray-300 my-3 dark:border-gray-600" />
 
                             {/* Contract addresses */}
                             <div className="flex justify-between">
+                                <div>
+                                    <div className="mt-1 flex items-center gap-1 text-gray-200">
+                                        <span className="text-[13px]">CA</span>
+                                        <IconAlertCircle
+                                            className="cursor-pointer"
+                                            size={14}
+                                            onClick={(event) => {
+                                                event.stopPropagation()
+                                                setTooltip('contract_addresses')
+                                            }}
+                                        />
+                                    </div>
+                                </div>
+                                {tooltip == 'contract_addresses' && (
+                                    <div className="absolute left-1/2 transform -translate-x-1/2 mt-2 bg-gray-800 text-white text-xs rounded-lg px-3 py-2 z-10">
+                                        Contract addresses of the Coin.
+                                    </div>
+                                )}
+
+                                {coin?.contract_addresses?.length > 0 && (
+                                    <div>
+                                        <div className="flex flex-col gap-1">
+                                            {/* Display the first contract address */}
+                                            <div className="flex gap-2">
+                                                <span className="text-[13px] bg-gray-700 px-2 py-1 rounded">
+                                                    {coin.contract_addresses[0].length > 24
+                                                        ? `${coin.contract_addresses[0].slice(0, 20)}...`
+                                                        : coin.contract_addresses[0]}
+                                                </span>
+
+                                                {/* Display the "X more" button and handle the toggle */}
+                                                {coin.contract_addresses.length > 1 && (
+                                                    <span
+                                                        className="flex items-center text-[13px] bg-gray-700 px-2 py-1 rounded cursor-pointer text-gray-300"
+                                                        onClick={(event) => {
+                                                            event.stopPropagation()
+                                                            setExpandAddresses((prev) => !prev)
+                                                            setTooltip('')
+                                                        }}
+                                                    >
+                                                        {coin.contract_addresses.length - 1} more
+                                                        {expandAddresses ? (
+                                                            <IconChevronUp className="ml-1" size={13} />
+                                                        ) : (
+                                                            <IconChevronDown className="ml-1" size={13} />
+                                                        )}
+                                                    </span>
+                                                )}
+                                            </div>
+
+                                            {/* Display the remaining addresses in a column */}
+                                            {expandAddresses && (
+                                                <div className="flex flex-col items-end gap-1">
+                                                    {coin.contract_addresses.slice(1).map((e, index) => (
+                                                        <span className="px-2 py-1 text-[13px] rounded bg-gray-700">
+                                                            {e.length > 32 ? `${e.slice(0, 31)}...` : e}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                            <div className="w-full border-t border-gray-300 my-3 dark:border-gray-600" />
+
+                            {/* Twitter */}
+                            <div className="flex justify-between">
                                 <div className="flex items-center gap-1 text-gray-200">
-                                    <span className="text-[13px]">Contract addresses</span>
+                                    <span className="text-[13px]">X Page</span>
                                 </div>
-                                <div className="flex gap-2">
-                                    <span className="text-[13px] bg-gray-700 px-2 py-1 rounded">0x12ASD...</span>
-                                    <span className="flex items-center text-[13px] bg-gray-700 px-2 py-1 rounded ">
-                                        2 more <IconChevronDown className="mt-0.5 ml-1" size={13} />
-                                    </span>
+                                {coin.twitter_screen_name ? (
+                                    <a
+                                        href={`https://x.com/${coin.twitter_screen_name}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-[13px] font-semibold underline"
+                                    >
+                                        {coin.twitter_screen_name[0] != '@' && '@'}
+                                        {coin.twitter_screen_name}
+                                    </a>
+                                ) : (
+                                    <span className="text-[13px] text-gray-400">N/A</span>
+                                )}
+                            </div>
+                            <div className="w-full border-t border-gray-300 my-3 dark:border-gray-600" />
+
+                            {/* Homepage links */}
+                            <div className="flex justify-between">
+                                <div>
+                                    <div className="mt-1 flex items-center gap-1 text-gray-200">
+                                        <span className="text-[13px]">Homepages</span>
+                                        <IconAlertCircle
+                                            className="cursor-pointer"
+                                            size={14}
+                                            onClick={(event) => {
+                                                event.stopPropagation()
+                                                setTooltip('homepages')
+                                            }}
+                                        />
+                                    </div>
                                 </div>
+                                {tooltip == 'homepages' && (
+                                    <div className="absolute left-1/2 transform -translate-x-1/2 mt-2 bg-gray-800 text-white text-xs rounded-lg px-3 py-2 z-10">
+                                        Please make sure to check out homepage links as we are not able to check them one by one.
+                                    </div>
+                                )}
+
+                                {coin?.homepage_links?.length > 0 && (
+                                    <div>
+                                        <div className="flex flex-col gap-1">
+                                            {/* Display the first homepage link */}
+                                            <div className="flex gap-2">
+                                                <span className="text-[13px] bg-gray-700 px-2 py-1 rounded">
+                                                    <a
+                                                        href={coin.homepage_links[0]}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="text-[13px] font-semibold italic underline"
+                                                    >
+                                                        {coin.homepage_links[0].length > 22
+                                                            ? `${coin.homepage_links[0].slice(0, 18)}...`
+                                                            : coin.homepage_links[0]}
+                                                    </a>
+                                                </span>
+
+                                                {/* Display the "X more" button and handle the toggle */}
+                                                {coin.homepage_links.length > 1 && (
+                                                    <span
+                                                        className="flex items-center text-[13px] bg-gray-700 px-2 py-1 rounded cursor-pointer text-gray-300"
+                                                        onClick={(event) => {
+                                                            event.stopPropagation()
+                                                            setExpandHomepages((prev) => !prev)
+                                                            setTooltip('')
+                                                        }}
+                                                    >
+                                                        {coin.homepage_links.length - 1} more
+                                                        {expandHomepages ? (
+                                                            <IconChevronUp className="ml-1" size={13} />
+                                                        ) : (
+                                                            <IconChevronDown className="ml-1" size={13} />
+                                                        )}
+                                                    </span>
+                                                )}
+                                            </div>
+
+                                            {/* Display the remaining addresses in a column */}
+                                            {expandHomepages && (
+                                                <div className="flex flex-col items-end gap-1">
+                                                    {coin.homepage_links.slice(1).map((e, index) => (
+                                                        <a
+                                                            key={index}
+                                                            href={e}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="block text-[13px] bg-gray-700 px-2 py-1 font-semibold italic underline rounded"
+                                                        >
+                                                            {e.length > 32 ? `${e.slice(0, 31)}...` : e}
+                                                        </a>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </Card>
                     )}

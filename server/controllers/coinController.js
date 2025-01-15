@@ -55,8 +55,6 @@ exports.getCoin = async (req, res, next) => {
   try {
     let coin = await prisma.coins.findFirst({ where: { id: +req.params?.id } });
 
-    console.log(coin);
-
     res.status(200).json(coin);
   } catch (error) {
     console.error('Error fetching coin:', error);
