@@ -435,7 +435,7 @@ const CoinShowPage: React.FC = () => {
                                         {coin.twitter_screen_name}
                                     </a>
                                 ) : (
-                                    <span className="text-[13px] text-gray-400">N/A</span>
+                                    <span>N/A</span>
                                 )}
                             </div>
                             <div className="w-full border-t border-gray-300 my-3 dark:border-gray-600" />

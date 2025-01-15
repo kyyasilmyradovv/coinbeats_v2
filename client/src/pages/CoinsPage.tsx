@@ -7,7 +7,9 @@ import Sidebar from '../components/common/Sidebar'
 import axiosInstance from '~/api/axiosInstance'
 import SearchIcon from '@mui/icons-material/Search'
 import NoDataFoundComponent from '~/components/common/NoDataFound'
+import Tabs2 from '../components/common/Tabs2'
 import { FiChevronDown, FiChevronUp } from 'react-icons/fi'
+import { IconEraser } from '@tabler/icons-react'
 
 interface RowInterface {
     id: number
@@ -35,6 +37,8 @@ export default function CoinsPage() {
     const [sortDirection, setSortDirection] = useState('desc')
     const [showScrollToTopButton, setShowScrollToTopButton] = useState(false)
     const [coinsCount, setCoinsCount] = useState(0)
+    const [activeTab1, setActiveTab1] = useState('')
+    const [activeTab2, setActiveTab2] = useState('')
 
     const fetchRows = async (reset = false) => {
         if (loading || (!hasMore && !reset)) return
@@ -43,7 +47,7 @@ export default function CoinsPage() {
 
         try {
             const response = await axiosInstance.get(
-                `/api/coins?limit=20&offset=${reset ? 0 : offset}&keyword=${encodeURIComponent(searchKeyword)}&sortColumn=${sortColumn}&sortDirection=${sortDirection}`
+                `/api/coins?limit=20&offset=${reset ? 0 : offset}&keyword=${encodeURIComponent(searchKeyword)}&sortColumn=${sortColumn}&sortDirection=${sortDirection}&tab1=${activeTab1}&tab2=${activeTab2.toLocaleLowerCase()}`
             )
             const newRows = response?.data
 
@@ -109,15 +113,41 @@ export default function CoinsPage() {
         fetchRows(true)
     }
 
-    useEffect(() => {
-        fetchRows(true)
-        setHasMore(true)
-    }, [sortColumn])
-
     const handleSortColumn = (column: string) => {
         setSortColumn(column)
         setSortDirection(column == 'market_cap_rank' ? 'asc' : 'desc')
+        setActiveTab1('')
+        setActiveTab2('')
     }
+
+    const handleTabChange1 = (tab: string) => {
+        setActiveTab1(tab)
+        if (activeTab2 == '') setActiveTab2('1H')
+        setSortColumn('id')
+        setSortDirection('desc')
+        setSearchKeyword('')
+    }
+
+    const handleTabChange2 = (tab: string) => {
+        setActiveTab2(tab)
+        if (activeTab1 == '') setActiveTab1('top-gainers')
+        setSortColumn('id')
+        setSortDirection('desc')
+        setSearchKeyword('')
+    }
+
+    const clearFilters = () => {
+        setActiveTab1('')
+        setActiveTab2('')
+        setSortColumn('id')
+        setSortDirection('desc')
+        setSearchKeyword('')
+    }
+
+    useEffect(() => {
+        fetchRows(true)
+        setHasMore(true)
+    }, [sortColumn, activeTab1, activeTab2])
 
     function cutNumbers(value: number, length = 5, isPrice: boolean = false) {
         if (isPrice && value < 0.0001) {
@@ -180,7 +210,7 @@ export default function CoinsPage() {
 
                     {/* Toggle for Filter and Sort */}
                     <button
-                        className="flex items-center justify-center mt-4 text-sm text-gray-600 dark:text-gray-300 focus:outline-none"
+                        className="flex items-center justify-center mt-4 text-sm text-gray-600 focus:outline-none"
                         onClick={() => setIsExpanded(!isExpanded)}
                     >
                         {isExpanded ? <FiChevronUp className="mr-2" /> : <FiChevronDown className="mr-2" />}
@@ -195,11 +225,12 @@ export default function CoinsPage() {
                         }}
                     >
                         <div className="mt-4">
-                            {/* Filter */}
-                            <div className="flex items-center justify-between mb-4">
-                                <label className="text-sm font-medium dark:text-gray-300">Filter & Sort:</label>
+                            {/* Sort */}
+                            <div className="flex items-center justify-between mb-0">
+                                <label className="text-sm font-medium dark:text-gray-300">Sort:</label>
                                 <div>
                                     <select
+                                        value={sortColumn}
                                         onChange={(e) => handleSortColumn(e.target.value)}
                                         className=" px-1 py-1.5 border border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:outline-none"
                                     >
@@ -211,22 +242,15 @@ export default function CoinsPage() {
                                         <option value="price_change_24h">24h Price Change</option>
                                         <option value="price_change_7d">7d Price Change</option>
                                     </select>
-
-                                    {/* <button
-                                        onClick={() => handleSortDirection()}
-                                        className="ml-2 p-1 rounded-md bg-gray-700 "
-                                        aria-label="Toggle Sort Direction"
-                                    >
-                                        {sortDirection == 'asc' ? (
-                                            <NorthRoundedIcon className="text-gray-600 dark:text-gray-300" />
-                                        ) : (
-                                            <SouthRoundedIcon className="text-gray-600 dark:text-gray-300" />
-                                        )}
-                                    </button> */}
                                 </div>
                             </div>
                         </div>
                     </div>
+                </div>
+
+                <div className=" flex justify-center items-center ml-4 mr-4 rounded-2xl py-1 bg-gray-800">
+                    <Tabs2 activeTab1={activeTab1} activeTab2={activeTab2} handleTabChange1={handleTabChange1} handleTabChange2={handleTabChange2} />
+                    <IconEraser className="text-gray-400 ml-2 mr-1 cursor-pointer" size={18} onClick={() => clearFilters()} />
                 </div>
 
                 {/* Cards */}
@@ -310,7 +334,10 @@ export default function CoinsPage() {
                                                             style={{
                                                                 color:
                                                                     row.price_change_1h != null ? (row.price_change_1h < 0 ? '#ff0000' : '#32cd32') : 'white',
-                                                                textShadow: sortColumn == 'price_change_1h' ? '4px 4px 16px rgba(255, 221, 51, 0.8)' : ''
+                                                                textShadow:
+                                                                    sortColumn == 'price_change_1h' || activeTab2 == '1H'
+                                                                        ? '4px 4px 16px rgba(255, 221, 51, 0.8)'
+                                                                        : ''
                                                             }}
                                                         >
                                                             {row.price_change_1h != null && (
@@ -328,7 +355,10 @@ export default function CoinsPage() {
                                                             style={{
                                                                 color:
                                                                     row.price_change_24h != null ? (row.price_change_24h < 0 ? '#ff0000' : '#32cd32') : 'white',
-                                                                textShadow: sortColumn == 'price_change_24h' ? '4px 4px 16px rgba(255, 221, 51, 0.8)' : ''
+                                                                textShadow:
+                                                                    sortColumn == 'price_change_24h' || activeTab2 == '24H'
+                                                                        ? '4px 4px 16px rgba(255, 221, 51, 0.8)'
+                                                                        : ''
                                                             }}
                                                         >
                                                             {row.price_change_24h != null && (
@@ -346,7 +376,10 @@ export default function CoinsPage() {
                                                             style={{
                                                                 color:
                                                                     row.price_change_7d != null ? (row.price_change_7d < 0 ? '#ff0000' : '#32cd32') : 'white',
-                                                                textShadow: sortColumn == 'price_change_7d' ? '4px 4px 16px rgba(255, 221, 51, 0.8)' : ''
+                                                                textShadow:
+                                                                    sortColumn == 'price_change_7d' || activeTab2 == '7D'
+                                                                        ? '4px 4px 16px rgba(255, 221, 51, 0.8)'
+                                                                        : ''
                                                             }}
                                                         >
                                                             {row.price_change_7d != null && (

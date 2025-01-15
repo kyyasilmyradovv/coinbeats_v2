@@ -4,7 +4,8 @@ const prisma = new PrismaClient();
 
 exports.getAllCoins = async (req, res, next) => {
   try {
-    let { keyword, sortColumn, sortDirection, limit, offset } = req.query;
+    let { keyword, sortColumn, sortDirection, tab1, tab2, limit, offset } =
+      req.query;
 
     let where = {};
     if (sortColumn != 'id') {
@@ -17,6 +18,14 @@ exports.getAllCoins = async (req, res, next) => {
         { name: { contains: keyword, mode: 'insensitive' } },
         { symbol: { contains: keyword, mode: 'insensitive' } },
       ];
+    }
+    if (tab1?.length && tab2?.length) {
+      sortColumn = `price_change_${tab2}`;
+      sortDirection = tab1 == 'top-gainers' ? 'desc' : 'asc';
+
+      where = {
+        [sortColumn]: { not: null },
+      };
     }
 
     let coins = await prisma.coins.findMany({
