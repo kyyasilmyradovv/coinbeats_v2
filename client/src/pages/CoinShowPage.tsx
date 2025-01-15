@@ -370,7 +370,7 @@ const CoinShowPage: React.FC = () => {
                                     </div>
                                 )}
 
-                                {coin?.contract_addresses?.length > 0 && (
+                                {coin?.contract_addresses?.length > 0 ? (
                                     <div>
                                         <div className="flex flex-col gap-1">
                                             {/* Display the first contract address */}
@@ -413,6 +413,8 @@ const CoinShowPage: React.FC = () => {
                                             )}
                                         </div>
                                     </div>
+                                ) : (
+                                    'N/A'
                                 )}
                             </div>
                             <div className="w-full border-t border-gray-300 my-3 dark:border-gray-600" />

@@ -8,8 +8,6 @@ import axiosInstance from '~/api/axiosInstance'
 import SearchIcon from '@mui/icons-material/Search'
 import NoDataFoundComponent from '~/components/common/NoDataFound'
 import { FiChevronDown, FiChevronUp } from 'react-icons/fi'
-import NorthRoundedIcon from '@mui/icons-material/NorthRounded'
-import SouthRoundedIcon from '@mui/icons-material/SouthRounded'
 
 interface RowInterface {
     id: number
@@ -111,17 +109,14 @@ export default function CoinsPage() {
         fetchRows(true)
     }
 
+    useEffect(() => {
+        fetchRows(true)
+        setHasMore(true)
+    }, [sortColumn])
+
     const handleSortColumn = (column: string) => {
         setSortColumn(column)
-        setHasMore(true)
-        fetchRows(true)
-    }
-
-    const handleSortDirection = () => {
-        if (loading) return
-        setSortDirection((prev) => (prev == 'asc' ? 'desc' : 'asc'))
-        setHasMore(true)
-        fetchRows(true)
+        setSortDirection(column == 'market_cap_rank' ? 'asc' : 'desc')
     }
 
     function cutNumbers(value: number, length = 5, isPrice: boolean = false) {
@@ -217,7 +212,7 @@ export default function CoinsPage() {
                                         <option value="price_change_7d">7d Price Change</option>
                                     </select>
 
-                                    <button
+                                    {/* <button
                                         onClick={() => handleSortDirection()}
                                         className="ml-2 p-1 rounded-md bg-gray-700 "
                                         aria-label="Toggle Sort Direction"
@@ -227,7 +222,7 @@ export default function CoinsPage() {
                                         ) : (
                                             <SouthRoundedIcon className="text-gray-600 dark:text-gray-300" />
                                         )}
-                                    </button>
+                                    </button> */}
                                 </div>
                             </div>
                         </div>
@@ -270,7 +265,10 @@ export default function CoinsPage() {
                                                     {/* Price */}
                                                     <div className="flex flex-col w-[32%]">
                                                         <span className="text-sm text-gray-300">Price:</span>
-                                                        <span className="text-[16px] md:text-lg font-semibold">
+                                                        <span
+                                                            className="text-[16px] md:text-lg font-semibold"
+                                                            style={{ textShadow: sortColumn == 'price' ? '4px 4px 16px rgba(255, 221, 51, 0.8)' : '' }}
+                                                        >
                                                             {row.price != null && '$'}
                                                             {cutNumbers(row.price, 6, true) || 'N/A'}
                                                         </span>
@@ -279,13 +277,23 @@ export default function CoinsPage() {
                                                     {/* Market Cap */}
                                                     <div className="flex flex-col w-[32%]">
                                                         <span className="text-sm text-gray-300">FDV:</span>
-                                                        <span className="text-[16px] md:text-lg font-semibold">{formatPrice(row.fdv)}</span>
+                                                        <span
+                                                            className="text-[16px] md:text-lg font-semibold"
+                                                            style={{ textShadow: sortColumn == 'fdv' ? '4px 4px 16px rgba(255, 221, 51, 0.8)' : '' }}
+                                                        >
+                                                            {formatPrice(row.fdv)}
+                                                        </span>
                                                     </div>
 
                                                     {/* Market Cap Rank */}
                                                     <div className="flex flex-col w-[32%]">
                                                         <span className="text-sm text-gray-300">Market Rank:</span>
-                                                        <span className="text-[16px] md:text-lg font-semibold">
+                                                        <span
+                                                            className="text-[16px] md:text-lg font-semibold"
+                                                            style={{
+                                                                textShadow: sortColumn == 'market_cap_rank' ? '4px 2px 26px rgba(255, 221, 51, 1)' : ''
+                                                            }}
+                                                        >
                                                             {row.market_cap_rank != null && '#'}
                                                             {row.market_cap_rank || 'N/A'}
                                                         </span>
@@ -300,7 +308,9 @@ export default function CoinsPage() {
                                                         <span
                                                             className="text-[16px] md:text-[16px] md:text-lg font-bold"
                                                             style={{
-                                                                color: row.price_change_1h != null ? (row.price_change_1h < 0 ? '#ff0000' : '#32cd32') : 'white'
+                                                                color:
+                                                                    row.price_change_1h != null ? (row.price_change_1h < 0 ? '#ff0000' : '#32cd32') : 'white',
+                                                                textShadow: sortColumn == 'price_change_1h' ? '4px 4px 16px rgba(255, 221, 51, 0.8)' : ''
                                                             }}
                                                         >
                                                             {row.price_change_1h != null && (
@@ -317,7 +327,8 @@ export default function CoinsPage() {
                                                             className="text-[16px] md:text-lg font-bold"
                                                             style={{
                                                                 color:
-                                                                    row.price_change_24h != null ? (row.price_change_24h < 0 ? '#ff0000' : '#32cd32') : 'white'
+                                                                    row.price_change_24h != null ? (row.price_change_24h < 0 ? '#ff0000' : '#32cd32') : 'white',
+                                                                textShadow: sortColumn == 'price_change_24h' ? '4px 4px 16px rgba(255, 221, 51, 0.8)' : ''
                                                             }}
                                                         >
                                                             {row.price_change_24h != null && (
@@ -333,7 +344,9 @@ export default function CoinsPage() {
                                                         <span
                                                             className="text-[16px] md:text-lg font-bold"
                                                             style={{
-                                                                color: row.price_change_7d != null ? (row.price_change_7d < 0 ? '#ff0000' : '#32cd32') : 'white'
+                                                                color:
+                                                                    row.price_change_7d != null ? (row.price_change_7d < 0 ? '#ff0000' : '#32cd32') : 'white',
+                                                                textShadow: sortColumn == 'price_change_7d' ? '4px 4px 16px rgba(255, 221, 51, 0.8)' : ''
                                                             }}
                                                         >
                                                             {row.price_change_7d != null && (

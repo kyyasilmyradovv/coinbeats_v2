@@ -7,6 +7,11 @@ exports.getAllCoins = async (req, res, next) => {
     let { keyword, sortColumn, sortDirection, limit, offset } = req.query;
 
     let where = {};
+    if (sortColumn != 'id') {
+      where = {
+        [sortColumn]: { not: null },
+      };
+    }
     if (keyword?.length) {
       where.OR = [
         { name: { contains: keyword, mode: 'insensitive' } },
