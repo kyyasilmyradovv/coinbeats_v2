@@ -109,6 +109,8 @@ export default function CoinsPage() {
     }, [hasMore, loading])
 
     const handleSearch = () => {
+        setActiveTab1('')
+        setActiveTab2('')
         setHasMore(true)
         fetchRows(true)
     }
