@@ -209,6 +209,7 @@ exports.createAcademy = async (req, res, next) => {
         creatorId: userId,
         academyTypeId: academyTypeId ? parseInt(academyTypeId, 10) : null,
         xp: totalXp, // Set the xp field
+        fomoXp: totalXp * 2,
       },
     });
 
@@ -324,6 +325,7 @@ exports.createBasicAcademy = async (req, res, next) => {
         creatorId: userId,
         academyTypeId: academyTypeId ? parseInt(academyTypeId, 10) : null,
         xp: totalXp, // Set the xp field
+        fomoXp: totalXp * 2,
       },
     });
 
