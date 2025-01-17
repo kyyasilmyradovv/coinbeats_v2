@@ -45,18 +45,7 @@ const CoinPriceChart: React.FC<CoinPriceChartProps> = ({ priceData }) => {
                 }
             }
         },
-        scales: {
-            x: {
-                grid: {
-                    display: false // Disable grid lines on the X axis
-                }
-            },
-            y: {
-                grid: {
-                    display: false // Disable grid lines on the Y axis
-                }
-            }
-        }
+        scales: { x: { grid: { display: false } }, y: { grid: { display: false } } }
     }
 
     return (

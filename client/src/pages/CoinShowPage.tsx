@@ -6,6 +6,8 @@ import Navbar from '../components/common/Navbar'
 import Tabs from '../components/common/Tabs'
 import { IconCaretDownFilled, IconCaretUpFilled, IconAlertCircle, IconChevronDown, IconChevronUp } from '@tabler/icons-react'
 import CoinPriceChart from '~/components/Chart'
+import GeckoChart from '~/components/GeckoChart'
+import CustomChart from '~/components/CustomChart'
 
 interface CoinProps {
     id: number
@@ -31,6 +33,7 @@ interface CoinProps {
     twitter_screen_name: string
     listed_date: string
     fdv: number
+    gecko_id: string
 }
 
 const CoinShowPage: React.FC = () => {
@@ -38,22 +41,13 @@ const CoinShowPage: React.FC = () => {
     const { id } = useParams<{ id: string }>()
     const [coin, setCoin] = useState<CoinProps | null>(null)
     const [loading, setLoading] = useState<boolean>(true)
-    const [activeTab, setActiveTab] = useState('Hour')
+    const [activeTab, setActiveTab] = useState('1M')
     const [tooltip, setTooltip] = useState('')
-    const [dropdown, setDropdown] = useState('')
     const [expandCategories, setExpandCategories] = useState(false)
     const [expandAddresses, setExpandAddresses] = useState(false)
     const [expandHomepages, setExpandHomepages] = useState(false)
 
-    const [priceData, setPriceData] = useState([
-        { time: '2PM', price: 8345 },
-        { time: '1PM', price: 8004.23 },
-        { time: '12PM', price: 7900.75 },
-        { time: '11AM', price: 8000 },
-        { time: '10AM', price: 8123.45 }
-    ])
-
-    const tabs = ['Hour', 'Day', 'Week', 'Month', 'Year']
+    const tabs = ['24H', '7D', '1M', '3M', '1Y']
 
     const fetchCoinShowPage = async () => {
         try {
@@ -71,13 +65,6 @@ const CoinShowPage: React.FC = () => {
 
     const handleTabChange = (tab: string) => {
         setActiveTab(tab)
-        setPriceData([
-            { time: 'Jan 14', price: 5323 },
-            { time: 'Jan 13', price: 1242 },
-            { time: 'Jan 12', price: 1256 },
-            { time: 'Jan 11', price: 2345 },
-            { time: 'Jan 10', price: 23545 }
-        ])
     }
 
     function cutNumbers(value: number, length = 5, isPrice: boolean = false): string {
@@ -167,7 +154,11 @@ const CoinShowPage: React.FC = () => {
 
                     <Tabs tabs={tabs} activeTab={activeTab} handleTabChange={handleTabChange} />
 
-                    <CoinPriceChart priceData={priceData} />
+                    {coin?.gecko_id && (
+                        <div className="mt-4 p-2 ">
+                            <CustomChart coinId={coin?.gecko_id} tab={activeTab} days={14} />
+                        </div>
+                    )}
 
                     {/* Details Card*/}
                     {coin && (
@@ -188,7 +179,6 @@ const CoinShowPage: React.FC = () => {
                                         onClick={(event) => {
                                             event.stopPropagation()
                                             setTooltip('market_cap')
-                                            setDropdown('')
                                         }}
                                     />
                                 </div>
@@ -216,7 +206,6 @@ const CoinShowPage: React.FC = () => {
                                         onClick={(event) => {
                                             event.stopPropagation()
                                             setTooltip('fdv')
-                                            setDropdown('')
                                         }}
                                     />
                                 </div>
@@ -245,7 +234,6 @@ const CoinShowPage: React.FC = () => {
                                         onClick={(event) => {
                                             event.stopPropagation()
                                             setTooltip('ath')
-                                            setDropdown('')
                                         }}
                                     />
                                 </div>
@@ -269,7 +257,6 @@ const CoinShowPage: React.FC = () => {
                                         onClick={(event) => {
                                             event.stopPropagation()
                                             setTooltip('atl')
-                                            setDropdown('')
                                         }}
                                     />
                                 </div>
