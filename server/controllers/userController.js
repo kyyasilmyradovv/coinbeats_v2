@@ -767,36 +767,25 @@ exports.getCurrentUser = async (req, res, next) => {
  * Handle login streak for a user.
  */
 exports.handleLoginStreak = async (req, res, next) => {
-  const telegramUserIdHeader = req.headers['x-telegram-user-id'];
-
-  if (!telegramUserIdHeader) {
+  const telegramUserId = +req.headers['x-telegram-user-id'];
+  if (!telegramUserId) {
     return next(createError(400, 'Telegram User ID is required'));
   }
 
   try {
-    // Convert telegramUserId to BigInt
-    const telegramUserId = BigInt(telegramUserIdHeader);
-
     // Find the user by telegramUserId
     const user = await prisma.user.findUnique({
       where: { telegramUserId },
+      select: { id: true },
     });
-
-    if (!user) {
-      return next(createError(404, 'User not found'));
-    }
+    if (!user) return next(createError(404, 'User not found'));
 
     const userId = user.id;
 
-    console.log(`Handling login streak for user ${userId}`);
-
     // Find the Daily Login Streak task
     const verificationTask = await prisma.verificationTask.findFirst({
-      where: {
-        name: 'Daily Login Streak',
-      },
+      where: { name: 'Daily Login Streak' },
     });
-
     if (!verificationTask) {
       return next(createError(404, 'Daily Login Streak task not found'));
     }
@@ -1046,7 +1035,6 @@ exports.startVerificationTask = async (req, res, next) => {
 
 exports.submitTask = async (req, res, next) => {
   const { taskId, submissionText, userId } = req.body;
-
   if (!userId || !taskId || !submissionText) {
     return next(
       createError(400, 'User ID, Task ID, and submission text are required')
@@ -1056,11 +1044,9 @@ exports.submitTask = async (req, res, next) => {
   try {
     const user = await prisma.user.findUnique({
       where: { id: userId },
+      select: { id: true },
     });
-
-    if (!user) {
-      return next(createError(404, 'User not found'));
-    }
+    if (!user) return next(createError(404, 'User not found'));
 
     const verificationTask = await prisma.verificationTask.findUnique({
       where: { id: taskId },
@@ -1159,12 +1145,8 @@ exports.submitTask = async (req, res, next) => {
 };
 
 exports.getUserVerificationTasks = async (req, res, next) => {
-  console.log('Request body:', req.body); // Check if the userId is being received
   const { userId } = req.body;
-
-  if (!userId) {
-    return res.status(400).json({ message: 'User ID is required' });
-  }
+  if (!userId) return res.status(400).json({ message: 'User ID is required' });
 
   try {
     const userVerificationTasks = await prisma.userVerification.findMany({
@@ -1216,8 +1198,9 @@ exports.checkReferralCompletion = async (req, res) => {
     const userAcademyPoints = await prisma.point.findFirst({
       where: {
         userId: Number(userId),
-        academyId: { not: null }, // Ensure it has an academyId
+        academyId: { not: null },
       },
+      select: { id: true },
     });
 
     if (userAcademyPoints) {

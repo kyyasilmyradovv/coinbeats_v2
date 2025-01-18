@@ -1,12 +1,10 @@
 import React, { useEffect, useState, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import axiosInstance from '~/api/axiosInstance'
-import { Page, Button, Preloader, Card } from 'konsta/react'
+import { Page, Preloader, Card } from 'konsta/react'
 import Navbar from '../components/common/Navbar'
 import Tabs from '../components/common/Tabs'
 import { IconCaretDownFilled, IconCaretUpFilled, IconAlertCircle, IconChevronDown, IconChevronUp } from '@tabler/icons-react'
-import CoinPriceChart from '~/components/Chart'
-import GeckoChart from '~/components/GeckoChart'
 import CustomChart from '~/components/CustomChart'
 
 interface CoinProps {
@@ -156,7 +154,7 @@ const CoinShowPage: React.FC = () => {
 
                     {coin?.gecko_id && (
                         <div className="mt-4 p-2 ">
-                            <CustomChart coinId={coin?.gecko_id} tab={activeTab} days={14} />
+                            <CustomChart coinId={coin?.gecko_id} tab={activeTab} />
                         </div>
                     )}
 
