@@ -9,14 +9,13 @@ interface TabProps {
 const Tabs: React.FC<TabProps> = ({ tabs, activeTab, handleTabChange }) => {
     return (
         <div>
-            <div className="flex space-x-4 mt-4">
+            <div className="flex justify-center gap-0 items-center w-full mt-4">
                 {tabs.map((tab) => (
                     <button
                         key={tab}
-                        className={`px-4 py-2 text-sm font-medium rounded-md ${
-                            activeTab === tab ? 'bg-blue-500 text-white' : 'text-gray-500 hover:bg-gray-200'
-                        }`}
+                        className={`px-4 py-2 text-sm font-bold rounded-md text-gray-200 ${activeTab === tab && 'bg-blue-500 text-white'}`}
                         onClick={() => handleTabChange(tab)}
+                        disabled={tab == '24H' || tab == '1Y'}
                     >
                         {tab}
                     </button>
