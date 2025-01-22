@@ -64,7 +64,7 @@ const Sidebar: React.FC = () => {
             { label: 'Raffle Management', path: '/overall-raffle-management' },
             { label: 'Surprise Box', path: '/surprise-box' },
             { label: 'Points Control', path: '/points-control' },
-            { label: 'Character Management', path: '/character-management' },
+            { label: 'Character Management', path: '/character-management' }
         ],
         ADMIN: [
             { label: 'Admin Dashboard', path: '/admin-dashboard' },
@@ -127,8 +127,8 @@ const Sidebar: React.FC = () => {
         <Panel side="right" floating opened={sidebarOpened} onBackdropClick={toggleSidebar}>
             <Page>
                 <Block className="space-y-4">
-                    {/* <BlockTitle className="mb-1">Connect your TON Wallet</BlockTitle>
-                    <TonConnectButton className="mx-auto" /> */}
+                    <BlockTitle className="mb-1">Connect your TON Wallet</BlockTitle>
+                    <TonConnectButton className="mx-auto" />
 
                     {/* <BlockTitle>Theme</BlockTitle>
                     <List strong inset>

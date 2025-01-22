@@ -11,7 +11,7 @@ const manifestUrl = 'https://raw.githubusercontent.com/ton-community/tutorials/m
 
 const App: React.FC = () => {
     return (
-        <TonConnectUIProvider manifestUrl={manifestUrl}>
+        <TonConnectUIProvider manifestUrl="/tonconnect-manifest.json">
             <RootComponent />
         </TonConnectUIProvider>
     )
