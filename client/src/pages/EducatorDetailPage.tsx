@@ -27,6 +27,7 @@ import { platformIcons, getActionLabel, requiresInputField, getInputPlaceholder,
 
 // IMPORTANT: use your axios instance
 import axios from '../api/axiosInstance'
+import axiosInstance from '../api/axiosInstance'
 
 // Function to extract YouTube video ID
 const extractYouTubeVideoId = (url: string): string | null => {
@@ -131,6 +132,10 @@ const EducatorDetailPage: React.FC = () => {
         const stateItem = location.state?.item as Educator | undefined
         if (stateItem) {
             setEducator(stateItem)
+
+            if (id) {
+                axiosInstance.post('/api/discover/visit', { tab: 'educator', id })
+            }
         } else {
             if (educators.length === 0) {
                 fetchEducators().then(() => {
