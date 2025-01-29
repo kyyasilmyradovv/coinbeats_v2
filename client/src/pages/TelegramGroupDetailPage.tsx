@@ -23,6 +23,7 @@ import bunnyHappyAnimationData from '../animations/bunny-happy.json'
 
 import { platformIcons, getActionLabel, requiresInputField, getInputPlaceholder, handleAction } from '../utils/actionHandlers'
 import axios from '../api/axiosInstance'
+import axiosInstance from '../api/axiosInstance'
 
 const bunnyHappyAnimation = {
     loop: true,
@@ -104,6 +105,9 @@ const TelegramGroupDetailPage: React.FC = () => {
         const stateItem = location.state?.item as TelegramGroup | undefined
         if (stateItem) {
             setGroup(stateItem)
+            if (id) {
+                axiosInstance.post('/api/discover/visit', { tab: 'telegramGroup', id })
+            }
         } else {
             if (telegramGroups.length === 0) {
                 fetchTelegramGroups().then(() => {

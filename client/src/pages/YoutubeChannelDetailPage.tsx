@@ -28,6 +28,7 @@ import bunnyHappyAnimationData from '../animations/bunny-happy.json'
 // ====== UTILS ======
 import axios from '../api/axiosInstance'
 import { platformIcons, getActionLabel, requiresInputField, getInputPlaceholder, handleAction } from '../utils/actionHandlers'
+import axiosInstance from '../api/axiosInstance'
 
 // ====== TYPES ======
 interface YoutubeChannel {
@@ -116,6 +117,9 @@ const YoutubeChannelDetailPage: React.FC = () => {
         const stateItem = location.state?.item as YoutubeChannel | undefined
         if (stateItem) {
             setChannel(stateItem)
+            if (id) {
+                axiosInstance.post('/api/discover/visit', { tab: 'youtubeChannel', id })
+            }
         } else {
             if (youtubeChannels.length === 0) {
                 fetchYoutubeChannels().then(() => {

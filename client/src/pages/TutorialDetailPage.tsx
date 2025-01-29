@@ -23,6 +23,7 @@ import coinbeats from '../images/coinbeats-l.svg'
 import axios from '../api/axiosInstance'
 import { platformIcons, getActionLabel, requiresInputField, getInputPlaceholder, handleAction } from '../utils/actionHandlers'
 import { extractYouTubeVideoId } from '../utils/extractYouTubeVideoId'
+import axiosInstance from '../api/axiosInstance'
 
 interface Tutorial {
     id: number
@@ -107,6 +108,9 @@ const TutorialDetailPage: React.FC = () => {
         const stateItem = location.state?.item as Tutorial | undefined
         if (stateItem) {
             setTutorial(stateItem)
+            if (id) {
+                axiosInstance.post('/api/discover/visit', { tab: 'tutorial', id })
+            }
         } else {
             if (tutorials.length === 0) {
                 fetchTutorials().then(() => {

@@ -7,6 +7,9 @@ const discoverController = require('../controllers/discoverController');
 
 const router = express.Router();
 
+// Increase Visit Count
+router.post('/visit', asyncHandler(discoverController.increaseVisitCount));
+
 // Public routes for Educators
 router.get('/educators', asyncHandler(discoverController.getAllEducators));
 router.get('/educators/:id', asyncHandler(discoverController.getEducatorById));

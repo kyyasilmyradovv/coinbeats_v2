@@ -25,6 +25,7 @@ import bunnyHappyAnimationData from '../animations/bunny-happy.json'
 
 import { platformIcons, getActionLabel, requiresInputField, getInputPlaceholder, handleAction } from '../utils/actionHandlers'
 import axios from '../api/axiosInstance'
+import axiosInstance from '../api/axiosInstance'
 
 // ==========================
 // BUNNY ANIMATION CONFIG
@@ -114,6 +115,9 @@ const PodcastDetailPage: React.FC = () => {
         const stateItem = location.state?.item as Podcast | undefined
         if (stateItem) {
             setPodcast(stateItem)
+            if (id) {
+                axiosInstance.post('/api/discover/visit', { tab: 'podcast', id })
+            }
         } else {
             if (podcasts.length === 0) {
                 fetchPodcasts().then(() => {

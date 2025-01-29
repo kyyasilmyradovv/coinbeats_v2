@@ -247,6 +247,7 @@ model Educator {
   lessons       Lesson[]      @relation("EducatorLessons")
   categories    Category[]    @relation("EducatorCategories")
   chains        Chain[]       @relation("EducatorChains")
+  visitCount    Int           @default(0)
 
   // Opposite side of VerificationTask => Educator
   verificationTasks VerificationTask[]
@@ -258,6 +259,7 @@ model Lesson {
   contentUrl String
   type       LessonType
   xp         Int        @default(0)
+  visitCount Int     @default(0)
   educatorId Int
   educator   Educator   @relation("EducatorLessons", fields: [educatorId], references: [id])
 }
@@ -276,6 +278,7 @@ model Podcast {
   updatedAt     DateTime      @updatedAt
   categories    Category[]    @relation("PodcastCategories")
   chains        Chain[]       @relation("PodcastChains")
+  visitCount    Int           @default(0)
 
   // Opposite side of VerificationTask => Podcast
   verificationTasks VerificationTask[]
@@ -295,6 +298,7 @@ model Tutorial {
   updatedAt     DateTime      @updatedAt
   categories    Category[]    @relation("TutorialCategories")
   chains        Chain[]       @relation("TutorialChains")
+  visitCount    Int           @default(0)
 
   // Opposite side of VerificationTask => Tutorial
   verificationTasks VerificationTask[]
@@ -312,6 +316,7 @@ model YoutubeChannel {
   updatedAt     DateTime      @updatedAt
   categories    Category[]    @relation("YoutubeChannelCategories")
   chains        Chain[]       @relation("YoutubeChannelChains")
+  visitCount    Int           @default(0)
 
   // Opposite side of VerificationTask => YoutubeChannel
   verificationTasks VerificationTask[]
@@ -329,6 +334,8 @@ model TelegramGroup {
   updatedAt     DateTime      @updatedAt
   categories    Category[]    @relation("TelegramGroupCategories")
   chains        Chain[]       @relation("TelegramGroupChains")
+  visitCount    Int           @default(0)
+  
 
   // Opposite side of VerificationTask => TelegramGroup
   verificationTasks VerificationTask[]

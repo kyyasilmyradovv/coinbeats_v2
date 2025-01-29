@@ -10,7 +10,7 @@ const integrateCoingecko = async (page) => {
     const response = await axios.get(url, {
       headers: {
         accept: 'application/json',
-        'x-cg-demo-api-key': 'CG-5DzvYu67MCjpgWvHnov2Dhnr',
+        'x-cg-demo-api-key': 'CG-zKSCDCPfgDJvuFjBv6Ww14Uy',
       },
       params: {
         per_page: 100,
@@ -25,7 +25,7 @@ const integrateCoingecko = async (page) => {
   }
 };
 
-for (let i = 1; i < 1; i++) {
+for (let i = 150; i < 170; i++) {
   integrateCoingecko(i)
     .then(async (data) => {
       for (let coin of data) {
@@ -72,7 +72,7 @@ const fetchCoinFromCoingecko = async (id) => {
     const response = await axios.get(url, {
       headers: {
         accept: 'application/json',
-        'x-cg-demo-api-key': 'CG-5DzvYu67MCjpgWvHnov2Dhnr',
+        'x-cg-demo-api-key': 'CG-zKSCDCPfgDJvuFjBv6Ww14Uy',
       },
       params: {
         localization: false,
@@ -81,8 +81,6 @@ const fetchCoinFromCoingecko = async (id) => {
         community_data: false,
       },
     });
-
-    console.log(response?.data);
 
     return {
       categories: response.data?.categories,

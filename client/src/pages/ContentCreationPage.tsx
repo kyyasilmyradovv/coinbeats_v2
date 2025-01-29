@@ -10,6 +10,7 @@ import bunnyLogo from '../images/bunny-mascot.png'
 import useCategoryChainStore from '../store/useCategoryChainStore'
 import { Icon } from '@iconify/react'
 import axios from '../api/axiosInstance'
+import { IconEye } from '@tabler/icons-react'
 
 const ContentCreationPage: React.FC = () => {
     const navigate = useNavigate()
@@ -1181,6 +1182,10 @@ const ContentCreationPage: React.FC = () => {
                                 {item.logoUrl && <img alt={titleForItem || ''} className="h-16 w-16 rounded-full" src={item.logoUrl} />}
                             </div>
                         </div>
+
+                        <span className="flex items-center gap-1 absolute top-1 right-1 bg-black bg-opacity-70 px-1 py-0 text-white rounded">
+                            <IconEye size={13} /> {item?.visitCount || 0}
+                        </span>
 
                         <div className="flex justify-center w-full relative z-10">
                             <Button className="rounded-full items-center justify-center" raised onClick={(e) => openPopoverForItem(item.id, e)}>

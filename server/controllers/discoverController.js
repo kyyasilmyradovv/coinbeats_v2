@@ -261,3 +261,34 @@ exports.createTelegramGroup = async (req, res, next) => {
     next(createError(500, 'Error creating Telegram group'));
   }
 };
+
+// ========== UPDATE VISIT COUNTS ==========
+exports.increaseVisitCount = async (req, res, next) => {
+  try {
+    const { tab, id } = req.body;
+
+    if (
+      !id ||
+      ![
+        'educator',
+        'podcast',
+        'telegramGroup',
+        'tutorial',
+        'youtubeChannel',
+      ].includes(tab)
+    ) {
+      res.send();
+    }
+
+    // Increment visitCount for the correct table
+    await prisma[tab].update({
+      where: { id: +id },
+      data: { visitCount: { increment: 1 } },
+    });
+
+    res.send();
+  } catch (error) {
+    console.error('Error incrementing visit count:', error);
+    next(createError(500, 'Error incrementing visit count'));
+  }
+};
