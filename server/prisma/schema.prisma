@@ -106,6 +106,7 @@ model Academy {
   fomoNumber       Int?               @default(50)
   fomoXp           Int?               @default(1000)
   overallRaffle    OverallRaffle?
+  coins            Coins[]
 }
 
 model Subscription {
@@ -550,6 +551,8 @@ model Coins {
   price_change_30d      Float?
   price_change_1y       Float?
   categories            String[]
+  academyId             Int?
+  academy               Academy?                  @relation(fields: [academyId], references: [id])
 }
 
 enum OverallRaffleType {

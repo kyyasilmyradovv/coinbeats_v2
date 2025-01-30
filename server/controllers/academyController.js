@@ -373,6 +373,7 @@ exports.updateAcademy = async (req, res, next) => {
     quests,
     webpageUrl,
     academyTypeId,
+    coinIds,
   } = req.body;
 
   try {
@@ -583,6 +584,17 @@ exports.updateAcademy = async (req, res, next) => {
       }
     }
 
+    if (coinIds) {
+      await prisma.academy.update({
+        where: { id: parseInt(id, 10) },
+        data: {
+          coins: {
+            set: coinIds.map((coinId) => ({ id: coinId })),
+          },
+        },
+      });
+    }
+
     res.json({
       message: 'Academy updated successfully',
       academy: updatedAcademy,
@@ -700,6 +712,14 @@ exports.getAcademyDetailsSuperadmin = async (req, res, next) => {
             id: true,
             name: true,
             email: true,
+          },
+        },
+        coins: {
+          select: {
+            id: true,
+            name: true,
+            symbol: true,
+            image: true,
           },
         },
         academyType: true,
@@ -1049,6 +1069,14 @@ exports.getAllAcademies = async (req, res, next) => {
         categories: true,
         chains: true,
         academyType: true,
+        coins: {
+          select: {
+            id: true,
+            name: true,
+            symbol: true,
+            image: true,
+          },
+        },
       },
     });
 
@@ -1140,7 +1168,6 @@ exports.getAcademyQuestions = async (req, res, next) => {
   }
 };
 
-// TODO: Task 3
 exports.submitQuizAnswers = async (req, res, next) => {
   const { academyId } = req.body;
 

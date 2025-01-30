@@ -136,7 +136,6 @@ exports.creditUserForFeedback = async (req, res, next) => {
       },
     });
 
-    // TODO: test on the development when available again
     if (pointsAwarded > 99) {
       await prisma.raffle.create({
         data: {

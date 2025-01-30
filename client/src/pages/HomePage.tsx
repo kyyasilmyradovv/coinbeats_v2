@@ -961,7 +961,7 @@ export default function HomePage() {
                                         </div>
                                         {academy.fomoNumber <= academy.pointCount &&
                                             !isCoinbeats &&
-                                            new Date() - new Date(academy.createdAt) > 7 * 24 * 60 * 60 * 1000 && (
+                                            new Date() - new Date(academy.createdAt) < 7 * 24 * 60 * 60 * 1000 && (
                                                 <img
                                                     src={NewIcon}
                                                     alt="New"

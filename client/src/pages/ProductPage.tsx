@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useInitData } from '@telegram-apps/sdk-react'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { FaTwitter, FaFacebook, FaInstagram, FaTelegramPlane, FaDiscord, FaYoutube, FaEnvelope, FaExchangeAlt } from 'react-icons/fa'
 import { Page, Card, Radio, Button, Block, Notification, Preloader } from 'konsta/react'
 import { Swiper, SwiperSlide } from 'swiper/react'
@@ -47,6 +47,7 @@ const platformIcons: { [key: string]: JSX.Element } = {
 }
 
 export default function ProductPage() {
+    const navigate = useNavigate()
     const initData = useInitData()
     const location = useLocation()
     const { academy } = location.state || {}
@@ -1050,6 +1051,24 @@ export default function ProductPage() {
                                     <FaExchangeAlt className="w-4 h-4 text-gray-300" /> {/* Icon from react-icons */}
                                     TRADE & SNIPE
                                 </Button>
+
+                                {/* Coins */}
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-4">
+                                    {academy?.coins?.map((coin: any) => (
+                                        <div
+                                            key={coin.id}
+                                            className="flex items-center p-2 bg-gray-800 rounded-lg"
+                                            onClick={() => navigate(`/coins/${coin.id}`)}
+                                        >
+                                            <img src={coin.image} alt={coin.name} className="w-10 h-10 rounded-full mr-4" />
+                                            <div>
+                                                <h3 className={`text-white font-semibold ${coin.name.length > 15 ? 'text-sm' : ''}`}>
+                                                    {coin.name.length > 25 ? `${coin.name.slice(0, 25)}...` : coin.name}
+                                                </h3>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
 
                                 <PointsCollectedCard
                                     earnedPoints={earnedPoints}
