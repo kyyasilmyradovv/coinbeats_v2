@@ -2,6 +2,39 @@ const { PrismaClient } = require('@prisma/client');
 const createError = require('http-errors');
 const prisma = new PrismaClient();
 
+exports.searchCoins = async (req, res, next) => {
+  try {
+    let { keyword, limit, offset } = req.query;
+
+    let where = {};
+
+    if (keyword?.length) {
+      where.OR = [
+        { name: { contains: keyword, mode: 'insensitive' } },
+        { symbol: { contains: keyword, mode: 'insensitive' } },
+      ];
+    }
+
+    let coins = await prisma.coins.findMany({
+      where,
+      orderBy: { id: 'desc' },
+      select: {
+        id: true,
+        name: true,
+        symbol: true,
+        image: true,
+      },
+      take: +limit || 10,
+      skip: +offset || 0,
+    });
+
+    res.status(200).json(coins);
+  } catch (error) {
+    console.error('Error fetching  coins:', error);
+    next(createError(500, 'Error fetching coins'));
+  }
+};
+
 exports.getAllCoins = async (req, res, next) => {
   try {
     let { keyword, sortColumn, sortDirection, tab1, tab2, limit, offset } =
