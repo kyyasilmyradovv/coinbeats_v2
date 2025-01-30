@@ -66,7 +66,8 @@ const CoinShowPage: React.FC = () => {
     }
 
     function cutNumbers(value: number, length = 5, isPrice: boolean = false): string {
-        let newValue = value.toString()
+        let newValue = value?.toString()
+        if (!newValue) return 'N/A'
         let [integerPart, decimalPart] = newValue.split('.')
 
         // Add commas to the integer part
@@ -134,7 +135,7 @@ const CoinShowPage: React.FC = () => {
 
                                 {/* Price & Price change */}
                                 <div className="flex gap-2">
-                                    <span className="text-[32px] font-semibold">${cutNumbers(coin.price, 8, true) || 'N/A'}</span>
+                                    <span className="text-[32px] font-semibold">${cutNumbers(coin?.price, 8, true) || 'N/A'}</span>
                                     {coin?.price_change_24h && (
                                         <span className="flex text-[18px] font-semibold" style={{ color: coin.price_change_24h < 0 ? '#ff0000' : '#32cd32' }}>
                                             {coin.price_change_24h < 0 ? (
