@@ -45,6 +45,7 @@ export default function HomePage() {
     const [animationComplete, setAnimationComplete] = useState(false)
     const [notificationOpen, setNotificationOpen] = useState(false)
     const [notificationText, setNotificationText] = useState('')
+    const [isVerifyTaskLoading, setIsVerifyTaskLoading] = useState(false)
 
     // Added useRef to ensure the login streak is handled only once
     const loginStreakHandled = useRef(false)
@@ -378,10 +379,14 @@ export default function HomePage() {
 
     // Implement the handleSubmitFeedback function
     const handleSubmitFeedback = async () => {
+        if (isVerifyTaskLoading) return
+        setIsVerifyTaskLoading(true)
         if (!selectedTask) return
+
         if (feedbackText.length < 100) {
             setNotificationText('Please enter at least 100 characters.')
             setNotificationOpen(true)
+            setIsVerifyTaskLoading(false)
             return
         }
         const taskId = selectedTask.id
@@ -420,6 +425,8 @@ export default function HomePage() {
             setNotificationText('Error submitting feedback. Please try again later.')
             setNotificationOpen(true)
         }
+
+        setIsVerifyTaskLoading(false)
     }
 
     // Custom handleAction function
@@ -444,6 +451,8 @@ export default function HomePage() {
                 telegramUserId
             })
         }
+
+        setIsVerifyTaskLoading(false)
     }
 
     const formatPoints = (points: number): string => {
