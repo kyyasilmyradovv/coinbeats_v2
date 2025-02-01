@@ -71,6 +71,7 @@ export default function GamesPage() {
     const [inputText, setInputText] = useState('')
     const [taskInputValues, setTaskInputValues] = useState<{ [key: number]: string }>({})
     const [submittedTasks, setSubmittedTasks] = useState<{ [key: number]: boolean }>({})
+    const [isVerifyTaskLoading, setIsVerifyTaskLoading] = useState(false)
 
     useEffect(() => {
         fetchGameTasks()
@@ -152,6 +153,9 @@ export default function GamesPage() {
 
     // Handle action button click
     const onActionClick = async (task: VerificationTask) => {
+        if (isVerifyTaskLoading) return
+        setIsVerifyTaskLoading(true)
+
         try {
             if (task.verificationMethod === 'LEAVE_FEEDBACK') {
                 const completed = isTaskCompleted(task)
@@ -187,10 +191,15 @@ export default function GamesPage() {
             setNotificationText(errorMessage)
             setNotificationOpen(true)
         }
+
+        setIsVerifyTaskLoading(false)
     }
 
     const handleSubmitFeedback = async () => {
         if (!selectedTask) return
+        if (isVerifyTaskLoading) return
+        setIsVerifyTaskLoading(true)
+
         if (feedbackText.length < 100) {
             setNotificationText('Please enter at least 100 characters.')
             setNotificationOpen(true)
@@ -239,9 +248,14 @@ export default function GamesPage() {
             setNotificationText(errorMessage)
             setNotificationOpen(true)
         }
+
+        setIsVerifyTaskLoading(false)
     }
 
     const handleSubmitInput = async () => {
+        if (isVerifyTaskLoading) return
+        setIsVerifyTaskLoading(true)
+
         if (!selectedTask) return
         if (inputText.length < 5) {
             setNotificationText('Please enter at least 5 characters.')
@@ -296,6 +310,8 @@ export default function GamesPage() {
             setNotificationText(errorMessage)
             setNotificationOpen(true)
         }
+
+        setIsVerifyTaskLoading(false)
     }
 
     const handleVerify = async (task: VerificationTask) => {
@@ -338,6 +354,9 @@ export default function GamesPage() {
     }
 
     const onVerifyClick = async (task: VerificationTask) => {
+        if (isVerifyTaskLoading) return
+        setIsVerifyTaskLoading(true)
+
         const completed = isTaskCompleted(task)
         if (completed) {
             setNotificationText('This task is already completed, wait for it to reset.')
@@ -345,6 +364,7 @@ export default function GamesPage() {
         } else {
             await handleVerify(task)
         }
+        setIsVerifyTaskLoading(false)
     }
 
     const toggleTooltip = (tooltipIndex: number) => {
