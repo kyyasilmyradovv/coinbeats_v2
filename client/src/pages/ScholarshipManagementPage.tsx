@@ -20,7 +20,6 @@ const ScholarshipManagementPage: React.FC = () => {
     const [endOfWeek, setEndOfWeek] = useState<string | null>(null)
     const [currentCETTime, setCurrentCETTime] = useState<Date>(new Date())
     const [countdown, setCountdown] = useState<string>('')
-    const [selectedWalletType, setSelectedWalletType] = useState<string>('erc20WalletAddress')
 
     const fetchScholarshipText = useLeaderboardStore((state) => state.fetchScholarshipText)
     const storedScholarshipText = useLeaderboardStore((state) => state.scholarshipText)
@@ -180,10 +179,9 @@ const ScholarshipManagementPage: React.FC = () => {
         }
 
         try {
-            const response = await axiosInstance.post('/api/download-csv-email', {
+            await axiosInstance.post('/api/download-csv-email', {
                 dataType,
                 data,
-                selectedWalletType,
                 fileName
             })
 
@@ -242,22 +240,7 @@ const ScholarshipManagementPage: React.FC = () => {
                                 <p className="text-xs text-gray-300">Countdown to next snapshot:</p>
                                 <p className="text-md text-white">{countdown}</p>
                             </div>
-                            <List strong inset className="!m-0 !p-0">
-                                <ListInput
-                                    outline
-                                    label="Select Wallet"
-                                    type="select"
-                                    className="!m-0 !p-0"
-                                    value={selectedWalletType}
-                                    onChange={(e) => setSelectedWalletType(e.target.value)}
-                                    inputClassName="!bg-[#1c1c1d] !text-white !m-1 !pl-2"
-                                >
-                                    <option value="erc20WalletAddress">ERC20 Wallet Address</option>
-                                    <option value="solanaWalletAddress">Solana Wallet Address</option>
-                                    <option value="tonWalletAddress">TON Wallet Address</option>
-                                </ListInput>
-                            </List>
-                            <Button large rounded onClick={() => handleSendCSVEmail('leaderboard')} className="!w-[90%] !mx-auto">
+                            <Button large rounded onClick={() => handleSendCSVEmail('leaderboard')} className="!w-[90%] !mx-auto mt-8">
                                 Send CSV to Email
                             </Button>
                             <List strong inset>
@@ -276,21 +259,6 @@ const ScholarshipManagementPage: React.FC = () => {
                                 ))}
                             </List>
 
-                            <List strong inset className="!m-0 !p-0">
-                                <ListInput
-                                    outline
-                                    label="Select Wallet"
-                                    type="select"
-                                    className="!m-0 !p-0"
-                                    value={selectedWalletType}
-                                    onChange={(e) => setSelectedWalletType(e.target.value)}
-                                    inputClassName="!bg-[#1c1c1d] !text-white !m-1 !pl-2"
-                                >
-                                    <option value="erc20WalletAddress">ERC20 Wallet Address</option>
-                                    <option value="solanaWalletAddress">Solana Wallet Address</option>
-                                    <option value="tonWalletAddress">TON Wallet Address</option>
-                                </ListInput>
-                            </List>
                             <Button large rounded onClick={() => handleSendCSVEmail('referrers')} className="!w-[90%] !mx-auto">
                                 Send CSV to Email
                             </Button>

@@ -32,9 +32,9 @@ router.post('/download-csv-email', authenticateToken, async (req, res) => {
 
     let csvContent = '';
     if (dataType === 'leaderboard') {
-      csvContent = generateLeaderboardCSV(data, selectedWalletType);
+      csvContent = generateLeaderboardCSV(data);
     } else if (dataType === 'referrers') {
-      csvContent = generateReferrersCSV(data, selectedWalletType);
+      csvContent = generateReferrersCSV(data);
     } else if (dataType === 'raffle_winners') {
       csvContent = generateRaffleWinnersCSV(data);
     } else {
@@ -74,25 +74,28 @@ router.post('/download-csv-email', authenticateToken, async (req, res) => {
   }
 });
 
-const generateLeaderboardCSV = (data, selectedWalletType) => {
-  const header = 'Rank,Username,UserId,TelegramUserId,WalletAddress';
+const generateLeaderboardCSV = (data) => {
+  const header =
+    'Rank,Username,UserId,TelegramUserId,TotalPoints,erc20WalletAddress,solanaWalletAddress,tonWalletAddress';
   const rows = data.map((user, index) => {
-    const walletAddress = user[selectedWalletType] || '';
-    return `${index + 1},${user.name},${user.userId},${
-      user.telegramUserId
-    },${walletAddress}`;
+    return `${index + 1},${user.name},${user.userId},${user.telegramUserId},${
+      user.totalPoints
+    }, ${user.erc20WalletAddress},${user.solanaWalletAddress},${
+      user.tonWalletAddress
+    }`;
   });
   return [header, ...rows].join('\n');
 };
 
-const generateReferrersCSV = (data, selectedWalletType) => {
+const generateReferrersCSV = (data) => {
   const header =
-    'Rank,Username,UserId,TelegramUserId,ReferralCount,WalletAddress';
+    'Rank,Username,UserId,TelegramUserId,ReferralCount,erc20WalletAddress,solanaWalletAddress,tonWalletAddress';
   const rows = data.map((user, index) => {
-    const walletAddress = user[selectedWalletType] || '';
     return `${index + 1},${user.name},${user.userId},${user.telegramUserId},${
       user.referralCount
-    },${walletAddress}`;
+    },${user.erc20WalletAddress},${user.solanaWalletAddress},${
+      user.tonWalletAddress
+    }`;
   });
   return [header, ...rows].join('\n');
 };
