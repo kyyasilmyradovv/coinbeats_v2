@@ -31,6 +31,7 @@ const {
   getCorrectChoicesForAnsweredQuestions,
   getAcademyRaffle,
 } = require('../controllers/academyController');
+const { cryptographyMiddleware } = require('../utils/functions/decryptRequest');
 
 const router = express.Router();
 
@@ -142,6 +143,10 @@ router.put(
   authorizeRoles('CREATOR', 'ADMIN', 'SUPERADMIN'),
   asyncHandler(updateAcademyWithVideos)
 );
-router.post('/:id/save-response', asyncHandler(saveUserResponse));
+router.post(
+  '/:id/save-response',
+  cryptographyMiddleware,
+  asyncHandler(saveUserResponse)
+);
 
 module.exports = router;
