@@ -6,6 +6,7 @@ import axiosInstance from '../api/axiosInstance'
 import useUserStore from './useUserStore' // Import useUserStore to update user points
 import useSessionStore from './useSessionStore'
 import useNotificationStore from './useNotificationStore'
+import cryptographyAxios from '~/api/cryptographyAxios'
 
 interface AcademyType {
     id: number
@@ -259,7 +260,7 @@ const useAcademiesStore = create<AcademiesState>()(
 
         saveResponse: async (academyId, questionId, choiceId, telegramUserId, isCorrect, pointsAwarded) => {
             try {
-                await axiosInstance.post(`/api/academies/${academyId}/save-response`, {
+                await cryptographyAxios.post(`/api/academies/${academyId}/save-response`, {
                     academyId,
                     questionId,
                     choiceId,
