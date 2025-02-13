@@ -19,6 +19,7 @@
         "@privy-io/wagmi": "^1.0.3",
         "@tabler/icons-react": "^3.28.1",
         "@tanstack/react-query": "^5.51.16",
+        "@telegram-apps/bridge": "^2.3.2",
         "@telegram-apps/react-router-integration": "^1.0.1",
         "@telegram-apps/sdk": "^1.1.3",
         "@telegram-apps/sdk-react": "^1.1.3",
