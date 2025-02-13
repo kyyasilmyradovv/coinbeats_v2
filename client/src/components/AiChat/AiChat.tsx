@@ -369,8 +369,10 @@ const AiChat: React.FC = () => {
                                 //     // linkTelegram({ launchParams })
                                 //     // login()
                                 // }}
-                                onClick={() => {
-                                    login2()
+                                onClick={async () => {
+                                    if (authenticated) await logout()
+                                    login()
+                                    await login2()
                                 }}
                                 className="border rounded p-1"
                             >
