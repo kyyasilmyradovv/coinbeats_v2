@@ -47,6 +47,8 @@ const AiChat: React.FC = () => {
 
     const { ready, authenticated, user, getAccessToken, logout, login, linkTelegram } = usePrivy()
 
+    // alert(authenticated
+
     useEffect(() => {
         if (ready && authenticated && user) {
             getAccessToken()
@@ -55,6 +57,7 @@ const AiChat: React.FC = () => {
                         console.warn('No token from getAccessToken()')
                         // return Promise.resolve(null)
                     }
+                    console.log(token, '---- token')
                     localStorage.setItem('privyAccessToken', token)
                     // return Promise.resolve(null)
                 })
@@ -378,16 +381,13 @@ const AiChat: React.FC = () => {
                             <button
                                 onClick={async () => {
                                     if (authenticated) await logout()
-                                    const launchParams = retrieveLaunchParams()
-
-                                    alert(launchParams)
-                                    linkTelegram({ launchParams })
-
-                                    alert(user)
-                                    // login()
+                                    // const launchParams = retrieveLaunchParams()
+                                    // linkTelegram({ launchParams })
+                                    login()
                                 }}
+                                className="border rounded p-1"
                             >
-                                Test Login
+                                Re-Login
                             </button>
                         </button>
                         <InitialPrompts onSelectPrompt={(promptText) => setPrompt(promptText)} />
