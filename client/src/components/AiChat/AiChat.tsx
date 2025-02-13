@@ -44,7 +44,7 @@ const AiChat: React.FC = () => {
     const [cancelled, setCancelled] = useState(false)
     const [notification, setNotification] = useState<{ title: string; text: string } | null>(null)
 
-    const { ready, authenticated, user, getAccessToken, login } = usePrivy()
+    const { ready, authenticated, user, getAccessToken, logout, login, linkTelegram } = usePrivy()
 
     useEffect(() => {
         if (ready && authenticated && user) {
@@ -61,7 +61,7 @@ const AiChat: React.FC = () => {
                     console.error('Error fetching/creating user =>', err)
                 })
         } else {
-            login()
+            // login()
         }
     }, [ready, authenticated, user, getAccessToken])
 
@@ -373,6 +373,15 @@ const AiChat: React.FC = () => {
                         <button className="flex mb-10 items-center gap-2 text-white text-sm italic">
                             <span className="font-normal">Chat with Coinbeats AI</span>
                             <IconHelpCircle className="w-4 h-4" />
+                            <button
+                                onClick={async () => {
+                                    if (authenticated) await logout()
+                                    linkTelegram()
+                                    // login()
+                                }}
+                            >
+                                Test Login
+                            </button>
                         </button>
                         <InitialPrompts onSelectPrompt={(promptText) => setPrompt(promptText)} />
                     </div>
