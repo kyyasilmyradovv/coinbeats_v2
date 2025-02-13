@@ -4,15 +4,16 @@ export function getPrivyConfig(theme: 'dark' | 'light'): PrivyClientConfig {
     return {
         embeddedWallets: {
             createOnLogin: 'off',
-            requireUserPasswordOnCreate: true,
-            showWalletUIs: true
+            requireUserPasswordOnCreate: true
+            // showWalletUIs: true
         },
-        loginMethods: ['telegram'],
+        loginMethods: ['email', 'telegram'],
         appearance: {
-            showWalletLoginFirst: true,
+            // showWalletLoginFirst: true,
             theme,
             accentColor: '#4c4c4c',
-            logo: '../../images/coinbeats-l.svg'
+            logo: '/src/images/coinbeats-l.svg',
+            landingHeader: 'Login to use Coinbeats AI'
         },
         fundingMethodConfig: {
             moonpay: {

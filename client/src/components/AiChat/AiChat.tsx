@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Button, Card, Notification, Popover } from 'konsta/react'
 import { IconHelpCircle, IconCopy, IconUser, IconEditCircle, IconInnerShadowTopRight, IconPlayerStopFilled, IconArrowUp } from '@tabler/icons-react'
-import { usePrivy, useWallets } from '@privy-io/react-auth'
+import { useLoginWithTelegram, usePrivy, useWallets } from '@privy-io/react-auth'
 import { useChainId } from 'wagmi'
 import logo1 from '../../images/coinbeats-l.svg'
 import InitialPrompts from './components/InitialPrompts'
@@ -47,6 +47,13 @@ const AiChat: React.FC = () => {
 
     const { ready, authenticated, user, getAccessToken, logout, login, linkTelegram } = usePrivy()
 
+    const loginWithTelegram = useLoginWithTelegram({
+        onComplete: (params) => {
+            console.log('Telegram login successful:', params)
+            // Handle successful login, e.g., store user info or navigate
+        }
+    })
+
     // alert(authenticated
 
     useEffect(() => {
@@ -57,7 +64,6 @@ const AiChat: React.FC = () => {
                         console.warn('No token from getAccessToken()')
                         // return Promise.resolve(null)
                     }
-                    console.log(token, '---- token')
                     localStorage.setItem('privyAccessToken', token)
                     // return Promise.resolve(null)
                 })
@@ -69,30 +75,6 @@ const AiChat: React.FC = () => {
             // linkTelegram()
         }
     }, [ready, authenticated, user, getAccessToken])
-
-    // const { ready, user, getAccessToken, login } = usePrivy()
-
-    // console.log('Privy data initial: ', ready, authenticated, user, login, '0000000000000000000000000000')
-
-    // useEffect(() => {
-    //     if (ready && authenticated && user) {
-    //         console.log('trying to get privy token 111111111111111111111')
-    //         getAccessToken()
-    //             .then((token) => {
-    //                 console.log(token, '+++++++++++++++++++++++')
-    //                 if (!token) {
-    //                     console.warn('No token from getAccessToken()')
-    //                     // return Promise.resolve(null)
-    //                 }
-    //                 localStorage.setItem('privyAccessToken', token)
-    //                 // return Promise.resolve(null)
-    //             })
-    //             .catch((err) => {
-    //                 console.log('kyyas', '+++++++++++++++++++++++')
-    //                 console.error('Error fetching/creating user =>', err)
-    //             })
-    //     }
-    // }, [ready, authenticated, user])
 
     // Auto-scroll to the latest message
     useEffect(() => {
@@ -356,6 +338,8 @@ const AiChat: React.FC = () => {
         )
     }
 
+    const { login: login2 } = useLoginWithTelegram()
+
     return (
         <div className="col-span-12 h-[96vh]">
             <Navbar />
@@ -379,11 +363,14 @@ const AiChat: React.FC = () => {
                             <span className="font-normal">Chat with Coinbeats AI</span>
                             <IconHelpCircle className="w-4 h-4" />
                             <button
-                                onClick={async () => {
-                                    if (authenticated) await logout()
-                                    // const launchParams = retrieveLaunchParams()
-                                    // linkTelegram({ launchParams })
-                                    login()
+                                // onClick={async () => {
+                                //     if (authenticated) await logout()
+                                //     // const launchParams = retrieveLaunchParams()
+                                //     // linkTelegram({ launchParams })
+                                //     // login()
+                                // }}
+                                onClick={() => {
+                                    login2()
                                 }}
                                 className="border rounded p-1"
                             >
