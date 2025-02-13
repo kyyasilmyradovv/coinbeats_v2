@@ -7,7 +7,7 @@ export function getPrivyConfig(theme: 'dark' | 'light'): PrivyClientConfig {
             requireUserPasswordOnCreate: true,
             showWalletUIs: true
         },
-        loginMethods: ['wallet', 'email', 'telegram'],
+        loginMethods: ['telegram'],
         appearance: {
             showWalletLoginFirst: true,
             theme,

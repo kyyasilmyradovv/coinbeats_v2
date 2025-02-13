@@ -10,6 +10,7 @@ import Navbar from '../common/Navbar'
 import bunnyLogo from '../../images/bunny-mascot.png'
 import axiosInstance from '~/api/axiosInstance'
 import Typewriter from './components/Typewriter'
+import { retrieveLaunchParams } from '@telegram-apps/bridge'
 
 interface ResponseMessage {
     sender: string // "user" or "ai"
@@ -62,6 +63,7 @@ const AiChat: React.FC = () => {
                 })
         } else {
             // login()
+            // linkTelegram()
         }
     }, [ready, authenticated, user, getAccessToken])
 
@@ -376,7 +378,12 @@ const AiChat: React.FC = () => {
                             <button
                                 onClick={async () => {
                                     if (authenticated) await logout()
-                                    linkTelegram()
+                                    const launchParams = retrieveLaunchParams()
+
+                                    alert(launchParams)
+                                    linkTelegram({ launchParams })
+
+                                    alert(user)
                                     // login()
                                 }}
                             >
