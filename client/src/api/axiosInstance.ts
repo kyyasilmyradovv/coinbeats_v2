@@ -5,7 +5,7 @@ import useAuthStore from '../store/useAuthStore'
 import useSessionStore from '../store/useSessionStore'
 
 const axiosInstance = axios.create({
-    baseURL: import.meta.env.VITE_API_BASE_URL // Automatically switches based on environment
+    baseURL: import.meta.env.VITE_API_BASE_URL
 })
 
 // Request interceptor for adding token to requests
@@ -14,6 +14,12 @@ axiosInstance.interceptors.request.use(
         const accessToken = useAuthStore.getState().accessToken || localStorage.getItem('accessToken')
         if (accessToken) {
             config.headers['Authorization'] = `Bearer ${accessToken}`
+        }
+
+        const privyToken = localStorage.getItem('privyAccessToken')
+
+        if (privyToken) {
+            config.headers['Authorization'] = `Privy ${privyToken}`
         }
         return config
     },

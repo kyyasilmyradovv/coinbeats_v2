@@ -2,13 +2,14 @@
 
 import React, { useEffect, useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Page, List, ListInput, Searchbar } from 'konsta/react'
+import { Page, List, ListInput, Searchbar, Button } from 'konsta/react'
 import Navbar from '../components/common/Navbar'
 import Sidebar from '../components/common/Sidebar'
 import useDiscoverStore from '../store/useDiscoverStore'
 import useCategoryChainStore from '../store/useCategoryChainStore'
 import BottomTabBar from '../components/BottomTabBar'
 import { Icon } from '@iconify/react'
+import { IconBrandAdobeIllustrator, IconChartDots } from '@tabler/icons-react'
 
 const DiscoverPage: React.FC = () => {
     const navigate = useNavigate()
@@ -67,7 +68,7 @@ const DiscoverPage: React.FC = () => {
     }, [fetchEducators, fetchPodcasts, fetchTutorials, fetchYoutubeChannels, fetchTelegramGroups])
 
     // We removed the "All" tab
-    const tabs = ['Educators', 'Podcasts', 'Youtube Channels', 'TG Groups', 'Tutorials']
+    const tabs = ['Educators', 'Podcasts', 'Youtube Channels', 'TG Groups', 'Tutorials', 'AI']
 
     // Filter data
     const filteredData = useMemo(() => {
@@ -348,180 +349,202 @@ const DiscoverPage: React.FC = () => {
                             </div>
                         </div>
                     </div>
-
                     {renderTabButtons()}
-
                     {/* Render total items */}
                     <div className="text-gray-300 text-xs mt-2 ml-6">
                         <span className="text-white font-bold">{filteredData.length} </span>
                         Items
                     </div>
-
                     {/* Grid Layout */}
                     <div className="grid grid-cols-3 gap-0 px-2 pt-1 pb-16">
-                        {filteredData.map((item) => {
-                            const links = detectPlatformLinks(item)
+                        {/* Ai Chat Card */}
+                        {activeFilter == 'AI' && (
+                            <div key="ai-chat" className="relative cursor-pointer">
+                                <div className="absolute inset-0 pointer-events-none rounded-2xl z-0 coinbeats-background mx-[7px] mt-[7px] mb-[15px] items-center justify-center"></div>
 
-                            return (
-                                <div key={`${item.contentType}-${item.id}`} className="relative cursor-pointer" onClick={() => handleCardClick(item)}>
-                                    <div
-                                        className="
-                      same-height-card relative flex flex-col items-center text-center
-                      p-0.5 mb-4 m-2 rounded-2xl shadow-lg overflow-visible z-10
-                      bg-white dark:bg-zinc-900 border border-gray-300 dark:border-gray-600
-                    "
+                                <div className="relative same-height-card flex flex-col items-center text-center p-0 !mb-4 !m-2 rounded-2xl shadow-lg overflow-visible z-10 bg-white dark:bg-zinc-900 coinbeats-content border-none">
+                                    <IconBrandAdobeIllustrator className="absolute top-1 left-1 h-6 w-6 text-orange-500" />
+                                    <IconChartDots className="mt-5 h-15 w-15 mb-2" />
+                                    <div className="text-md font-bold mt-3">Your first steps into crypto</div>
+                                    <Button
+                                        outline
+                                        rounded
+                                        className=" mt-4 font-bold text-md shadow-xl !h-6 !mb-3 w-24 md:w-36 lg:w-[80%]"
+                                        style={{
+                                            background: 'linear-gradient(to left, #ff0077, #7700ff)',
+                                            color: '#fff'
+                                        }}
+                                        onClick={() => navigate('/discover/ai-chat')}
                                     >
-                                        {/* Type label at top-left */}
-                                        <span className="absolute top-1 left-1 text-2xs bg-black bg-opacity-70 text-white px-1 py-0 rounded">
-                                            {item.contentType}
-                                        </span>
+                                        Learn
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
 
-                                        {/* Main image / name/title */}
-                                        {item.contentType === 'Educator' && (
-                                            <>
-                                                {item.logoUrl && (
-                                                    <div className="flex items-center justify-center w-full mt-2">
-                                                        <img
-                                                            alt={item.name}
-                                                            className="h-20 w-20 rounded-full mb-2"
-                                                            src={constructImageUrl(item.logoUrl)}
-                                                            loading="lazy"
-                                                        />
-                                                    </div>
-                                                )}
-                                                <div className="text-md font-bold mb-2">{item.name}</div>
-                                            </>
-                                        )}
+                        {activeFilter != 'AI' &&
+                            filteredData.map((item) => {
+                                const links = detectPlatformLinks(item)
 
-                                        {item.contentType === 'Podcast' && (
-                                            <>
-                                                {item.logoUrl ? (
-                                                    <div className="flex items-center justify-center w-full mt-2">
-                                                        <img
-                                                            alt={item.name}
-                                                            className="h-20 w-20 rounded-full mb-2"
-                                                            src={constructImageUrl(item.logoUrl)}
-                                                            loading="lazy"
-                                                        />
-                                                    </div>
-                                                ) : (
-                                                    <div className="h-16 w-16 rounded-full bg-gray-300 mb-2 mt-1" />
-                                                )}
-                                                <div className="text-md font-bold mb-2">{item.name}</div>
-                                            </>
-                                        )}
+                                return (
+                                    <div key={`${item.contentType}-${item.id}`} className="relative cursor-pointer" onClick={() => handleCardClick(item)}>
+                                        <div
+                                            className="
+                                            same-height-card relative flex flex-col items-center text-center
+                                            p-0.5 mb-4 m-2 rounded-2xl shadow-lg overflow-visible z-10
+                                            bg-white dark:bg-zinc-900 border border-gray-300 dark:border-gray-600
+                                            "
+                                        >
+                                            {/* Type label at top-left */}
+                                            <span className="absolute top-1 left-1 text-2xs bg-black bg-opacity-70 text-white px-1 py-0 rounded">
+                                                {item.contentType}
+                                            </span>
 
-                                        {item.contentType === 'Tutorial' && (
-                                            <>
-                                                {item.logoUrl ? (
-                                                    <div className="flex items-center justify-center w-full mt-2">
-                                                        <img
-                                                            alt={item.title}
-                                                            className="h-20 w-20 rounded-full mb-2"
-                                                            src={constructImageUrl(item.logoUrl)}
-                                                            loading="lazy"
-                                                        />
-                                                    </div>
-                                                ) : (
-                                                    <div className="h-16 w-16 rounded-full bg-gray-300 mb-2 mt-1" />
-                                                )}
-                                                <div className="text-md font-bold mb-2">{item.title}</div>
-                                            </>
-                                        )}
-
-                                        {item.contentType === 'YoutubeChannel' && (
-                                            <>
-                                                {item.logoUrl ? (
-                                                    <div className="flex items-center justify-center w-full mt-2">
-                                                        <img
-                                                            alt={item.name}
-                                                            className="h-20 w-20 rounded-full mb-2"
-                                                            src={constructImageUrl(item.logoUrl)}
-                                                            loading="lazy"
-                                                        />
-                                                    </div>
-                                                ) : (
-                                                    <div className="h-16 w-16 rounded-full bg-gray-300 mb-2 mt-1" />
-                                                )}
-                                                <div className="text-md font-bold mb-2">{item.name}</div>
-                                            </>
-                                        )}
-
-                                        {item.contentType === 'TelegramGroup' && (
-                                            <>
-                                                {item.logoUrl ? (
-                                                    <div className="flex items-center justify-center w-full mt-2">
-                                                        <img
-                                                            alt={item.name}
-                                                            className="h-20 w-20 rounded-full mb-2"
-                                                            src={constructImageUrl(item.logoUrl)}
-                                                            loading="lazy"
-                                                        />
-                                                    </div>
-                                                ) : (
-                                                    <div className="h-16 w-16 rounded-full bg-gray-300 mb-2 mt-1" />
-                                                )}
-                                                <div className="text-md font-bold mb-2">{item.name}</div>
-                                            </>
-                                        )}
-
-                                        {/* Icons for any platform links */}
-                                        {links.length > 0 && (
-                                            <div className="flex gap-1 mt-1 mb-2 justify-center items-center">
-                                                {links.map((link, i) => {
-                                                    // Make substack icon a bit smaller
-                                                    const iconSize =
-                                                        link.label === 'Substack'
-                                                            ? { width: '1.5rem', height: '1.5rem', padding: '0.2rem' }
-                                                            : { width: '1.5rem', height: '1.5rem' }
-                                                    return (
-                                                        <div
-                                                            key={i}
-                                                            title={link.label}
-                                                            className="p-1 rounded-full"
-                                                            style={{ backgroundColor: '#444' }}
-                                                            onClick={(e) => {
-                                                                // Prevent card click from also navigating
-                                                                e.stopPropagation()
-                                                                window.open(link.url, '_blank')
-                                                            }}
-                                                        >
-                                                            <Icon icon={link.icon} style={{ color: link.color, ...iconSize }} />
+                                            {/* Main image / name/title */}
+                                            {item.contentType === 'Educator' && (
+                                                <>
+                                                    {item.logoUrl && (
+                                                        <div className="flex items-center justify-center w-full mt-2">
+                                                            <img
+                                                                alt={item.name}
+                                                                className="h-20 w-20 rounded-full mb-2"
+                                                                src={constructImageUrl(item.logoUrl)}
+                                                                loading="lazy"
+                                                            />
                                                         </div>
-                                                    )
-                                                })}
-                                            </div>
-                                        )}
+                                                    )}
+                                                    <div className="text-md font-bold mb-2">{item.name}</div>
+                                                </>
+                                            )}
 
-                                        {/* Categories / Chains badges */}
-                                        <div className="flex flex-wrap gap-1 justify-center mt-1 mb-2">
-                                            {/* Categories */}
-                                            {item.categories &&
-                                                item.categories.map((cat: any, index: number) => (
-                                                    <span
-                                                        key={`category-${index}`}
-                                                        className="bg-blue-200 dark:bg-blue-800 px-1 !py-0 rounded-full text-[0.5rem]"
-                                                    >
-                                                        {cat.name}
-                                                    </span>
-                                                ))}
-                                            {/* Chains */}
-                                            {item.chains &&
-                                                item.chains.map((ch: any, index: number) => (
-                                                    <span
-                                                        key={`chain-${index}`}
-                                                        className="bg-green-200 dark:bg-green-800 px-1 py-0 rounded-full text-[0.5rem]"
-                                                    >
-                                                        {ch.name}
-                                                    </span>
-                                                ))}
+                                            {item.contentType === 'Podcast' && (
+                                                <>
+                                                    {item.logoUrl ? (
+                                                        <div className="flex items-center justify-center w-full mt-2">
+                                                            <img
+                                                                alt={item.name}
+                                                                className="h-20 w-20 rounded-full mb-2"
+                                                                src={constructImageUrl(item.logoUrl)}
+                                                                loading="lazy"
+                                                            />
+                                                        </div>
+                                                    ) : (
+                                                        <div className="h-16 w-16 rounded-full bg-gray-300 mb-2 mt-1" />
+                                                    )}
+                                                    <div className="text-md font-bold mb-2">{item.name}</div>
+                                                </>
+                                            )}
+
+                                            {item.contentType === 'Tutorial' && (
+                                                <>
+                                                    {item.logoUrl ? (
+                                                        <div className="flex items-center justify-center w-full mt-2">
+                                                            <img
+                                                                alt={item.title}
+                                                                className="h-20 w-20 rounded-full mb-2"
+                                                                src={constructImageUrl(item.logoUrl)}
+                                                                loading="lazy"
+                                                            />
+                                                        </div>
+                                                    ) : (
+                                                        <div className="h-16 w-16 rounded-full bg-gray-300 mb-2 mt-1" />
+                                                    )}
+                                                    <div className="text-md font-bold mb-2">{item.title}</div>
+                                                </>
+                                            )}
+
+                                            {item.contentType === 'YoutubeChannel' && (
+                                                <>
+                                                    {item.logoUrl ? (
+                                                        <div className="flex items-center justify-center w-full mt-2">
+                                                            <img
+                                                                alt={item.name}
+                                                                className="h-20 w-20 rounded-full mb-2"
+                                                                src={constructImageUrl(item.logoUrl)}
+                                                                loading="lazy"
+                                                            />
+                                                        </div>
+                                                    ) : (
+                                                        <div className="h-16 w-16 rounded-full bg-gray-300 mb-2 mt-1" />
+                                                    )}
+                                                    <div className="text-md font-bold mb-2">{item.name}</div>
+                                                </>
+                                            )}
+
+                                            {item.contentType === 'TelegramGroup' && (
+                                                <>
+                                                    {item.logoUrl ? (
+                                                        <div className="flex items-center justify-center w-full mt-2">
+                                                            <img
+                                                                alt={item.name}
+                                                                className="h-20 w-20 rounded-full mb-2"
+                                                                src={constructImageUrl(item.logoUrl)}
+                                                                loading="lazy"
+                                                            />
+                                                        </div>
+                                                    ) : (
+                                                        <div className="h-16 w-16 rounded-full bg-gray-300 mb-2 mt-1" />
+                                                    )}
+                                                    <div className="text-md font-bold mb-2">{item.name}</div>
+                                                </>
+                                            )}
+
+                                            {/* Icons for any platform links */}
+                                            {links.length > 0 && (
+                                                <div className="flex gap-1 mt-1 mb-2 justify-center items-center">
+                                                    {links.map((link, i) => {
+                                                        // Make substack icon a bit smaller
+                                                        const iconSize =
+                                                            link.label === 'Substack'
+                                                                ? { width: '1.5rem', height: '1.5rem', padding: '0.2rem' }
+                                                                : { width: '1.5rem', height: '1.5rem' }
+                                                        return (
+                                                            <div
+                                                                key={i}
+                                                                title={link.label}
+                                                                className="p-1 rounded-full"
+                                                                style={{ backgroundColor: '#444' }}
+                                                                onClick={(e) => {
+                                                                    // Prevent card click from also navigating
+                                                                    e.stopPropagation()
+                                                                    window.open(link.url, '_blank')
+                                                                }}
+                                                            >
+                                                                <Icon icon={link.icon} style={{ color: link.color, ...iconSize }} />
+                                                            </div>
+                                                        )
+                                                    })}
+                                                </div>
+                                            )}
+
+                                            {/* Categories / Chains badges */}
+                                            <div className="flex flex-wrap gap-1 justify-center mt-1 mb-2">
+                                                {/* Categories */}
+                                                {item.categories &&
+                                                    item.categories.map((cat: any, index: number) => (
+                                                        <span
+                                                            key={`category-${index}`}
+                                                            className="bg-blue-200 dark:bg-blue-800 px-1 !py-0 rounded-full text-[0.5rem]"
+                                                        >
+                                                            {cat.name}
+                                                        </span>
+                                                    ))}
+                                                {/* Chains */}
+                                                {item.chains &&
+                                                    item.chains.map((ch: any, index: number) => (
+                                                        <span
+                                                            key={`chain-${index}`}
+                                                            className="bg-green-200 dark:bg-green-800 px-1 py-0 rounded-full text-[0.5rem]"
+                                                        >
+                                                            {ch.name}
+                                                        </span>
+                                                    ))}
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            )
-                        })}
+                                )
+                            })}
                     </div>
-
                     <BottomTabBar activeTab={activeTab} setActiveTab={setActiveTab} />
                 </div>
             </div>

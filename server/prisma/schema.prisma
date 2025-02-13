@@ -212,6 +212,7 @@ model Point {
   verificationTaskId Int?
   createdAt          DateTime          @default(now())
   description        String?
+  is_active          Boolean           @default(true)
   academy            Academy?          @relation("AcademyToPoint", fields: [academyId], references: [id])
   user               User              @relation(fields: [userId], references: [id])
   verificationTask   VerificationTask? @relation(fields: [verificationTaskId], references: [id])
