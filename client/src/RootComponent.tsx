@@ -64,6 +64,7 @@ import BannedPage from './components/BannedPage' // <-- if you have this file
 import CoinsPage from './pages/CoinsPage'
 import PointsControlPage from './pages/PointsControlPage'
 import CoinShowPage from './pages/CoinShowPage'
+import AiChat from './components/AiChat/AiChat'
 
 function RootComponent() {
     const [isLoading, setIsLoading] = useState(true)
@@ -397,6 +398,7 @@ function RootComponent() {
                         <Route path="/discover/tutorials/:id" element={<TutorialDetailPage />} />
                         <Route path="/discover/youtube-channels/:id" element={<YoutubeChannelDetailPage />} />
                         <Route path="/discover/telegram-groups/:id" element={<TelegramGroupDetailPage />} />
+                        <Route path="/discover/ai-chat" element={<AiChat />} />
                     </Routes>
                 </BookmarkProvider>
             </KonstaApp>

@@ -1,6 +1,6 @@
 // client/src/index.tsx
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter as Router } from 'react-router-dom'
 import App from './App'
@@ -8,6 +8,10 @@ import IntroPage from './components/IntroPage'
 import MaintenancePage from './components/MaintenancePage'
 import * as serviceWorker from './serviceWorker'
 import { SDKProvider } from '@telegram-apps/sdk-react'
+import { wagmiConfig } from './config/wagmiConfig.js'
+import { WagmiProvider } from 'wagmi'
+import { PrivyProvider } from '@privy-io/react-auth'
+import { getPrivyConfig as basePrivyConfig } from './config/privyConfig'
 
 // Initialize dark mode settings
 const darkModeSetting = localStorage.getItem('darkMode')
@@ -46,10 +50,43 @@ const Index = () => {
         setShowIntro(false)
     }
 
+    const dynamicPrivyConfig = useMemo(() => {
+        // Call the basePrivyConfig function with the current theme to get the config object
+        const baseConfig = basePrivyConfig('dark')
+        // return {
+
+        // }
+
+        return {
+            ...baseConfig,
+            embeddedWallets: {
+                createOnLogin: 'users-without-wallets'
+            },
+            appearance: {
+                ...(baseConfig.appearance ?? {}),
+                theme: 'dark'
+            },
+            fundingMethodConfig: {
+                ...(baseConfig.fundingMethodConfig ?? {}),
+                moonpay: {
+                    ...(baseConfig.fundingMethodConfig?.moonpay ?? {}),
+                    uiConfig: {
+                        ...(baseConfig.fundingMethodConfig?.moonpay?.uiConfig ?? {}),
+                        theme: 'dark'
+                    }
+                }
+            }
+        }
+    }, [])
+
     return (
         <React.StrictMode>
             <SDKProvider>
-                <Router>{showIntro ? <IntroPage onComplete={handleIntroComplete} /> : <App />}</Router>
+                <PrivyProvider appId="cm71yn23l026rpz7ps7rrfhqn" config={dynamicPrivyConfig}>
+                    <WagmiProvider config={wagmiConfig}>
+                        <Router>{showIntro ? <IntroPage onComplete={handleIntroComplete} /> : <App />}</Router>
+                    </WagmiProvider>
+                </PrivyProvider>
             </SDKProvider>
         </React.StrictMode>
     )
