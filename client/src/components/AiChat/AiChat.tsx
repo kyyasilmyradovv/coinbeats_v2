@@ -9,8 +9,10 @@ import Navbar from '../common/Navbar'
 import bunnyLogo from '../../images/bunny-mascot.png'
 import axiosInstance from '~/api/axiosInstance'
 import Typewriter from './components/Typewriter'
-import { retrieveLaunchParams } from '@telegram-apps/bridge'
+import { isTMA } from '@telegram-apps/bridge'
+// import { retrieveLaunchParams } from '@telegram-apps/bridge'
 // import { retrieveLaunchParams } from '../../utils/telegramUtils'
+import { useInitData } from '@telegram-apps/sdk-react'
 
 interface ResponseMessage {
     sender: string // "user" or "ai"
@@ -44,6 +46,9 @@ const AiChat: React.FC = () => {
     const [notification, setNotification] = useState<{ title: string; text: string } | null>(null)
 
     const { ready, authenticated, user, getAccessToken, logout, login } = usePrivy()
+
+    const initData = useInitData()
+    console.log('initData:', initData, '++++++++++++++++++++')
 
     // useEffect(() => {
     //     if (ready && authenticated && user) {
@@ -352,13 +357,16 @@ const AiChat: React.FC = () => {
         if (authenticated) await logout()
         console.log(authenticated, ready, ' - Auto Login Via Tg')
 
+        console.log(await isTMA('complete'), ' - tg mini ap or not ???????')
+
         if (ready && !authenticated) {
-            console.log('Trying to retrieve launch params...')
-            const launchParams = retrieveLaunchParams()
-            console.log('Using Telegram launch params for auto-login:', JSON.stringify(launchParams, null, 2))
+            // console.log('Trying to retrieve launch params...')
+            // const launchParams = retrieveLaunchParams()
+            // console.log('Using Telegram launch params for auto-login:', JSON.stringify(launchParams, null, 2))
 
             // Automatically attempt login using Telegram credentials.
-            loginWithTelegram({ launchParams })
+
+            loginWithTelegram({ initData })
 
             console.log('Logged in via tg successfully')
         }
