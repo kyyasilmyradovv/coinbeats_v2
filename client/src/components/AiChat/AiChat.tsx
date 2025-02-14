@@ -394,7 +394,7 @@ const AiChat: React.FC = () => {
 
                                     linkTelegram({ launchParams })
 
-                                    autoLogin()
+                                    // autoLogin()
                                 }}
                                 className="border rounded p-1"
                             >
