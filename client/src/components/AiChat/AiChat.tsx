@@ -380,7 +380,6 @@ const AiChat: React.FC = () => {
                             <button
                                 // onClick={async () => {
                                 //     if (authenticated) await logout()
-                                //     // const launchParams = retrieveLaunchParams()
                                 //     // linkTelegram({ launchParams })
                                 //     // login()
                                 // }}
@@ -389,6 +388,11 @@ const AiChat: React.FC = () => {
                                     // login()
                                     // const re = await login2()
                                     // console.log(re, '----------- tg login response')
+
+                                    const launchParams = retrieveLaunchParams()
+                                    console.log('Sending to Privy:', JSON.stringify(launchParams, null, 2))
+
+                                    linkTelegram({ launchParams })
 
                                     autoLogin()
                                 }}
