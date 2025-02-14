@@ -9,7 +9,6 @@ import Navbar from '../common/Navbar'
 import bunnyLogo from '../../images/bunny-mascot.png'
 import axiosInstance from '~/api/axiosInstance'
 import Typewriter from './components/Typewriter'
-import { isTMA } from '@telegram-apps/bridge'
 // import { retrieveLaunchParams } from '@telegram-apps/bridge'
 // import { retrieveLaunchParams } from '../../utils/telegramUtils'
 import { useInitData } from '@telegram-apps/sdk-react'
@@ -48,27 +47,53 @@ const AiChat: React.FC = () => {
     const { ready, authenticated, user, getAccessToken, logout, login } = usePrivy()
 
     const initData = useInitData()
-    console.log('initData:', initData, '++++++++++++++++++++')
 
-    // useEffect(() => {
-    //     if (ready && authenticated && user) {
-    //         getAccessToken()
-    //             .then((token) => {
-    //                 if (!token) {
-    //                     console.warn('No token from getAccessToken()')
-    //                     // return Promise.resolve(null)
-    //                 }
-    //                 localStorage.setItem('privyAccessToken', token)
-    //                 // return Promise.resolve(null)
-    //             })
-    //             .catch((err) => {
-    //                 console.error('Error fetching/creating user =>', err)
-    //             })
-    //     } else {
-    //         login()
-    //         // linkTelegram()
-    //     }
-    // }, [ready, authenticated, user, getAccessToken])
+    const loginWithTelegram = useLoginWithTelegram({
+        onComplete: (params) => {
+            console.log('Telegram login successful:', params)
+            // You might want to redirect the user or update your app state here.
+        },
+        onError: (error) => {
+            console.error('Telegram login failed:', error)
+        }
+    })
+
+    // This function now only uses the already-created loginWithTelegram function
+    const handleTelegramAuth = async () => {
+        if (authenticated) await logout()
+        console.log(authenticated, ready, ' - Auto Login Via Tg')
+        console.log('initData:', initData, '++++++++++++++++++++')
+
+        if (ready && !authenticated) {
+            loginWithTelegram({ initData })
+            console.log('Logged in via tg successfully')
+        }
+    }
+
+    // Auto-trigger the auth process on mount
+    useEffect(() => {
+        handleTelegramAuth()
+    }, [ready, authenticated])
+
+    useEffect(() => {
+        if (ready && authenticated && user) {
+            getAccessToken()
+                .then((token) => {
+                    if (!token) {
+                        console.warn('No token from getAccessToken()')
+                        // return Promise.resolve(null)
+                    }
+                    localStorage.setItem('privyAccessToken', token)
+                    // return Promise.resolve(null)
+                })
+                .catch((err) => {
+                    console.error('Error fetching/creating user =>', err)
+                })
+        } else {
+            // login()
+            // linkTelegram()
+        }
+    }, [ready, authenticated, user, getAccessToken])
 
     // Auto-scroll to the latest message
     useEffect(() => {
@@ -341,41 +366,6 @@ const AiChat: React.FC = () => {
             </div>
         )
     }
-
-    const loginWithTelegram = useLoginWithTelegram({
-        onComplete: (params) => {
-            console.log('Telegram login successful:', params)
-            // You might want to redirect the user or update your app state here.
-        },
-        onError: (error) => {
-            console.error('Telegram login failed:', error)
-        }
-    })
-
-    // This function now only uses the already-created loginWithTelegram function
-    const handleTelegramAuth = async () => {
-        if (authenticated) await logout()
-        console.log(authenticated, ready, ' - Auto Login Via Tg')
-
-        console.log(await isTMA('complete'), ' - tg mini ap or not ???????')
-
-        if (ready && !authenticated) {
-            // console.log('Trying to retrieve launch params...')
-            // const launchParams = retrieveLaunchParams()
-            // console.log('Using Telegram launch params for auto-login:', JSON.stringify(launchParams, null, 2))
-
-            // Automatically attempt login using Telegram credentials.
-
-            loginWithTelegram({ initData })
-
-            console.log('Logged in via tg successfully')
-        }
-    }
-
-    // Auto-trigger the auth process on mount
-    useEffect(() => {
-        handleTelegramAuth()
-    }, [ready, authenticated])
 
     return (
         <div className="col-span-12 h-[96vh]">
