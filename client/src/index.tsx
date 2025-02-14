@@ -59,6 +59,7 @@ const Index = () => {
 
         return {
             ...baseConfig,
+            autoLogin: true,
             embeddedWallets: {
                 createOnLogin: 'users-without-wallets'
             },
