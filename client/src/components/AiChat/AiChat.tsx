@@ -45,7 +45,7 @@ const AiChat: React.FC = () => {
     const [cancelled, setCancelled] = useState(false)
     const [notification, setNotification] = useState<{ title: string; text: string } | null>(null)
 
-    const { ready, authenticated, user, getAccessToken, logout, login, linkTelegram } = usePrivy()
+    const { ready, authenticated, user, getAccessToken, logout, login } = usePrivy()
 
     const loginWithTelegram = useLoginWithTelegram({
         onComplete: (params) => {
@@ -338,21 +338,42 @@ const AiChat: React.FC = () => {
         )
     }
 
-    const { login: login2 } = useLoginWithTelegram()
+    // const { login: login2 } = useLoginWithTelegram()
 
-    const autoLogin = () => {
-        const loginWithTelegram = useLoginWithTelegram({
-            onComplete: (params) => {
-                console.log('Telegram auto-login successful:', params)
-                alert('Login successful: ' + JSON.stringify(params))
-            },
-            onError: (error) => {
-                console.error('Telegram login error:', error)
-                alert('Login failed: ' + error)
-            }
-        })
+    // const autoLogin = () => {
+    //     const loginWithTelegram = useLoginWithTelegram({
+    //         onComplete: (params) => {
+    //             console.log('Telegram auto-login successful:', params)
+    //             alert('Login successful: ' + JSON.stringify(params))
+    //         },
+    //         onError: (error) => {
+    //             console.error('Telegram login error:', error)
+    //             alert('Login failed: ' + error)
+    //         }
+    //     })
 
-        loginWithTelegram.login() // Auto-trigger login
+    //     loginWithTelegram.login() // Auto-trigger login
+    // }
+
+    const linkTelegram = useLoginWithTelegram()
+
+    const handleTelegramAuth = async () => {
+        login()
+        console.log(authenticated, ' - authenticated')
+        if (!authenticated) {
+            console.log('User not authenticated. Logging in to Privy first...')
+            await login() // Ensure the user is logged in first
+        }
+
+        const launchParams = retrieveLaunchParams()
+        console.log('Sending to Privy:', JSON.stringify(launchParams, null, 2))
+
+        try {
+            await linkTelegram({ launchParams })
+            console.log('Telegram linked successfully!')
+        } catch (error) {
+            console.error('Failed to link Telegram:', error)
+        }
     }
 
     return (
@@ -383,19 +404,20 @@ const AiChat: React.FC = () => {
                                 //     // linkTelegram({ launchParams })
                                 //     // login()
                                 // }}
-                                onClick={async () => {
-                                    if (authenticated) await logout()
-                                    // login()
-                                    // const re = await login2()
-                                    // console.log(re, '----------- tg login response')
+                                // onClick={async () => {
+                                //     if (authenticated) await logout()
+                                //     // login()
+                                //     // const re = await login2()
+                                //     // console.log(re, '----------- tg login response')
 
-                                    const launchParams = retrieveLaunchParams()
-                                    console.log('Sending to Privy:', JSON.stringify(launchParams, null, 2))
+                                //     const launchParams = retrieveLaunchParams()
+                                //     console.log('Sending to Privy:', JSON.stringify(launchParams, null, 2))
 
-                                    linkTelegram({ launchParams })
+                                //     linkTelegram({ launchParams })
 
-                                    // autoLogin()
-                                }}
+                                //     // autoLogin()
+                                // }}
+                                onClick={handleTelegramAuth}
                                 className="border rounded p-1"
                             >
                                 Re-Login
