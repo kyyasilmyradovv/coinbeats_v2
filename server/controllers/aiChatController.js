@@ -67,7 +67,7 @@ exports.handleChat = async (req, res) => {
   try {
     const { prompt, address, chainId, messages = [] } = req.body;
 
-    console.log('[chatController] Received chat request:', req.body);
+    // console.log('[chatController] Received chat request:', req.body);
 
     if (!prompt || !address) {
       return res.status(400).json({ error: 'Prompt and address required' });
