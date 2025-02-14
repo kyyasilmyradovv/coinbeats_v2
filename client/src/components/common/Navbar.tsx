@@ -1,6 +1,6 @@
 // client/src/components/common/Navbar.tsx
 
-import React, { useEffect, useMemo } from 'react'
+import React, { useMemo } from 'react'
 import { useInitData } from '@telegram-apps/sdk-react'
 import { useNavigate } from 'react-router-dom'
 import { Chip, NavbarBackLink, Navbar as KonstaNavbar } from 'konsta/react'
@@ -10,7 +10,6 @@ import avatar from '../../images/bunny-head.png'
 import useUserStore from '../../store/useUserStore'
 import useSessionStore from '../../store/useSessionStore'
 import StorefrontIcon from '@mui/icons-material/Storefront'
-import { usePrivy } from '@privy-io/react-auth'
 
 interface NavbarProps {
     handleNavigationAttempt?: (newFilter: string | null, navigationAction: () => void) => void
@@ -42,27 +41,6 @@ const Navbar: React.FC<Partial<NavbarProps>> = ({ handleNavigationAttempt, page 
             navigationAction()
         }
     }
-
-    // const { ready, authenticated, user, getAccessToken, login } = usePrivy()
-
-    // useEffect(() => {
-    //     if (ready && authenticated && user) {
-    //         getAccessToken()
-    //             .then((token) => {
-    //                 if (!token) {
-    //                     console.warn('No token from getAccessToken()')
-    //                     // return Promise.resolve(null)
-    //                 }
-    //                 localStorage.setItem('privyAccessToken', token)
-    //                 // return Promise.resolve(null)
-    //             })
-    //             .catch((err) => {
-    //                 console.error('Error fetching/creating user =>', err)
-    //             })
-    //     } else {
-    //         login()
-    //     }
-    // }, [ready, authenticated, user, getAccessToken])
 
     return (
         <KonstaNavbar
