@@ -60,8 +60,8 @@ async function classifyPrompt(prompt) {
  * Handles the chat request:
  *  - If classified as "twitter", retrieve Twitter data from Brian.
  *  - If classified as "blockchain", try Brian’s agent.
- *    -> if Brian fails, fallback to OpenAI with our Barista persona
- *  - Else, use OpenAI ChatGPT with our Barista persona.
+ *    -> if Brian fails, fallback to OpenAI with our Coinbeats persona
+ *  - Else, use OpenAI ChatGPT with our Coinbeats persona.
  */
 exports.handleChat = async (req, res) => {
   try {
@@ -91,7 +91,7 @@ exports.handleChat = async (req, res) => {
         messages,
       });
 
-      // If Brian can't answer, fallback to OpenAI with Barista system prompt
+      // If Brian can't answer, fallback to OpenAI with Coinbeats system prompt
       if (brianResponse.error) {
         console.log('[chatController] Brian failed, switching to OpenAI...');
         const fallbackResponse = await openaiClient.chat.completions.create({
@@ -99,8 +99,8 @@ exports.handleChat = async (req, res) => {
           messages: [
             {
               role: 'system',
-              // Insert Barista persona text from agent_virtuals
-              content: agentVirtuals.description || 'A friendly barista agent.',
+              content:
+                agentVirtuals.description || 'A friendly coinbeats agent.',
             },
             { role: 'user', content: prompt },
           ],
@@ -113,13 +113,14 @@ exports.handleChat = async (req, res) => {
       return res.status(200).json({ result: brianResponse });
     }
 
-    // Otherwise, general chat: answer directly using OpenAI with Barista persona
+    // Otherwise, general chat: answer directly using OpenAI with Coinbeats persona
     const chatResponse = await openaiClient.chat.completions.create({
       model: 'gpt-4',
       messages: [
         {
           role: 'system',
-          content: agentVirtuals.description || 'A friendly barista agent.',
+          content:
+            agentVirtuals.description || 'A friendly Coinbeats AI agent.',
         },
         { role: 'user', content: prompt },
       ],

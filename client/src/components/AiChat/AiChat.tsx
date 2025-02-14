@@ -10,7 +10,6 @@ import bunnyLogo from '../../images/bunny-mascot.png'
 import axiosInstance from '~/api/axiosInstance'
 import Typewriter from './components/Typewriter'
 // import { retrieveLaunchParams } from '@telegram-apps/bridge'
-// import { retrieveLaunchParams } from '../../utils/telegramUtils'
 import { useInitData } from '@telegram-apps/sdk-react'
 
 interface ResponseMessage {
@@ -405,9 +404,9 @@ const AiChat: React.FC = () => {
                                     handleTelegramAuth()
                                     login()
                                 }}
-                                className="border rounded p-1"
+                                className="border rounded p-1 px-2 mt-2  bg-gradient-to-r from-[#ff0077] to-[#7700ff] a"
                             >
-                                Logout-then-ReLogin
+                                Login to Coinbeats AI
                             </button>
                         </button>
                         <InitialPrompts onSelectPrompt={(promptText) => setPrompt(promptText)} />
