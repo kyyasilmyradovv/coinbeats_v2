@@ -42,7 +42,6 @@ const AiChat: React.FC = () => {
     const [prompt, setPrompt] = useState('')
     const [responses, setResponses] = useState<Response[]>([])
     const [loading, setLoading] = useState(false)
-    const [cancelled, setCancelled] = useState(false)
     const [notification, setNotification] = useState<{ title: string; text: string } | null>(null)
 
     const { ready, authenticated, user, getAccessToken, logout, login } = usePrivy()
@@ -62,7 +61,7 @@ const AiChat: React.FC = () => {
                     console.error('Error fetching/creating user =>', err)
                 })
         } else {
-            // login()
+            login()
             // linkTelegram()
         }
     }, [ready, authenticated, user, getAccessToken])
@@ -88,7 +87,6 @@ const AiChat: React.FC = () => {
 
     const stopPrompt = () => {
         setLoading(false)
-        setCancelled(true)
 
         // Abort the axios request if it's in-flight
         if (abortControllerRef.current) {
@@ -100,6 +98,26 @@ const AiChat: React.FC = () => {
             updated[updated.length - 1].conversationHistory[1].content = 'Prompt cancelled'
             return updated
         })
+        setPrompt('')
+    }
+
+    const handleNewChat = async () => {
+        setLoading(false)
+        const textarea = document.querySelector('textarea')
+        if (textarea) {
+            textarea.style.height = '130px'
+        }
+
+        // if (chatContainerRef.current) {
+        //     chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight
+        // }
+
+        // Abort the axios request if it's in-flight
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort()
+        }
+
+        setResponses([])
         setPrompt('')
     }
 
@@ -140,7 +158,6 @@ const AiChat: React.FC = () => {
             const controller = new AbortController()
             abortControllerRef.current = controller
 
-            const userAddress = wallets[0]?.address
             const res = await axiosInstance.post(
                 '/api/ai-chat/chat',
                 {
@@ -197,32 +214,24 @@ const AiChat: React.FC = () => {
                 return updated
             })
         } catch (error) {
+            if (error?.response?.status == 401) {
+                login()
+                await handleNewChat()
+                return
+            }
+
             console.error('[AiChat] Error sending prompt:', error)
             const errMsg = (error as Error).message || 'Failed to get response from server.'
 
             setResponses((prev) => {
                 const updated = [...prev]
-                updated[updated.length - 1].conversationHistory[1].content = errMsg
+                if (updated?.length) updated[updated.length - 1].conversationHistory[1].content = errMsg
                 return updated
             })
         } finally {
             setLoading(false)
             abortControllerRef.current = null
         }
-    }
-
-    const handleNewChat = async () => {
-        setLoading(false)
-        const textarea = document.querySelector('textarea')
-        if (textarea) {
-            textarea.style.height = '130px'
-        }
-        // if (chatContainerRef.current) {
-        //     chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight
-        // }
-
-        setResponses([])
-        setPrompt('')
     }
 
     const adjustHeight = (textarea: any) => {
@@ -410,13 +419,16 @@ const AiChat: React.FC = () => {
                         }}
                     />
 
-                    <button
-                        className="w-[100px] flex gap-1 justify-center border border-gray-400 p-1 w-[120px] text-gray-400 items-center rounded-lg ml-4 mb-4 absolute bottom-2 left-2 hover:bg-gray-100 hover:text-black"
-                        onClick={handleNewChat}
-                    >
-                        <IconEditCircle size={18} />
-                        New Chat
-                    </button>
+                    {responses?.length > 0 && (
+                        <button
+                            className="w-[100px] flex gap-1 justify-center border border-gray-400 p-1 w-[120px] text-gray-400 items-center rounded-lg ml-4 mb-4 absolute bottom-2 left-2 active:bg-gray-100 active:text-black"
+                            onClick={handleNewChat}
+                            // disabled={loading}
+                        >
+                            <IconEditCircle size={18} />
+                            New Chat
+                        </button>
+                    )}
 
                     {loading ? (
                         <IconPlayerStopFilled
