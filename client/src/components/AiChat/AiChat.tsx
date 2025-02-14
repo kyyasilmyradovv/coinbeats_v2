@@ -60,20 +60,24 @@ const AiChat: React.FC = () => {
 
     // This function now only uses the already-created loginWithTelegram function
     const handleTelegramAuth = async () => {
-        if (authenticated) await logout()
-        console.log(authenticated, ready, ' - Auto Login Via Tg')
+        try {
+            if (authenticated) await logout()
+            console.log(authenticated, ready, ' - Auto Login Via Tg')
 
-        const params = {
-            user: initData?.user,
-            auth_date: initData?.authDate,
-            hash: initData?.hash
-        }
+            const params = {
+                user: initData?.user,
+                auth_date: initData?.authDate,
+                hash: initData?.hash
+            }
 
-        console.log('params: ', params, '  -------------')
+            console.log('params: ', params, '  -------------')
 
-        if (ready && !authenticated) {
-            loginWithTelegram({ params })
-            console.log('Logged in via tg successfully')
+            if (ready && !authenticated) {
+                loginWithTelegram({ launchParams: params })
+                console.log('Logged in via tg successfully')
+            }
+        } catch (error) {
+            console.log(error)
         }
     }
 
@@ -394,10 +398,16 @@ const AiChat: React.FC = () => {
                         <img src={logo1} alt="Coinbeats AI Chat" className="h-[50px] mx-auto" />
                         <h2 className="mt-2 text-2xl font-bold text-white">Coinbeats AI Chat</h2>
                         <button className="flex mb-10 items-center gap-2 text-white text-sm italic">
-                            <span className="font-normal">Chat with Coinbeats AI</span>
-                            <IconHelpCircle className="w-4 h-4" />
-                            <button onClick={handleTelegramAuth} className="border rounded p-1">
-                                Re-Login
+                            {/* <span className="font-normal">Chat with Coinbeats AI</span> */}
+                            {/* <IconHelpCircle className="w-4 h-4" /> */}
+                            <button
+                                onClick={() => {
+                                    handleTelegramAuth()
+                                    login()
+                                }}
+                                className="border rounded p-1"
+                            >
+                                Logout-then-ReLogin
                             </button>
                         </button>
                         <InitialPrompts onSelectPrompt={(promptText) => setPrompt(promptText)} />
