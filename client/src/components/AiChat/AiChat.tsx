@@ -340,6 +340,21 @@ const AiChat: React.FC = () => {
 
     const { login: login2 } = useLoginWithTelegram()
 
+    const autoLogin = () => {
+        const loginWithTelegram = useLoginWithTelegram({
+            onComplete: (params) => {
+                console.log('Telegram auto-login successful:', params)
+                alert('Login successful: ' + JSON.stringify(params))
+            },
+            onError: (error) => {
+                console.error('Telegram login error:', error)
+                alert('Login failed: ' + error)
+            }
+        })
+
+        loginWithTelegram.login() // Auto-trigger login
+    }
+
     return (
         <div className="col-span-12 h-[96vh]">
             <Navbar />
@@ -371,8 +386,11 @@ const AiChat: React.FC = () => {
                                 // }}
                                 onClick={async () => {
                                     if (authenticated) await logout()
-                                    login()
-                                    await login2()
+                                    // login()
+                                    // const re = await login2()
+                                    // console.log(re, '----------- tg login response')
+
+                                    autoLogin()
                                 }}
                                 className="border rounded p-1"
                             >
