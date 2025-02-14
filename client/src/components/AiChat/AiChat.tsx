@@ -1,16 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Button, Card, Notification, Popover } from 'konsta/react'
-import { IconHelpCircle, IconCopy, IconUser, IconEditCircle, IconInnerShadowTopRight, IconPlayerStopFilled, IconArrowUp } from '@tabler/icons-react'
+import { IconHelpCircle, IconCopy, IconEditCircle, IconInnerShadowTopRight, IconPlayerStopFilled, IconArrowUp } from '@tabler/icons-react'
 import { useLoginWithTelegram, usePrivy, useWallets } from '@privy-io/react-auth'
 import { useChainId } from 'wagmi'
 import logo1 from '../../images/coinbeats-l.svg'
 import InitialPrompts from './components/InitialPrompts'
-import cryptographyAxios from '~/api/cryptographyAxios'
 import Navbar from '../common/Navbar'
 import bunnyLogo from '../../images/bunny-mascot.png'
 import axiosInstance from '~/api/axiosInstance'
 import Typewriter from './components/Typewriter'
 import { retrieveLaunchParams } from '@telegram-apps/bridge'
+// import { retrieveLaunchParams } from '../../utils/telegramUtils'
 
 interface ResponseMessage {
     sender: string // "user" or "ai"
@@ -35,7 +35,6 @@ interface Response {
 const AiChat: React.FC = () => {
     const chatContainerRef = useRef<HTMLDivElement>(null)
     // const textareaRef = useRef<HTMLTextAreaElement | null>(null)
-    const { ready: authReady } = usePrivy()
     const { wallets, ready: walletsReady } = useWallets()
     const abortControllerRef = useRef<AbortController | null>(null)
     const chainId = useChainId()
@@ -46,25 +45,25 @@ const AiChat: React.FC = () => {
 
     const { ready, authenticated, user, getAccessToken, logout, login } = usePrivy()
 
-    useEffect(() => {
-        if (ready && authenticated && user) {
-            getAccessToken()
-                .then((token) => {
-                    if (!token) {
-                        console.warn('No token from getAccessToken()')
-                        // return Promise.resolve(null)
-                    }
-                    localStorage.setItem('privyAccessToken', token)
-                    // return Promise.resolve(null)
-                })
-                .catch((err) => {
-                    console.error('Error fetching/creating user =>', err)
-                })
-        } else {
-            login()
-            // linkTelegram()
-        }
-    }, [ready, authenticated, user, getAccessToken])
+    // useEffect(() => {
+    //     if (ready && authenticated && user) {
+    //         getAccessToken()
+    //             .then((token) => {
+    //                 if (!token) {
+    //                     console.warn('No token from getAccessToken()')
+    //                     // return Promise.resolve(null)
+    //                 }
+    //                 localStorage.setItem('privyAccessToken', token)
+    //                 // return Promise.resolve(null)
+    //             })
+    //             .catch((err) => {
+    //                 console.error('Error fetching/creating user =>', err)
+    //             })
+    //     } else {
+    //         login()
+    //         // linkTelegram()
+    //     }
+    // }, [ready, authenticated, user, getAccessToken])
 
     // Auto-scroll to the latest message
     useEffect(() => {
@@ -125,8 +124,8 @@ const AiChat: React.FC = () => {
         const trimmed = prompt.trim()
         if (!trimmed) return
 
-        // if (!authReady || !authenticated) {
-        if (!authReady) {
+        // if (!ready || !authenticated) {
+        if (!ready) {
             setNotification({ title: 'Login required', text: 'Please log in first.' })
             return
         }
@@ -338,23 +337,37 @@ const AiChat: React.FC = () => {
         )
     }
 
-    const handleTelegramAuth = async () => {
-        console.log(authenticated, ' - authenticated')
-        if (!authenticated) {
-            console.log('User not authenticated. Logging in to Privy first...')
-            login()
+    const loginWithTelegram = useLoginWithTelegram({
+        onComplete: (params) => {
+            console.log('Telegram login successful:', params)
+            // You might want to redirect the user or update your app state here.
+        },
+        onError: (error) => {
+            console.error('Telegram login failed:', error)
         }
+    })
 
-        // const launchParams = retrieveLaunchParams()
-        // console.log('Sending to Privy:', JSON.stringify(launchParams, null, 2))
+    // This function now only uses the already-created loginWithTelegram function
+    const handleTelegramAuth = async () => {
+        if (authenticated) await logout()
+        console.log(authenticated, ready, ' - Auto Login Via Tg')
 
-        try {
-            // await linkTelegram({ launchParams })
-            console.log('Telegram linked successfully!')
-        } catch (error) {
-            console.error('Failed to link Telegram:', error)
+        if (ready && !authenticated) {
+            console.log('Trying to retrieve launch params...')
+            const launchParams = retrieveLaunchParams()
+            console.log('Using Telegram launch params for auto-login:', JSON.stringify(launchParams, null, 2))
+
+            // Automatically attempt login using Telegram credentials.
+            loginWithTelegram({ launchParams })
+
+            console.log('Logged in via tg successfully')
         }
     }
+
+    // Auto-trigger the auth process on mount
+    useEffect(() => {
+        handleTelegramAuth()
+    }, [ready, authenticated])
 
     return (
         <div className="col-span-12 h-[96vh]">
