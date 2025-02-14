@@ -47,15 +47,6 @@ const AiChat: React.FC = () => {
 
     const { ready, authenticated, user, getAccessToken, logout, login } = usePrivy()
 
-    const loginWithTelegram = useLoginWithTelegram({
-        onComplete: (params) => {
-            console.log('Telegram login successful:', params)
-            // Handle successful login, e.g., store user info or navigate
-        }
-    })
-
-    // alert(authenticated
-
     useEffect(() => {
         if (ready && authenticated && user) {
             getAccessToken()
