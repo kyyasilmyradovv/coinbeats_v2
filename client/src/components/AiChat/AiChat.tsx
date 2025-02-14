@@ -62,15 +62,22 @@ const AiChat: React.FC = () => {
     const handleTelegramAuth = async () => {
         if (authenticated) await logout()
         console.log(authenticated, ready, ' - Auto Login Via Tg')
-        console.log('initData:', initData, '++++++++++++++++++++')
+
+        const params = {
+            user: initData?.user,
+            auth_date: initData?.authDate,
+            hash: initData?.hash
+        }
+
+        console.log('params: ', params, '  -------------')
 
         if (ready && !authenticated) {
-            loginWithTelegram({ initData })
+            loginWithTelegram({ params })
             console.log('Logged in via tg successfully')
         }
     }
 
-    // Auto-trigger the auth process on mount
+    // Auto-trigger the auth process on mount=
     useEffect(() => {
         handleTelegramAuth()
     }, [ready, authenticated])
