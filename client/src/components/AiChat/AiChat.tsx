@@ -329,38 +329,18 @@ const AiChat: React.FC = () => {
         )
     }
 
-    // const { login: login2 } = useLoginWithTelegram()
-
-    // const autoLogin = () => {
-    //     const loginWithTelegram = useLoginWithTelegram({
-    //         onComplete: (params) => {
-    //             console.log('Telegram auto-login successful:', params)
-    //             alert('Login successful: ' + JSON.stringify(params))
-    //         },
-    //         onError: (error) => {
-    //             console.error('Telegram login error:', error)
-    //             alert('Login failed: ' + error)
-    //         }
-    //     })
-
-    //     loginWithTelegram.login() // Auto-trigger login
-    // }
-
-    const linkTelegram = useLoginWithTelegram()
-
     const handleTelegramAuth = async () => {
-        login()
         console.log(authenticated, ' - authenticated')
         if (!authenticated) {
             console.log('User not authenticated. Logging in to Privy first...')
-            await login() // Ensure the user is logged in first
+            login()
         }
 
-        const launchParams = retrieveLaunchParams()
-        console.log('Sending to Privy:', JSON.stringify(launchParams, null, 2))
+        // const launchParams = retrieveLaunchParams()
+        // console.log('Sending to Privy:', JSON.stringify(launchParams, null, 2))
 
         try {
-            await linkTelegram({ launchParams })
+            // await linkTelegram({ launchParams })
             console.log('Telegram linked successfully!')
         } catch (error) {
             console.error('Failed to link Telegram:', error)
@@ -389,28 +369,7 @@ const AiChat: React.FC = () => {
                         <button className="flex mb-10 items-center gap-2 text-white text-sm italic">
                             <span className="font-normal">Chat with Coinbeats AI</span>
                             <IconHelpCircle className="w-4 h-4" />
-                            <button
-                                // onClick={async () => {
-                                //     if (authenticated) await logout()
-                                //     // linkTelegram({ launchParams })
-                                //     // login()
-                                // }}
-                                // onClick={async () => {
-                                //     if (authenticated) await logout()
-                                //     // login()
-                                //     // const re = await login2()
-                                //     // console.log(re, '----------- tg login response')
-
-                                //     const launchParams = retrieveLaunchParams()
-                                //     console.log('Sending to Privy:', JSON.stringify(launchParams, null, 2))
-
-                                //     linkTelegram({ launchParams })
-
-                                //     // autoLogin()
-                                // }}
-                                onClick={handleTelegramAuth}
-                                className="border rounded p-1"
-                            >
+                            <button onClick={handleTelegramAuth} className="border rounded p-1">
                                 Re-Login
                             </button>
                         </button>
