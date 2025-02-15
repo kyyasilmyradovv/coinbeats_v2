@@ -47,7 +47,7 @@ const AiChat: React.FC = () => {
 
     const initData = useInitData()
 
-    const loginWithTelegram = useLoginWithTelegram({
+    const { login: loginWithTelegram } = useLoginWithTelegram({
         onComplete: (params) => {
             console.log('Telegram login successful:', params)
             // You might want to redirect the user or update your app state here.
@@ -57,22 +57,22 @@ const AiChat: React.FC = () => {
         }
     })
 
-    // This function now only uses the already-created loginWithTelegram function
     const handleTelegramAuth = async () => {
         try {
             if (authenticated) await logout()
             console.log(authenticated, ready, ' - Auto Login Via Tg')
 
-            const params = {
+            const launchParams = {
                 user: initData?.user,
                 auth_date: initData?.authDate,
                 hash: initData?.hash
             }
 
-            console.log('params: ', params, '  -------------')
+            console.log('launchParams: ', launchParams, '  -------------')
 
             if (ready && !authenticated) {
-                loginWithTelegram({ launchParams: params })
+                const ans = await loginWithTelegram()
+                console.log(ans)
                 console.log('Logged in via tg successfully')
             }
         } catch (error) {
