@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { Button, Card, Notification, Popover } from 'konsta/react'
 import { IconHelpCircle, IconCopy, IconEditCircle, IconInnerShadowTopRight, IconPlayerStopFilled, IconArrowUp } from '@tabler/icons-react'
 import { useLoginWithTelegram, usePrivy, useWallets } from '@privy-io/react-auth'
+import { retrieveLaunchParams } from '@telegram-apps/bridge'
 import { useChainId } from 'wagmi'
 import logo1 from '../../images/coinbeats-l.svg'
 import InitialPrompts from './components/InitialPrompts'
@@ -43,7 +44,7 @@ const AiChat: React.FC = () => {
     const [loading, setLoading] = useState(false)
     const [notification, setNotification] = useState<{ title: string; text: string } | null>(null)
 
-    const { ready, authenticated, user, getAccessToken, logout, login } = usePrivy()
+    const { ready, authenticated, user, getAccessToken, logout, login, linkTelegram } = usePrivy()
 
     const initData = useInitData()
 
@@ -68,11 +69,24 @@ const AiChat: React.FC = () => {
                 hash: initData?.hash
             }
 
+            // const launchParams = {
+            //     id: initData?.user?.id,
+            //     first_name: initData?.user?.first_name,
+            //     last_name: initData?.user?.last_name,
+            //     username: initData?.user?.username,
+            //     photo_url: initData?.user?.photo_url,
+            //     auth_date: initData?.authDate,
+            //     hash: initData?.hash
+            // }
+
+            const launchParams2 = retrieveLaunchParams()
+
             console.log('launchParams: ', launchParams, '  -------------')
+            console.log('launchParams2: ', launchParams2, '  -------------')
 
             if (ready && !authenticated) {
-                const ans = await loginWithTelegram()
-                console.log(ans)
+                linkTelegram({ launchParams: launchParams2 })
+                await loginWithTelegram()
                 console.log('Logged in via tg successfully')
             }
         } catch (error) {
