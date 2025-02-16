@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Button, Card, Notification, Popover } from 'konsta/react'
 import { IconHelpCircle, IconCopy, IconEditCircle, IconInnerShadowTopRight, IconPlayerStopFilled, IconArrowUp } from '@tabler/icons-react'
-import { useLoginWithTelegram, usePrivy, useWallets } from '@privy-io/react-auth'
-import { retrieveLaunchParams } from '@telegram-apps/bridge'
+import { usePrivy, useWallets } from '@privy-io/react-auth'
 import { useChainId } from 'wagmi'
 import logo1 from '../../images/coinbeats-l.svg'
 import InitialPrompts from './components/InitialPrompts'
@@ -10,8 +9,6 @@ import Navbar from '../common/Navbar'
 import bunnyLogo from '../../images/bunny-mascot.png'
 import axiosInstance from '~/api/axiosInstance'
 import Typewriter from './components/Typewriter'
-// import { retrieveLaunchParams } from '@telegram-apps/bridge'
-import { useInitData } from '@telegram-apps/sdk-react'
 
 interface ResponseMessage {
     sender: string // "user" or "ai"
@@ -44,60 +41,7 @@ const AiChat: React.FC = () => {
     const [loading, setLoading] = useState(false)
     const [notification, setNotification] = useState<{ title: string; text: string } | null>(null)
 
-    const { ready, authenticated, user, getAccessToken, logout, login, linkTelegram } = usePrivy()
-
-    const initData = useInitData()
-
-    const { login: loginWithTelegram } = useLoginWithTelegram({
-        onComplete: (params) => {
-            console.log('Telegram login successful:', params)
-            // You might want to redirect the user or update your app state here.
-        },
-        onError: (error) => {
-            console.error('Telegram login failed:', error)
-        }
-    })
-
-    const handleTelegramAuth = async () => {
-        try {
-            if (authenticated) await logout()
-            console.log(authenticated, ready, ' - Auto Login Via Tg')
-
-            const launchParams = {
-                user: initData?.user,
-                auth_date: initData?.authDate,
-                hash: initData?.hash
-            }
-
-            // const launchParams = {
-            //     id: initData?.user?.id,
-            //     first_name: initData?.user?.first_name,
-            //     last_name: initData?.user?.last_name,
-            //     username: initData?.user?.username,
-            //     photo_url: initData?.user?.photo_url,
-            //     auth_date: initData?.authDate,
-            //     hash: initData?.hash
-            // }
-
-            const launchParams2 = retrieveLaunchParams()
-
-            console.log('launchParams: ', launchParams, '  -------------')
-            console.log('launchParams2: ', launchParams2, '  -------------')
-
-            if (ready && !authenticated) {
-                linkTelegram({ launchParams: launchParams2 })
-                await loginWithTelegram()
-                console.log('Logged in via tg successfully')
-            }
-        } catch (error) {
-            console.log(error)
-        }
-    }
-
-    // Auto-trigger the auth process on mount=
-    useEffect(() => {
-        handleTelegramAuth()
-    }, [ready, authenticated])
+    const { ready, authenticated, user, getAccessToken, login } = usePrivy()
 
     useEffect(() => {
         if (ready && authenticated && user) {
@@ -114,8 +58,7 @@ const AiChat: React.FC = () => {
                     console.error('Error fetching/creating user =>', err)
                 })
         } else {
-            // login()
-            // linkTelegram()
+            login()
         }
     }, [ready, authenticated, user, getAccessToken])
 
@@ -161,10 +104,6 @@ const AiChat: React.FC = () => {
             textarea.style.height = '130px'
         }
 
-        // if (chatContainerRef.current) {
-        //     chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight
-        // }
-
         // Abort the axios request if it's in-flight
         if (abortControllerRef.current) {
             abortControllerRef.current.abort()
@@ -178,8 +117,7 @@ const AiChat: React.FC = () => {
         const trimmed = prompt.trim()
         if (!trimmed) return
 
-        // if (!ready || !authenticated) {
-        if (!ready) {
+        if (!authenticated) {
             setNotification({ title: 'Login required', text: 'Please log in first.' })
             return
         }
@@ -411,17 +349,8 @@ const AiChat: React.FC = () => {
                         <img src={logo1} alt="Coinbeats AI Chat" className="h-[50px] mx-auto" />
                         <h2 className="mt-2 text-2xl font-bold text-white">Coinbeats AI Chat</h2>
                         <button className="flex mb-10 items-center gap-2 text-white text-sm italic">
-                            {/* <span className="font-normal">Chat with Coinbeats AI</span> */}
-                            {/* <IconHelpCircle className="w-4 h-4" /> */}
-                            <button
-                                onClick={() => {
-                                    handleTelegramAuth()
-                                    login()
-                                }}
-                                className="border rounded p-1 px-2 mt-2  bg-gradient-to-r from-[#ff0077] to-[#7700ff] a"
-                            >
-                                Login to Coinbeats AI
-                            </button>
+                            <span className="font-normal">Chat with Coinbeats AI</span>
+                            <IconHelpCircle className="w-4 h-4" />
                         </button>
                         <InitialPrompts onSelectPrompt={(promptText) => setPrompt(promptText)} />
                     </div>

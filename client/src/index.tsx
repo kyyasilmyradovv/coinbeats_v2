@@ -53,9 +53,6 @@ const Index = () => {
     const dynamicPrivyConfig = useMemo(() => {
         // Call the basePrivyConfig function with the current theme to get the config object
         const baseConfig = basePrivyConfig('dark')
-        // return {
-
-        // }
 
         return {
             ...baseConfig,
@@ -66,17 +63,17 @@ const Index = () => {
             appearance: {
                 ...(baseConfig.appearance ?? {}),
                 theme: 'dark'
-            },
-            fundingMethodConfig: {
-                ...(baseConfig.fundingMethodConfig ?? {}),
-                moonpay: {
-                    ...(baseConfig.fundingMethodConfig?.moonpay ?? {}),
-                    uiConfig: {
-                        ...(baseConfig.fundingMethodConfig?.moonpay?.uiConfig ?? {}),
-                        theme: 'dark'
-                    }
-                }
             }
+            // fundingMethodConfig: {
+            //     ...(baseConfig.fundingMethodConfig ?? {}),
+            //     moonpay: {
+            //         ...(baseConfig.fundingMethodConfig?.moonpay ?? {}),
+            //         uiConfig: {
+            //             ...(baseConfig.fundingMethodConfig?.moonpay?.uiConfig ?? {}),
+            //             theme: 'dark'
+            //         }
+            //     }
+            // }
         }
     }, [])
 
