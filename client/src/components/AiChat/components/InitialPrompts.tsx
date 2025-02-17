@@ -28,7 +28,7 @@ const InitialPrompts: React.FC<InitialPromptsProps> = ({ onSelectPrompt }) => {
                 <div key={index} className={`${index % 2 === 0 ? 'text-right' : 'text-left'} flex flex-col items-center`}>
                     <button
                         onClick={() => onSelectPrompt(e.text)}
-                        className="w-full flex items-center justify-center p-2 border-[0.5px] rounded-lg hover:bg-primary hover:text-black hover:border-primary"
+                        className="w-full flex items-center justify-center p-2 border-[0.5px] rounded-lg  hover:bg-gradient-to-r from-[#ff0077] to-[#7700ff] hover:text-black hover:border-none"
                     >
                         <div className="mr-2">{e.icon}</div>
                         <span className="truncate" title={e.text}>
