@@ -1,6 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Button, Card, Notification, Popover } from 'konsta/react'
-import { IconHelpCircle, IconCopy, IconEditCircle, IconInnerShadowTopRight, IconPlayerStopFilled, IconArrowUp } from '@tabler/icons-react'
+import {
+    IconHelpCircle,
+    IconCopy,
+    IconEditCircle,
+    IconInnerShadowTopRight,
+    IconPlayerStopFilled,
+    IconArrowUp,
+    IconLayoutSidebarRightCollapseFilled
+} from '@tabler/icons-react'
 import { usePrivy, useWallets } from '@privy-io/react-auth'
 import { useChainId } from 'wagmi'
 import logo1 from '../../images/coinbeats-l.svg'
@@ -9,6 +17,7 @@ import Navbar from '../common/Navbar'
 import bunnyLogo from '../../images/bunny-mascot.png'
 import axiosInstance from '~/api/axiosInstance'
 import Typewriter from './components/Typewriter'
+import AiChatSidebar from './components/AiChatSidebar'
 
 interface ResponseMessage {
     sender: string // "user" or "ai"
@@ -32,6 +41,7 @@ interface Response {
 
 const AiChat: React.FC = () => {
     const chatContainerRef = useRef<HTMLDivElement>(null)
+    const sidebarRef = useRef<HTMLDivElement>(null)
     // const textareaRef = useRef<HTMLTextAreaElement | null>(null)
     const { wallets, ready: walletsReady } = useWallets()
     const abortControllerRef = useRef<AbortController | null>(null)
@@ -39,6 +49,7 @@ const AiChat: React.FC = () => {
     const [prompt, setPrompt] = useState('')
     const [responses, setResponses] = useState<Response[]>([])
     const [loading, setLoading] = useState(false)
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
     const [notification, setNotification] = useState<{ title: string; text: string } | null>(null)
 
     const { ready, authenticated, user, getAccessToken, login } = usePrivy()
@@ -111,6 +122,7 @@ const AiChat: React.FC = () => {
 
         setResponses([])
         setPrompt('')
+        if (window.innerWidth < 1024) toggleSidebar()
     }
 
     const handleSendPrompt = async () => {
@@ -329,88 +341,124 @@ const AiChat: React.FC = () => {
         )
     }
 
+    const toggleSidebar = () => {
+        setIsSidebarCollapsed((prev) => !prev)
+    }
+
+    // Close sidebar when clicked outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (window.innerWidth < 1024 && chatContainerRef.current?.contains(event.target) && !sidebarRef.current?.contains(event.target)) {
+                setIsSidebarCollapsed(true)
+            }
+        }
+
+        document.addEventListener('mousedown', handleClickOutside)
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside)
+        }
+    }, [])
+
     return (
-        <div className="col-span-12 h-[96vh]">
+        <div className="col-span-12 h-[96vh] fixed w-full">
             <Navbar />
-            <div
-                className={`flex flex-col pt-1 items-center justify-between`}
-                ref={chatContainerRef}
-                style={{
-                    height: '100%',
-                    // msOverflowStyle: 'none',
-                    overflowY: 'auto',
-                    scrollbarWidth: 'none', // For Firefox
-                    scrollbarColor: '#555 #333'
-                }}
-            >
-                {/* Header + initial prompts */}
-                {responses.length === 0 && (
-                    <div className={'flex flex-col items-center mt-40'}>
-                        <img src={logo1} alt="Coinbeats AI Chat" className="h-[50px] mx-auto" />
-                        <h2 className="mt-2 text-2xl font-bold text-white">Coinbeats AI Chat</h2>
-                        <button className="flex mb-10 items-center gap-2 text-white text-sm italic">
-                            <span className="font-normal">Chat with Coinbeats AI</span>
-                            <IconHelpCircle className="w-4 h-4" />
-                        </button>
-                        <InitialPrompts onSelectPrompt={(promptText) => setPrompt(promptText)} />
-                    </div>
-                )}
 
-                {/* Conversation area */}
-                {responses.length > 0 && (
-                    <div
-                        // ref={chatContainerRef}
-                        className="w-[90%] lg:w-1/2 p-5 text-gray-100"
-                    >
-                        {responses.map((response, i) => (
-                            <React.Fragment key={i}>
-                                {response.conversationHistory.map((msg, msgIdx) => renderChatBubble(msg, msgIdx, i == responses.length - 1))}
-                                {response.data && renderTransactionCard(response.data, i)}
-                            </React.Fragment>
-                        ))}
-                    </div>
-                )}
-
-                {/* Input area */}
-                <div className="p-4 w-full bg-black mb-2 flex flex-col lg:w-1/2 sticky bottom-0">
-                    <textarea
-                        className="pb-14 bg-[#2b2b2b] text-[16px] p-4 rounded-lg focus:outline-none resize-none min-h-[130px] max-h-[500px] "
-                        placeholder="Type a message..."
-                        value={prompt}
-                        onChange={(e) => {
-                            setPrompt(e.target.value)
-                            adjustHeight(e.target)
-                        }}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter' && !e.shiftKey) {
-                                e.preventDefault()
-                                handleSendPrompt()
-                            }
-                        }}
-                    />
-
-                    {responses?.length > 0 && (
-                        <button
-                            className="w-[100px] flex gap-1 justify-center border border-gray-400 p-1 w-[120px] text-gray-400 items-center rounded-lg ml-4 mb-4 absolute bottom-2 left-2 active:bg-gray-100 active:text-black"
-                            onClick={handleNewChat}
-                            // disabled={loading}
-                        >
-                            <IconEditCircle size={18} />
-                            New Chat
-                        </button>
-                    )}
-
-                    {loading ? (
-                        <IconPlayerStopFilled
-                            className="w-[34px] h-[34px] mr-4 mb-4 bg-gray-300 text-gray-700 absolute bottom-2 right-2 rounded-full p-2 cursor-pointer"
-                            onClick={stopPrompt}
-                        />
+            <div className="flex">
+                <div
+                    className={`transition-transform ease-in-out ${isSidebarCollapsed ? 'w-0 -translate-x-full duration-700' : 'w-[55%] lg:w-[16%] translate-x-0 duration-500'} ${!isSidebarCollapsed ? 'fixed z-50 shadow-lg' : ''}`}
+                    ref={sidebarRef}
+                >
+                    {isSidebarCollapsed ? (
+                        <IconLayoutSidebarRightCollapseFilled className="absolute size-6 hover:text-primary mt-3 ml-4" onClick={toggleSidebar} />
                     ) : (
-                        <IconArrowUp
-                            className="w-[34px] h-[34px] mr-4 mb-4 bg-gradient-to-r from-[#ff0077] to-[#7700ff] absolute bottom-2 right-2 rounded-full p-1 cursor-pointer"
-                            onClick={handleSendPrompt}
-                        />
+                        <AiChatSidebar toggleSidebar={toggleSidebar} handleNewChat={handleNewChat} />
                     )}
+                </div>
+
+                {/* Main Chat Container */}
+                <div
+                    className={`
+                        flex flex-col pt-1 items-center justify-between flex-1 h-[95vh]
+                        transition-all duration-500 ease-in-out
+                        ${!isSidebarCollapsed ? 'filter blur-sm md:blur-none md:ml-[16%]' : ''}
+                      `}
+                    ref={chatContainerRef}
+                    style={{
+                        msOverflowStyle: 'none',
+                        overflowY: 'auto',
+                        scrollbarWidth: 'none', // For Firefox
+                        scrollbarColor: '#555 #333'
+                    }}
+                >
+                    {/* Header + initial prompts */}
+                    {responses.length === 0 && (
+                        <div className={'flex flex-col items-center mt-40'}>
+                            <img src={logo1} alt="Coinbeats AI Chat" className="h-[50px] mx-auto" />
+                            <h2 className="mt-2 text-2xl font-bold text-white">Coinbeats AI Chat</h2>
+                            <button className="flex mb-10 items-center gap-2 text-white text-sm italic">
+                                <span className="font-normal">Chat with Coinbeats AI</span>
+                                <IconHelpCircle className="w-4 h-4" />
+                            </button>
+                            <InitialPrompts onSelectPrompt={(promptText) => setPrompt(promptText)} />
+                        </div>
+                    )}
+
+                    {/* Conversation area */}
+                    {responses.length > 0 && (
+                        <div
+                            // ref={chatContainerRef}
+                            className="w-[90%] lg:w-[800px] p-5 text-gray-100"
+                        >
+                            {responses.map((response, i) => (
+                                <React.Fragment key={i}>
+                                    {response.conversationHistory.map((msg, msgIdx) => renderChatBubble(msg, msgIdx, i == responses.length - 1))}
+                                    {response.data && renderTransactionCard(response.data, i)}
+                                </React.Fragment>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Input area */}
+                    <div className={`px-4 w-full bg-black mb-2 flex flex-col sticky bottom-0 ${isSidebarCollapsed ? 'lg:w-[800px]' : 'lg:w-[800px]'}`}>
+                        <textarea
+                            className="pb-14 bg-[#2b2b2b] text-[16px] p-4 rounded-lg focus:outline-none resize-none min-h-[130px] max-h-[500px] "
+                            placeholder="Type a message..."
+                            value={prompt}
+                            onChange={(e) => {
+                                setPrompt(e.target.value)
+                                adjustHeight(e.target)
+                            }}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' && !e.shiftKey) {
+                                    e.preventDefault()
+                                    handleSendPrompt()
+                                }
+                            }}
+                        />
+
+                        {responses?.length > 0 && (
+                            <button
+                                className="w-[100px] mb-1 flex gap-1 justify-center border border-gray-400 p-1 w-[120px] text-gray-400 items-center rounded-lg ml-4 absolute bottom-2 left-2 active:bg-gray-100 active:text-black"
+                                onClick={handleNewChat}
+                                // disabled={loading}
+                            >
+                                <IconEditCircle size={18} />
+                                New Chat
+                            </button>
+                        )}
+
+                        {loading ? (
+                            <IconPlayerStopFilled
+                                className="w-[34px] h-[34px] mr-4 mb-1 bg-gray-300 text-gray-700 absolute bottom-2 right-2 rounded-full p-2 cursor-pointer"
+                                onClick={stopPrompt}
+                            />
+                        ) : (
+                            <IconArrowUp
+                                className="w-[34px] h-[34px] mr-4 mb-1 bg-gradient-to-r from-[#ff0077] to-[#7700ff] absolute bottom-2 right-2 rounded-full p-1 cursor-pointer"
+                                onClick={handleSendPrompt}
+                            />
+                        )}
+                    </div>
                 </div>
             </div>
 
