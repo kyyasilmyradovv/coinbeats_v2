@@ -49,7 +49,7 @@ const AiChat: React.FC = () => {
     const [prompt, setPrompt] = useState('')
     const [responses, setResponses] = useState<Response[]>([])
     const [loading, setLoading] = useState(false)
-    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(window.innerWidth < 1024)
     const [notification, setNotification] = useState<{ title: string; text: string } | null>(null)
 
     const { ready, authenticated, user, getAccessToken, login } = usePrivy()
@@ -77,7 +77,7 @@ const AiChat: React.FC = () => {
     useEffect(() => {
         if (chatContainerRef.current) {
             chatContainerRef.current.scrollTo({
-                top: chatContainerRef.current.scrollHeight,
+                top: chatContainerRef.current.scr2ollHeight,
                 behavior: 'smooth'
             })
         }
@@ -204,8 +204,7 @@ const AiChat: React.FC = () => {
                 finalAiContent = lastAiMsg.content
             }
 
-            // 2) Update the last chat bubble with the final answer
-
+            // Update the last chat bubble with the final answer
             setResponses((prev) => {
                 const updated = [...prev]
                 const lastItem = updated[updated.length - 1]
@@ -365,7 +364,7 @@ const AiChat: React.FC = () => {
 
             <div className="flex">
                 <div
-                    className={`transition-transform ease-in-out ${isSidebarCollapsed ? 'w-0 -translate-x-full duration-700' : 'w-[55%] lg:w-[16%] translate-x-0 duration-500'} ${!isSidebarCollapsed ? 'fixed z-50 shadow-lg' : ''}`}
+                    className={`transition-transform ease-in-out ${isSidebarCollapsed ? 'w-0 -translate-x-full duration-700' : 'w-[55%] lg:w-[18%] translate-x-0 duration-500'} ${!isSidebarCollapsed ? 'fixed z-50 shadow-lg' : ''}`}
                     ref={sidebarRef}
                 >
                     {isSidebarCollapsed ? (
@@ -380,7 +379,7 @@ const AiChat: React.FC = () => {
                     className={`
                         flex flex-col pt-1 items-center justify-between flex-1 h-[95vh]
                         transition-all duration-500 ease-in-out
-                        ${!isSidebarCollapsed ? 'filter blur-sm md:blur-none md:ml-[16%]' : ''}
+                        ${!isSidebarCollapsed ? 'filter blur-sm md:blur-none md:ml-[18%]' : ''}
                       `}
                     ref={chatContainerRef}
                     style={{
@@ -392,9 +391,9 @@ const AiChat: React.FC = () => {
                 >
                     {/* Header + initial prompts */}
                     {responses.length === 0 && (
-                        <div className={'flex flex-col items-center mt-40'}>
+                        <div className={'flex flex-col items-center mt-40 select-none'}>
                             <img src={logo1} alt="Coinbeats AI Chat" className="h-[50px] mx-auto" />
-                            <h2 className="mt-2 text-2xl font-bold text-white">Coinbeats AI Chat</h2>
+                            <h2 className="mt-2 mb-2 text-2xl font-bold text-white">Coinbeats AI Chat</h2>
                             <button className="flex mb-10 items-center gap-2 text-white text-sm italic">
                                 <span className="font-normal">Chat with Coinbeats AI</span>
                                 <IconHelpCircle className="w-4 h-4" />
