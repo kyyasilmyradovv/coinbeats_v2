@@ -64,7 +64,7 @@ const tabConfig: { [key: string]: number } = {
 
 const CustomChart: React.FC<CustomChartProps> = ({ coinId, tab }) => {
     const [chartData, setChartData] = useState<ChartData<'line'> | null>(null)
-    const [hoverPosition, setHoverPosition] = useState<number | null>(null)
+    // const [hoverPosition, setHoverPosition] = useState<number | null>(null)
 
     useEffect(() => {
         const loadChartData = async () => {
