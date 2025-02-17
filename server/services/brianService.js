@@ -1,4 +1,4 @@
-const fetch = require('node-fetch');
+const axios = require('axios'); // TODO: switch to axios
 
 const BRIAN_API_URL = 'https://api.brianknows.org/api/v0/agent';
 const BRIAN_API_KEY = 'brian_D7FzZdWEsB3N8sges';
@@ -12,7 +12,7 @@ const brianService = {
       chainId,
     };
 
-    const response = await fetch(BRIAN_API_URL, {
+    const response = await axios(BRIAN_API_URL, {
       method: 'POST',
       headers: {
         'X-Brian-Api-Key': BRIAN_API_KEY,
