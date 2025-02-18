@@ -44,7 +44,6 @@ const AiChat: React.FC = () => {
     const sidebarRef = useRef<HTMLDivElement>(null)
     const editContainerRef = useRef<HTMLDivElement>(null)
     const inputRef = useRef<HTMLInputElement>(null)
-    // const textareaRef = useRef<HTMLTextAreaElement | null>(null)
     const { wallets, ready: walletsReady } = useWallets()
     const abortControllerRef = useRef<AbortController | null>(null)
     const chainId = useChainId()
@@ -53,9 +52,10 @@ const AiChat: React.FC = () => {
     const [loading, setLoading] = useState(false)
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(window.innerWidth < 1024)
     const [notification, setNotification] = useState<{ title: string; text: string } | null>(null)
-    const [editingChat, setEditingChat] = useState<{ title: string }>({ title: '' })
     const [isTyping, setIsTyping] = useState(false)
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+    const [touchStart, setTouchStart] = useState<number | null>(null)
+    const [touchEnd, setTouchEnd] = useState<number | null>(null)
 
     const { ready, authenticated, user, getAccessToken, login, logout } = usePrivy()
 
@@ -364,8 +364,29 @@ const AiChat: React.FC = () => {
         }
     }, [])
 
+    const handleSwipe = () => {
+        if (touchStart !== null && touchEnd !== null) {
+            const delta = touchEnd - touchStart
+            const threshold = 50 // Minimum swipe distance in px
+            if (delta > threshold) {
+                // Swipe right: open sidebar
+                setIsSidebarCollapsed(false)
+            } else if (delta < -threshold) {
+                // Swipe left: close sidebar
+                setIsSidebarCollapsed(true)
+            }
+        }
+        setTouchStart(null)
+        setTouchEnd(null)
+    }
+
     return (
-        <div className="col-span-12 h-[96vh] fixed w-full">
+        <div
+            className="col-span-12 h-[96vh] fixed w-full"
+            onTouchStart={(e) => setTouchStart(e.touches[0].clientX)}
+            onTouchMove={(e) => setTouchEnd(e.touches[0].clientX)}
+            onTouchEnd={handleSwipe}
+        >
             <Navbar />
 
             <div className="flex">
@@ -374,12 +395,11 @@ const AiChat: React.FC = () => {
                     ref={sidebarRef}
                 >
                     {isSidebarCollapsed ? (
-                        <IconLayoutSidebarRightCollapseFilled className="absolute size-6 hover:text-primary mt-3 ml-4" onClick={toggleSidebar} />
+                        <IconLayoutSidebarRightCollapseFilled className="absolute size-6 text-gray-200 hover:text-primary mt-3 ml-4" onClick={toggleSidebar} />
                     ) : (
                         <AiChatSidebar toggleSidebar={toggleSidebar} handleNewChat={handleNewChat} />
                     )}
                 </div>
-
                 {/* Main Chat Container */}
                 <div
                     className={`
@@ -426,10 +446,7 @@ const AiChat: React.FC = () => {
                     {/* Input area */}
                     <div
                         className="px-4 w-full bg-black flex flex-col sticky bottom-0 lg:w-[800px]"
-                        style={{
-                            // Extra padding to ensure you see the bottom when keyboard is open
-                            paddingBottom: isSidebarCollapsed ? 'calc(env(safe-area-inset-bottom) + 2rem)' : ''
-                        }}
+                        style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 2rem)' }}
                     >
                         <textarea
                             className="pb-14 bg-[#2b2b2b] text-[16px] p-4 rounded-lg focus:outline-none resize-none min-h-[130px] max-h-[500px] "
