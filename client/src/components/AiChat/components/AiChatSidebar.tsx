@@ -73,6 +73,12 @@ const AiChatSidebar: React.FC<AiChatSidebarProps> = ({ toggleSidebar, handleNewC
 
     const filteredChats = chats.filter((chat) => chat.title.toLowerCase().includes(searchQuery.toLowerCase()))
 
+    const handleOpenChat = async () => {
+        setTimeout(() => {
+            toggleSidebar()
+        }, 300)
+    }
+
     const handleEditChat = (id: number, title: string) => {
         setEditingChat({ id, title })
     }
@@ -114,7 +120,7 @@ const AiChatSidebar: React.FC<AiChatSidebarProps> = ({ toggleSidebar, handleNewC
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 placeholder="Search chats..."
-                                className="pl-2 pr-7 py-1 text-sm bg-[#333] rounded w-full focus:outline-none focus:border-primary"
+                                className="pl-2 pr-7 py-1 text-sm  text-white bg-[#333] rounded w-full focus:outline-none focus:border-primary"
                             />
                             {searchQuery && (
                                 <IconX
@@ -143,6 +149,7 @@ const AiChatSidebar: React.FC<AiChatSidebarProps> = ({ toggleSidebar, handleNewC
                                 ? { border: '1.5px solid', borderImage: 'linear-gradient(to right, #ff0077, #7700ff) 1' }
                                 : {}
                         }
+                        onClick={handleOpenChat}
                     >
                         {editingChat && editingChat.id === chat.id ? (
                             <div ref={editContainerRef} className="flex w-full items-center">
@@ -157,8 +164,11 @@ const AiChatSidebar: React.FC<AiChatSidebarProps> = ({ toggleSidebar, handleNewC
                                     className="bg-transparent focus:outline-none"
                                 />
                                 <IconCheck
-                                    className="m-size-6 stroke-[3.3px] text-gray-300 hover:text-primary cursor-pointer border-l border-gray-500 pl-1 ml-auto"
-                                    onClick={() => handleSaveChat(chat.id)}
+                                    className="min-size-6 stroke-[3.3px] text-gray-300 hover:text-primary cursor-pointer border-l border-gray-500 pl-1 ml-auto"
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        handleSaveChat(chat.id)
+                                    }}
                                 />
                             </div>
                         ) : (
@@ -170,9 +180,18 @@ const AiChatSidebar: React.FC<AiChatSidebarProps> = ({ toggleSidebar, handleNewC
                             <div className="flex gap-1 ml-2">
                                 <IconPencil
                                     className="size-5 text-gray-300 hover:text-primary cursor-pointer"
-                                    onClick={() => handleEditChat(chat.id, chat.title)}
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        handleEditChat(chat.id, chat.title)
+                                    }}
                                 />
-                                <IconTrash className="size-5 text-gray-300 hover:text-primary cursor-pointer" onClick={() => setChatToDelete(chat.id)} />
+                                <IconTrash
+                                    className="size-5 text-gray-300 hover:text-primary cursor-pointer"
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        setChatToDelete(chat.id)
+                                    }}
+                                />
                             </div>
                         )}
 
