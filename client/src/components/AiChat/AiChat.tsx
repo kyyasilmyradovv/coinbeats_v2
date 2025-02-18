@@ -428,7 +428,7 @@ const AiChat: React.FC = () => {
                         className="px-4 w-full bg-black flex flex-col sticky bottom-0 lg:w-[800px]"
                         style={{
                             // Extra padding to ensure you see the bottom when keyboard is open
-                            paddingBottom: 'calc(env(safe-area-inset-bottom) + 2rem)'
+                            paddingBottom: isSidebarCollapsed ? 'calc(env(safe-area-inset-bottom) + 2rem)' : ''
                         }}
                     >
                         <textarea

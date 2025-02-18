@@ -157,7 +157,7 @@ const AiChatSidebar: React.FC<AiChatSidebarProps> = ({ toggleSidebar, handleNewC
                                     className="bg-transparent focus:outline-none"
                                 />
                                 <IconCheck
-                                    className="min-size-6 stroke-[3.3px] text-gray-300 hover:text-primary cursor-pointer border-l border-gray-500 pl-1 ml-auto"
+                                    className="m-size-6 stroke-[3.3px] text-gray-300 hover:text-primary cursor-pointer border-l border-gray-500 pl-1 ml-auto"
                                     onClick={() => handleSaveChat(chat.id)}
                                 />
                             </div>
