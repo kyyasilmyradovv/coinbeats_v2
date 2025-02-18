@@ -79,8 +79,7 @@ const useAuthStore = create<AuthState>()(
                     localStorage.removeItem('accessToken')
                     localStorage.removeItem('refreshToken')
 
-                    // Optionally, you can redirect the user to the login page here
-                    // window.location.href = '/login'; // This ensures the user is forced to log in again
+                    // window.location.href = '/login';
                 }
             },
 
