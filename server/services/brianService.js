@@ -1,4 +1,4 @@
-const axios = require('axios'); // TODO: switch to axios
+const axios = require('axios');
 
 const BRIAN_API_URL = 'https://api.brianknows.org/api/v0/agent';
 const BRIAN_API_KEY = 'brian_D7FzZdWEsB3N8sges';
@@ -12,21 +12,24 @@ const brianService = {
       chainId,
     };
 
-    const response = await axios(BRIAN_API_URL, {
-      method: 'POST',
-      headers: {
-        'X-Brian-Api-Key': BRIAN_API_KEY,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(body),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error('Brian API error =>', errorData);
-      return { error: errorData.error || 'Brian API error' };
+    try {
+      const response = await axios({
+        method: 'POST',
+        url: BRIAN_API_URL,
+        headers: {
+          'X-Brian-Api-Key': BRIAN_API_KEY,
+          'Content-Type': 'application/json',
+        },
+        data: body,
+      });
+      return response.data;
+    } catch (error) {
+      console.error(
+        'Brian API error =>',
+        error.response?.data || error.message
+      );
+      return { error: error.response?.data?.error || 'Brian API error' };
     }
-    return response.json();
   },
 
   // Example method if you wanted Twitter data
