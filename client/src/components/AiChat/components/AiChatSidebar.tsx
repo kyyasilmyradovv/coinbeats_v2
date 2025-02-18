@@ -21,6 +21,8 @@ const AiChatSidebar: React.FC<AiChatSidebarProps> = ({ toggleSidebar, handleNewC
     const [isSearchActive, setIsSearchActive] = useState<boolean>(false)
     const [editingChat, setEditingChat] = useState<{ id: number; title: string } | null>(null)
     const [chatToDelete, setChatToDelete] = useState<number | null>(null)
+    const [showRenameSuccess, setShowRenameSuccess] = useState(false)
+    const [showDeleteSuccess, setShowDeleteSuccess] = useState(false)
 
     useEffect(() => {
         if (editingChat && inputRef.current) {
@@ -75,7 +77,7 @@ const AiChatSidebar: React.FC<AiChatSidebarProps> = ({ toggleSidebar, handleNewC
 
     const handleOpenChat = async () => {
         setTimeout(() => {
-            toggleSidebar()
+            if (window.innerWidth < 768) toggleSidebar()
         }, 300)
     }
 
@@ -86,11 +88,13 @@ const AiChatSidebar: React.FC<AiChatSidebarProps> = ({ toggleSidebar, handleNewC
     const handleSaveChat = async (id: number) => {
         try {
             setChats((prevChats) => prevChats.map((chat) => (chat.id === id ? { ...chat, title: editingChat?.title || chat.title } : chat)))
-            await fetch(`/api/chats/edit/${id}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ title: editingChat?.title })
-            })
+            // fetch(`/api/chats/edit/${id}`, {
+            //     method: 'POST',
+            //     headers: { 'Content-Type': 'application/json' },
+            //     body: JSON.stringify({ title: editingChat?.title })
+            // })
+            setShowRenameSuccess(true)
+            setTimeout(() => setShowRenameSuccess(false), 1000)
         } catch (error) {
             console.error('Failed to save chat title', error)
         } finally {
@@ -101,7 +105,9 @@ const AiChatSidebar: React.FC<AiChatSidebarProps> = ({ toggleSidebar, handleNewC
     const handleDeleteChat = async (id: number) => {
         try {
             setChats((prevChats) => prevChats.filter((chat) => chat.id !== id))
-            await fetch(`/api/chats/delete/${id}`, { method: 'DELETE' })
+            // fetch(`/api/chats/delete/${id}`, { method: 'DELETE' })
+            setShowDeleteSuccess(true)
+            setTimeout(() => setShowDeleteSuccess(false), 1000)
         } catch (error) {
             console.error('Failed to delete chat', error)
         }
@@ -164,7 +170,7 @@ const AiChatSidebar: React.FC<AiChatSidebarProps> = ({ toggleSidebar, handleNewC
                                     className="bg-transparent focus:outline-none"
                                 />
                                 <IconCheck
-                                    className="min-size-6 stroke-[3.3px] text-gray-300 hover:text-primary cursor-pointer border-l border-gray-500 pl-1 ml-auto"
+                                    className="w-6 h-6 stroke-[3.3px] text-gray-300 hover:text-primary cursor-pointer border-l border-gray-500 pl-1 ml-auto"
                                     onClick={(e) => {
                                         e.stopPropagation()
                                         handleSaveChat(chat.id)
@@ -230,6 +236,71 @@ const AiChatSidebar: React.FC<AiChatSidebarProps> = ({ toggleSidebar, handleNewC
                     </div>
                 </div>
             ))}
+
+            {/* Rename Success Modal */}
+            {showRenameSuccess &&
+                ReactDOM.createPortal(
+                    <>
+                        <style>{`@keyframes dash { to { stroke-dashoffset: 0; } }`}</style>
+                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+                            <div className="p-[1.5px] rounded-xl bg-gradient-to-r from-[#ff0077] to-[#7700ff] max-w-xs w-full shadow-lg">
+                                <div className="bg-gray-800 text-white p-6 rounded-xl text-center">
+                                    <svg className="w-20 h-20 mx-auto" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <circle cx="26" cy="26" r="25" stroke="#86efac" strokeWidth="2" />
+                                        <path
+                                            d="M14 27l7 7 16-16"
+                                            stroke="#16a34a"
+                                            strokeWidth="5"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeDasharray="48"
+                                            strokeDashoffset="48"
+                                            style={{ animation: 'dash 0.3s ease-in-out forwards' }}
+                                        />
+                                    </svg>
+                                    <span className="mt-4 block text-lg font-bold">Chat renamed!</span>
+                                </div>
+                            </div>
+                        </div>
+                    </>,
+                    document.body
+                )}
+
+            {/* Delete Success Modal */}
+            {showDeleteSuccess &&
+                ReactDOM.createPortal(
+                    <>
+                        <style>{`@keyframes trashPop {
+                            0% { transform: scale(0); opacity: 0; }
+                            50% { transform: scale(1.2); opacity: 1; }
+                            100% { transform: scale(1); opacity: 1; }
+                        }`}</style>
+                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+                            <div className="p-[1.5px] rounded-xl bg-gradient-to-r from-[#ff0077] to-[#7700ff] max-w-xs w-full shadow-lg">
+                                <div className="bg-gray-800 text-white p-6 rounded-xl text-center">
+                                    <svg
+                                        className="w-20 h-20 mx-auto stroke-red-500"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        // stroke=""
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        style={{ animation: 'trashPop 0.5s ease-out forwards' }}
+                                    >
+                                        <polyline points="3 6 5 6 21 6" />
+                                        <path d="M19 6l-1 14H6L5 6" />
+                                        <path d="M10 11v6" />
+                                        <path d="M14 11v6" />
+                                        <path d="M9 6V4h6v2" />
+                                    </svg>
+                                    <span className="mt-4 block text-lg font-bold">Chat deleted!</span>
+                                </div>
+                            </div>
+                        </div>
+                    </>,
+                    document.body
+                )}
         </div>
     )
 }

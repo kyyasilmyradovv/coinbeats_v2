@@ -334,7 +334,7 @@ const AiChat: React.FC = () => {
                     {/* If ai is thinking... show spinner */}
                     {message.content.includes('Coinbeats AI is thinking...') && loading ? (
                         <div className="flex gap-1 items-center">
-                            Coinbeats AI is thinking... <IconInnerShadowTopRight className="animate-spin size-5" />
+                            Coinbeats AI is thinking... <IconInnerShadowTopRight className="text-primary animate-spin size-5" />
                         </div>
                     ) : isUser || !isLast ? (
                         <span className="text-[14px] lg:text-[16px]">{message.content.replace('Coinbeats AI is thinking...', '').trim()}</span>
@@ -449,7 +449,7 @@ const AiChat: React.FC = () => {
                         style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 2rem)' }}
                     >
                         <textarea
-                            className="pb-14 bg-[#2b2b2b] text-[16px] p-4 rounded-lg focus:outline-none resize-none min-h-[130px] max-h-[500px] "
+                            className="pb-14 bg-[#2b2b2b] text-[16px] p-4 mt-2 rounded-lg focus:outline-none resize-none min-h-[130px] max-h-[500px] "
                             placeholder="Type a message..."
                             value={prompt}
                             onChange={(e) => {
