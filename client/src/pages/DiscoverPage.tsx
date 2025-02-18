@@ -369,7 +369,7 @@ const DiscoverPage: React.FC = () => {
                                     <Button
                                         outline
                                         rounded
-                                        className=" mt-4 font-bold text-md shadow-xl !h-6 !mb-3 w-24 md:w-36 lg:w-[80%]"
+                                        className=" mt-4 font-bold text-md shadow-xl !h-6 !mb-3 w-[90px] md:w-36 lg:w-[80%]"
                                         style={{
                                             background: 'linear-gradient(to left, #ff0077, #7700ff)',
                                             color: '#fff'

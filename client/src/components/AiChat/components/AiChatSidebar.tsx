@@ -79,12 +79,12 @@ const AiChatSidebar: React.FC<AiChatSidebarProps> = ({ toggleSidebar, handleNewC
 
     const handleSaveChat = async (id: number) => {
         try {
+            setChats((prevChats) => prevChats.map((chat) => (chat.id === id ? { ...chat, title: editingChat?.title || chat.title } : chat)))
             await fetch(`/api/chats/edit/${id}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ title: editingChat?.title })
             })
-            setChats((prevChats) => prevChats.map((chat) => (chat.id === id ? { ...chat, title: editingChat?.title || chat.title } : chat)))
         } catch (error) {
             console.error('Failed to save chat title', error)
         } finally {
@@ -94,8 +94,8 @@ const AiChatSidebar: React.FC<AiChatSidebarProps> = ({ toggleSidebar, handleNewC
 
     const handleDeleteChat = async (id: number) => {
         try {
-            await fetch(`/api/chats/delete/${id}`, { method: 'DELETE' })
             setChats((prevChats) => prevChats.filter((chat) => chat.id !== id))
+            await fetch(`/api/chats/delete/${id}`, { method: 'DELETE' })
         } catch (error) {
             console.error('Failed to delete chat', error)
         }
@@ -145,7 +145,7 @@ const AiChatSidebar: React.FC<AiChatSidebarProps> = ({ toggleSidebar, handleNewC
                         }
                     >
                         {editingChat && editingChat.id === chat.id ? (
-                            <div ref={editContainerRef} className="flex flex-1 items-center">
+                            <div ref={editContainerRef} className="flex w-full items-center">
                                 <input
                                     ref={inputRef}
                                     type="text"
@@ -154,10 +154,10 @@ const AiChatSidebar: React.FC<AiChatSidebarProps> = ({ toggleSidebar, handleNewC
                                     onKeyDown={(e) => {
                                         if (e.key === 'Enter') handleSaveChat(chat.id)
                                     }}
-                                    className="flex-1 bg-transparent text-gray-200 focus:outline-none"
+                                    className="bg-transparent focus:outline-none flex-1"
                                 />
                                 <IconCheck
-                                    className="ml-1 size-6 stroke-[3.3px] text-gray-300 hover:text-primary cursor-pointer border-l border-gray-500 pl-1"
+                                    className="size-6 stroke-[3.3px] text-gray-300 hover:text-primary cursor-pointer border-l border-gray-500 pl-1 ml-2"
                                     onClick={() => handleSaveChat(chat.id)}
                                 />
                             </div>

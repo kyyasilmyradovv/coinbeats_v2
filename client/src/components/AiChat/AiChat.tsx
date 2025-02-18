@@ -7,7 +7,8 @@ import {
     IconInnerShadowTopRight,
     IconPlayerStopFilled,
     IconArrowUp,
-    IconLayoutSidebarRightCollapseFilled
+    IconLayoutSidebarRightCollapseFilled,
+    IconCheck
 } from '@tabler/icons-react'
 import { usePrivy, useWallets } from '@privy-io/react-auth'
 import { useChainId } from 'wagmi'
@@ -42,6 +43,8 @@ interface Response {
 const AiChat: React.FC = () => {
     const chatContainerRef = useRef<HTMLDivElement>(null)
     const sidebarRef = useRef<HTMLDivElement>(null)
+    const editContainerRef = useRef<HTMLDivElement>(null)
+    const inputRef = useRef<HTMLInputElement>(null)
     // const textareaRef = useRef<HTMLTextAreaElement | null>(null)
     const { wallets, ready: walletsReady } = useWallets()
     const abortControllerRef = useRef<AbortController | null>(null)
@@ -51,11 +54,14 @@ const AiChat: React.FC = () => {
     const [loading, setLoading] = useState(false)
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(window.innerWidth < 1024)
     const [notification, setNotification] = useState<{ title: string; text: string } | null>(null)
+    const [editingChat, setEditingChat] = useState<{ title: string }>({ title: '' })
+    const [isTyping, setIsTyping] = useState(false)
+    const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
     const { ready, authenticated, user, getAccessToken, login } = usePrivy()
 
     useEffect(() => {
-        if (ready && authenticated && user) {
+        if (!authenticated) {
             getAccessToken()
                 .then((token) => {
                     if (!token) {
@@ -77,7 +83,7 @@ const AiChat: React.FC = () => {
     useEffect(() => {
         if (chatContainerRef.current) {
             chatContainerRef.current.scrollTo({
-                top: chatContainerRef.current.scr2ollHeight,
+                top: chatContainerRef.current.scrollHeight,
                 behavior: 'smooth'
             })
         }
@@ -122,7 +128,7 @@ const AiChat: React.FC = () => {
 
         setResponses([])
         setPrompt('')
-        if (window.innerWidth < 1024) toggleSidebar()
+        if (window.innerWidth < 1024) setIsSidebarCollapsed(true)
     }
 
     const handleSendPrompt = async () => {
@@ -304,7 +310,7 @@ const AiChat: React.FC = () => {
                 }}
             >
                 <div
-                    className="relative min-w-[40%] max-w-[80%] bg-[#2b2b2b] p-3 rounded-xl"
+                    className="relative min-w-[50%] max-w-[80%] bg-[#2b2b2b] p-3 rounded-xl"
                     style={{
                         whiteSpace: 'pre-line',
                         overflowWrap: 'break-word'
@@ -364,7 +370,7 @@ const AiChat: React.FC = () => {
 
             <div className="flex">
                 <div
-                    className={`transition-transform ease-in-out ${isSidebarCollapsed ? 'w-0 -translate-x-full duration-700' : 'w-[55%] lg:w-[18%] translate-x-0 duration-500'} ${!isSidebarCollapsed ? 'fixed z-50 shadow-lg' : ''}`}
+                    className={`transition-transform ease-in-out ${isSidebarCollapsed ? 'w-0 -translate-x-full duration-700' : 'w-[70%] lg:w-[18%] translate-x-0 duration-500'} ${!isSidebarCollapsed ? 'fixed z-50 shadow-lg' : ''}`}
                     ref={sidebarRef}
                 >
                     {isSidebarCollapsed ? (
@@ -379,7 +385,7 @@ const AiChat: React.FC = () => {
                     className={`
                         flex flex-col pt-1 items-center justify-between flex-1 h-[95vh]
                         transition-all duration-500 ease-in-out
-                        ${!isSidebarCollapsed ? 'filter blur-sm md:blur-none md:ml-[18%]' : ''}
+                        ${!isSidebarCollapsed ? 'filter blur-md md:blur-none md:ml-[18%]' : ''}
                       `}
                     ref={chatContainerRef}
                     style={{
@@ -418,7 +424,7 @@ const AiChat: React.FC = () => {
                     )}
 
                     {/* Input area */}
-                    <div className={`px-4 w-full bg-black mb-2 flex flex-col sticky bottom-0 ${isSidebarCollapsed ? 'lg:w-[800px]' : 'lg:w-[800px]'}`}>
+                    <div className={`px-4 w-full bg-black mb-4 flex flex-col sticky bottom-0 ${isSidebarCollapsed ? 'lg:w-[800px]' : 'lg:w-[800px]'}`}>
                         <textarea
                             className="pb-14 bg-[#2b2b2b] text-[16px] p-4 rounded-lg focus:outline-none resize-none min-h-[130px] max-h-[500px] "
                             placeholder="Type a message..."
@@ -426,6 +432,9 @@ const AiChat: React.FC = () => {
                             onChange={(e) => {
                                 setPrompt(e.target.value)
                                 adjustHeight(e.target)
+                                setIsTyping(true)
+                                if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current)
+                                typingTimeoutRef.current = setTimeout(() => setIsTyping(false), 1000)
                             }}
                             onKeyDown={(e) => {
                                 if (e.key === 'Enter' && !e.shiftKey) {
@@ -439,7 +448,6 @@ const AiChat: React.FC = () => {
                             <button
                                 className="w-[100px] mb-1 flex gap-1 justify-center border border-gray-400 p-1 w-[120px] text-gray-400 items-center rounded-lg ml-4 absolute bottom-2 left-2 active:bg-gray-100 active:text-black"
                                 onClick={handleNewChat}
-                                // disabled={loading}
                             >
                                 <IconEditCircle size={18} />
                                 New Chat
@@ -451,6 +459,14 @@ const AiChat: React.FC = () => {
                                 className="w-[34px] h-[34px] mr-4 mb-1 bg-gray-300 text-gray-700 absolute bottom-2 right-2 rounded-full p-2 cursor-pointer"
                                 onClick={stopPrompt}
                             />
+                        ) : isTyping ? (
+                            <div className="w-[34px] h-[34px] mr-4 mb-1 bg-gradient-to-r from-[#ff0077] to-[#7700ff] absolute bottom-2 right-2 rounded-full p-1 flex items-center justify-center">
+                                <div className="flex space-x-1">
+                                    <div className="w-1 h-1 bg-white rounded-full animate-bounce"></div>
+                                    <div className="w-1 h-1 bg-white rounded-full animate-bounce delay-100"></div>
+                                    <div className="w-1 h-1 bg-white rounded-full animate-bounce delay-200"></div>
+                                </div>
+                            </div>
                         ) : (
                             <IconArrowUp
                                 className="w-[34px] h-[34px] mr-4 mb-1 bg-gradient-to-r from-[#ff0077] to-[#7700ff] absolute bottom-2 right-2 rounded-full p-1 cursor-pointer"
