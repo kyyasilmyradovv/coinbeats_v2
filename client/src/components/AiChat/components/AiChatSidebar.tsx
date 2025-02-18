@@ -145,7 +145,7 @@ const AiChatSidebar: React.FC<AiChatSidebarProps> = ({ toggleSidebar, handleNewC
                         }
                     >
                         {editingChat && editingChat.id === chat.id ? (
-                            <div ref={editContainerRef} className="flex w-full bg-gray-600 items-center">
+                            <div ref={editContainerRef} className="flex w-full items-center">
                                 <input
                                     ref={inputRef}
                                     type="text"
@@ -157,7 +157,7 @@ const AiChatSidebar: React.FC<AiChatSidebarProps> = ({ toggleSidebar, handleNewC
                                     className="bg-transparent focus:outline-none"
                                 />
                                 <IconCheck
-                                    className="size-6 stroke-[3.3px] text-gray-300 hover:text-primary cursor-pointer border-l border-gray-500 pl-1 ml-auto"
+                                    className="min-size-6 stroke-[3.3px] text-gray-300 hover:text-primary cursor-pointer border-l border-gray-500 pl-1 ml-auto"
                                     onClick={() => handleSaveChat(chat.id)}
                                 />
                             </div>

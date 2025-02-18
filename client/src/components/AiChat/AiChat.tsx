@@ -60,7 +60,7 @@ const AiChat: React.FC = () => {
     const { ready, authenticated, user, getAccessToken, login, logout } = usePrivy()
 
     useEffect(() => {
-        if (!authenticated) {
+        if (authenticated) {
             getAccessToken()
                 .then((token) => {
                     if (!token) {
@@ -222,6 +222,7 @@ const AiChat: React.FC = () => {
             })
         } catch (error) {
             if (error?.response?.status == 401) {
+                await logout()
                 login()
                 await handleNewChat()
                 return
@@ -396,7 +397,7 @@ const AiChat: React.FC = () => {
                 >
                     {/* Header + initial prompts */}
                     {responses.length === 0 && (
-                        <div className={'flex flex-col items-center mt-40 select-none'}>
+                        <div className={'flex flex-col items-center mt-[140px] select-none'}>
                             <img src={logo1} alt="Coinbeats AI Chat" className="h-[50px] mx-auto" />
                             <h2 className="mt-2 mb-2 text-2xl font-bold text-white">Coinbeats AI Chat</h2>
                             <button className="flex mb-10 items-center gap-2 text-white text-sm italic">
@@ -424,10 +425,10 @@ const AiChat: React.FC = () => {
 
                     {/* Input area */}
                     <div
-                        className="px-4 w-full bg-black mb-4 flex flex-col sticky bottom-0 lg:w-[800px]"
+                        className="px-4 w-full bg-black flex flex-col sticky bottom-0 lg:w-[800px]"
                         style={{
                             // Extra padding to ensure you see the bottom when keyboard is open
-                            paddingBottom: 'calc(env(safe-area-inset-bottom) + 1rem)'
+                            paddingBottom: 'calc(env(safe-area-inset-bottom) + 2rem)'
                         }}
                     >
                         <textarea
@@ -439,7 +440,7 @@ const AiChat: React.FC = () => {
                                 adjustHeight(e.target)
                                 setIsTyping(true)
                                 if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current)
-                                typingTimeoutRef.current = setTimeout(() => setIsTyping(false), 1000)
+                                typingTimeoutRef.current = setTimeout(() => setIsTyping(false), 600)
                             }}
                             onKeyDown={(e) => {
                                 if (e.key === 'Enter' && !e.shiftKey) {
@@ -451,7 +452,7 @@ const AiChat: React.FC = () => {
 
                         {responses?.length > 0 && (
                             <button
-                                className="w-[100px] mb-4 flex gap-1 justify-center border border-gray-400 p-1 w-[120px] text-gray-400 items-center rounded-lg ml-4 absolute bottom-2 left-2 active:bg-gray-100 active:text-black"
+                                className="w-[100px] flex gap-1 justify-center border border-gray-400 p-1 w-[120px] text-gray-400 items-center rounded-lg ml-4 absolute bottom-10 left-2 active:bg-gray-100 active:text-black"
                                 onClick={handleNewChat}
                             >
                                 <IconEditCircle size={18} />
@@ -461,11 +462,11 @@ const AiChat: React.FC = () => {
 
                         {loading ? (
                             <IconPlayerStopFilled
-                                className="w-[34px] h-[34px] mr-4 mb-4 bg-gray-300 text-gray-700 absolute bottom-2 right-2 rounded-full p-2 cursor-pointer"
+                                className="w-[34px] h-[34px] mr-4 bg-gray-300 text-gray-700 absolute bottom-10 right-2 rounded-full p-2 cursor-pointer"
                                 onClick={stopPrompt}
                             />
                         ) : isTyping ? (
-                            <div className="w-[34px] h-[34px] mr-4 mb-1 bg-gradient-to-r from-[#ff0077] to-[#7700ff] absolute bottom-2 right-2 rounded-full p-1 flex items-center justify-center">
+                            <div className="w-[34px] h-[34px] mr-4 bg-gradient-to-r from-[#ff0077] to-[#7700ff] absolute bottom-10 right-2 rounded-full p-1 flex items-center justify-center">
                                 <div className="flex space-x-1">
                                     <div className="w-1 h-1 bg-white rounded-full animate-bounce"></div>
                                     <div className="w-1 h-1 bg-white rounded-full animate-bounce delay-100"></div>
@@ -474,7 +475,7 @@ const AiChat: React.FC = () => {
                             </div>
                         ) : (
                             <IconArrowUp
-                                className="w-[34px] h-[34px] mr-4 mb-4 bg-gradient-to-r from-[#ff0077] to-[#7700ff] absolute bottom-2 right-2 rounded-full p-1 cursor-pointer"
+                                className="w-[34px] h-[34px] mr-4 bg-gradient-to-r from-[#ff0077] to-[#7700ff] absolute bottom-10 right-2 rounded-full p-1 cursor-pointer"
                                 onClick={handleSendPrompt}
                             />
                         )}
