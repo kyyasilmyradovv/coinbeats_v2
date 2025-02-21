@@ -50,11 +50,14 @@ exports.getTopic = async (req, res, next) => {
 
 exports.createTopic = async (req, res, next) => {
   try {
+    if (!req?.user?.roles?.includes('SUPERADMIN')) {
+      return next(createError(403, 'Forbidden'));
+    }
     const { title, context, is_active, academyIds } = req.body;
 
     const maxOrder = await prisma.aiTopics.aggregate({ _max: { order: true } });
 
-    const newTopic = await prisma.aiTopics.create({
+    await prisma.aiTopics.create({
       data: {
         title,
         context,
@@ -75,6 +78,10 @@ exports.createTopic = async (req, res, next) => {
 
 exports.updateTopic = async (req, res, next) => {
   try {
+    if (!req?.user?.roles?.includes('SUPERADMIN')) {
+      return next(createError(403, 'Forbidden'));
+    }
+
     const { id } = req.params;
     const { title, context, is_active, academyIds } = req.body;
 
@@ -99,6 +106,10 @@ exports.updateTopic = async (req, res, next) => {
 
 exports.deleteTopic = async (req, res, next) => {
   try {
+    if (!req?.user?.roles?.includes('SUPERADMIN')) {
+      return next(createError(403, 'Forbidden'));
+    }
+
     const { id } = req.params;
 
     await prisma.aiTopics.delete({ where: { id: +id } });
@@ -112,6 +123,10 @@ exports.deleteTopic = async (req, res, next) => {
 
 exports.reorderTopics = async (req, res, next) => {
   try {
+    if (!req?.user?.roles?.includes('SUPERADMIN')) {
+      return next(createError(403, 'Forbidden'));
+    }
+
     const { topicIds } = req.body;
 
     for (let i = 0; i < topicIds.length; i++) {
