@@ -40,6 +40,7 @@ const surpriseBoxRoutes = require('./routes/surpriseBox');
 const raffleRoutes = require('./routes/raffle');
 const coinRoutes = require('./routes/coin');
 const aiChatRoutes = require('./routes/aiChat');
+const aiTopicRoutes = require('./routes/aiTopics');
 const downloadRoutes = require('./routes/downloadRoutes'); // <--
 
 // Initialize Express app
@@ -94,6 +95,7 @@ app.use('/api/surprise-box', surpriseBoxRoutes);
 app.use('/api/raffle', raffleRoutes);
 app.use('/api/coins', coinRoutes);
 app.use('/api/ai-chat', aiChatRoutes);
+app.use('/api/ai-topics', aiTopicRoutes);
 app.use('/api', downloadRoutes);
 
 // Serve static files

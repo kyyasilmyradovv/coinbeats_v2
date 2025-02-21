@@ -107,6 +107,7 @@ model Academy {
   fomoXp           Int?               @default(1000)
   overallRaffle    OverallRaffle?
   coins            Coins[]
+  ai_topics        AiTopics[]         @relation("AiTopicAcademies")
 }
 
 model Subscription {
@@ -520,7 +521,6 @@ model AcademyRaffleEntries {
   @@unique([userId, academyId])
 }
 
-
 model Coins {
   id                    Int                       @id @default(autoincrement())
   name                  String                    @unique
@@ -554,6 +554,17 @@ model Coins {
   categories            String[]
   academyId             Int?
   academy               Academy?                  @relation(fields: [academyId], references: [id])
+}
+
+model AiTopics {
+  id          Int        @id @default(autoincrement())
+  title       String
+  context     String
+  order       Int
+  is_active   Boolean     @default(false)
+  academies   Academy[]   @relation("AiTopicAcademies")
+  created_at  DateTime    @default(now())
+  updated_at  DateTime    @updatedAt
 }
 
 enum OverallRaffleType {
