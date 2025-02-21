@@ -218,7 +218,7 @@ export default function AiTopicsPage() {
                                 {rows.map((row) => (
                                     <SortableItem key={row.id} id={row.id} disabled={!reorderMode}>
                                         <Card
-                                            className="rounded-2xl shadow-lg border dark:border-gray-600"
+                                            className="rounded-2xl shadow-lg border dark:border-gray-600 select-none"
                                             style={{ marginBottom: 0, overflow: 'hidden' }}
                                             onClick={() => !reorderMode && handleEditTopic(row.id.toString())}
                                         >
