@@ -14,32 +14,12 @@ const {
 const router = express.Router();
 
 router.get('/academies', asyncHandler(getAcademies));
-router.patch(
-  '/reorder',
-  authenticateToken,
-  authorizeRoles('SUPERADMIN'),
-  asyncHandler(reorderTopics)
-);
+router.patch('/reorder', authenticateToken, asyncHandler(reorderTopics));
 
 router.get('/', authenticateToken, asyncHandler(getAllTopics));
 router.get('/:id', asyncHandler(getTopic));
-router.post(
-  '/',
-  authenticateToken,
-  authorizeRoles('SUPERADMIN'),
-  asyncHandler(createTopic)
-);
-router.put(
-  '/:id',
-  authenticateToken,
-  authorizeRoles('SUPERADMIN'),
-  asyncHandler(updateTopic)
-);
-router.delete(
-  '/:id',
-  authenticateToken,
-  authorizeRoles('SUPERADMIN'),
-  asyncHandler(deleteTopic)
-);
+router.post('/', authenticateToken, asyncHandler(createTopic));
+router.put('/:id', authenticateToken, asyncHandler(updateTopic));
+router.delete('/:id', authenticateToken, asyncHandler(deleteTopic));
 
 module.exports = router;
