@@ -51,6 +51,7 @@ const Sidebar: React.FC = () => {
     const roleMenuItems = {
         SUPERADMIN: [
             { label: 'Dashboard', path: '/superadmin-dashboard' },
+            { label: 'AI Model', path: '/ai-topics' },
             { label: 'User Management', path: '/user-management' },
             { label: 'Scam Management', path: '/scam-management' },
             { label: 'Academy Management', path: '/academy-management' },

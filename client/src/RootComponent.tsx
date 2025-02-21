@@ -65,6 +65,9 @@ import CoinsPage from './pages/CoinsPage'
 import PointsControlPage from './pages/PointsControlPage'
 import CoinShowPage from './pages/CoinShowPage'
 import AiChat from './components/AiChat/AiChat'
+import AiTopicsPage from './pages/AiTopicsPage'
+import AddAiTopicPage from './pages/AddAiTopicPage'
+import EditAiTopicPage from './pages/EditAiTopicPage'
 
 function RootComponent() {
     const [isLoading, setIsLoading] = useState(true)
@@ -209,6 +212,30 @@ function RootComponent() {
                             element={
                                 <RouteGuard allowedRoles={['SUPERADMIN']}>
                                     <SuperAdminDashboardPage />
+                                </RouteGuard>
+                            }
+                        />
+                        <Route
+                            path="/ai-topics"
+                            element={
+                                <RouteGuard allowedRoles={['SUPERADMIN']}>
+                                    <AiTopicsPage />
+                                </RouteGuard>
+                            }
+                        />
+                        <Route
+                            path="/ai-topics/add"
+                            element={
+                                <RouteGuard allowedRoles={['SUPERADMIN']}>
+                                    <AddAiTopicPage />
+                                </RouteGuard>
+                            }
+                        />
+                        <Route
+                            path="/ai-topics/:id"
+                            element={
+                                <RouteGuard allowedRoles={['SUPERADMIN']}>
+                                    <EditAiTopicPage />
                                 </RouteGuard>
                             }
                         />

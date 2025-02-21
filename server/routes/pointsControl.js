@@ -1,5 +1,3 @@
-// server/routes/category.js
-
 const express = require('express');
 const asyncHandler = require('express-async-handler');
 const { authenticateToken, authorizeRoles } = require('../middleware/auth');
