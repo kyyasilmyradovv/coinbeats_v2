@@ -24,11 +24,12 @@ function SortableItem({ id, children, disabled }: { id: number; children: React.
     const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id, disabled })
     const style = {
         transform: CSS.Transform.toString(transform),
-        transition
+        transition,
+        touchAction: disabled ? 'auto' : 'none'
     }
 
     return (
-        <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+        <div ref={setNodeRef} style={style} {...attributes} {...(disabled ? {} : listeners)}>
             {children}
         </div>
     )
@@ -154,8 +155,7 @@ export default function AiTopicsPage() {
     const sensors = useSensors(
         useSensor(PointerSensor, {
             activationConstraint: {
-                delay: 150, // delay activation by 150ms
-                tolerance: 5 // allow slight movement during the delay
+                distance: 5 // start drag after the pointer moves 5px
             }
         }),
         useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
