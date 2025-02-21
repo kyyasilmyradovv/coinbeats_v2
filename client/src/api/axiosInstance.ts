@@ -16,11 +16,8 @@ axiosInstance.interceptors.request.use(
             config.headers['Authorization'] = `Bearer ${accessToken}`
         }
 
-        // const privyToken = localStorage.getItem('privyAccessToken')
-
-        // if (privyToken) {
-        //     config.headers['Authorization'] = `Privy ${privyToken}`
-        // }
+        const privyToken = localStorage.getItem('privyAccessToken')
+        if (privyToken) config.headers['privy'] = privyToken
 
         const telegramUserId = useSessionStore.getState().userId
         if (telegramUserId) {

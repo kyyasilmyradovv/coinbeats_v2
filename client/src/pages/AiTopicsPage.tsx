@@ -139,7 +139,6 @@ export default function AiTopicsPage() {
             await axiosInstance.patch('/api/ai-topics/reorder', { topicIds: reorderedIds })
             setReorderMode(false)
             setReorderSuccess(true)
-            // Reset the flag so Save stays disabled until new change occurs.
             setHasReorderChange(false)
             fetchRows(true)
             setTimeout(() => {
@@ -153,7 +152,12 @@ export default function AiTopicsPage() {
     }
 
     const sensors = useSensors(
-        useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                delay: 150, // delay activation by 150ms
+                tolerance: 5 // allow slight movement during the delay
+            }
+        }),
         useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
     )
 
