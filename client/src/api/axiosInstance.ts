@@ -16,11 +16,17 @@ axiosInstance.interceptors.request.use(
             config.headers['Authorization'] = `Bearer ${accessToken}`
         }
 
-        const privyToken = localStorage.getItem('privyAccessToken')
+        // const privyToken = localStorage.getItem('privyAccessToken')
 
-        if (privyToken) {
-            config.headers['Authorization'] = `Privy ${privyToken}`
+        // if (privyToken) {
+        //     config.headers['Authorization'] = `Privy ${privyToken}`
+        // }
+
+        const telegramUserId = useSessionStore.getState().userId
+        if (telegramUserId) {
+            config.headers['X-Telegram-User-Id'] = telegramUserId
         }
+
         return config
     },
     (error) => Promise.reject(error)
@@ -57,21 +63,22 @@ axiosInstance.interceptors.response.use(
     }
 )
 
-// Request interceptor for adding tokens to requests
-axiosInstance.interceptors.request.use(
-    (config) => {
-        const accessToken = useAuthStore.getState().accessToken || localStorage.getItem('accessToken')
-        if (accessToken) {
-            config.headers['Authorization'] = `Bearer ${accessToken}`
-        }
+// COULD BE DELETED AFTER SOME TESTING
+// // Request interceptor for adding tokens to requests
+// axiosInstance.interceptors.request.use(
+//     (config) => {
+//         const accessToken = useAuthStore.getState().accessToken || localStorage.getItem('accessToken')
+//         if (accessToken) {
+//             config.headers['Authorization'] = `Bearer ${accessToken}`
+//         }
 
-        const telegramUserId = useSessionStore.getState().userId
-        if (telegramUserId) {
-            config.headers['X-Telegram-User-Id'] = telegramUserId
-        }
-        return config
-    },
-    (error) => Promise.reject(error)
-)
+//         const telegramUserId = useSessionStore.getState().userId
+//         if (telegramUserId) {
+//             config.headers['X-Telegram-User-Id'] = telegramUserId
+//         }
+//         return config
+//     },
+//     (error) => Promise.reject(error)
+// )
 
 export default axiosInstance
