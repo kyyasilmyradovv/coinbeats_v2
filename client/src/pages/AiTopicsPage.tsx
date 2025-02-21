@@ -144,7 +144,7 @@ export default function AiTopicsPage() {
             fetchRows(true)
             setTimeout(() => {
                 setReorderSuccess(false)
-            }, 1000)
+            }, 1500)
         } catch (error) {
             console.error('Error saving reordered topics:', error)
         } finally {
@@ -153,10 +153,8 @@ export default function AiTopicsPage() {
     }
 
     const sensors = useSensors(
-        useSensor(PointerSensor),
-        useSensor(KeyboardSensor, {
-            coordinateGetter: sortableKeyboardCoordinates
-        })
+        useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+        useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
     )
 
     const handleDragEnd = (event: { active: any; over: any }) => {
