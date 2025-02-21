@@ -20,12 +20,8 @@ function getKey(header, callback) {
 
 exports.requirePrivyAuth = (req, res, next) => {
   try {
-    const authHeader = req.headers.authorization;
-
-    const token = authHeader?.split(' ')[1];
-    if (!token) {
-      return res.status(401).json({ error: 'Missing Bearer token' });
-    }
+    const token = req.headers['privy'];
+    if (!token) return res.status(401).json({ error: 'Missing Privy token' });
 
     // const decodedRaw = jwt.decode(token, { complete: true });
     // console.log(decodedRaw);
