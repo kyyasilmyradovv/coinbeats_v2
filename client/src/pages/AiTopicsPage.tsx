@@ -20,17 +20,16 @@ interface RowInterface {
     is_active: boolean
 }
 
-function SortableItem({ id, children, disabled }: { id: number; children: React.ReactNode; disabled: boolean }) {
+function SortableItem({ id, children, disabled }: { id: number; children: (dragHandleProps: any) => React.ReactNode; disabled: boolean }) {
     const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id, disabled })
     const style = {
         transform: CSS.Transform.toString(transform),
-        transition,
-        touchAction: disabled ? 'auto' : 'none'
+        transition
     }
 
     return (
-        <div ref={setNodeRef} style={style} {...attributes} {...(disabled ? {} : listeners)}>
-            {children}
+        <div ref={setNodeRef} style={style} {...attributes}>
+            {children(!disabled ? listeners : {})}
         </div>
     )
 }
@@ -217,22 +216,29 @@ export default function AiTopicsPage() {
                             <SortableContext items={rows} strategy={verticalListSortingStrategy}>
                                 {rows.map((row) => (
                                     <SortableItem key={row.id} id={row.id} disabled={!reorderMode}>
-                                        <Card
-                                            className="rounded-2xl shadow-lg border dark:border-gray-600 select-none"
-                                            style={{ marginBottom: 0, overflow: 'hidden' }}
-                                            onClick={() => !reorderMode && handleEditTopic(row.id.toString())}
-                                        >
-                                            <div className="flex justify-between gap-4">
-                                                <div className="text-[14px] font-semibold flex items-center gap-2">
-                                                    {reorderMode && <IconGripVertical size={22} />}
-                                                    {row.title}
+                                        {(dragHandleProps) => (
+                                            <Card
+                                                className="rounded-2xl shadow-lg border dark:border-gray-600 select-none"
+                                                style={{ marginBottom: 0, overflow: 'hidden' }}
+                                                onClick={() => !reorderMode && handleEditTopic(row.id.toString())}
+                                            >
+                                                <div className="flex justify-between gap-4">
+                                                    <div className="text-[14px] font-semibold flex items-center gap-2">{row.title}</div>
+                                                    <div className="flex gap-1 items-center text-[14px] font-semibold">
+                                                        <span className={`w-2 h-2 rounded-full ${row.is_active ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                                                        {row.is_active ? 'Active' : 'Passive'}
+                                                        {reorderMode && (
+                                                            <IconGripVertical
+                                                                className="ml-2"
+                                                                size={22}
+                                                                {...dragHandleProps}
+                                                                style={{ touchAction: 'none', cursor: 'grab' }}
+                                                            />
+                                                        )}
+                                                    </div>
                                                 </div>
-                                                <div className="flex gap-1 items-center text-[14px] font-semibold">
-                                                    <span className={`w-2 h-2 rounded-full ${row.is_active ? 'bg-green-500' : 'bg-red-500'}`}></span>
-                                                    {row.is_active ? 'Active' : 'Passive'}
-                                                </div>
-                                            </div>
-                                        </Card>
+                                            </Card>
+                                        )}
                                     </SortableItem>
                                 ))}
                             </SortableContext>

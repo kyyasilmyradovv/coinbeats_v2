@@ -21,7 +21,7 @@ router.patch(
   asyncHandler(reorderTopics)
 );
 
-router.get('/', authenticateToken, asyncHandler(getAllTopics));
+router.get('/', asyncHandler(getAllTopics));
 router.get('/:id', authenticateToken, asyncHandler(getTopic));
 router.post(
   '/',
