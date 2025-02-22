@@ -10,9 +10,11 @@ exports.getAllTopics = async (req, res, next) => {
     if (keyword) {
       where.title = { contains: keyword, mode: 'insensitive' };
     }
+    if (limit == 100) where.is_active = true;
 
     let topics = await prisma.aiTopics.findMany({
       where,
+      select: { id: true, title: true, is_active: true },
       orderBy: { order: 'asc' },
       take: parseInt(limit),
       skip: parseInt(offset),

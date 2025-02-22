@@ -1,10 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react'
 import ReactDOM from 'react-dom'
 import { IconSearch, IconLayoutSidebarLeftCollapseFilled, IconEditCircle, IconTrash, IconPencil, IconX, IconCheck } from '@tabler/icons-react'
+import axiosInstance from '~/api/axiosInstance'
 
 interface AiChatSidebarProps {
     toggleSidebar: () => void
     handleNewChat: () => void
+}
+
+interface AiTopicInterface {
+    id: number
+    title: string
 }
 
 const AiChatSidebar: React.FC<AiChatSidebarProps> = ({ toggleSidebar, handleNewChat }) => {
@@ -16,6 +22,7 @@ const AiChatSidebar: React.FC<AiChatSidebarProps> = ({ toggleSidebar, handleNewC
         { id: 2, title: 'How to setup wallet?' },
         { id: 3, title: 'How to do transactions?' }
     ])
+    const [topics, setTopics] = useState<AiTopicInterface[]>([])
     const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
     const [searchQuery, setSearchQuery] = useState<string>('')
     const [isSearchActive, setIsSearchActive] = useState<boolean>(false)
@@ -31,6 +38,19 @@ const AiChatSidebar: React.FC<AiChatSidebarProps> = ({ toggleSidebar, handleNewC
             inputRef.current.setSelectionRange(length, length)
         }
     }, [editingChat])
+
+    useEffect(() => {
+        const fetchTopics = async () => {
+            try {
+                const response = await axiosInstance.get('/api/ai-topics?limit=100')
+                setTopics(response.data)
+            } catch (error) {
+                console.error('Failed to fetch topics', error)
+            }
+        }
+
+        fetchTopics()
+    }, [])
 
     useEffect(() => {
         if (editingChat) {
@@ -144,7 +164,12 @@ const AiChatSidebar: React.FC<AiChatSidebarProps> = ({ toggleSidebar, handleNewC
                 </div>
             </div>
 
-            {/* Chat Items */}
+            {/* My Chats */}
+            <div className="flex items-center my-2">
+                <div className="flex-grow border-t border-gray-600"></div>
+                <span className="mx-2 text-xs text-gray-400 uppercase tracking-wider">My Chats</span>
+                <div className="flex-grow border-t border-gray-600"></div>
+            </div>
             {filteredChats.map((chat, index) => (
                 <div key={chat.id} className="relative flex flex-col" onMouseEnter={() => setHoveredIndex(index)} onMouseLeave={() => setHoveredIndex(null)}>
                     <div
@@ -233,6 +258,26 @@ const AiChatSidebar: React.FC<AiChatSidebarProps> = ({ toggleSidebar, handleNewC
                                 </div>,
                                 document.body
                             )}
+                    </div>
+                </div>
+            ))}
+
+            {/* Trending Topics */}
+            <div className="flex items-center my-2 mt-8">
+                <div className="flex-grow border-t border-gray-600"></div>
+                <span className="mx-2 text-xs text-gray-400 uppercase tracking-wider">Trending Topics</span>
+                <div className="flex-grow border-t border-gray-600"></div>
+            </div>
+            {topics?.map((topic, index) => (
+                <div key={topic.id} className="relative flex flex-col">
+                    <div
+                        key={topic.id}
+                        className="w-full flex items-center p-2 rounded-lg transition-all duration-200 hover:bg-gradient-to-r from-[#ff0077] to-[#7700ff]"
+                        // onClick={handleOpenChat}
+                    >
+                        <span className="truncate flex-1 select-none" title={topic.title}>
+                            {topic.title}
+                        </span>
                     </div>
                 </div>
             ))}
