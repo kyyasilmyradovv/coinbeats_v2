@@ -16,7 +16,7 @@ import InitialPrompts from './components/InitialPrompts'
 import Navbar from '../common/Navbar'
 import bunnyLogo from '../../images/bunny-mascot.png'
 import axiosInstance from '~/api/axiosInstance'
-import TypeWriter from './components/TypeWriter'
+import TypeWriter from './components/Typewriter'
 import AiChatSidebar from './components/AiChatSidebar'
 import { useNavigate } from 'react-router-dom'
 
