@@ -2,10 +2,12 @@ import React, { useState, useRef, useEffect } from 'react'
 import ReactDOM from 'react-dom'
 import { IconSearch, IconLayoutSidebarLeftCollapseFilled, IconEditCircle, IconTrash, IconPencil, IconX, IconCheck } from '@tabler/icons-react'
 import axiosInstance from '~/api/axiosInstance'
+import { Preloader } from 'konsta/react'
 
 interface AiChatSidebarProps {
     toggleSidebar: () => void
     handleNewChat: () => void
+    handleOpenTopic: (topicId: number) => Promise<void>
 }
 
 interface AiTopicInterface {
@@ -13,7 +15,7 @@ interface AiTopicInterface {
     title: string
 }
 
-const AiChatSidebar: React.FC<AiChatSidebarProps> = ({ toggleSidebar, handleNewChat }) => {
+const AiChatSidebar: React.FC<AiChatSidebarProps> = ({ toggleSidebar, handleNewChat, handleOpenTopic }) => {
     const editContainerRef = useRef<HTMLDivElement>(null)
     const inputRef = useRef<HTMLInputElement>(null)
     const modalRef = useRef<HTMLDivElement>(null)
@@ -268,19 +270,23 @@ const AiChatSidebar: React.FC<AiChatSidebarProps> = ({ toggleSidebar, handleNewC
                 <span className="mx-2 text-xs text-gray-400 uppercase tracking-wider">Trending Topics</span>
                 <div className="flex-grow border-t border-gray-600"></div>
             </div>
-            {topics?.map((topic, index) => (
-                <div key={topic.id} className="relative flex flex-col">
-                    <div
-                        key={topic.id}
-                        className="w-full flex items-center p-2 rounded-lg transition-all duration-200 hover:bg-gradient-to-r from-[#ff0077] to-[#7700ff]"
-                        // onClick={handleOpenChat}
-                    >
-                        <span className="truncate flex-1 select-none" title={topic.title}>
-                            {topic.title}
-                        </span>
+            {topics?.length > 0 ? (
+                topics.map((topic, index) => (
+                    <div key={topic.id} className="relative flex flex-col">
+                        <div
+                            key={topic.id}
+                            className="w-full flex items-center p-2 rounded-lg transition-all duration-200 hover:bg-gradient-to-r from-[#ff0077] to-[#7700ff]"
+                            onClick={() => handleOpenTopic(topic.id)}
+                        >
+                            <span className="truncate flex-1 select-none">{topic.title}</span>
+                        </div>
                     </div>
+                ))
+            ) : (
+                <div className="flex items-center justify-center py-4">
+                    <Preloader />
                 </div>
-            ))}
+            )}
 
             {/* Rename Success Modal */}
             {showRenameSuccess &&
@@ -327,7 +333,6 @@ const AiChatSidebar: React.FC<AiChatSidebarProps> = ({ toggleSidebar, handleNewC
                                         className="w-20 h-20 mx-auto stroke-red-500"
                                         viewBox="0 0 24 24"
                                         fill="none"
-                                        // stroke=""
                                         strokeWidth="2"
                                         strokeLinecap="round"
                                         strokeLinejoin="round"

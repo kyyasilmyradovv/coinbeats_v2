@@ -16,15 +16,24 @@ import InitialPrompts from './components/InitialPrompts'
 import Navbar from '../common/Navbar'
 import bunnyLogo from '../../images/bunny-mascot.png'
 import axiosInstance from '~/api/axiosInstance'
-import Typewriter from './components/Typewriter'
+import TypeWriter from './components/TypeWriter'
 import AiChatSidebar from './components/AiChatSidebar'
+import { useNavigate } from 'react-router-dom'
+
+interface LinkInterface {
+    id?: number
+    name?: string
+    logoUrl?: string
+}
 
 interface ResponseMessage {
     sender: string // "user" or "ai"
     content: string
+    links?: LinkInterface[]
 }
 
 interface Response {
+    links?: LinkInterface[]
     conversationHistory: ResponseMessage[]
     data?: {
         description: string
@@ -40,11 +49,9 @@ interface Response {
 }
 
 const AiChat: React.FC = () => {
+    const navigate = useNavigate()
     const chatContainerRef = useRef<HTMLDivElement>(null)
     const sidebarRef = useRef<HTMLDivElement>(null)
-    const editContainerRef = useRef<HTMLDivElement>(null)
-    const inputRef = useRef<HTMLInputElement>(null)
-    const { wallets, ready: walletsReady } = useWallets()
     const abortControllerRef = useRef<AbortController | null>(null)
     const chainId = useChainId()
     const [prompt, setPrompt] = useState('')
@@ -56,6 +63,7 @@ const AiChat: React.FC = () => {
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
     const [touchStart, setTouchStart] = useState<number | null>(null)
     const [touchEnd, setTouchEnd] = useState<number | null>(null)
+    const [typewritingComplete, setTypewritingComplete] = useState(false)
 
     const { ready, authenticated, user, getAccessToken, login, logout } = usePrivy()
 
@@ -107,7 +115,9 @@ const AiChat: React.FC = () => {
 
         setResponses((prev) => {
             const updated = [...prev]
-            updated[updated.length - 1].conversationHistory[1].content = 'Prompt cancelled'
+            const lastItem = updated[updated.length - 1]
+            lastItem.conversationHistory[1].content = 'canceled'
+            lastItem.conversationHistory[1].links = []
             return updated
         })
         setPrompt('')
@@ -128,6 +138,39 @@ const AiChat: React.FC = () => {
         setResponses([])
         setPrompt('')
         if (window.innerWidth < 1024) setIsSidebarCollapsed(true)
+    }
+
+    const handleOpenTopic = async (topicId: number) => {
+        const textarea = document.querySelector('textarea')
+        if (textarea) {
+            textarea.style.height = '130px'
+        }
+
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort()
+        }
+
+        setResponses([])
+        setPrompt('')
+        if (window.innerWidth < 1024) setIsSidebarCollapsed(true)
+
+        const fetchTopic = async (id: number) => {
+            try {
+                const response = await axiosInstance.get(`/api/ai-topics/${id}`)
+                setResponses([
+                    {
+                        conversationHistory: [
+                            { sender: 'user', content: response.data.title },
+                            { sender: 'ai', content: response.data.context, links: response.data.academies }
+                        ]
+                    }
+                ])
+            } catch (error) {
+                console.log('Error fetching topic', error)
+            }
+        }
+
+        fetchTopic(topicId)
     }
 
     const handleSendPrompt = async () => {
@@ -297,8 +340,11 @@ const AiChat: React.FC = () => {
         )
     }
 
-    // Render a single chat bubble
-    const renderChatBubble = (message: ResponseMessage, idx: number, isLast: boolean) => {
+    const constructImageUrl = (url: string) => {
+        return `https://telegram.coinbeats.xyz/${url}`
+    }
+
+    const renderChatBubble = (message: ResponseMessage, links: LinkInterface[], idx: number, isLast: boolean) => {
         const isUser = message.sender === 'user'
         return (
             <div
@@ -339,7 +385,46 @@ const AiChat: React.FC = () => {
                     ) : isUser || !isLast ? (
                         <span className="text-[14px] lg:text-[16px]">{message.content.replace('Coinbeats AI is thinking...', '').trim()}</span>
                     ) : (
-                        <Typewriter text={message.content.replace('Coinbeats AI is thinking...', '').trim()} className="text-[14px] lg:text-[16px]" speed={2} />
+                        <div>
+                            <TypeWriter
+                                text={message.content.replace('Coinbeats AI is thinking...', '').trim()}
+                                className="text-[14px] lg:text-[16px]"
+                                speed={1}
+                                onStart={() => {
+                                    setTypewritingComplete(false)
+                                }}
+                                onDone={() => {
+                                    setTypewritingComplete(true)
+                                }}
+                            />
+                        </div>
+                    )}
+
+                    {links?.length > 0 && (typewritingComplete || !isLast) && (
+                        <div>
+                            <div className="flex items-center my-2 mt-8">
+                                <div className="flex-grow border-t border-gray-600"></div>
+                                <span className="mx-2 text-xs text-gray-400 uppercase tracking-wider">Check those out</span>
+                                <div className="flex-grow border-t border-gray-600"></div>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+                                {links.map(({ id, name, logoUrl }) => (
+                                    <div
+                                        key={id}
+                                        className="flex items-center p-4 rounded-lg shadow-md hover:shadow-xl transition cursor-pointer border"
+                                        onClick={() => navigate(`/product/${id}`)}
+                                    >
+                                        <img
+                                            alt={name}
+                                            className="h-8 md:h-10 mr-3 rounded-full object-cover"
+                                            src={constructImageUrl(logoUrl || '')}
+                                            loading="lazy"
+                                        />
+                                        <span className="font-semibold text-gray-500 truncate max-w-[120px]">{name}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
                     )}
                 </div>
             </div>
@@ -367,12 +452,10 @@ const AiChat: React.FC = () => {
     const handleSwipe = () => {
         if (touchStart !== null && touchEnd !== null) {
             const delta = touchEnd - touchStart
-            const threshold = 50 // Minimum swipe distance in px
+            const threshold = 50
             if (delta > threshold) {
-                // Swipe right: open sidebar
                 setIsSidebarCollapsed(false)
             } else if (delta < -threshold) {
-                // Swipe left: close sidebar
                 setIsSidebarCollapsed(true)
             }
         }
@@ -397,7 +480,7 @@ const AiChat: React.FC = () => {
                     {isSidebarCollapsed ? (
                         <IconLayoutSidebarRightCollapseFilled className="absolute size-6 text-gray-200 hover:text-primary mt-3 ml-4" onClick={toggleSidebar} />
                     ) : (
-                        <AiChatSidebar toggleSidebar={toggleSidebar} handleNewChat={handleNewChat} />
+                        <AiChatSidebar toggleSidebar={toggleSidebar} handleNewChat={handleNewChat} handleOpenTopic={handleOpenTopic} />
                     )}
                 </div>
                 {/* Main Chat Container */}
@@ -436,7 +519,9 @@ const AiChat: React.FC = () => {
                         >
                             {responses.map((response, i) => (
                                 <React.Fragment key={i}>
-                                    {response.conversationHistory.map((msg, msgIdx) => renderChatBubble(msg, msgIdx, i == responses.length - 1))}
+                                    {response.conversationHistory.map((msg, msgIdx) =>
+                                        renderChatBubble(msg, msg?.links || [], msgIdx, i == responses.length - 1)
+                                    )}
                                     {response.data && renderTransactionCard(response.data, i)}
                                 </React.Fragment>
                             ))}

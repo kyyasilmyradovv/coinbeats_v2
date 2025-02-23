@@ -22,7 +22,7 @@ router.patch(
 );
 
 router.get('/', asyncHandler(getAllTopics));
-router.get('/:id', authenticateToken, asyncHandler(getTopic));
+router.get('/:id', asyncHandler(getTopic));
 router.post(
   '/',
   authenticateToken,
