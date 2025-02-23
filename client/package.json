@@ -60,6 +60,7 @@
         "react-select": "^5.8.3",
         "react-window": "^1.8.10",
         "swiper": "^11.1.10",
+        "typewriter-effect": "^2.21.0",
         "viem": "^2.23.1",
         "vite-tsconfig-paths": "^4.3.2",
         "wagmi": "^2.14.11",

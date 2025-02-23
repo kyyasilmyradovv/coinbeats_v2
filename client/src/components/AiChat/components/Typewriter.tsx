@@ -1,32 +1,41 @@
-import React, { useState, useEffect } from 'react'
+import React, { useRef, useEffect } from 'react'
+import Typewriter from 'typewriter-effect'
 
-interface TypewriterProps {
+export interface TypeWriterProps {
     text: string
     speed?: number
     className?: string
+    onStart?: () => void
+    onDone?: () => void
 }
 
-const Typewriter: React.FC<TypewriterProps> = ({ text, speed = 20, className = '' }) => {
-    const [displayedText, setDisplayedText] = useState('')
+const TypeWriter: React.FC<TypeWriterProps> = ({ text, speed = 1, className = '', onStart, onDone }) => {
+    const typewriterRef = useRef<any>(null)
 
-    useEffect(() => {
-        let index = 0
-        let timerId: ReturnType<typeof setTimeout>
-        setDisplayedText('')
-
-        const tick = () => {
-            setDisplayedText(text.slice(0, index + 1))
-            index++
-            if (index < text.length) {
-                timerId = setTimeout(tick, speed)
-            }
-        }
-        tick()
-
-        return () => clearTimeout(timerId)
-    }, [text, speed])
-
-    return <span className={className}>{displayedText}</span>
+    return (
+        <div className={className}>
+            <Typewriter
+                options={{
+                    delay: speed,
+                    cursor: '',
+                    autoStart: true,
+                    loop: false
+                }}
+                onInit={(typewriter) => {
+                    typewriterRef.current = typewriter
+                    typewriter
+                        .callFunction(() => {
+                            if (onStart) onStart()
+                        })
+                        .typeString(text)
+                        .callFunction(() => {
+                            if (onDone) onDone()
+                        })
+                        .start()
+                }}
+            />
+        </div>
+    )
 }
 
-export default Typewriter
+export default TypeWriter

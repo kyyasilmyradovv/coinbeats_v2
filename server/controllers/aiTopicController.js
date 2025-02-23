@@ -38,6 +38,7 @@ exports.getTopic = async (req, res, next) => {
           select: {
             id: true,
             name: true,
+            logoUrl: true,
           },
         },
       },
