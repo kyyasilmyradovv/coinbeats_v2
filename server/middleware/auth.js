@@ -18,7 +18,6 @@ exports.authenticateToken = async (req, res, next) => {
   }
 
   if (token) {
-    // Existing token verification logic
     jwt.verify(token, JWT_SECRET, async (err, user) => {
       if (err) return next(createError(403, 'Forbidden'));
 
