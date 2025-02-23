@@ -19,6 +19,7 @@ import axiosInstance from '~/api/axiosInstance'
 import TypeWriter from './components/Typewriter'
 import AiChatSidebar from './components/AiChatSidebar'
 import { useNavigate } from 'react-router-dom'
+import useAcademiesStore from '../../store/useAcademiesStore'
 
 interface LinkInterface {
     id?: number
@@ -463,12 +464,14 @@ const AiChat: React.FC = () => {
         setTouchEnd(null)
     }
 
+    const { academies } = useAcademiesStore((state) => ({
+        academies: state.academies
+    }))
+
     const handleAcademyClick = async (id: number) => {
         try {
-            const response = await axiosInstance.get(`/api/academies/${id}`)
-            const academy = response.data
-
-            navigate(`/product/${id}`, { state: { academy } })
+            const academy = academies.find((a) => a.id === id)
+            if (academy) navigate(`/product/${id}`, { state: { academy } })
         } catch (error) {
             console.error('Error fetching academy details:', error)
         }
