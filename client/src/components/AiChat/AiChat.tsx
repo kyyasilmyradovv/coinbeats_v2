@@ -389,7 +389,7 @@ const AiChat: React.FC = () => {
                             <TypeWriter
                                 text={message.content.replace('Coinbeats AI is thinking...', '').trim()}
                                 className="text-[14px] lg:text-[16px]"
-                                speed={1}
+                                speed={0}
                                 onStart={() => {
                                     setTypewritingComplete(false)
                                 }}
@@ -412,7 +412,7 @@ const AiChat: React.FC = () => {
                                     <div
                                         key={id}
                                         className="flex items-center p-4 rounded-lg shadow-md hover:shadow-xl transition cursor-pointer border"
-                                        onClick={() => navigate(`/product/${id}`)}
+                                        onClick={() => handleAcademyClick(id)}
                                     >
                                         <img
                                             alt={name}
@@ -461,6 +461,17 @@ const AiChat: React.FC = () => {
         }
         setTouchStart(null)
         setTouchEnd(null)
+    }
+
+    const handleAcademyClick = async (id: number) => {
+        try {
+            const response = await axiosInstance.get(`/api/academies/${id}`)
+            const academy = response.data
+
+            navigate(`/product/${id}`, { state: { academy } })
+        } catch (error) {
+            console.error('Error fetching academy details:', error)
+        }
     }
 
     return (
