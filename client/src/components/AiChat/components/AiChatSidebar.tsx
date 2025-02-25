@@ -4,27 +4,40 @@ import { IconSearch, IconLayoutSidebarLeftCollapseFilled, IconEditCircle, IconTr
 import axiosInstance from '~/api/axiosInstance'
 import { Preloader } from 'konsta/react'
 
-interface AiChatSidebarProps {
-    toggleSidebar: () => void
-    handleNewChat: () => void
-    handleOpenTopic: (topicId: number) => Promise<void>
-}
-
-interface AiTopicInterface {
+interface AiChatInterface {
     id: number
     title: string
 }
 
-const AiChatSidebar: React.FC<AiChatSidebarProps> = ({ toggleSidebar, handleNewChat, handleOpenTopic }) => {
+interface AiChatSidebarProps {
+    chats: AiChatInterface[]
+    topics: AiChatInterface[]
+    chatsLoading: boolean
+    handleSetChats: (chats: AiChatInterface[]) => void
+    toggleSidebar: () => void
+    handleNewChat: () => void
+    handleOpenTopic: (topicId: number) => Promise<void>
+    handleOpenChat: (id: number) => Promise<void>
+}
+
+interface AiChatInterface {
+    id: number
+    title: string
+}
+
+const AiChatSidebar: React.FC<AiChatSidebarProps> = ({
+    chats,
+    handleSetChats,
+    chatsLoading,
+    topics,
+    toggleSidebar,
+    handleNewChat,
+    handleOpenTopic,
+    handleOpenChat
+}) => {
     const editContainerRef = useRef<HTMLDivElement>(null)
     const inputRef = useRef<HTMLInputElement>(null)
     const modalRef = useRef<HTMLDivElement>(null)
-    const [chats, setChats] = useState([
-        { id: 1, title: 'What is crypto?' },
-        { id: 2, title: 'How to setup wallet?' },
-        { id: 3, title: 'How to do transactions?' }
-    ])
-    const [topics, setTopics] = useState<AiTopicInterface[]>([])
     const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
     const [searchQuery, setSearchQuery] = useState<string>('')
     const [isSearchActive, setIsSearchActive] = useState<boolean>(false)
@@ -32,6 +45,8 @@ const AiChatSidebar: React.FC<AiChatSidebarProps> = ({ toggleSidebar, handleNewC
     const [chatToDelete, setChatToDelete] = useState<number | null>(null)
     const [showRenameSuccess, setShowRenameSuccess] = useState(false)
     const [showDeleteSuccess, setShowDeleteSuccess] = useState(false)
+    const [isFetchingMore, setIsFetchingMore] = useState(false)
+    const [hasMoreChats, setHasMoreChats] = useState<boolean>(chats?.length > 11)
 
     useEffect(() => {
         if (editingChat && inputRef.current) {
@@ -40,19 +55,6 @@ const AiChatSidebar: React.FC<AiChatSidebarProps> = ({ toggleSidebar, handleNewC
             inputRef.current.setSelectionRange(length, length)
         }
     }, [editingChat])
-
-    useEffect(() => {
-        const fetchTopics = async () => {
-            try {
-                const response = await axiosInstance.get('/api/ai-topics?limit=100')
-                setTopics(response.data)
-            } catch (error) {
-                console.error('Failed to fetch topics', error)
-            }
-        }
-
-        fetchTopics()
-    }, [])
 
     useEffect(() => {
         if (editingChat) {
@@ -95,13 +97,7 @@ const AiChatSidebar: React.FC<AiChatSidebarProps> = ({ toggleSidebar, handleNewC
         )
     }
 
-    const filteredChats = chats.filter((chat) => chat.title.toLowerCase().includes(searchQuery.toLowerCase()))
-
-    const handleOpenChat = async () => {
-        setTimeout(() => {
-            if (window.innerWidth < 768) toggleSidebar()
-        }, 300)
-    }
+    const filteredChats = chats?.filter((chat) => chat.title.toLowerCase().includes(searchQuery.toLowerCase()))
 
     const handleEditChat = (id: number, title: string) => {
         setEditingChat({ id, title })
@@ -109,12 +105,8 @@ const AiChatSidebar: React.FC<AiChatSidebarProps> = ({ toggleSidebar, handleNewC
 
     const handleSaveChat = async (id: number) => {
         try {
-            setChats((prevChats) => prevChats.map((chat) => (chat.id === id ? { ...chat, title: editingChat?.title || chat.title } : chat)))
-            // fetch(`/api/chats/edit/${id}`, {
-            //     method: 'POST',
-            //     headers: { 'Content-Type': 'application/json' },
-            //     body: JSON.stringify({ title: editingChat?.title })
-            // })
+            handleSetChats(chats?.map((chat) => (chat.id === id ? { ...chat, title: editingChat?.title || chat.title } : chat)))
+            await axiosInstance.put(`/api/ai-chat/${id}`, { title: editingChat?.title })
             setShowRenameSuccess(true)
             setTimeout(() => setShowRenameSuccess(false), 1000)
         } catch (error) {
@@ -126,17 +118,40 @@ const AiChatSidebar: React.FC<AiChatSidebarProps> = ({ toggleSidebar, handleNewC
 
     const handleDeleteChat = async (id: number) => {
         try {
-            setChats((prevChats) => prevChats.filter((chat) => chat.id !== id))
-            // fetch(`/api/chats/delete/${id}`, { method: 'DELETE' })
             setShowDeleteSuccess(true)
             setTimeout(() => setShowDeleteSuccess(false), 1000)
+            await axiosInstance.delete(`/api/ai-chat/${id}`)
+            handleSetChats(chats.filter((chat) => chat.id !== id))
         } catch (error) {
             console.error('Failed to delete chat', error)
         }
     }
 
+    const handleFetchMore = async () => {
+        setIsFetchingMore(true)
+        try {
+            const res = await axiosInstance.get('/api/ai-chat?limit=12&offset=' + filteredChats.length)
+            const newChats = res.data
+            handleSetChats([...chats, ...newChats])
+            // If we get less than 12 chats, we've reached the end
+            setHasMoreChats(newChats.length === 12)
+        } catch (error) {
+            console.error('Error fetching more chats:', error)
+        } finally {
+            setIsFetchingMore(false)
+        }
+    }
+
     return (
-        <div className="flex flex-col p-3 bg-[#212121e6] h-[100vh]">
+        <div
+            className="flex flex-col p-3 bg-[#212121e6] h-[95vh]"
+            style={{
+                msOverflowStyle: 'none',
+                overflowY: 'auto',
+                scrollbarWidth: 'none', // For Firefox
+                scrollbarColor: '#555 #333'
+            }}
+        >
             {/* Header */}
             <div className="flex mb-4 px-1 h-6 text-gray-200 items-center">
                 <IconLayoutSidebarLeftCollapseFilled className="flex-none size-6 hover:text-primary" onClick={toggleSidebar} />
@@ -172,97 +187,127 @@ const AiChatSidebar: React.FC<AiChatSidebarProps> = ({ toggleSidebar, handleNewC
                 <span className="mx-2 text-xs text-gray-400 uppercase tracking-wider">My Chats</span>
                 <div className="flex-grow border-t border-gray-600"></div>
             </div>
-            {filteredChats.map((chat, index) => (
-                <div key={chat.id} className="relative flex flex-col" onMouseEnter={() => setHoveredIndex(index)} onMouseLeave={() => setHoveredIndex(null)}>
-                    <div
-                        key={chat.id}
-                        className={`w-full flex items-center p-2 rounded-lg transition-all duration-200 ${editingChat && editingChat.id === chat.id ? '' : 'hover:bg-gradient-to-r from-[#ff0077] to-[#7700ff]'}`}
-                        style={
-                            editingChat && editingChat.id === chat.id
-                                ? { border: '1.5px solid', borderImage: 'linear-gradient(to right, #ff0077, #7700ff) 1' }
-                                : {}
-                        }
-                        onClick={handleOpenChat}
-                    >
-                        {editingChat && editingChat.id === chat.id ? (
-                            <div ref={editContainerRef} className="flex w-full items-center">
-                                <input
-                                    ref={inputRef}
-                                    type="text"
-                                    value={editingChat.title}
-                                    onChange={(e) => setEditingChat({ ...editingChat, title: e.target.value })}
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter') handleSaveChat(chat.id)
-                                    }}
-                                    className="bg-transparent focus:outline-none"
-                                />
-                                <IconCheck
-                                    className="w-6 h-6 stroke-[3.3px] text-gray-300 hover:text-primary cursor-pointer border-l border-gray-500 pl-1 ml-auto"
-                                    onClick={(e) => {
-                                        e.stopPropagation()
-                                        handleSaveChat(chat.id)
-                                    }}
-                                />
-                            </div>
-                        ) : (
-                            <span className="truncate flex-1 select-none" title={chat.title}>
-                                {highlightMatch(chat.title, searchQuery)}
-                            </span>
-                        )}
-                        {hoveredIndex === index && !editingChat && (
-                            <div className="flex gap-1 ml-2">
-                                <IconPencil
-                                    className="size-5 text-gray-300 hover:text-primary cursor-pointer"
-                                    onClick={(e) => {
-                                        e.stopPropagation()
-                                        handleEditChat(chat.id, chat.title)
-                                    }}
-                                />
-                                <IconTrash
-                                    className="size-5 text-gray-300 hover:text-primary cursor-pointer"
-                                    onClick={(e) => {
-                                        e.stopPropagation()
-                                        setChatToDelete(chat.id)
-                                    }}
-                                />
-                            </div>
-                        )}
 
-                        {/* Delete Confirmation Modal */}
-                        {chatToDelete !== null &&
-                            ReactDOM.createPortal(
-                                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-                                    <div ref={modalRef} className="p-[1.5px] rounded-xl bg-gradient-to-r from-[#ff0077] to-[#7700ff] max-w-xs w-full shadow-lg">
-                                        <div className="bg-gray-800 text-white p-6 rounded-xl text-center">
-                                            <p className="mb-4">Once deleted, the chat can't be restored. Are you sure you want to delete?</p>
-                                            <div className="flex justify-center gap-4">
-                                                <button
-                                                    className="px-4 py-2 rounded hover:bg-gray-300 text-gray-800 bg-gray-200"
-                                                    onClick={() => {
-                                                        setChatToDelete(null)
-                                                        setHoveredIndex(null)
-                                                    }}
-                                                >
-                                                    Cancel
-                                                </button>
-                                                <button
-                                                    className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-                                                    onClick={() => {
-                                                        handleDeleteChat(chatToDelete)
-                                                        setChatToDelete(null)
-                                                    }}
-                                                >
-                                                    Delete
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>,
-                                document.body
-                            )}
-                    </div>
+            {chatsLoading ? (
+                <div className="flex items-center justify-center py-6">
+                    <Preloader />
                 </div>
-            ))}
+            ) : filteredChats?.length > 0 ? (
+                <>
+                    {filteredChats.map((chat, index) => (
+                        <div
+                            key={chat.id}
+                            className="relative flex flex-col"
+                            onMouseEnter={() => setHoveredIndex(index)}
+                            onMouseLeave={() => setHoveredIndex(null)}
+                        >
+                            <div
+                                key={chat.id}
+                                className={`w-full flex items-center p-2 rounded-lg transition-all duration-200 ${editingChat && editingChat.id === chat.id ? '' : 'hover:bg-gradient-to-r from-[#ff0077] to-[#7700ff]'}`}
+                                style={
+                                    editingChat && editingChat.id === chat.id
+                                        ? { border: '1.5px solid', borderImage: 'linear-gradient(to right, #ff0077, #7700ff) 1' }
+                                        : {}
+                                }
+                                onClick={() => handleOpenChat(chat.id)}
+                            >
+                                {editingChat && editingChat.id === chat.id ? (
+                                    <div ref={editContainerRef} className="flex w-full items-center">
+                                        <input
+                                            ref={inputRef}
+                                            type="text"
+                                            value={editingChat.title}
+                                            onChange={(e) => setEditingChat({ ...editingChat, title: e.target.value })}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') handleSaveChat(chat.id)
+                                            }}
+                                            className="bg-transparent focus:outline-none"
+                                        />
+                                        <IconCheck
+                                            className="w-6 h-6 stroke-[3.3px] text-gray-300 hover:text-primary cursor-pointer border-l border-gray-500 pl-1 ml-auto"
+                                            onClick={(e) => {
+                                                e.stopPropagation()
+                                                handleSaveChat(chat.id)
+                                            }}
+                                        />
+                                    </div>
+                                ) : (
+                                    <span className="truncate flex-1 select-none" title={chat.title}>
+                                        {highlightMatch(chat.title, searchQuery)}
+                                    </span>
+                                )}
+                                {hoveredIndex === index && !editingChat && (
+                                    <div className="flex gap-1 ml-2">
+                                        <IconPencil
+                                            className="size-5 text-gray-300 hover:text-primary cursor-pointer"
+                                            onClick={(e) => {
+                                                e.stopPropagation()
+                                                handleEditChat(chat.id, chat.title)
+                                            }}
+                                        />
+                                        <IconTrash
+                                            className="size-5 text-gray-300 hover:text-primary cursor-pointer"
+                                            onClick={(e) => {
+                                                e.stopPropagation()
+                                                setChatToDelete(chat.id)
+                                            }}
+                                        />
+                                    </div>
+                                )}
+
+                                {/* Delete Confirmation Modal */}
+                                {chatToDelete !== null &&
+                                    ReactDOM.createPortal(
+                                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+                                            <div
+                                                ref={modalRef}
+                                                className="p-[1.5px] rounded-xl bg-gradient-to-r from-[#ff0077] to-[#7700ff] max-w-xs w-full shadow-lg"
+                                            >
+                                                <div className="bg-gray-800 text-white p-6 rounded-xl text-center">
+                                                    <p className="mb-4">Once deleted, the chat can't be restored. Are you sure you want to delete?</p>
+                                                    <div className="flex justify-center gap-4">
+                                                        <button
+                                                            className="px-4 py-2 rounded hover:bg-gray-300 text-gray-800 bg-gray-200"
+                                                            onClick={() => {
+                                                                setChatToDelete(null)
+                                                                setHoveredIndex(null)
+                                                            }}
+                                                        >
+                                                            Cancel
+                                                        </button>
+                                                        <button
+                                                            className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+                                                            onClick={() => {
+                                                                handleDeleteChat(chatToDelete)
+                                                                setChatToDelete(null)
+                                                            }}
+                                                        >
+                                                            Delete
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>,
+                                        document.body
+                                    )}
+                            </div>
+                        </div>
+                    ))}
+                    {isFetchingMore ? (
+                        <div className="flex items-center justify-center py-4">
+                            <Preloader />
+                        </div>
+                    ) : hasMoreChats ? (
+                        <div className="flex justify-end pr-2 text-gray-400 text-sm cursor-pointer hover:text-primary" onClick={handleFetchMore}>
+                            Fetch more...
+                        </div>
+                    ) : null}
+                </>
+            ) : (
+                <div className="flex items-center justify-center py-6">
+                    <p className="text-center text-gray-400 text-sm italic">No chats found... Start a new conversation and your chats will appear here.</p>
+                </div>
+            )}
 
             {/* Trending Topics */}
             <div className="flex items-center my-2 mt-8">

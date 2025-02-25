@@ -49,6 +49,7 @@ model User {
   registrationIp            String?
   registrationFingerprint   String?
   isBanned                  Boolean                @default(false)
+  aiChats                   AiChats[]
 }
 
 model TwitterAccount {
@@ -108,6 +109,7 @@ model Academy {
   overallRaffle    OverallRaffle?
   coins            Coins[]
   ai_topics        AiTopics[]         @relation("AiTopicAcademies")
+  aiChatMessages   AiChatMessages[]   @relation("AcademyToAiChatMessages")
 }
 
 model Subscription {
@@ -565,6 +567,30 @@ model AiTopics {
   academies   Academy[]   @relation("AiTopicAcademies")
   created_at  DateTime    @default(now())
   updated_at  DateTime    @updatedAt
+}
+
+model AiChats {
+  id              Int                   @id @default(autoincrement())
+  title           String
+  is_deleted      Boolean               @default(false)
+  user_id         Int
+  
+  created_at      DateTime              @default(now())
+  updated_at      DateTime              @updatedAt
+  
+  user            User                  @relation(fields: [user_id], references: [id])
+  messages        AiChatMessages[]
+}
+
+model AiChatMessages {
+  id              Int           @id @default(autoincrement())
+  message         String
+  sender          String
+  chat_id         Int
+  user_id         Int
+  
+  chat            AiChats       @relation(fields: [chat_id], references: [id])
+  academies       Academy[]     @relation("AcademyToAiChatMessages")
 }
 
 enum OverallRaffleType {

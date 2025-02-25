@@ -2,6 +2,9 @@ const fs = require('fs');
 const path = require('path');
 const OpenAI = require('openai');
 const brianService = require('../services/brianService');
+const { PrismaClient } = require('@prisma/client');
+const createError = require('http-errors');
+const prisma = new PrismaClient();
 
 // Attempt to load agent_virtuals.json
 let agentVirtuals = {};
@@ -53,6 +56,34 @@ async function classifyPrompt(prompt) {
   } catch (error) {
     console.error('Error classifying prompt:', error);
     return 'chat'; // Fallback if classification fails
+  }
+}
+
+async function generateChatTitle(prompt) {
+  try {
+    const response = await openaiClient.chat.completions.create({
+      model: 'gpt-4',
+      messages: [
+        {
+          role: 'system',
+          content:
+            'You are an assistant that generates chat title for user prompts. Title must be in range from 2 to 5 words. Return only the title.',
+        },
+        { role: 'user', content: prompt },
+      ],
+      temperature: 0,
+      max_tokens: 10,
+    });
+
+    let content = response.choices[0].message.content;
+    if (content?.length > 2) content = content.slice(1, -1);
+
+    console.log('Generated chat title:', content);
+
+    return content || prompt.slice(0, 26);
+  } catch (error) {
+    console.error('Error generating chat title:', error);
+    return prompt.slice(0, 26);
   }
 }
 
@@ -134,5 +165,119 @@ exports.handleChat = async (req, res) => {
     return res
       .status(500)
       .json({ error: error.message || 'Internal server error' });
+  }
+};
+
+// User routes' controllers
+exports.getAllChats = async (req, res, next) => {
+  try {
+    const telegramUserId = +req.headers['x-telegram-user-id'];
+    if (!telegramUserId)
+      return next(createError(400, 'Telegram User ID is required'));
+
+    const user = await prisma.user.findUnique({
+      where: { telegramUserId },
+      select: { id: true },
+    });
+    if (!user) return next(createError(404, 'User not found'));
+
+    const { keyword, limit = 20, offset = 0 } = req.query;
+
+    const where = { is_deleted: false, user_id: user?.id };
+    if (keyword) {
+      where.title = { contains: keyword, mode: 'insensitive' };
+    }
+
+    let chats = await prisma.aiChats.findMany({
+      where,
+      select: { id: true, title: true },
+      orderBy: { id: 'desc' },
+      take: +limit,
+      skip: +offset,
+    });
+
+    res.status(200).json(chats);
+  } catch (error) {
+    console.error('Error fetching chats:', error);
+    next(createError(500, 'Error fetching chats'));
+  }
+};
+
+exports.createChat = async (req, res, next) => {
+  try {
+    const telegramUserId = +req.headers['x-telegram-user-id'];
+    if (!telegramUserId)
+      return next(createError(400, 'Telegram User ID is required'));
+
+    const user = await prisma.user.findUnique({
+      where: { telegramUserId },
+      select: { id: true },
+    });
+    if (!user) return next(createError(404, 'User not found'));
+
+    let { title, prompt } = req.body;
+    if (!title) title = await generateChatTitle(prompt);
+
+    const newChat = await prisma.aiChats.create({
+      data: { title, user_id: user?.id },
+    });
+
+    res.status(200).send(newChat);
+  } catch (error) {
+    console.error('Error creating chat:', error);
+    next(createError(500, 'Error creating chat'));
+  }
+};
+
+exports.updateChat = async (req, res, next) => {
+  try {
+    const telegramUserId = +req.headers['x-telegram-user-id'];
+    if (!telegramUserId)
+      return next(createError(400, 'Telegram User ID is required'));
+
+    const user = await prisma.user.findUnique({
+      where: { telegramUserId },
+      select: { id: true },
+    });
+    if (!user) return next(createError(404, 'User not found'));
+
+    const { id } = req.params;
+    const { title } = req.body;
+
+    await prisma.aiChats.update({
+      where: { id: +id, user_id: user?.id },
+      data: { title },
+    });
+
+    res.status(200).send();
+  } catch (error) {
+    console.error('Error updating chat:', error);
+    next(createError(500, 'Error updating chat'));
+  }
+};
+
+exports.deleteChat = async (req, res, next) => {
+  try {
+    const telegramUserId = +req.headers['x-telegram-user-id'];
+    if (!telegramUserId)
+      return next(createError(400, 'Telegram User ID is required'));
+
+    const user = await prisma.user.findUnique({
+      where: { telegramUserId },
+      select: { id: true },
+    });
+    if (!user) return next(createError(404, 'User not found'));
+
+    const { id } = req.params;
+
+    await prisma.aiChats.update({
+      where: { id: +id, user_id: user?.id },
+      data: { is_deleted: true },
+    });
+
+    res.status(204).send();
+  } catch (error) {
+    console.error('Error deleting chat:', error);
+    next(createError(500, 'Error deleting chat'));
   }
 };
