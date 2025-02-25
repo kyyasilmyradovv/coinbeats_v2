@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { Button, Card, Notification, Popover } from 'konsta/react'
+import { Button, Card, Notification, Popover, Preloader } from 'konsta/react'
 import {
     IconHelpCircle,
     IconCopy,
@@ -7,7 +7,8 @@ import {
     IconInnerShadowTopRight,
     IconPlayerStopFilled,
     IconArrowUp,
-    IconLayoutSidebarRightCollapseFilled
+    IconLayoutSidebarRightCollapseFilled,
+    IconArrowDown
 } from '@tabler/icons-react'
 import { usePrivy, useWallets } from '@privy-io/react-auth'
 import { useChainId } from 'wagmi'
@@ -49,6 +50,11 @@ interface Response {
     answer?: string
 }
 
+interface AiChatInterface {
+    id: number
+    title: string
+}
+
 const AiChat: React.FC = () => {
     const navigate = useNavigate()
     const chatContainerRef = useRef<HTMLDivElement>(null)
@@ -58,6 +64,7 @@ const AiChat: React.FC = () => {
     const [prompt, setPrompt] = useState('')
     const [responses, setResponses] = useState<Response[]>([])
     const [loading, setLoading] = useState(false)
+    const [isContentLoading, setIsContentLoading] = useState(false)
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(window.innerWidth < 1024)
     const [notification, setNotification] = useState<{ title: string; text: string } | null>(null)
     const [isTyping, setIsTyping] = useState(false)
@@ -65,6 +72,12 @@ const AiChat: React.FC = () => {
     const [touchStart, setTouchStart] = useState<number | null>(null)
     const [touchEnd, setTouchEnd] = useState<number | null>(null)
     const [typewritingComplete, setTypewritingComplete] = useState(false)
+    const [chats, setChats] = useState<AiChatInterface[]>([])
+    const [chatsLoading, setChatsLoading] = useState<boolean>(true)
+    const [topics, setTopics] = useState<AiChatInterface[]>([])
+    const [activeChatId, setActiveChatId] = useState<number | null>(null)
+    const [isHistoricalMessage, setIsHistoricalMessage] = useState(false)
+    const [showScrollButton, setShowScrollButton] = useState(false)
 
     const { ready, authenticated, user, getAccessToken, login, logout } = usePrivy()
 
@@ -87,6 +100,34 @@ const AiChat: React.FC = () => {
         }
     }, [ready, authenticated, user, getAccessToken])
 
+    useEffect(() => {
+        const fetchChats = async () => {
+            try {
+                const response = await axiosInstance.get('/api/ai-chat?limit=12')
+                setChats(response.data)
+            } catch (error) {
+                console.error('Failed to fetch chats', error)
+            } finally {
+                setChatsLoading(false)
+            }
+        }
+
+        fetchChats()
+    }, [])
+
+    useEffect(() => {
+        const fetchTopics = async () => {
+            try {
+                const response = await axiosInstance.get('/api/ai-topics?limit=100')
+                setTopics(response.data)
+            } catch (error) {
+                console.error('Failed to fetch topics', error)
+            }
+        }
+
+        fetchTopics()
+    }, [])
+
     // Auto-scroll to the latest message
     useEffect(() => {
         if (chatContainerRef.current) {
@@ -97,7 +138,21 @@ const AiChat: React.FC = () => {
         }
     }, [responses])
 
-    // Copy a message's content to the clipboard
+    useEffect(() => {
+        const container = chatContainerRef.current
+        if (!container) return
+        const handleScrollPosition = () => {
+            const { scrollTop, clientHeight, scrollHeight } = container
+            if (scrollTop + clientHeight < scrollHeight - 50) {
+                setShowScrollButton(true)
+            } else {
+                setShowScrollButton(false)
+            }
+        }
+        container.addEventListener('scroll', handleScrollPosition)
+        return () => container.removeEventListener('scroll', handleScrollPosition)
+    }, [])
+
     const handleCopyContent = async (text: string) => {
         try {
             await navigator.clipboard.writeText(text)
@@ -125,6 +180,7 @@ const AiChat: React.FC = () => {
     }
 
     const handleNewChat = async () => {
+        setShowScrollButton(false)
         setLoading(false)
         const textarea = document.querySelector('textarea')
         if (textarea) {
@@ -138,6 +194,7 @@ const AiChat: React.FC = () => {
 
         setResponses([])
         setPrompt('')
+        setActiveChatId(null)
         if (window.innerWidth < 1024) setIsSidebarCollapsed(true)
     }
 
@@ -153,6 +210,7 @@ const AiChat: React.FC = () => {
 
         setResponses([])
         setPrompt('')
+        setIsContentLoading(true)
         if (window.innerWidth < 1024) setIsSidebarCollapsed(true)
 
         const fetchTopic = async (id: number) => {
@@ -166,7 +224,22 @@ const AiChat: React.FC = () => {
                         ]
                     }
                 ])
+
+                setIsContentLoading(false)
+
+                const newChat = await axiosInstance.post('/api/ai-chat', { title: response.data.title })
+                chats.unshift(newChat.data)
+                handleSetChats(chats)
+                setActiveChatId(newChat.data.id)
+
+                await axiosInstance.post(`api/ai-chat/${newChat?.data?.id}/messages`, { sender: 'user', message: response.data.title })
+                await axiosInstance.post(`api/ai-chat/${newChat?.data?.id}/messages`, {
+                    sender: 'ai',
+                    message: response.data.context,
+                    academy_ids: response.data.academies?.map((e: any) => e.id)
+                })
             } catch (error) {
+                setIsContentLoading(false)
                 console.log('Error fetching topic', error)
             }
         }
@@ -174,7 +247,50 @@ const AiChat: React.FC = () => {
         fetchTopic(topicId)
     }
 
+    const handleOpenChat = async (id: number) => {
+        setShowScrollButton(false)
+        const textarea = document.querySelector('textarea')
+        if (textarea) {
+            textarea.style.height = '130px'
+        }
+
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort()
+        }
+
+        setResponses([])
+        setPrompt('')
+        setIsContentLoading(true)
+        if (window.innerWidth < 1024) setIsSidebarCollapsed(true)
+
+        const fetchChatMessages = async (id: number) => {
+            try {
+                const response = await axiosInstance.get(`/api/ai-chat/${id}/messages?limit=100`)
+                setIsHistoricalMessage(true)
+
+                const parsedMessages = response.data
+                    .map((msg: any) => ({
+                        sender: msg.sender,
+                        content: msg.message,
+                        links: msg.academy_ids?.map((id: number) => academies.find((a) => a.id === id)) || []
+                    }))
+                    .reverse()
+
+                setResponses([{ conversationHistory: parsedMessages }])
+                setIsContentLoading(false)
+                // ... rest of the function
+            } catch (error) {
+                setIsContentLoading(false)
+                console.log('Error fetching chat messages', error)
+            }
+        }
+
+        fetchChatMessages(id)
+        setActiveChatId(id)
+    }
+
     const handleSendPrompt = async () => {
+        setIsHistoricalMessage(false) // Reset flag for new messages
         const trimmed = prompt.trim()
         if (!trimmed) return
 
@@ -182,10 +298,7 @@ const AiChat: React.FC = () => {
             setNotification({ title: 'Login required', text: 'Please log in first.' })
             return
         }
-        // if (!walletsReady || !wallets.length) {
-        //     setNotification({ title: 'Wallet connection required', text: 'Please connect your wallet first.' })
-        //     return
-        // }
+        const isNewChat = responses.length === 0
 
         setLoading(true)
         const textarea = document.querySelector('textarea')
@@ -196,6 +309,7 @@ const AiChat: React.FC = () => {
             chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight
         }
 
+        // Append the user's prompt with the "thinking" AI bubble
         const thinkingBubble: Response = {
             conversationHistory: [
                 { sender: 'user', content: trimmed },
@@ -253,17 +367,28 @@ const AiChat: React.FC = () => {
                 finalAiContent = lastAiMsg.content
             }
 
-            // Update the last chat bubble with the final answer
+            // Update the last chat bubble with the final answer and attach any transaction data
             setResponses((prev) => {
                 const updated = [...prev]
                 const lastItem = updated[updated.length - 1]
                 lastItem.conversationHistory[1].content = finalAiContent
-                // Attach any transaction data
                 if (newResponse.data) {
                     lastItem.data = newResponse.data
                 }
                 return updated
             })
+
+            let activeChatId_ = activeChatId
+            if (isNewChat) {
+                const newChat = await axiosInstance.post('/api/ai-chat', { prompt: trimmed })
+                chats.unshift(newChat.data)
+                handleSetChats(chats)
+                setActiveChatId(newChat.data.id)
+                activeChatId_ = newChat.data.id
+            }
+
+            await axiosInstance.post(`api/ai-chat/${activeChatId_}/messages`, { sender: 'user', message: trimmed })
+            await axiosInstance.post(`api/ai-chat/${activeChatId_}/messages`, { sender: 'ai', message: finalAiContent })
         } catch (error) {
             if (error?.response?.status == 401) {
                 await logout()
@@ -383,7 +508,7 @@ const AiChat: React.FC = () => {
                         <div className="flex gap-1 items-center">
                             Coinbeats AI is thinking... <IconInnerShadowTopRight className="text-primary animate-spin size-5" />
                         </div>
-                    ) : isUser || !isLast ? (
+                    ) : isUser || !isLast || isHistoricalMessage ? ( // Check isHistoricalMessage instead of isContentLoading
                         <span className="text-[14px] lg:text-[16px]">{message.content.replace('Coinbeats AI is thinking...', '').trim()}</span>
                     ) : (
                         <div>
@@ -477,6 +602,10 @@ const AiChat: React.FC = () => {
         }
     }
 
+    const handleSetChats = (chats: AiChatInterface[]) => {
+        setChats(chats)
+    }
+
     return (
         <div
             className="col-span-12 h-[96vh] fixed w-full"
@@ -494,7 +623,16 @@ const AiChat: React.FC = () => {
                     {isSidebarCollapsed ? (
                         <IconLayoutSidebarRightCollapseFilled className="absolute size-6 text-gray-200 hover:text-primary mt-3 ml-4" onClick={toggleSidebar} />
                     ) : (
-                        <AiChatSidebar toggleSidebar={toggleSidebar} handleNewChat={handleNewChat} handleOpenTopic={handleOpenTopic} />
+                        <AiChatSidebar
+                            chats={chats}
+                            handleSetChats={handleSetChats}
+                            chatsLoading={chatsLoading}
+                            topics={topics}
+                            toggleSidebar={toggleSidebar}
+                            handleNewChat={handleNewChat}
+                            handleOpenTopic={handleOpenTopic}
+                            handleOpenChat={handleOpenChat}
+                        />
                     )}
                 </div>
                 {/* Main Chat Container */}
@@ -502,7 +640,7 @@ const AiChat: React.FC = () => {
                     className={`
                         flex flex-col pt-1 items-center justify-between flex-1 h-[95vh]
                         transition-all duration-500 ease-in-out
-                        ${!isSidebarCollapsed ? 'filter blur-md md:blur-none md:ml-[18%]' : ''}
+                        ${!isSidebarCollapsed || isContentLoading ? 'filter blur-md md:blur-none md:ml-[18%]' : ''}
                       `}
                     ref={chatContainerRef}
                     style={{
@@ -544,9 +682,21 @@ const AiChat: React.FC = () => {
 
                     {/* Input area */}
                     <div
-                        className="px-4 w-full bg-black flex flex-col sticky bottom-0 lg:w-[800px]"
+                        className="relative px-4 w-full bg-black flex flex-col sticky bottom-0 lg:w-[800px]"
                         style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 2rem)' }}
                     >
+                        {showScrollButton && (
+                            <button
+                                className="absolute top-[-60px] left-1/2 transform -translate-x-1/2 z-50 bg-gradient-to-r from-[#ff0077] to-[#7700ff] p-3 rounded-full shadow-lg transition opacity-80 hover:opacity-100"
+                                onClick={() => {
+                                    chatContainerRef.current?.scrollTo({ top: chatContainerRef.current.scrollHeight, behavior: 'smooth' })
+                                    setShowScrollButton(false)
+                                }}
+                            >
+                                <IconArrowDown className="w-6 h-6" />
+                            </button>
+                        )}
+
                         <textarea
                             className="pb-14 bg-[#2b2b2b] text-[16px] p-4 mt-2 rounded-lg focus:outline-none resize-none min-h-[130px] max-h-[500px] "
                             placeholder="Type a message..."
@@ -596,6 +746,12 @@ const AiChat: React.FC = () => {
                             />
                         )}
                     </div>
+
+                    {isContentLoading && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
+                            <Preloader />
+                        </div>
+                    )}
                 </div>
             </div>
 
