@@ -1,0 +1,31 @@
+name: Deploy to Server
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create .ssh directory
+        run: mkdir -p ~/.ssh
+
+      - name: Add server to known hosts
+        run: ssh-keyscan -H 116.203.35.19 >> ~/.ssh/known_hosts
+
+      - name: Deploy to server
+        env:
+          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+        run: |
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > private_key
+          chmod 600 private_key
+          ssh-agent -a $SSH_AUTH_SOCK > /dev/null
+          ssh-add private_key
+          ssh deployer@116.203.35.19 << 'EOF'
+          cd /opt/coinbeats/coinbeats
+          git pull origin main
+          bash deploy.sh
+          EOF
+          rm private_key
