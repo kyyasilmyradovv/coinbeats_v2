@@ -72,7 +72,18 @@ app.use(
 // Custom middleware
 app.use(bigIntMiddleware);
 
+// Serve Api Docs
+app.use(
+  '/api/api-docs',
+  swaggerUI.serve,
+  swaggerUI.setup(swaggerOptions, {
+    customCss: swaggerCustomCss,
+    customSiteTitle: 'Coinbeats API Docs',
+  })
+);
+
 // Routes
+app.use('/api/v2', mainRouter);
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/academies', academyRoutes);
@@ -101,7 +112,6 @@ app.use('/api/coins', coinRoutes);
 app.use('/api/ai-chat', aiChatRoutes);
 app.use('/api/ai-topics', aiTopicRoutes);
 app.use('/api', downloadRoutes);
-app.use('/api/v2', mainRouter);
 
 // Serve static files
 app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
@@ -117,16 +127,6 @@ require('./utils/cronJobs.js');
 if (process.env.NODE_ENV === 'development') {
   app.use(require('morgan')('dev'));
 }
-
-// Serve Api Docs
-app.use(
-  '/api/api-docs',
-  swaggerUI.serve,
-  swaggerUI.setup(swaggerOptions, {
-    customCss: swaggerCustomCss,
-    customSiteTitle: 'Coinbeats API Docs',
-  })
-);
 
 // Catch 404
 app.use((req, res, next) => {
