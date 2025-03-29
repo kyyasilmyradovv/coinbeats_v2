@@ -5,17 +5,17 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "cross-env NODE_ENV=production node server.js",
-    "dev": "cross-env NODE_ENV=development node server.js"
+    "dev": "cross-env NODE_ENV=development nodemon -e js,yaml,json server.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "@prisma/client": "^6.1.0",
+    "@prisma/client": "^6.5.0",
     "@types/bcrypt": "^5.0.2",
-    "@types/jsonwebtoken": "^9.0.7",
-    "axios": "^1.7.9",
+    "@types/jsonwebtoken": "^9.0.9",
+    "axios": "^1.8.4",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "date-fns": "2.30.0",
@@ -27,19 +27,23 @@
     "http-errors": "^2.0.0",
     "install": "^0.13.0",
     "jsonwebtoken": "^9.0.2",
-    "jwks-rsa": "^3.1.0",
+    "jwks-rsa": "^3.2.0",
+    "morgan": "^1.10.0",
     "multer": "1.4.5-lts.1",
     "node-cron": "^3.0.3",
-    "nodemailer": "^6.9.16",
-    "oauth": "^0.10.0",
-    "openai": "^4.83.0",
-    "qs": "^6.13.1",
+    "nodemailer": "^6.10.0",
+    "nodemon": "^3.1.9",
+    "oauth": "^0.10.2",
+    "openai": "^4.90.0",
+    "qs": "^6.14.0",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1",
     "twitter-api-sdk": "^1.2.1",
-    "twitter-api-v2": "^1.19.0",
-    "uuid": "^11.0.3"
+    "twitter-api-v2": "^1.22.0",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "cross-env": "^7.0.3",
-    "prisma": "^6.1.0"
+    "prisma": "^6.5.0"
   }
 }

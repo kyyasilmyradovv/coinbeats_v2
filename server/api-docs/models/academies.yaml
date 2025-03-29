@@ -1,0 +1,60 @@
+components:
+  schemas:
+    Academy:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        logoUrl:
+          type: string
+        xp:
+          type: integer
+        pointCount:
+          type: integer
+        fomoNumber:
+          type: integer
+        fomoXp:
+          type: integer
+        academyTypeId:
+          type: integer
+    # AcademyAudio:
+    #   type: object
+    #   properties:
+    #     uuid:
+    #       type: string
+    #       format: uuid
+    #     filename:
+    #       type: string
+    #     duration:
+    #       type: integer
+    #     created_at:
+    #       type: string
+    #       format: date-time
+    # AcademyInput:
+    #   type: object
+    #   required:
+    #     - content
+    #   properties:
+    #     content:
+    #       type: string
+    #     audioUuids:
+    #       type: array
+    #       items:
+    #         type: string
+    #         format: uuid
+    # AcademyEdit:
+    #   type: object
+    #   properties:
+    #     content:
+    #       type: string
+    # AcademyWithIncludes:
+    #   allOf:
+    #     - $ref: '#/components/schemas/Academy'
+    #     - type: object
+    #       properties:
+    #         audios:
+    #           type: array
+    #           items:
+    #             $ref: '#/components/schemas/AcademyAudio'
