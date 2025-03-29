@@ -9,7 +9,6 @@ const cors = require('cors');
 const createError = require('http-errors');
 const swaggerUI = require('swagger-ui-express');
 const swaggerOptions = require('./api-docs/options');
-const swaggerCustomCss = require('./api-docs/swaggerCustomCss');
 
 // Load environment variables
 const envFile =
@@ -77,7 +76,7 @@ app.use(
   '/api/api-docs',
   swaggerUI.serve,
   swaggerUI.setup(swaggerOptions, {
-    customCss: swaggerCustomCss,
+    customCss: require('./api-docs/swaggerCustomCss'),
     customSiteTitle: 'Coinbeats API Docs',
   })
 );
