@@ -1,0 +1,113 @@
+paths:
+  /api/v2/academies:
+    get:
+      tags: [Academies]
+      description: Returns all academies list
+      statuses: [404]
+      parameters:
+        # - in: query
+        #   name: keyword
+        #   schema:
+        #     type: string
+        #   description: Search by content of the academies
+      responses:
+        '200':
+          description: An array of objects which consist of academy information
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Academy'
+  #   post:
+  #     tags: [Academies]
+  #     description: Add new academy
+  #     statuses: [400, 401, 404, 409]
+  #     requestBody:
+  #       content:
+  #         application/json:
+  #           schema:
+  #             $ref: '#/components/schemas/AcademyInput'
+  #     responses:
+  #       '201':
+  #         description: An object which consists newly created academy information
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/AcademyWithIncludes'
+  # /api/v2/academy/{uuid}:
+  #   put:
+  #     tags: [Academies]
+  #     description: Edit existing academy
+  #     statuses: [400, 404, 409]
+  #     parameters:
+  #       - in: path
+  #         name: uuid
+  #         description: Academy uuid
+  #         schema:
+  #           type: string
+  #           format: uuid
+  #         required: true
+  #     requestBody:
+  #       content:
+  #         application/json:
+  #           schema:
+  #             $ref: '#/components/schemas/AcademyEdit'
+  #     responses:
+  #       '200':
+  #         description: Edited academy information
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/Academy'
+  #   delete:
+  #     tags: [Academies]
+  #     description: Delete academy
+  #     statuses: [204, 400, 404, 409]
+  #     parameters:
+  #       - in: path
+  #         name: uuid
+  #         description: Academy uuid
+  #         schema:
+  #           type: string
+  #           format: uuid
+  #         required: true
+  # /api/v2/academy/audio:
+  #   post:
+  #     tags: [Academies]
+  #     description: Upload audio file for academy
+  #     statuses: [400, 404, 409]
+  #     parameters:
+  #       - in: query
+  #         name: academyUuid
+  #         description: Academy uuid (if academy has not created yet, then dont need to pass this)
+  #         schema:
+  #           type: string
+  #           format: uuid
+  #     requestBody:
+  #       content:
+  #         application/octet-stream:
+  #           schema:
+  #             type: string
+  #             format: binary
+  #           description: Audio file input as a request body (audioBlob)
+  #     responses:
+  #       '200':
+  #         description: Edited academy information
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/AcademyAudio'
+  # /api/v2/academy/audio/{uuid}:
+  #   delete:
+  #     tags: [Academies]
+  #     description: Delete academy
+  #     statuses: [204, 400, 404, 409]
+  #     parameters:
+  #       - in: path
+  #         name: uuid
+  #         description: Audio uuid
+  #         schema:
+  #           type: string
+  #           format: uuid
+  #         required: true

@@ -7,6 +7,9 @@ const session = require('express-session');
 const bigIntMiddleware = require('./middleware/bigIntMiddleware');
 const cors = require('cors');
 const createError = require('http-errors');
+const swaggerUI = require('swagger-ui-express');
+const swaggerOptions = require('./api-docs/options');
+const swaggerCustomCss = require('./api-docs/swaggerCustomCss');
 
 // Load environment variables
 const envFile =
@@ -41,7 +44,8 @@ const raffleRoutes = require('./routes/raffle');
 const coinRoutes = require('./routes/coin');
 const aiChatRoutes = require('./routes/aiChat');
 const aiTopicRoutes = require('./routes/aiTopics');
-const downloadRoutes = require('./routes/downloadRoutes'); // <--
+const downloadRoutes = require('./routes/downloadRoutes');
+const mainRouter = require('./routes/mainRouter');
 
 // Initialize Express app
 const app = express();
@@ -97,6 +101,7 @@ app.use('/api/coins', coinRoutes);
 app.use('/api/ai-chat', aiChatRoutes);
 app.use('/api/ai-topics', aiTopicRoutes);
 app.use('/api', downloadRoutes);
+app.use('/api/v2', mainRouter);
 
 // Serve static files
 app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
@@ -107,6 +112,21 @@ app.use(
 
 // Cron jobs
 require('./utils/cronJobs.js');
+
+// Logging requests
+if (process.env.NODE_ENV === 'development') {
+  app.use(require('morgan')('dev'));
+}
+
+// Serve Api Docs
+app.use(
+  '/api/api-docs',
+  swaggerUI.serve,
+  swaggerUI.setup(swaggerOptions, {
+    customCss: swaggerCustomCss,
+    customSiteTitle: 'Coinbeats API Docs',
+  })
+);
 
 // Catch 404
 app.use((req, res, next) => {

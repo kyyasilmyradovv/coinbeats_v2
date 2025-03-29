@@ -20,7 +20,8 @@ try {
 
 // Initialize OpenAI Client
 const openaiClient = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+  apiKey: process.env.GALADRIEL_API_KEY,
+  baseURL: 'https://api.galadriel.com/v1/verified',
 });
 
 /**
