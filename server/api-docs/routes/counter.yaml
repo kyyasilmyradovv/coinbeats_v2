@@ -1,0 +1,16 @@
+paths:
+  /api/v2/counter:
+    get:
+      tags: [Counter]
+      description: Fetch counter
+      statuses: [401, 404]
+      parameters:
+        - in: query
+          name: table
+          schema:
+            type: string
+            enum: ['Academy']
+          description: Fetch counter by table name
+      responses:
+        '200':
+          description: An integer

@@ -19,6 +19,28 @@ components:
           type: integer
         academyTypeId:
           type: integer
+        createdAt:
+          type: string
+          format: date-time
+    AcademyDetails:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        logoUrl:
+          type: string
+        xp:
+          type: integer
+        pointCount:
+          type: integer
+        fomoNumber:
+          type: integer
+        fomoXp:
+          type: integer
+        academyTypeId:
+          type: integer
     # AcademyAudio:
     #   type: object
     #   properties:

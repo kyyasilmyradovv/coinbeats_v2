@@ -12,7 +12,7 @@ paths:
         #   description: Search by content of the academies
       responses:
         '200':
-          description: An array of objects which consist of academy information
+          description: An array of objects which consist of academies information
           content:
             application/json:
               schema:
@@ -35,7 +35,26 @@ paths:
   #           application/json:
   #             schema:
   #               $ref: '#/components/schemas/AcademyWithIncludes'
-  # /api/v2/academy/{uuid}:
+  /api/v2/academies/{id}:
+    get:
+      tags: [Academies]
+      description: Fetch one academy details
+      statuses: [404]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          description: Academy id
+      responses:
+        '200':
+          description: An objects which consist of academy information
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Academy'
   #   put:
   #     tags: [Academies]
   #     description: Edit existing academy

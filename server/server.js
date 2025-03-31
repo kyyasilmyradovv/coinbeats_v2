@@ -71,6 +71,11 @@ app.use(
 // Custom middleware
 app.use(bigIntMiddleware);
 
+// Logging requests
+if (process.env.NODE_ENV === 'development') {
+  app.use(require('morgan')('dev'));
+}
+
 // Serve Api Docs
 app.use(
   '/api/api-docs',
@@ -121,11 +126,6 @@ app.use(
 
 // Cron jobs
 require('./utils/cronJobs.js');
-
-// Logging requests
-if (process.env.NODE_ENV === 'development') {
-  app.use(require('morgan')('dev'));
-}
 
 // Catch 404
 app.use((req, res, next) => {

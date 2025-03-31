@@ -593,6 +593,12 @@ model AiChatMessages {
   academies       Academy[]     @relation("AcademyToAiChatMessages")
 }
 
+model Counter {
+  table           String                        @unique
+  count           Int                           @default(0)
+  visibility      CounterVisibilityTypes
+}
+
 enum OverallRaffleType {
   PLATFORM
   ACADEMY
@@ -676,4 +682,9 @@ enum Role {
   CREATOR
   ADMIN
   SUPERADMIN
+}
+
+enum CounterVisibilityTypes {
+  public
+  private
 }
