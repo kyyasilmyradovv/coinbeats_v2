@@ -6,9 +6,7 @@ exports.getAllAcademies = asyncHandler(async (req, res, next) => {
   const { limit, offset } = req.query;
 
   const academies = await prisma.academy.findMany({
-    where: {
-      status: 'approved',
-    },
+    where: { status: 'approved' },
     select: {
       id: true,
       name: true,

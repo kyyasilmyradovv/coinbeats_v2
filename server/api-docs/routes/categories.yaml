@@ -1,0 +1,21 @@
+paths:
+  /api/v2/categories:
+    get:
+      tags: [Categories]
+      description: Returns all categories list
+      statuses: [404]
+      parameters:
+        - in: query
+          name: keyword
+          schema:
+            type: string
+          description: Search keyword
+      responses:
+        '200':
+          description: An array of objects which consist of categories information
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Category'

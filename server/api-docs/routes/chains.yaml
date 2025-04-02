@@ -1,0 +1,21 @@
+paths:
+  /api/v2/chains:
+    get:
+      tags: [Chains]
+      description: Returns all chains list
+      statuses: [404]
+      parameters:
+        - in: query
+          name: keyword
+          schema:
+            type: string
+          description: Search keyword
+      responses:
+        '200':
+          description: An array of objects which consist of chains information
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Chain'

@@ -1,0 +1,21 @@
+paths:
+  /api/v2/academy-types:
+    get:
+      tags: [AcademyTypes]
+      description: Returns all academy types list
+      statuses: [404]
+      parameters:
+        - in: query
+          name: keyword
+          schema:
+            type: string
+          description: Search keyword
+      responses:
+        '200':
+          description: An array of objects which consist of academy types information
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AcademyTypes'
