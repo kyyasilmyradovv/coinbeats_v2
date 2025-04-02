@@ -8,7 +8,9 @@ import {
     IconPlayerStopFilled,
     IconArrowUp,
     IconLayoutSidebarRightCollapseFilled,
-    IconArrowDown
+    IconArrowDown,
+    IconWallet,
+    IconX
 } from '@tabler/icons-react'
 import { usePrivy, useWallets } from '@privy-io/react-auth'
 import { useChainId } from 'wagmi'
@@ -21,6 +23,8 @@ import TypeWriter from './components/Typewriter'
 import AiChatSidebar from './components/AiChatSidebar'
 import { useNavigate } from 'react-router-dom'
 import useAcademiesStore from '../../store/useAcademiesStore'
+import { ConnectButton } from 'thirdweb/react'
+import { client } from '../../thirdwebClient.ts'
 
 interface LinkInterface {
     id?: number
@@ -78,6 +82,7 @@ const AiChat: React.FC = () => {
     const [activeChatId, setActiveChatId] = useState<number | null>(null)
     const [isHistoricalMessage, setIsHistoricalMessage] = useState(false)
     const [showScrollButton, setShowScrollButton] = useState(false)
+    const [isWalletOpened, setIsWalletOpened] = useState(false)
 
     const { ready, authenticated, user, getAccessToken, login, logout } = usePrivy()
 
@@ -558,14 +563,37 @@ const AiChat: React.FC = () => {
     }
 
     const toggleSidebar = () => {
+        // Close wallet sidebar when opening left sidebar on small screens
+        if (window.innerWidth < 1024 && isWalletOpened) {
+            setIsWalletOpened(false)
+        }
         setIsSidebarCollapsed((prev) => !prev)
     }
 
-    // Close sidebar when clicked outside
+    const toggleWalletSidebar = () => {
+        // Close left sidebar when opening wallet sidebar on small screens
+        if (window.innerWidth < 1024 && !isSidebarCollapsed) {
+            setIsSidebarCollapsed(true)
+        }
+        setIsWalletOpened((prev) => !prev)
+    }
+
+    // Update the existing useEffect for click outside detection to handle both sidebars
     useEffect(() => {
         const handleClickOutside = (event) => {
-            if (window.innerWidth < 1024 && chatContainerRef.current?.contains(event.target) && !sidebarRef.current?.contains(event.target)) {
-                setIsSidebarCollapsed(true)
+            // For small screens only
+            if (window.innerWidth < 1024) {
+                // Close left sidebar if clicked outside
+                if (chatContainerRef.current?.contains(event.target) && !sidebarRef.current?.contains(event.target)) {
+                    setIsSidebarCollapsed(true)
+                }
+
+                // Close wallet sidebar if clicked outside
+                // Make sure we're not clicking the wallet toggle button
+                const walletButton = document.querySelector('[data-wallet-toggle]')
+                if (isWalletOpened && !walletButton?.contains(event.target) && !event.target.closest('[data-wallet-sidebar]')) {
+                    setIsWalletOpened(false)
+                }
             }
         }
 
@@ -573,7 +601,7 @@ const AiChat: React.FC = () => {
         return () => {
             document.removeEventListener('mousedown', handleClickOutside)
         }
-    }, [])
+    }, [isWalletOpened]) // Add isWalletOpened to dependencies
 
     const handleSwipe = () => {
         if (touchStart !== null && touchEnd !== null) {
@@ -615,6 +643,37 @@ const AiChat: React.FC = () => {
         >
             <Navbar />
 
+            {/* Only show wallet button when sidebar is closed */}
+            {!isWalletOpened && (
+                <div className="fixed top-14 right-4 z-50 transition-all duration-300 ease-in-out">
+                    <button
+                        data-wallet-toggle
+                        className="bg-gradient-to-r from-[#ff0077] to-[#7700ff] p-2 rounded-full shadow-md flex items-center justify-center"
+                        onClick={toggleWalletSidebar}
+                    >
+                        <IconWallet className="size-6 text-white" />
+                    </button>
+                </div>
+            )}
+
+            {/* Wallet Sidebar */}
+            <div
+                data-wallet-sidebar
+                className={`fixed top-11 right-0 h-full transition-all duration-300 ease-in-out ${
+                    isWalletOpened ? 'w-[70%] lg:w-[18%] opacity-100' : 'w-0 opacity-0'
+                } bg-[#262626] shadow-lg z-40 overflow-hidden`}
+            >
+                <div className="flex justify-between items-center p-4 border-b border-gray-700">
+                    <h2 className="text-xl font-bold text-white">Wallet</h2>
+                    <button onClick={toggleWalletSidebar} className="text-gray-400 hover:text-white">
+                        <IconX className="w-5 h-5" />
+                    </button>
+                </div>
+                <div className="p-4 overflow-y-auto h-[calc(100%-60px)]">
+                    <ConnectButton client={client} />
+                </div>
+            </div>
+
             <div className="flex">
                 <div
                     className={`transition-transform ease-in-out ${isSidebarCollapsed ? 'w-0 -translate-x-full duration-700' : 'w-[70%] lg:w-[18%] translate-x-0 duration-500'} ${!isSidebarCollapsed ? 'fixed z-50 shadow-lg' : ''}`}
@@ -641,12 +700,13 @@ const AiChat: React.FC = () => {
                         flex flex-col pt-1 items-center justify-between flex-1 h-[95vh]
                         transition-all duration-500 ease-in-out
                         ${!isSidebarCollapsed || isContentLoading ? 'filter blur-md md:blur-none md:ml-[18%]' : ''}
-                      `}
+                        ${isWalletOpened ? 'mr-[70%] lg:mr-[18%]' : 'mr-0'}
+                    `}
                     ref={chatContainerRef}
                     style={{
                         msOverflowStyle: 'none',
                         overflowY: 'auto',
-                        scrollbarWidth: 'none', // For Firefox
+                        scrollbarWidth: 'none',
                         scrollbarColor: '#555 #333'
                     }}
                 >

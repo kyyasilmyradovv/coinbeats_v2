@@ -3,6 +3,7 @@
 import React from 'react'
 import { TonConnectUIProvider } from '@tonconnect/ui-react'
 import RootComponent from './RootComponent'
+import { ThirdwebProvider } from 'thirdweb/react'
 
 import './index.css'
 import './mockEnv'
@@ -12,7 +13,9 @@ const manifestUrl = 'https://raw.githubusercontent.com/ton-community/tutorials/m
 const App: React.FC = () => {
     return (
         <TonConnectUIProvider manifestUrl="/tonconnect-manifest.json">
-            <RootComponent />
+            <ThirdwebProvider>
+                <RootComponent />
+            </ThirdwebProvider>
         </TonConnectUIProvider>
     )
 }
