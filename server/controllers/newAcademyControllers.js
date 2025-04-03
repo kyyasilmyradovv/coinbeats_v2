@@ -54,6 +54,24 @@ exports.getAcademy = asyncHandler(async (req, res, next) => {
       pointCount: true,
       fomoNumber: true,
       fomoXp: true,
+      categories: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      chains: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      academyType: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
       overallRaffle: {
         where: {
           isActive: true,

@@ -48,7 +48,18 @@ components:
         dexScreener:
           type: string
         tokenomics:
-          type: string
+          type: object
+          properties:
+            logic:
+              type: string
+            chains:
+              type: array
+              items:
+                type: string
+            utility:
+              type: string
+            totalSupply:
+              type: string
         xp:
           type: integer
         pointCount:
@@ -110,3 +121,18 @@ components:
                     type: integer
                   reward:
                     type: string
+            categories:
+              type: array
+              items:
+                $ref: '#/components/schemas/Category'
+            chains:
+              type: array
+              items:
+                $ref: '#/components/schemas/Chain'
+            academyType:
+              type: object
+              properties:
+                id:
+                  type: integer
+                name:
+                  type: string
