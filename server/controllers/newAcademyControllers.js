@@ -36,26 +36,43 @@ exports.getAcademy = asyncHandler(async (req, res, next) => {
   // }
 
   const academy = await prisma.academy.findUnique({
-    where: { id: parseInt(id, 10) },
-    // where: { id: parseInt(id, 10), creatorId: userId },
+    where: { id: +id }, // add creatorId: userId for admin side
     select: {
-      academyQuestions: {
-        include: {
-          choices: true,
-          initialQuestion: true,
+      id: true,
+      name: true,
+      ticker: true,
+      coingecko: true,
+      discord: true,
+      telegram: true,
+      twitter: true,
+      webpageUrl: true,
+      coverPhotoUrl: true,
+      logoUrl: true,
+      dexScreener: true,
+      tokenomics: true,
+      xp: true,
+      pointCount: true,
+      fomoNumber: true,
+      fomoXp: true,
+      overallRaffle: {
+        where: {
+          isActive: true,
+          deadline: {
+            gte: new Date(),
+          },
+        },
+        select: {
+          id: true,
+          minAmount: true,
+          winnersCount: true,
+          deadline: true,
+          minPoints: true,
+          reward: true,
         },
       },
-      raffles: true,
-      quests: true,
     },
   });
-  if (!academy) {
-    return res.status(404).json({ message: 'Academy not found' });
-  }
-
-  // academy.academyQuestions = academy.academyQuestions || [];
-  // academy.raffles = academy.raffles || [];
-  // academy.quests = academy.quests || [];
+  if (!academy) return res.status(404).json({ message: 'Academy not found' });
 
   res.json(academy);
 });

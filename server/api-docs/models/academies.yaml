@@ -29,7 +29,25 @@ components:
           type: integer
         name:
           type: string
+        ticker:
+          type: string
+        coingecko:
+          type: string
+        discord:
+          type: string
+        telegram:
+          type: string
+        twitter:
+          type: string
+        webpageUrl:
+          type: string
+        coverPhotoUrl:
+          type: string
         logoUrl:
+          type: string
+        dexScreener:
+          type: string
+        tokenomics:
           type: string
         xp:
           type: integer
@@ -38,8 +56,6 @@ components:
         fomoNumber:
           type: integer
         fomoXp:
-          type: integer
-        academyTypeId:
           type: integer
     # AcademyAudio:
     #   type: object
@@ -71,12 +87,26 @@ components:
     #   properties:
     #     content:
     #       type: string
-    # AcademyWithIncludes:
-    #   allOf:
-    #     - $ref: '#/components/schemas/Academy'
-    #     - type: object
-    #       properties:
-    #         audios:
-    #           type: array
-    #           items:
-    #             $ref: '#/components/schemas/AcademyAudio'
+    AcademyWithIncludes:
+      allOf:
+        - $ref: '#/components/schemas/AcademyDetails'
+        - type: object
+          properties:
+            raffles:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  minAmount:
+                    type: integer
+                  winnersCount:
+                    type: integer
+                  deadline:
+                    type: string
+                    format: date-time
+                  minPoints:
+                    type: integer
+                  reward:
+                    type: string
