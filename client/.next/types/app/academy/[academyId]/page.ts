@@ -1,4 +1,4 @@
-// File: /Users/didargayypow2003gmail.com/Desktop/untitled folder/coinbeats_v2/client/src/app/academy/[academyId]/page.tsx
+// File: /Users/kyyas/Desktop/coin-beats/client/src/app/academy/[academyId]/page.tsx
 import * as entry from '../../../../../src/app/academy/[academyId]/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 
