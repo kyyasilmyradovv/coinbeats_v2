@@ -20,10 +20,12 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { setAcademySendInfo } from '@/store/academy/academySlice'
 import { useCategoryOptionsQuery } from '@/store/api/category.api'
 import { useChainOptionsQuery } from '@/store/api/chain.api'
+import { Command, CommandInput } from '@/components/ui/command'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { CategoryFilter } from '@/components/categoryFilter'
 // Sorting options component
-interface SortOptionsProps {
-    onSortChange: (value: string) => void
-}
+interface SortOptionsProps {}
 
 const formatPoints = (points: number): string => {
     if (points >= 1_000_000_000) {
@@ -112,54 +114,12 @@ function ExtraDetail() {
 function Filters({}: SortOptionsProps) {
     const dispatch = useAppDispatch()
     const academySendInfo = useAppSelector((state) => state.academy.academySendInfo)
-    const { currentData: categoryOptions, isLoading, isFetching } = useCategoryOptionsQuery({ offset: 0, limit: 300 })
+
     const { currentData: chainOptions, isLoading: isChainsLoading, isFetching: isChainsFetching } = useChainOptionsQuery({ offset: 0, limit: 300 })
 
     return (
-        <div className="mb-6">
-            <Select
-                onValueChange={(e) => {
-                    dispatch(
-                        setAcademySendInfo({
-                            ...academySendInfo,
-                            academyId: +e,
-                            offset: 0
-                        })
-                    )
-                }}
-            >
-                <p className="text-l mb-1">Category:</p>
-                <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="" />
-                </SelectTrigger>
-                <SelectContent>
-                    {categoryOptions?.map((e) => (
-                        <SelectItem value={e.value.toString()}>{e.label}</SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
-
-            <Select
-                onValueChange={(e) => {
-                    dispatch(
-                        setAcademySendInfo({
-                            ...academySendInfo,
-                            chainId: +e,
-                            offset: 0
-                        })
-                    )
-                }}
-            >
-                <p className="text-l mb-1">Chain:</p>
-                <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="" />
-                </SelectTrigger>
-                <SelectContent>
-                    {chainOptions?.map((e) => (
-                        <SelectItem value={e.value.toString()}>{e.label}</SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
+        <div className="mb-6 flex gap-2">
+            <CategoryFilter onSelect={(e) => dispatch(setAcademySendInfo({ ...academySendInfo, categoryId: e, offset: 0 }))} />
         </div>
     )
 }
@@ -184,9 +144,8 @@ export default function Home() {
     return (
         <div className="container mx-auto pt-4  pb-4 px-4">
             <ExtraDetail />
-            {/* <Filters onSortChange={() => {}} />÷ */}
+            <Filters />
             {/* <SortOptions onSortChange={() => {}} /> */}
-
             {!academies?.length && (isLoading || isFetching) ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 mt-4">
                     {Array.from({ length: 15 }).map((_, index) => (
