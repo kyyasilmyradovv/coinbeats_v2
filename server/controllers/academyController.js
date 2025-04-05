@@ -1148,10 +1148,9 @@ exports.getAcademyQuestions = async (req, res, next) => {
           select: {
             id: true,
             text: true,
-            // Exclude isCorrect to prevent revealing the correct answer
           },
         },
-        initialQuestion: true, // Include the related initial question
+        initialQuestion: true,
       },
     });
 

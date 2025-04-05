@@ -1,0 +1,22 @@
+paths:
+  /api/v2/quizzes:
+    get:
+      tags: [Quizzes]
+      description: Fetch questions of academy quizzes
+      statuses: [404]
+      parameters:
+        - in: query
+          name: academyId
+          required: true
+          description: Fetch questions by academy
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: An array of objects which consist of academy quiz questions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Academy'

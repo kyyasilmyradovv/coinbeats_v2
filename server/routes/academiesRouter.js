@@ -4,7 +4,6 @@ const {
   getAllAcademies,
   getAcademy,
 } = require('../controllers/newAcademyControllers');
-
 const router = express.Router();
 
 router.get('/', getAllAcademies);
