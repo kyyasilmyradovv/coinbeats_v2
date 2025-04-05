@@ -15,7 +15,7 @@ type Option = {
 }
 
 interface CategoryFilterProps {
-    onSelect: (value: Option | null) => void
+    onSelect?: (value: Option | null) => void
     defaultValue?: Option
     className?: string
 }
@@ -47,7 +47,7 @@ export function CategoryFilter({ onSelect, defaultValue, className }: CategoryFi
     return (
         <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
-                <Button variant="outline" role="combobox" aria-expanded={open} className={cn('w-[200px] justify-between', className)}>
+                <Button variant="outline" role="combobox" aria-expanded={open} className={cn('w-full md:w-[250px] justify-between', className)}>
                     {value?.label || 'Select category...'}
                     {isLoading || isFetching ? (
                         <RefreshCw size={16} className="animate-spin ml-auto" />
@@ -56,7 +56,7 @@ export function CategoryFilter({ onSelect, defaultValue, className }: CategoryFi
                     )}
                 </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-[200px] p-0">
+            <PopoverContent className="w-[250px] p-0">
                 <Command shouldFilter={false}>
                     <CommandInput value={keyword} onValueChange={setKeyword} placeholder="Search category..." />
                     <CommandList

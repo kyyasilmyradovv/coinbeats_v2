@@ -8,6 +8,7 @@ import './animations.css'
 import { Footer } from '@/components/footer'
 import { StoreProvider } from '@/providers/storeProvider'
 import { ArrowUpToLine } from 'lucide-react'
+import BackTopButton from '@/components/backToTop'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -37,12 +38,15 @@ export default function RootLayout({
                         <Toaster />
                         <Header />
 
-                        <main className="flex-1 ">{children}</main>
+                        <main className="flex-1 ">
+                            {children}
+                            <BackTopButton />
+                        </main>
 
                         <footer className="pt-0 pb-20">
                             <div className="px-2 text-center text-sm text-muted-foreground">© 2025 coinbeats All rights reserved.</div>
                         </footer>
-                        {/* <Footer /> */}
+                        <Footer />
                     </ThemeProvider>
                 </body>
             </html>

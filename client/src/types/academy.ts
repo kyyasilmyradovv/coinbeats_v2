@@ -12,6 +12,7 @@ export type TAcademy = {
 export type TAcademySendInfo = {
     offset: number
     limit: number
+    keyword?: string
     categoryId?: number
     chainId?: number
 }

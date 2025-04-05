@@ -3,12 +3,13 @@ import * as React from 'react'
 import Link from 'next/link'
 import { Button } from './ui/button'
 import { ThemeToggle } from './theme toggle/theme-toggle'
-import { ArrowBigLeft, BellRing, Coins } from 'lucide-react'
+import { AlertCircle, ArrowBigLeft, Bell, BellRing, Coins } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar'
 import Image from 'next/image'
 import { useTheme } from 'next-themes'
 import { ROUTES } from '@/shared/links'
 import { usePathname, useRouter } from 'next/navigation'
+import { NavMenu } from './navigation'
 
 // THIS IS A TEMPORARY HEADER FOR SIGNUP AND LANDING PAGE WHILE SITE IS NOT LIVE YET
 export function Header() {
@@ -42,10 +43,15 @@ export function Header() {
                 </div>
             </Link>
             {/* </div> */}
-            <div className="absolute w-full flex items-center justify-center z-50"></div>
+            <div className="absolute w-full  items-center justify-center z-50 hidden md:flex">
+                <NavMenu />
+            </div>
 
             <div className="flex items-center gap-1 z-100">
                 <ThemeToggle />
+                <Button variant="ghost" size="icon">
+                    <Bell className="h-[1.2rem] w-[1.2rem]" />
+                </Button>
                 <div className=" flex items-center space-x-4  p-1 justify-center">
                     <Avatar>
                         <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
