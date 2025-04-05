@@ -1,0 +1,312 @@
+/* Landing page specific animations - simplified */
+
+/* Base styling for gradient containers */
+.gradient-bg-container {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* Gradient backgrounds */
+.primary-gradient {
+  position: absolute;
+  inset: 0;
+  opacity: 0.25;
+  background: radial-gradient(
+      circle at 15% 50%,
+      var(--brand) 0%,
+      transparent 70%
+    ),
+    radial-gradient(circle at 85% 30%, rgb(124, 58, 237) 0%, transparent 70%);
+  animation: shift 15s ease-in-out infinite alternate,
+    pulseLight 10s ease infinite alternate;
+}
+
+.secondary-gradient-1 {
+  position: absolute;
+  inset: 0;
+  opacity: 0.2;
+  background: radial-gradient(
+    circle at 75% 40%,
+    var(--brand) 0%,
+    transparent 60%
+  );
+}
+
+.secondary-gradient-2 {
+  position: absolute;
+  inset: 0;
+  opacity: 0.2;
+  background: radial-gradient(
+    circle at 25% 70%,
+    rgb(124, 58, 237) 0%,
+    transparent 60%
+  );
+}
+
+.dark .primary-gradient {
+  opacity: 0.15;
+  background: radial-gradient(
+      circle at 15% 50%,
+      var(--brand) 0%,
+      transparent 60%
+    ),
+    radial-gradient(circle at 85% 30%, rgb(124, 58, 237) 0%, transparent 60%);
+  animation: shift 15s ease-in-out infinite alternate,
+    pulseDark 10s ease infinite alternate;
+}
+
+.dark .secondary-gradient-1 {
+  opacity: 0.1;
+  background: radial-gradient(
+    circle at 75% 40%,
+    var(--brand) 0%,
+    transparent 50%
+  );
+}
+
+.dark .secondary-gradient-2 {
+  opacity: 0.1;
+  background: radial-gradient(
+    circle at 25% 70%,
+    rgb(124, 58, 237) 0%,
+    transparent 50%
+  );
+}
+
+/* Stats blob styling */
+.stats-blob {
+  position: absolute;
+  width: 60vw;
+  height: 55vh;
+  left: -25vw;
+  top: 0;
+  filter: blur(100px);
+  z-index: -10;
+  pointer-events: none;
+}
+
+.stats-blob-inner {
+  width: 100%;
+  height: 100%;
+  background-color: rgb(72, 107, 236);
+  opacity: 0.25;
+  transform: rotate(10deg);
+  border-radius: 25% 75% 85% 15% / 65% 20% 80% 35%;
+  animation: blob-morph 15s ease-in-out infinite;
+}
+
+.dark .stats-blob-inner {
+  opacity: 0.1;
+}
+
+/* Hero image gradient */
+.hero-image-gradient {
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(
+    circle at center,
+    var(--brand) / 20%,
+    transparent 70%
+  );
+}
+
+/* Blob morphing animation */
+@keyframes blob-morph {
+  0%,
+  100% {
+    border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+  }
+  50% {
+    border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%;
+  }
+}
+
+@keyframes pulseLight {
+  0%,
+  100% {
+    opacity: 0.15;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes pulseDark {
+  0%,
+  100% {
+    opacity: 0.05;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@keyframes shift {
+  0% {
+    background-position: 0% 0%;
+  }
+  50% {
+    background-position: 10% 20%;
+  }
+  100% {
+    background-position: -10% -10%;
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0px) translateX(0px);
+  }
+  50% {
+    transform: translateY(-30px) translateX(0px);
+  }
+}
+
+@keyframes float-reverse {
+  0%,
+  100% {
+    transform: translateY(0px) translateX(0px);
+  }
+  50% {
+    transform: translateY(30px) translateX(0px);
+  }
+}
+
+/* Animation utility classes */
+.animate-float {
+  animation: float 18s ease-in-out infinite alternate;
+}
+
+.animate-float-reverse {
+  animation: float-reverse 12s ease-in-out infinite alternate;
+}
+
+/* Rotating word animation */
+.rotating-word-container {
+  position: relative;
+  display: inline-block;
+  min-width: 320px;
+  height: 1.25em;
+  vertical-align: top;
+}
+
+.rotating-word {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: auto;
+  padding-bottom: 0.5em;
+  transition: all 2000ms cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+.rotating-word.active {
+  opacity: 1;
+  filter: blur(0px);
+  transform: scale(1);
+}
+
+.rotating-word.inactive {
+  opacity: 0;
+  filter: blur(8px);
+  transform: scale(0.95);
+}
+
+/* Button float animation */
+@keyframes float-button {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-float-button {
+  animation: float-button 3s ease-in-out infinite;
+}
+
+/* IDK Why but without this element hover animations lag in safari SO KEEP IT */
+.stats-blob-inner {
+  animation: blob-morph 15s ease-in-out infinite;
+  animation: pulseLight 10s ease infinite alternate;
+  transition: all 0.5s ease-in-out;
+}
+
+/* Responsive section styling */
+.responsive-section-text {
+  font-size: 1.875rem; /* text-3xl */
+  margin-bottom: 3rem; /* mb-12 */
+  font-weight: 300; /* font-light */
+  text-align: left;
+}
+
+.responsive-section-text .gradient-title {
+  font-size: 2.25rem; /* text-4xl */
+  margin-bottom: 1rem; /* mb-4 */
+}
+
+/* Media query for mobile devices */
+@media (max-width: 768px) {
+  .responsive-section-text {
+    font-size: 1.25rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .responsive-section-text .gradient-title {
+    font-size: 2rem;
+  }
+}
+
+/* Consistent padding for card elements */
+.card-gradient > div {
+  padding-left: 1.25rem;
+  padding-right: 1.25rem;
+}
+
+.card-gradient .collapsible-trigger {
+  padding: 0;
+}
+
+.card-gradient .collapsible-content > div {
+  padding-top: 0.2rem;
+}
+
+/* First content element after the trigger should have proper spacing */
+.card-gradient .collapsible-content > div:first-child {
+  padding-top: 1rem;
+}
+
+/* Consistent spacing for collapsible content */
+.collapsible-content {
+  padding-bottom: 0.5rem;
+}
+
+/* Media query for mobile devices */
+@media (max-width: 768px) {
+  .card-gradient > div {
+    padding: 1rem;
+  }
+
+  .feature-list {
+    padding-left: 1.25rem;
+  }
+
+  .gradient-icon-bg {
+    width: 2rem;
+    height: 2rem;
+    padding: 0.4rem;
+  }
+}
+
+.gradient-background {
+  background: var(--gradient);
+}
