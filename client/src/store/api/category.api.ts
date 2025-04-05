@@ -1,37 +1,37 @@
-import { buildUrlWithParams } from "@/lib/utils";
-import { apiSlice } from "./apiSlice";
-import { TAcademy, TAcademySendInfo } from "@/types/academy";
+import { buildUrlWithParams } from '@/lib/utils'
+import { apiSlice } from './apiSlice'
+import { TAcademy, TAcademySendInfo } from '@/types/academy'
 
 export const categoriesApi = apiSlice.injectEndpoints({
-  endpoints: (builder) => ({
-    categoryOptions: builder.query({
-      query: (parameters) => {
-        return {
-          url: buildUrlWithParams("/categories", parameters),
-          method: "GET",
-        };
-      },
-      transformResponse: async (baseQueryReturnValue, _meta, _arg) => {
-        let result =
-          (baseQueryReturnValue as TAcademy[])?.map((e) => ({
-            label: e.name,
-            value: e.id,
-          })) || [];
+    endpoints: (builder) => ({
+        categoryOptions: builder.query({
+            query: (parameters) => {
+                return {
+                    url: buildUrlWithParams('/categories', parameters),
+                    method: 'GET'
+                }
+            },
+            transformResponse: async (baseQueryReturnValue, _meta, _arg) => {
+                let result =
+                    (baseQueryReturnValue as TAcademy[])?.map((e) => ({
+                        label: e.name,
+                        value: e.id.toString()
+                    })) || []
 
-        return result;
-      },
-      serializeQueryArgs: ({ endpointName }) => endpointName,
-      merge: (currentCache, newItems, { arg: { offset } }) => {
-        if (offset === 0) {
-          currentCache.length = 0;
-        }
-        currentCache.push(...newItems);
-      },
-      forceRefetch: ({ currentArg, previousArg }) => currentArg !== previousArg,
-      providesTags: ["Categories"],
+                return result
+            },
+            serializeQueryArgs: ({ endpointName }) => endpointName,
+            merge: (currentCache, newItems, { arg: { offset } }) => {
+                if (offset === 0) {
+                    currentCache.length = 0
+                }
+                currentCache.push(...newItems)
+            },
+            forceRefetch: ({ currentArg, previousArg }) => currentArg !== previousArg,
+            providesTags: ['Categories']
+        })
     }),
-  }),
-  overrideExisting: false,
-});
+    overrideExisting: false
+})
 
-export const { useCategoryOptionsQuery } = categoriesApi;
+export const { useCategoryOptionsQuery } = categoriesApi
