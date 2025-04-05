@@ -5,11 +5,21 @@ paths:
       description: Returns all academies list
       statuses: [404]
       parameters:
-        # - in: query
-        #   name: keyword
-        #   schema:
-        #     type: string
-        #   description: Search by content of the academies
+        - in: query
+          name: keyword
+          schema:
+            type: string
+          description: Search by name of the academies
+        - in: query
+          name: categoryId
+          schema:
+            type: integer
+          description: Filter by category
+        - in: query
+          name: chainId
+          schema:
+            type: integer
+          description: Filter by chain
       responses:
         '200':
           description: An array of objects which consist of academies information
