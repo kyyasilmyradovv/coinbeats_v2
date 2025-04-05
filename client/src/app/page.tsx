@@ -24,6 +24,9 @@ import { Command, CommandInput } from '@/components/ui/command'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { CategoryFilter } from '@/components/categoryFilter'
+import { ChainFilter } from '@/components/chainFilter'
+import { SearchBar } from '@/components/search'
+
 // Sorting options component
 interface SortOptionsProps {}
 
@@ -115,11 +118,11 @@ function Filters({}: SortOptionsProps) {
     const dispatch = useAppDispatch()
     const academySendInfo = useAppSelector((state) => state.academy.academySendInfo)
 
-    const { currentData: chainOptions, isLoading: isChainsLoading, isFetching: isChainsFetching } = useChainOptionsQuery({ offset: 0, limit: 300 })
-
     return (
-        <div className="mb-6 flex gap-2">
+        <div className="mb-6 flex gap-2 flex-wrap">
+            <SearchBar onSearch={(e) => dispatch(setAcademySendInfo({ ...academySendInfo, keyword: e, offset: 0 }))} />
             <CategoryFilter onSelect={(e) => dispatch(setAcademySendInfo({ ...academySendInfo, categoryId: e, offset: 0 }))} />
+            <ChainFilter onSelect={(e) => dispatch(setAcademySendInfo({ ...academySendInfo, chainId: e, offset: 0 }))} />
         </div>
     )
 }
@@ -147,7 +150,7 @@ export default function Home() {
             <Filters />
             {/* <SortOptions onSortChange={() => {}} /> */}
             {!academies?.length && (isLoading || isFetching) ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 mt-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 mt-4">
                     {Array.from({ length: 15 }).map((_, index) => (
                         <AnalysisCardSkeleton key={index} />
                     ))}
@@ -158,14 +161,14 @@ export default function Home() {
                     next={() => handleFetchMore()}
                     hasMore={academies?.length === academySendInfo.offset + academySendInfo.limit || academies?.length === academySendInfo.offset}
                     loader={
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 mt-4">
-                            {Array.from({ length: 5 }).map((_, index) => (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 mt-4">
+                            {Array.from({ length: 10 }).map((_, index) => (
                                 <AnalysisCardSkeleton key={index} />
                             ))}
                         </div>
                     }
                 >
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 ">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 ">
                         {academies?.map((academy: TAcademy) => (
                             <AcademyCard academy={academy} />
                         ))}
