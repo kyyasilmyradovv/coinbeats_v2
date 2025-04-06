@@ -15,6 +15,7 @@ exports.login = asyncHandler(async (req, res, next) => {
       roles: true,
       telegramUserId: true,
       email: true,
+      password: true,
     },
   });
 
