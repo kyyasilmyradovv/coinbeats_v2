@@ -5,9 +5,6 @@ const prisma = new PrismaClient();
 const asyncHandler = require('../utils/asyncHandler');
 const { sendMail } = require('../utils/sendMail');
 
-// const JWT_SECRET = 'abcdef';
-// const JWT_REFRESH_SECRET = 'abcdef';
-
 exports.login = asyncHandler(async (req, res, next) => {
   const { email, password } = req.body;
 
@@ -53,6 +50,8 @@ exports.sendMeCode = asyncHandler(async (req, res, next) => {
     update: { code, created_at: new Date() },
     create: { email, code, created_at: new Date() },
   });
+
+  console.log('Code sent: ', code);
 
   await sendMail(code, email);
 
