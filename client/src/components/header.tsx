@@ -10,6 +10,7 @@ import { useTheme } from 'next-themes'
 import { ROUTES } from '@/shared/links'
 import { usePathname, useRouter } from 'next/navigation'
 import { NavMenu } from './navigation'
+import { LoginModal } from './loginModal'
 
 // THIS IS A TEMPORARY HEADER FOR SIGNUP AND LANDING PAGE WHILE SITE IS NOT LIVE YET
 export function Header() {
@@ -53,10 +54,14 @@ export function Header() {
                     <Bell className="h-[1.2rem] w-[1.2rem]" />
                 </Button>
                 <div className=" flex items-center space-x-4  p-1 justify-center">
-                    <Avatar>
+                    {/* <Button variant="ghost" className="cursor-pointer">
+                        <p className="gradient-text">Sign in</p>
+                    </Button> */}
+                    <LoginModal />
+                    {/* <Avatar>
                         <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
                         <AvatarFallback className="p-2">DG</AvatarFallback>
-                    </Avatar>
+                    </Avatar> */}
                     {/* <div className="flex-1 space-y-1 hidden md:block">
                         <p className="text-sm font-medium leading-none">Didar Gayypow</p>
                         <p className="text-sm text-muted-foreground">@didar_gayypow</p>

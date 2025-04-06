@@ -1,4 +1,4 @@
-import { buildUrlWithParams } from '@/lib/utils'
+import { buildUrlWithParams, removeEmpty } from '@/lib/utils'
 import { apiSlice } from './apiSlice'
 import { TAcademy, TAcademySendInfo } from '@/types/academy'
 
@@ -7,7 +7,7 @@ export const categoriesApi = apiSlice.injectEndpoints({
         categoryOptions: builder.query({
             query: (parameters) => {
                 return {
-                    url: buildUrlWithParams('/categories', parameters),
+                    url: buildUrlWithParams('/categories', removeEmpty(parameters)),
                     method: 'GET'
                 }
             },
