@@ -93,29 +93,31 @@
 #                     type: string
 #                   refreshToken:
 #                     type: string
-#   /api/v1/user/auth/refresh-token:
-#     post:
-#       tags: [Authentication]
-#       description: Refresh user token
-#       statuses: [409]
-#       requestBody:
-#         content:
-#           application/json:
-#             schema:
-#               properties:
-#                 refreshToken:
-#                   type: string
-#       responses:
-#         '200':
-#           content:
-#             application/json:
-#               schema:
-#                 type: object
-#                 properties:
-#                   token:
-#                     type: string
-#                   refreshToken:
-#                     type: string
+/api/v2/user/auth/refresh-token:
+  post:
+    tags: [Authentication]
+    description: Refresh user token
+    statuses: []
+    requestBody:
+      content:
+        application/json:
+          schema:
+            properties:
+              refreshToken:
+                type: string
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token:
+                  type: string
+                refreshToken:
+                  type: string
+      '409':
+        description: 'Refresh token expired or invalid'
 #   /api/v1/user/auth/profile:
 #     get:
 #       tags: [Authentication]

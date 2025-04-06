@@ -5,6 +5,7 @@ const validator = require('validator');
 let requiredFields = {
   login: ['email', 'password'],
   send_me_code: ['email'],
+  refresh_token: ['refreshToken'],
 };
 
 // Common Functions
@@ -76,6 +77,7 @@ let typeCheckers = {
   page: parentFunctions.isString,
   description: parentFunctions.isString,
   referral_profile: parentFunctions.isString,
+  refreshToken: parentFunctions.isString,
   // Number
   order: parentFunctions.isNumber,
   count: parentFunctions.isNumber,
