@@ -13,44 +13,49 @@ import Image from 'next/image'
 import { useAuthMutation } from '@/store/api/auth.api'
 import { Toaster } from './ui/sonner'
 import { toast } from 'sonner'
+import { SignUpModal } from './signUpModal'
 
 type TSignInFields = {
     email: string
     password: string
-    remember?: boolean
+    // remember?: boolean
 }
 
 export function LoginModal() {
     const [showPassword, setShowPassword] = useState(false)
 
-    const [auth, { isSuccess, data, isError, error, isLoading }] = useAuthMutation()
+    const [auth, { isSuccess, data, isError, error, isLoading, reset }] = useAuthMutation()
 
     useEffect(() => {
         if (isError) {
-            console.log('login error', error)
+            toast('Error!', {
+                description: 'Something went wrong. Please check your credentials and try again.',
+                position: 'top-right'
+            })
         }
         if (isSuccess) {
             localStorage.setItem('coinbeatsAT', data.accessToken)
             localStorage.setItem('coinbeatsRT', data.refreshToken)
-            toast('Event has been created', {
-                description: 'You successfully signed in',
+            toast('Successfully signed in!', {
+                description: 'Welcome back! You have successfully logged into your account.',
                 position: 'top-right'
             })
         }
+        reset()
     }, [isSuccess, isError])
 
     const form = useForm({
         defaultValues: {
             email: 'kyyas.ilmyradov@gmail.com',
-            password: '!k2y0y0a1s!',
-            remember: false
+            password: '!k2y0y0a1s!'
+            // remember: false
         }
     })
 
     const onSubmit = async (values: TSignInFields) => {
         const valuesToSend = values
-        delete valuesToSend.remember
-        await auth(values)
+        // delete valuesToSend.remember
+        await auth(valuesToSend)
     }
 
     return (
@@ -116,7 +121,7 @@ export function LoginModal() {
                         />
 
                         {/* Remember me */}
-                        <FormField
+                        {/* <FormField
                             control={form.control}
                             name="remember"
                             render={({ field }) => (
@@ -129,7 +134,7 @@ export function LoginModal() {
                                     </FormLabel>
                                 </FormItem>
                             )}
-                        />
+                        /> */}
 
                         <DialogFooter>
                             <Button type="submit" className="w-full">
@@ -138,9 +143,8 @@ export function LoginModal() {
                         </DialogFooter>
 
                         {/* Sign up text below the button */}
-                        <p className="text-sm text-muted-foreground text-center mt-2">
-                            Don&apos;t have an account? <span className="text-primary hover:underline cursor-pointer">Sign up</span>
-                        </p>
+
+                        <SignUpModal />
                     </form>
                 </Form>
             </DialogContent>

@@ -1,22 +1,77 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { BaseQueryFn, createApi, FetchArgs, fetchBaseQuery, FetchBaseQueryError } from '@reduxjs/toolkit/query/react'
+import { Mutex } from 'async-mutex'
+import { toast } from 'sonner'
+
+type TToken = {
+    accessToken: string
+    refreshToken: string
+}
+const mutex = new Mutex()
 
 const baseQuery = fetchBaseQuery({
-  baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL,
-  prepareHeaders: (headers) => {
-    // const dr_accessToken = Cookies.get("DR_AT") ?? "";
+    baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL,
+    prepareHeaders: (headers) => {
+        const accessToken = localStorage.getItem('coinbeatsAT') ?? ''
 
-    // if (dr_accessToken) {
-    //   headers.set("Authorization", `Bearer ${sanitizedToken}`);
-    // }
-    headers.set("Api-Version", "1");
-    return headers;
-  },
-});
+        if (accessToken) {
+            headers.set('Authorization', `Bearer ${accessToken}`)
+        }
+        headers.set('Api-Version', '2')
+        return headers
+    }
+})
+
+const baseQueryWithReAuth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError> = async (args, api, extraOptions) => {
+    await mutex.waitForUnlock()
+    const release = await mutex.acquire()
+
+    const refreshToken = localStorage.getItem('coinbeatsRT') ?? ''
+
+    let result = await baseQuery(args, api, extraOptions)
+
+    if (result.error && result.error.status === 401) {
+        var credentials = { refreshToken: refreshToken, platform: 'web' }
+        try {
+            const refreshResult = await baseQuery(
+                {
+                    url: '/user/auth/refresh',
+                    method: 'POST',
+                    body: credentials
+                },
+                api,
+                extraOptions
+            )
+
+            if ('data' in refreshResult) {
+                const { data } = refreshResult as { data: TToken }
+                const { accessToken, refreshToken } = data
+
+                localStorage.setItem('coinbeatsAT', accessToken)
+                localStorage.setItem('coinbeatsRT', refreshToken)
+
+                result = await baseQuery(args, api, extraOptions)
+            } else {
+                if (((refreshResult.error as any).originalStatus ?? (refreshResult.error as any).status) === 409) {
+                    toast('Attention!', {
+                        description: 'Token Conflict',
+                        position: 'top-right'
+                    })
+                }
+            }
+        } finally {
+            release()
+        }
+    }
+
+    release()
+
+    return result
+}
 
 export const apiSlice = createApi({
-  reducerPath: "api",
-  baseQuery: baseQuery,
-  refetchOnReconnect: true,
-  tagTypes: ["Academies", "Academy", "Categories", "Chains"],
-  endpoints: () => ({}),
-});
+    reducerPath: 'api',
+    baseQuery: baseQuery,
+    refetchOnReconnect: true,
+    tagTypes: ['Academies', 'Academy', 'Categories', 'Chains'],
+    endpoints: () => ({})
+})
