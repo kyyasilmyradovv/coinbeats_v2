@@ -138,11 +138,9 @@ export function LoginModal() {
 
                         <DialogFooter>
                             <Button type="submit" className="w-full">
-                                {isLoading ? <Loader size={30} className="animate-spin" /> : 'Sign in'}
+                                {isLoading ? <Loader size={30} className="animate-spin" /> : 'SIGN IN'}
                             </Button>
                         </DialogFooter>
-
-                        {/* Sign up text below the button */}
 
                         <SignUpModal />
                     </form>

@@ -29,8 +29,8 @@ const baseQueryWithReAuth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
 
     let result = await baseQuery(args, api, extraOptions)
 
-    if (result.error && result.error.status === 401) {
-        var credentials = { refreshToken: refreshToken, platform: 'web' }
+    if (result.error && result.error.status === 498) {
+        var credentials = { refreshToken: refreshToken }
         try {
             const refreshResult = await baseQuery(
                 {
@@ -70,7 +70,7 @@ const baseQueryWithReAuth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
 
 export const apiSlice = createApi({
     reducerPath: 'api',
-    baseQuery: baseQuery,
+    baseQuery: baseQueryWithReAuth,
     refetchOnReconnect: true,
     tagTypes: ['Academies', 'Academy', 'Categories', 'Chains'],
     endpoints: () => ({})

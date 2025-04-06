@@ -1,43 +1,32 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
+import { Separator } from './ui/separator'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Eye, EyeOff, Loader } from 'lucide-react'
+import Image from 'next/image'
+import { useAuthMutation } from '@/store/api/auth.api'
+import { Toaster } from './ui/sonner'
 import { toast } from 'sonner'
 
-type EmailFormFields = { email: string }
-type OtpFormFields = { otp: string }
+type TSignInFields = {
+    email: string
+}
 
 export function SignUpModal() {
-    const [step, setStep] = useState<'email' | 'otp'>('email')
-    const [email, setEmail] = useState('')
-
-    const emailForm = useForm<EmailFormFields>({ defaultValues: { email: '' } })
-    const otpForm = useForm<OtpFormFields>({ defaultValues: { otp: '' } })
-
-    const sendOtp = async (values: EmailFormFields) => {
-        try {
-            // Backend call to send OTP to email
-            // await sendOtpToEmail(values.email)
-            setEmail(values.email)
-            toast('OTP Sent', { description: `Check your email: ${values.email}` })
-            setStep('otp')
-        } catch (error) {
-            toast('Failed to send OTP', { description: 'Please try again later.' })
+    const form = useForm({
+        defaultValues: {
+            email: ''
         }
-    }
+    })
 
-    const verifyOtp = async (values: OtpFormFields) => {
-        try {
-            // Backend call to verify OTP
-            // await verifyOtpCode({ email, otp: values.otp })
-            toast('OTP Verified', { description: 'Your account is ready!' })
-        } catch (error) {
-            toast('Invalid OTP', { description: 'Please check the code and try again.' })
-        }
+    const onSubmit = async (values: TSignInFields) => {
+        console.log('values', values)
     }
 
     return (
@@ -49,61 +38,44 @@ export function SignUpModal() {
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
-                    <DialogTitle>{step === 'email' ? 'Sign Up' : 'Verify Email'}</DialogTitle>
-                    <DialogDescription>
-                        {step === 'email' ? 'Enter your email to receive a verification code.' : `We've sent a 6-digit code to ${email}.`}
-                    </DialogDescription>
+                    <DialogTitle>Sign UP</DialogTitle>
+                    <DialogDescription>Welcome to our platform!</DialogDescription>
                 </DialogHeader>
 
-                {step === 'email' ? (
-                    <Form {...emailForm}>
-                        <form onSubmit={emailForm.handleSubmit(sendOtp)} className="grid gap-4 py-4">
-                            <FormField
-                                control={emailForm.control}
-                                name="email"
-                                rules={{ required: 'Email is required' }}
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Email</FormLabel>
-                                        <FormControl>
-                                            <Input type="email" placeholder="you@example.com" {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <DialogFooter>
-                                <Button type="submit" className="w-full">
-                                    Send OTP
-                                </Button>
-                            </DialogFooter>
-                        </form>
-                    </Form>
-                ) : (
-                    <Form {...otpForm}>
-                        <form onSubmit={otpForm.handleSubmit(verifyOtp)} className="grid gap-4 py-4">
-                            <FormField
-                                control={otpForm.control}
-                                name="otp"
-                                rules={{ required: 'OTP is required' }}
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>OTP</FormLabel>
-                                        <FormControl>
-                                            <Input placeholder="Enter 6-digit code" {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <DialogFooter>
-                                <Button type="submit" className="w-full">
-                                    Verify
-                                </Button>
-                            </DialogFooter>
-                        </form>
-                    </Form>
-                )}
+                <Button variant="outline" className="cursor-pointer flex gap-2 items-center" type="button">
+                    <div className="relative w-[20px] h-[20px]">
+                        <Image src="google-icon-logo-svgrepo-com.svg" alt="google" fill className="object-contain" />
+                    </div>
+                    <p>Continue with Google</p>
+                </Button>
+
+                <Separator className="my-2" />
+
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4 pb-2 pt-0">
+                        {/* Email */}
+                        <FormField
+                            control={form.control}
+                            name="email"
+                            rules={{ required: 'Email is required' }}
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Email</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="you@example.com" type="email" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        <DialogFooter>
+                            <Button type="submit" className="w-full">
+                                {false ? <Loader size={30} className="animate-spin" /> : 'CREATE ACCOUNT'}
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </Form>
             </DialogContent>
         </Dialog>
     )

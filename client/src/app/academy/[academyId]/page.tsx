@@ -38,7 +38,7 @@ function ActTypes({ academy }: TTabsProps) {
                                     <Rocket />
                                     <p className="text-lg font-bold ml-2">Ticker:</p>
                                 </div>
-                                <Badge variant={'outline'} className="ml-2 gradient-background ">
+                                <Badge variant={'outline'} className="ml-4 gradient-background ">
                                     {academy.ticker ?? 'N/A'}
                                 </Badge>
                             </div>
