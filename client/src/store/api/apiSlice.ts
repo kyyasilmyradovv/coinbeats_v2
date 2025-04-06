@@ -34,7 +34,7 @@ const baseQueryWithReAuth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
         try {
             const refreshResult = await baseQuery(
                 {
-                    url: '/user/auth/refresh',
+                    url: '/user/auth/refresh-token',
                     method: 'POST',
                     body: credentials
                 },

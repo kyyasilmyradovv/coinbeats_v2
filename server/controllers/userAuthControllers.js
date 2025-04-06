@@ -32,7 +32,7 @@ exports.login = asyncHandler(async (req, res, next) => {
   };
 
   const accessToken = jwt.sign(tokenPayload, process.env.JWT_SECRET, {
-    expiresIn: '2h',
+    expiresIn: '10s',
   });
   const refreshToken = jwt.sign(tokenPayload, process.env.JWT_REFRESH_SECRET, {
     expiresIn: '30d',
