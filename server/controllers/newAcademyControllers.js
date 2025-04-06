@@ -115,7 +115,7 @@ exports.getAcademy = asyncHandler(async (req, res, next) => {
   });
   if (!academy) return res.status(404).json({ message: 'Academy not found' });
 
-  // if(req.user){
+  // if(req.user){  // TODO: uncomment after auth logic done
   const pointsSum = await prisma.point.aggregate({
     where: {
       // userId: req.user.id,

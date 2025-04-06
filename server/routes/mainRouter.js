@@ -7,5 +7,6 @@ router.use('/academy-types', require('./academyTypesRouter'));
 router.use('/categories', require('./categoriesRouter'));
 router.use('/chains', require('./chainsRouter'));
 router.use('/quizzes', require('./quizzesRouter'));
+router.use('/user/auth', require('./userAuthRouter'));
 
 module.exports = router;

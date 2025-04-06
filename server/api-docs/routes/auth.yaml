@@ -1,111 +1,76 @@
 # paths:
-#   /api/v1/user/auth/login:
-#     post:
-#       tags: [Authentication]
-#       description: Login as user
-#       statuses: [400, 404]
-#       requestBody:
-#         content:
-#           application/json:
-#             schema:
-#               $ref: '#/components/schemas/LoginFieldsOfUsers'
-#       responses:
-#         '200':
-#           content:
-#             application/json:
-#               schema:
-#                 type: object
-#                 properties:
-#                   token:
-#                     type: string
-#                   refreshToken:
-#                     type: string
-#         '409':
-#           content:
-#             application/json:
-#               schema:
-#                 type: object
-#                 properties:
-#                   message:
-#                     type: string
-#                     example: Cannot finish login on another device, because you already have 5 devices connected
-#                   devices:
-#                     type: array
-#                     items:
-#                       type: object
-#                       properties:
-#                         uuid:
-#                           type: string
-#                           format: uuid
-#                         deviceId:
-#                           type: string
-#                         deviceModel:
-#                           type: string
-#                         user:
-#                           type: object
-#                           properties:
-#                             uuid:
-#                               type: string
-#                               format: uuid
-#                             username:
-#                               type: string
-#                             name:
-#                               type: string
-#                             surname:
-#                               type: string
-#                             phone:
-#                               type: string
-#   /api/v1/user/auth/logout:
-#     post:
-#       tags: [Authentication]
-#       description: Logout from the system
-#       statuses: [400]
-#       responses:
-#         '200':
-#           description: Logged out successfully
-#   /api/v1/user/auth/logout-for-login:
-#     post:
-#       tags: [Authentication]
-#       description: Logout one device to create empty place for the current logging device
-#       statuses: [400]
-#       requestBody:
-#         content:
-#           application/json:
-#             schema:
-#               $ref: '#/components/schemas/LogoutForLoginFields'
-#       responses:
-#         '200':
-#           description: Logged out successfully
-#   /api/v1/user/auth/signup:
-#     post:
-#       tags: [Authentication]
-#       description: Signup as new user
-#       statuses: [400, 404, 409]
-#       requestBody:
-#         content:
-#           application/json:
-#             schema:
-#               $ref: '#/components/schemas/SignupFieldsOfUsers'
-#       responses:
-#         '200':
-#           description: 'Verification code successfully sent'
-#   /api/v1/user/auth/send-me-code:
-#     post:
-#       tags: [Authentication]
-#       description: Send me verification code
-#       statuses: [400, 404, 409]
-#       requestBody:
-#         content:
-#           application/json:
-#             schema:
-#               type: object
-#               properties:
-#                 phone:
-#                   type: string
-#                   example: '99361064781'
-#       responses:
-#         '200':
-#           description: 'Verification code successfully sent'
+/api/v2/user/auth/login:
+  post:
+    tags: [Authentication]
+    description: Login as user
+    statuses: [400, 404]
+    requestBody:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/LoginFieldsOfUsers'
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token:
+                  type: string
+                refreshToken:
+                  type: string
+  #   /api/v1/user/auth/logout:
+  #     post:
+  #       tags: [Authentication]
+  #       description: Logout from the system
+  #       statuses: [400]
+  #       responses:
+  #         '200':
+  #           description: Logged out successfully
+  #   /api/v1/user/auth/logout-for-login:
+  #     post:
+  #       tags: [Authentication]
+  #       description: Logout one device to create empty place for the current logging device
+  #       statuses: [400]
+  #       requestBody:
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/LogoutForLoginFields'
+  #       responses:
+  #         '200':
+  #           description: Logged out successfully
+  #   /api/v1/user/auth/signup:
+  #     post:
+  #       tags: [Authentication]
+  #       description: Signup as new user
+  #       statuses: [400, 404, 409]
+  #       requestBody:
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/SignupFieldsOfUsers'
+  #       responses:
+  #         '200':
+  #           description: 'Verification code successfully sent'
+/api/v2/user/auth/send-me-code:
+  post:
+    tags: [Authentication]
+    description: Send me email verification code
+    statuses: [400, 409]
+    requestBody:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              email:
+                type: string
+                example: 'kyyas.ilmyradov@gmail.com'
+    responses:
+      '200':
+        description: 'Code sent'
 #   /api/v1/user/auth/verify:
 #     post:
 #       tags: [Authentication]

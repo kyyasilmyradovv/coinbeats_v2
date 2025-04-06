@@ -1,154 +1,139 @@
-# components:
-#   schemas:
-#     ProfileFieldsOfUsers:
-#       type: object
-#       properties:
-#         name:
-#           type: string
-#         surname:
-#           type: string
-#         username:
-#           type: string
-#         email:
-#           type: string
-#         phone:
-#           type: string
-#         birthdate:
-#           type: string
-#           format: date
-#         language:
-#           type: string
-#           enum: ['tm', 'ru']
-#         hasMobileFirebaseToken:
-#           type: boolean
-#         hasWebFirebaseToken:
-#           type: boolean
-#         avatar:
-#           type: object
-#           properties:
-#             uuid:
-#               type: string
-#               format: uuid
-#             preview:
-#               type: string
-#             image:
-#               type: string
-#         device:
-#           type: object
-#           properties:
-#             uuid:
-#               type: string
-#               format: uuid
-#             deviceId:
-#               type: string
-#             deviceModel:
-#               type: string
-#             version:
-#               type: string
-#             firebaseToken:
-#               type: string
-#             type:
-#               type: string
-#               enum: ['android', 'ios', 'tv', 'pc']
-#             subscriptionDeadline:
-#               type: string
-#               format: date
-#             createdAt:
-#               type: string
-#               format: date-time
-#             hasSubscription:
-#               type: boolean
-#     UpdateFieldsOfUsersProfile:
-#       type: object
-#       properties:
-#         name:
-#           type: string
-#         surname:
-#           type: string
-#         username:
-#           type: string
-#         email:
-#           type: string
-#         birthdate:
-#           type: string
-#           format: date
-#         password:
-#           type: string
-#         language:
-#           type: string
-#           enum: ['tm', 'ru']
-#         mobileFirebaseToken:
-#           type: string
-#         webFirebaseToken:
-#           type: string
-#         avatarUuid:
-#           type: string
-#           format: uuid
-#     SignupFieldsOfUsers:
-#       type: object
-#       required:
-#         - username
-#         - phone
-#         - password
-#       properties:
-#         username:
-#           type: string
-#         phone:
-#           type: string
-#         password:
-#           type: string
-#     VerificationFieldsOfUsers:
-#       type: object
-#       required:
-#         - phone
-#         - verificationCode
-#         - deviceId
-#         - deviceModel
-#         - type
-#         - firebaseToken
-#       properties:
-#         phone:
-#           type: string
-#         verificationCode:
-#           type: integer
-#         deviceId:
-#           type: string
-#         deviceModel:
-#           type: string
-#         version:
-#           type: string
-#         type:
-#           type: string
-#           enum: ['android', 'ios', 'tv', 'pc']
-#         firebaseToken:
-#           type: string
-#     LoginFieldsOfUsers:
-#       type: object
-#       required:
-#         - login
-#         - password
-#         - deviceId
-#         - deviceModel
-#         - type
-#         - firebaseToken
-#       properties:
-#         login:
-#           type: string
-#           example: rahym
-#         password:
-#           type: string
-#           example: rahym123
-#         deviceId:
-#           type: string
-#         deviceModel:
-#           type: string
-#         version:
-#           type: string
-#         type:
-#           type: string
-#           enum: ['android', 'ios', 'tv', 'pc']
-#         firebaseToken:
-#           type: string
+components:
+  schemas:
+    #     ProfileFieldsOfUsers:
+    #       type: object
+    #       properties:
+    #         name:
+    #           type: string
+    #         surname:
+    #           type: string
+    #         username:
+    #           type: string
+    #         email:
+    #           type: string
+    #         phone:
+    #           type: string
+    #         birthdate:
+    #           type: string
+    #           format: date
+    #         language:
+    #           type: string
+    #           enum: ['tm', 'ru']
+    #         hasMobileFirebaseToken:
+    #           type: boolean
+    #         hasWebFirebaseToken:
+    #           type: boolean
+    #         avatar:
+    #           type: object
+    #           properties:
+    #             uuid:
+    #               type: string
+    #               format: uuid
+    #             preview:
+    #               type: string
+    #             image:
+    #               type: string
+    #         device:
+    #           type: object
+    #           properties:
+    #             uuid:
+    #               type: string
+    #               format: uuid
+    #             deviceId:
+    #               type: string
+    #             deviceModel:
+    #               type: string
+    #             version:
+    #               type: string
+    #             firebaseToken:
+    #               type: string
+    #             type:
+    #               type: string
+    #               enum: ['android', 'ios', 'tv', 'pc']
+    #             subscriptionDeadline:
+    #               type: string
+    #               format: date
+    #             createdAt:
+    #               type: string
+    #               format: date-time
+    #             hasSubscription:
+    #               type: boolean
+    #     UpdateFieldsOfUsersProfile:
+    #       type: object
+    #       properties:
+    #         name:
+    #           type: string
+    #         surname:
+    #           type: string
+    #         username:
+    #           type: string
+    #         email:
+    #           type: string
+    #         birthdate:
+    #           type: string
+    #           format: date
+    #         password:
+    #           type: string
+    #         language:
+    #           type: string
+    #           enum: ['tm', 'ru']
+    #         mobileFirebaseToken:
+    #           type: string
+    #         webFirebaseToken:
+    #           type: string
+    #         avatarUuid:
+    #           type: string
+    #           format: uuid
+    #     SignupFieldsOfUsers:
+    #       type: object
+    #       required:
+    #         - username
+    #         - phone
+    #         - password
+    #       properties:
+    #         username:
+    #           type: string
+    #         phone:
+    #           type: string
+    #         password:
+    #           type: string
+    #     VerificationFieldsOfUsers:
+    #       type: object
+    #       required:
+    #         - phone
+    #         - verificationCode
+    #         - deviceId
+    #         - deviceModel
+    #         - type
+    #         - firebaseToken
+    #       properties:
+    #         phone:
+    #           type: string
+    #         verificationCode:
+    #           type: integer
+    #         deviceId:
+    #           type: string
+    #         deviceModel:
+    #           type: string
+    #         version:
+    #           type: string
+    #         type:
+    #           type: string
+    #           enum: ['android', 'ios', 'tv', 'pc']
+    #         firebaseToken:
+    #           type: string
+    LoginFieldsOfUsers:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          example: kyyas.ilmyradov@gmail.com
+        password:
+          type: string
+          example: '!k2y0y0a1s!'
 #     LogoutForLoginFields:
 #       type: object
 #       required:

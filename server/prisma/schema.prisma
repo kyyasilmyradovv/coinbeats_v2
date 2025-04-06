@@ -599,6 +599,12 @@ model Counter {
   visibility      CounterVisibilityTypes
 }
 
+model EmailVerifications {
+  email               String                @unique
+  code                String
+  created_at          DateTime              @default(now())
+}
+
 enum OverallRaffleType {
   PLATFORM
   ACADEMY
