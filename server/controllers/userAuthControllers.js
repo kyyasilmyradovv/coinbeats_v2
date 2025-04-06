@@ -10,6 +10,12 @@ exports.login = asyncHandler(async (req, res, next) => {
 
   const user = await prisma.user.findUnique({
     where: { email, isBanned: false },
+    select: {
+      id: true,
+      roles: true,
+      telegramUserId: true,
+      email: true,
+    },
   });
 
   if (!user || !(await bcrypt.compare(password, user.password))) {
@@ -17,7 +23,51 @@ exports.login = asyncHandler(async (req, res, next) => {
   }
 
   const tokenPayload = {
-    id: user.id.toString(),
+    id: user.id,
+    roles: user.roles,
+    telegramUserId: user.telegramUserId ? user.telegramUserId.toString() : null,
+    email: user.email,
+  };
+
+  const accessToken = jwt.sign(tokenPayload, process.env.JWT_SECRET, {
+    expiresIn: '2h',
+  });
+  const refreshToken = jwt.sign(tokenPayload, process.env.JWT_REFRESH_SECRET, {
+    expiresIn: '30d',
+  });
+
+  res.status(200).json({ accessToken, refreshToken });
+});
+
+exports.refreshToken = asyncHandler(async (req, res, next) => {
+  let { refreshToken: token } = req.body;
+
+  let decoded = null;
+  try {
+    decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
+  } catch (error) {
+    return res.status(409).json({ status: 'Failed', message: 'Invalid token' });
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: +decoded.id, isBanned: false },
+    select: {
+      id: true,
+      roles: true,
+      telegramUserId: true,
+      email: true,
+    },
+  });
+
+  if (!user) {
+    return res.status(409).json({
+      status: 'Failed',
+      message: 'Invalid token',
+    });
+  }
+
+  const tokenPayload = {
+    id: user.id,
     roles: user.roles,
     telegramUserId: user.telegramUserId ? user.telegramUserId.toString() : null,
     email: user.email,
