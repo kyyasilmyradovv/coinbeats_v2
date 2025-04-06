@@ -1,5 +1,6 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { promisify } = require('util');
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const asyncHandler = require('../utils/asyncHandler');
@@ -139,4 +140,37 @@ exports.verify = asyncHandler(async (req, res, next) => {
   });
 
   res.json({ accessToken, refreshToken });
+});
+
+exports.protectForUser = asyncHandler(async (req, res, next) => {
+  let token,
+    auth = req.headers?.authorization;
+  if (auth?.startsWith('Bearer')) token = auth.split(' ')[1];
+  if (!token) {
+    return res.status(401).json({
+      status: 'Failed',
+      message: 'You are not logged in',
+    });
+  }
+
+  try {
+    var decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
+  } catch (error) {
+    console.log(error);
+    if (error.name === 'TokenExpiredError') {
+      return res.status(498).json({
+        status: 'Failed',
+        message: 'Token expired',
+      });
+    } else {
+      return res.status(400).json({
+        status: 'Failed',
+        message: 'Token not valid',
+      });
+    }
+  }
+
+  req.user = decoded;
+
+  next();
 });

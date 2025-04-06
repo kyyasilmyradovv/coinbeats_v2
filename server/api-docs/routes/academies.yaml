@@ -49,7 +49,7 @@ paths:
     get:
       tags: [Academies]
       description: Fetch one academy details
-      statuses: [404]
+      statuses: [401, 404]
       parameters:
         - in: path
           name: id
