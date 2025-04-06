@@ -159,7 +159,7 @@ export default function Home() {
                 <InfiniteScroll
                     dataLength={academies?.length ?? 0}
                     next={() => handleFetchMore()}
-                    hasMore={academies?.length === academySendInfo.offset + academySendInfo.limit || academies?.length === academySendInfo.offset}
+                    hasMore={academies?.length === academySendInfo.offset + academySendInfo.limit}
                     loader={
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 mt-4">
                             {Array.from({ length: 10 }).map((_, index) => (
