@@ -72,7 +72,7 @@ exports.getAcademy = asyncHandler(async (req, res, next) => {
       coverPhotoUrl: true,
       logoUrl: true,
       dexScreener: true,
-      tokenomics: true,
+      // tokenomics: true,
       xp: true,
       pointCount: true,
       fomoNumber: true,
@@ -114,6 +114,23 @@ exports.getAcademy = asyncHandler(async (req, res, next) => {
     },
   });
   if (!academy) return res.status(404).json({ message: 'Academy not found' });
+
+  // if(req.user){
+  const pointsSum = await prisma.point.aggregate({
+    where: {
+      // userId: req.user.id,
+      userId: 12,
+      academyId: +id,
+    },
+    _sum: {
+      value: true,
+    },
+  });
+
+  academy.earnedPoints =
+    pointsSum._sum.value !== null ? pointsSum._sum.value : -1;
+
+  // }
 
   res.json(academy);
 });

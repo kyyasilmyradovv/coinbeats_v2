@@ -68,6 +68,8 @@ components:
           type: integer
         fomoXp:
           type: integer
+        earnedPoints:
+          type: integer
     # AcademyAudio:
     #   type: object
     #   properties:
