@@ -11,7 +11,8 @@ import AcademyCard from '@/components/academyCard'
 import { ROUTES } from '@/shared/links'
 import coinsEarnedAnimationData from '@/animations/earned-coins.json'
 import bunnyHappyAnimationData from '../animations/bunny-happy.json'
-import Lottie from 'react-lottie'
+import dynamic from 'next/dynamic'
+const Lottie = dynamic(() => import('react-lottie'), { ssr: false })
 import Image from 'next/image'
 import { Loader, Send } from 'lucide-react'
 import { useAcademiesQuery } from '@/store/api/academy.api'
@@ -169,9 +170,7 @@ export default function Home() {
                     }
                 >
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 ">
-                        {academies?.map((academy: TAcademy) => (
-                            <AcademyCard academy={academy} />
-                        ))}
+                        {academies?.map((academy: TAcademy) => <AcademyCard academy={academy} />)}
                     </div>
                 </InfiniteScroll>
             )}

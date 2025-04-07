@@ -20,7 +20,16 @@ exports.login = async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await prisma.user.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        roles: true,
+        telegramUserId: true,
+        email: true,
+        name: true,
+      },
+    });
 
     if (!user || !(await bcrypt.compare(password, user.password))) {
       console.log('Invalid email or password for:', email);
@@ -34,6 +43,7 @@ exports.login = async (req, res) => {
         ? user.telegramUserId.toString()
         : null,
       email: user.email,
+      name: user.name,
     };
 
     const accessToken = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: '1h' });
@@ -65,6 +75,7 @@ exports.refreshToken = async (req, res) => {
       roles: user.roles, // Include roles array
       telegramUserId: user.telegramUserId,
       email: user.email,
+      name: user.name,
     };
 
     // No need to convert to strings here because they are already strings in the token

@@ -5,8 +5,19 @@ const nextConfig: NextConfig = {
     async rewrites() {
         return [
             {
+                source: '/api/auth/:path*',
+                destination: '/api/auth/:path*'
+            },
+            {
                 source: '/api/:path*',
-                destination: 'http://localhost:4004/api/v2/:path*' // Proxy to backend
+                destination: 'http://localhost:4004/api/v2/:path*',
+                has: [
+                    {
+                        type: 'header',
+                        key: 'x-nextjs-data',
+                        value: '(?!)'
+                    }
+                ]
             }
         ]
     },

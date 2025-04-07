@@ -32,13 +32,54 @@ exports.login = asyncHandler(async (req, res, next) => {
   };
 
   const accessToken = jwt.sign(tokenPayload, process.env.JWT_SECRET, {
-    expiresIn: '10s',
+    expiresIn: '2h',
   });
   const refreshToken = jwt.sign(tokenPayload, process.env.JWT_REFRESH_SECRET, {
     expiresIn: '30d',
   });
 
   res.status(200).json({ accessToken, refreshToken });
+});
+
+exports.signinGoogle = asyncHandler(async (req, res, next) => {
+  const { email, name } = req.body;
+  console.log('Google signin', req.body);
+
+  const user = await prisma.user.upsert({
+    where: { email },
+    create: {
+      email,
+      name: name || email.split('@')[0],
+      roles: ['USER'],
+      isBanned: false,
+      emailConfirmed: true,
+    },
+    update: {},
+    select: {
+      id: true,
+      roles: true,
+      telegramUserId: true,
+      email: true,
+      name: true,
+    },
+  });
+
+  const tokenPayload = {
+    id: user.id,
+    roles: user.roles,
+    telegramUserId: user.telegramUserId ? user.telegramUserId.toString() : null,
+    email: user.email,
+    name: user.name,
+  };
+
+  const accessToken = jwt.sign(tokenPayload, process.env.JWT_SECRET, {
+    expiresIn: '2h',
+  });
+  const refreshToken = jwt.sign(tokenPayload, process.env.JWT_REFRESH_SECRET, {
+    expiresIn: '30d',
+  });
+
+  res.status(200).json({ accessToken, refreshToken, user });
 });
 
 exports.refreshToken = asyncHandler(async (req, res, next) => {

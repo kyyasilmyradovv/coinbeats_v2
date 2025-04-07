@@ -4,6 +4,7 @@ const {
   login,
   sendMeCode,
   refreshToken,
+  signinGoogle,
 } = require('../controllers/userAuthControllers');
 const { checkInputs } = require('../middleware/checkInputs');
 const router = express.Router();
@@ -15,5 +16,6 @@ router.post(
   checkInputs('refresh_token', 'create'),
   refreshToken
 );
+router.post('/google-signin', signinGoogle);
 
 module.exports = router;
