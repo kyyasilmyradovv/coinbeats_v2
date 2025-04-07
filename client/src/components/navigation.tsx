@@ -24,8 +24,11 @@ export function NavMenu() {
         <NavigationMenu className="relative">
             <NavigationMenuList className="flex space-x-2">
                 {NAV_ITEMS.map((item, i) => {
-                    const isActive = pathname === item.href
-                    console.log('pathname', pathname, item.href)
+                    let isActive = pathname === item.href
+                    if (pathname.split('/')[1] === 'academy' && item.href === '/') {
+                        isActive = true
+                    }
+
                     return (
                         <NavigationMenuItem key={i} className="relative">
                             <Link href={item.href} passHref>

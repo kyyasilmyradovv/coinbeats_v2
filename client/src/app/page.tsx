@@ -27,6 +27,8 @@ import { Label } from '@/components/ui/label'
 import { CategoryFilter } from '@/components/categoryFilter'
 import { ChainFilter } from '@/components/chainFilter'
 import { SearchBar } from '@/components/search'
+import { useTheme } from 'next-themes'
+import { cn } from '@/lib/utils'
 
 // Sorting options component
 interface SortOptionsProps {}
@@ -43,6 +45,7 @@ const formatPoints = (points: number): string => {
 }
 
 function ExtraDetail() {
+    const { theme } = useTheme()
     const coinsEarnedAnimation = {
         loop: true,
         autoplay: true,
@@ -83,7 +86,7 @@ function ExtraDetail() {
                                 <span className="text-center">{500}</span>
                             </div>
                             <div className="flex flex-row items-center justify-center">
-                                <span className="text-xs text-gray-300">Rank</span>
+                                <span className={cn('text-xs', theme === 'dark' ? 'text-gray-300' : 'text-gray-500')}>Rank</span>
                             </div>
                         </div>
                     </div>
