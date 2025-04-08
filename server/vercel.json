@@ -7,6 +7,5 @@
     }
   ],
   "routes": [{ "src": "/(.*)", "dest": "server.js" }],
-  "installCommand": "pnpm install --no-frozen-lockfile",
-  "buildCommand": "prisma generate"
+  "installCommand": "pnpm install --no-frozen-lockfile"
 }

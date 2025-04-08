@@ -43,9 +43,8 @@
     "twitter-api-sdk": "^1.2.1",
     "twitter-api-v2": "^1.22.0",
     "uuid": "^11.1.0",
-    "prisma": "^6.5.0"
-  },
-  "devDependencies": {
+    "prisma": "^6.5.0",
     "cross-env": "^7.0.3"
-  }
+  },
+  "devDependencies": {}
 }
