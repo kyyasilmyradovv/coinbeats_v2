@@ -125,8 +125,8 @@ function Filters({}: SortOptionsProps) {
     return (
         <div className="mb-6 flex gap-2 flex-wrap">
             <SearchBar onSearch={(e) => dispatch(setAcademySendInfo({ ...academySendInfo, keyword: e, offset: 0 }))} />
-            <CategoryFilter onSelect={(e) => dispatch(setAcademySendInfo({ ...academySendInfo, categoryId: e, offset: 0 }))} />
-            <ChainFilter onSelect={(e) => dispatch(setAcademySendInfo({ ...academySendInfo, chainId: e, offset: 0 }))} />
+            <CategoryFilter onSelect={(e) => dispatch(setAcademySendInfo({ ...academySendInfo, categoryId: e ? Number(e) : undefined, offset: 0 }))} />
+            <ChainFilter onSelect={(e) => dispatch(setAcademySendInfo({ ...academySendInfo, chainId: e ? Number(e) : undefined, offset: 0 }))} />
         </div>
     )
 }
@@ -173,7 +173,9 @@ export default function Home() {
                     }
                 >
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 ">
-                        {academies?.map((academy: TAcademy) => <AcademyCard academy={academy} />)}
+                        {academies?.map((academy: TAcademy) => (
+                            <AcademyCard academy={academy} />
+                        ))}
                     </div>
                 </InfiniteScroll>
             )}

@@ -15,7 +15,7 @@ type Option = {
 }
 
 interface CategoryFilterProps {
-    onSelect?: (value: Option | null) => void
+    onSelect?: (value: string | undefined) => void
     defaultValue?: Option
     className?: string
 }

@@ -27,6 +27,7 @@ export type TGlobal = {
 }
 
 export type TAcademySingle = {
+    [key: string]: any
     id: number
     name: string
     ticker: string

@@ -20,7 +20,7 @@ export const buildUrlWithParams = (baseUrl: string, params: { [key: string]: any
     return `${baseUrl}?${queryParams.toString()}`
 }
 
-export const constructImageUrl = (url: string) => {
+export const constructImageUrl = (url: string | undefined) => {
     return `https://telegram.coinbeats.xyz/${url}`
 }
 

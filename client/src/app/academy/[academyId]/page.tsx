@@ -16,7 +16,7 @@ import { Badge } from '@/components/ui/badge'
 import { SOCIALS } from '@/shared/socials'
 
 interface TTabsProps {
-    academy: TAcademySingle
+    academy: TAcademySingle | undefined
 }
 
 function ActTypes({ academy }: TTabsProps) {
@@ -39,7 +39,7 @@ function ActTypes({ academy }: TTabsProps) {
                                     <p className="text-lg font-bold ml-2">Ticker:</p>
                                 </div>
                                 <Badge variant={'outline'} className="ml-4 gradient-background ">
-                                    {academy.ticker ?? 'N/A'}
+                                    {academy?.ticker ?? 'N/A'}
                                 </Badge>
                             </div>
                             {/* Categories */}
@@ -48,7 +48,7 @@ function ActTypes({ academy }: TTabsProps) {
                                     <List />
                                     <p className="text-lg font-bold ml-2">Categories:</p>
                                 </div>
-                                {academy.categories?.length
+                                {academy?.categories?.length
                                     ? academy?.categories?.map((e) => (
                                           <Badge key={e.id} variant={'outline'} className="ml-2 bg-amber-800 text-[#FFFFFF]">
                                               {e.name ?? 'N/A'}
@@ -62,7 +62,7 @@ function ActTypes({ academy }: TTabsProps) {
                                     <Recycle />
                                     <p className="text-lg font-bold ml-2">Chains:</p>
                                 </div>
-                                {academy.categories?.length
+                                {academy?.categories?.length
                                     ? academy?.chains?.map((e) => (
                                           <Badge variant={'outline'} className="ml-2 bg-amber-800 text-[#FFFFFF]">
                                               {e.name ?? 'N/A'}
@@ -87,7 +87,7 @@ function ActTypes({ academy }: TTabsProps) {
     )
 }
 interface TEarnedCoinsProps {
-    academy: TAcademySingle
+    academy: TAcademySingle | undefined
 }
 
 function EarnedCoins({ academy }: TEarnedCoinsProps) {
@@ -108,7 +108,7 @@ function EarnedCoins({ academy }: TEarnedCoinsProps) {
                         <p className="gradient-text">Earn {academy?.fomoNumber > +academy?.pointCount ? academy?.fomoXp : academy?.xp} points by doing quiz!</p>
                     ) : (
                         <p className="gradient-text">
-                            Earned Poins: {academy?.earnedPoints}/{academy?.fomoNumber > +academy?.pointCount ? academy?.fomoXp : academy?.xp}
+                            Earned Poins: {academy?.earnedPoints}/{academy?.fomoNumber! > +academy?.pointCount! ? academy?.fomoXp : academy?.xp}
                         </p>
                     )}
                 </div>
@@ -121,7 +121,7 @@ function EarnedCoins({ academy }: TEarnedCoinsProps) {
     )
 }
 interface TSocialLinksProps {
-    academy: TAcademySingle
+    academy: TAcademySingle | undefined
 }
 
 function SocialLinks({ academy }: TSocialLinksProps) {
@@ -182,7 +182,7 @@ export default function Academy() {
                             <h2 className="text-4xl font-bold gradient-text mt-1 mb-3">{academy?.name}</h2>
                             <div className="flex w-full items-center justify-center gap-12">
                                 <Badge variant="default" className="flex items-center">
-                                    <p>+{academy?.pointCount > academy?.fomoNumber ? academy.xp : academy.fomoXp}</p>
+                                    <p>+{academy?.pointCount ?? 0 > academy?.fomoNumber! ? academy?.xp : academy?.fomoXp}</p>
                                     <Check className="h-5.5 w-5.5" />
                                 </Badge>
                                 <Badge variant="default" className="flex items-center gap-1 ">
