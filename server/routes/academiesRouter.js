@@ -8,7 +8,7 @@ const { protectForUser } = require('../controllers/userAuthControllers');
 const router = express.Router();
 
 router.get('/', getAllAcademies);
-router.use(protectForUser); // REMOVE OR MOFIY THIS LINE ATM FOR TEST DIDAR
+// router.use(protectForUser);
 router.get('/:id', getAcademy);
 // router.get('/:id', authenticateToken, getAcademy);
 

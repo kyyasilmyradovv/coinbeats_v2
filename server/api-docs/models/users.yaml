@@ -1,0 +1,17 @@
+components:
+  schemas:
+    ProfileOfUser:
+      type: object
+      properties:
+        id:
+          type: integer
+        telegramUserId:
+          type: string
+        roles:
+          type: array
+          items:
+            type: string
+        name:
+          type: string
+        email:
+          type: string

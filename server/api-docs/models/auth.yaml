@@ -97,31 +97,6 @@ components:
     #           type: string
     #         password:
     #           type: string
-    #     VerificationFieldsOfUsers:
-    #       type: object
-    #       required:
-    #         - phone
-    #         - verificationCode
-    #         - deviceId
-    #         - deviceModel
-    #         - type
-    #         - firebaseToken
-    #       properties:
-    #         phone:
-    #           type: string
-    #         verificationCode:
-    #           type: integer
-    #         deviceId:
-    #           type: string
-    #         deviceModel:
-    #           type: string
-    #         version:
-    #           type: string
-    #         type:
-    #           type: string
-    #           enum: ['android', 'ios', 'tv', 'pc']
-    #         firebaseToken:
-    #           type: string
     LoginFieldsOfUsers:
       type: object
       required:
@@ -134,69 +109,22 @@ components:
         password:
           type: string
           example: '!k2y0y0a1s!'
-#     LogoutForLoginFields:
-#       type: object
-#       required:
-#         - login
-#         - password
-#         - logoutDeviceUuid
-#         - logoutDeviceId
-#       properties:
-#         login:
-#           type: string
-#           example: rahym
-#         password:
-#           type: string
-#           example: rahym123
-#         logoutDeviceUuid:
-#           type: string
-#           format: uuid
-#         logoutDeviceId:
-#           type: string
-#     LoginFieldsOfTv:
-#       type: object
-#       required:
-#         - deviceId
-#         - deviceModel
-#         - firebaseToken
-#         - type
-#       properties:
-#         deviceId:
-#           type: string
-#         deviceModel:
-#           type: string
-#         version:
-#           type: string
-#         type:
-#           type: string
-#           enum: ['tv', 'android', 'ios', 'pc']
-#         firebaseToken:
-#           type: string
-#     DeviceFieldsOfUsers:
-#       type: object
-#       required:
-#         - deviceId
-#         - deviceModel
-#         - type
-#         - firebaseToken
-#       properties:
-#         deviceId:
-#           type: string
-#         deviceModel:
-#           type: string
-#         version:
-#           type: string
-#         type:
-#           type: string
-#           enum: ['android', 'ios', 'tv', 'pc']
-#         firebaseToken:
-#           type: string
-#     LoginFields:
-#       type: object
-#       properties:
-#         username:
-#           type: string
-#           example: kyyas
-#         password:
-#           type: string
-#           example: 123
+    AuthResponseOfUser:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        id:
+          type: integer
+        telegramUserId:
+          type: string
+        roles:
+          type: array
+          items:
+            type: string
+        name:
+          type: string
+        email:
+          type: string
