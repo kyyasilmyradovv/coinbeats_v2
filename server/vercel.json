@@ -15,5 +15,5 @@
       "dest": "server.js"
     }
   ],
-  "buildCommand": "npm run vercel-build"
+  "buildCommand": "pnpm install --no-frozen-lockfile && pnpm run build"
 }
