@@ -49,7 +49,6 @@
         "@types/react-dom": "^19",
         "@types/react-lottie": "^1.2.10",
         "tailwindcss": "^4",
-        "typescript": "^5",
-        "next": "15.2.4"
+        "typescript": "^5"
     }
 }
