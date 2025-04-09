@@ -58,45 +58,11 @@ components:
     #               format: date-time
     #             hasSubscription:
     #               type: boolean
-    #     UpdateFieldsOfUsersProfile:
-    #       type: object
-    #       properties:
-    #         name:
-    #           type: string
-    #         surname:
-    #           type: string
-    #         username:
-    #           type: string
-    #         email:
-    #           type: string
-    #         birthdate:
-    #           type: string
-    #           format: date
-    #         password:
-    #           type: string
-    #         language:
-    #           type: string
-    #           enum: ['tm', 'ru']
-    #         mobileFirebaseToken:
-    #           type: string
-    #         webFirebaseToken:
-    #           type: string
-    #         avatarUuid:
-    #           type: string
-    #           format: uuid
-    #     SignupFieldsOfUsers:
-    #       type: object
-    #       required:
-    #         - username
-    #         - phone
-    #         - password
-    #       properties:
-    #         username:
-    #           type: string
-    #         phone:
-    #           type: string
-    #         password:
-    #           type: string
+    UpdateFieldsOfUsersProfile:
+      type: object
+      properties:
+        name:
+          type: string
     LoginFieldsOfUsers:
       type: object
       required:
@@ -118,8 +84,6 @@ components:
           type: string
         id:
           type: integer
-        telegramUserId:
-          type: string
         roles:
           type: array
           items:
