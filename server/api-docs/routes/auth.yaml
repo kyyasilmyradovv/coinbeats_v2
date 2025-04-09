@@ -14,12 +14,30 @@
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                token:
-                  type: string
-                refreshToken:
-                  type: string
+              $ref: '#/components/schemas/AuthResponseOfUser'
+/api/v2/user/auth/google-signin:
+  post:
+    tags: [Authentication]
+    description: Login as user
+    statuses: [400, 404]
+    requestBody:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              email:
+                type: string
+                example: 'kyyas.ilmyradov@gmail.com'
+              name:
+                type: string
+                example: 'kyyas'
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthResponseOfUser'
   #   /api/v1/user/auth/logout:
   #     post:
   #       tags: [Authentication]
@@ -110,27 +128,20 @@
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                token:
-                  type: string
-                refreshToken:
-                  type: string
+              $ref: '#/components/schemas/AuthResponseOfUser'
       '409':
         description: 'Refresh token expired or invalid'
-#   /api/v1/user/auth/profile:
-#     get:
-#       tags: [Authentication]
-#       description: Get my profile
-#       statuses: [400, 404, 409]
-#       responses:
-#         '200':
-#           content:
-#             application/json:
-#               schema:
-#                 properties:
-#                   data:
-#                     $ref: '#/components/schemas/ProfileFieldsOfUsers'
+/api/v2/user/auth/profile:
+  get:
+    tags: [Authentication]
+    description: Get my profile
+    statuses: [401]
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProfileOfUser'
 #     put:
 #       tags: [Authentication]
 #       description: Update my profile

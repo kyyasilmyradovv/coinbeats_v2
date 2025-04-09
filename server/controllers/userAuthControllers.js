@@ -6,6 +6,10 @@ const prisma = new PrismaClient();
 const asyncHandler = require('../utils/asyncHandler');
 const { sendMail } = require('../utils/sendMail');
 
+exports.getMyProfile = asyncHandler(async (req, res, next) => {
+  res.status(200).json(req.user);
+});
+
 exports.login = asyncHandler(async (req, res, next) => {
   const { email, password } = req.body;
 
@@ -14,6 +18,7 @@ exports.login = asyncHandler(async (req, res, next) => {
     select: {
       id: true,
       roles: true,
+      name: true,
       telegramUserId: true,
       email: true,
       password: true,
@@ -29,6 +34,7 @@ exports.login = asyncHandler(async (req, res, next) => {
     roles: user.roles,
     telegramUserId: user.telegramUserId ? user.telegramUserId.toString() : null,
     email: user.email,
+    name: user.name,
   };
 
   const accessToken = jwt.sign(tokenPayload, process.env.JWT_SECRET, {
@@ -38,12 +44,11 @@ exports.login = asyncHandler(async (req, res, next) => {
     expiresIn: '30d',
   });
 
-  res.status(200).json({ accessToken, refreshToken });
+  res.status(200).json({ accessToken, refreshToken, ...tokenPayload });
 });
 
 exports.signinGoogle = asyncHandler(async (req, res, next) => {
   const { email, name } = req.body;
-  console.log('Google signin', req.body);
 
   const user = await prisma.user.upsert({
     where: { email },
@@ -79,7 +84,7 @@ exports.signinGoogle = asyncHandler(async (req, res, next) => {
     expiresIn: '30d',
   });
 
-  res.status(200).json({ accessToken, refreshToken, user });
+  res.status(200).json({ accessToken, refreshToken, ...user });
 });
 
 exports.refreshToken = asyncHandler(async (req, res, next) => {
@@ -99,6 +104,7 @@ exports.refreshToken = asyncHandler(async (req, res, next) => {
       roles: true,
       telegramUserId: true,
       email: true,
+      name: true,
     },
   });
 
@@ -114,6 +120,7 @@ exports.refreshToken = asyncHandler(async (req, res, next) => {
     roles: user.roles,
     telegramUserId: user.telegramUserId ? user.telegramUserId.toString() : null,
     email: user.email,
+    name: user.name,
   };
 
   const accessToken = jwt.sign(tokenPayload, process.env.JWT_SECRET, {
@@ -123,7 +130,7 @@ exports.refreshToken = asyncHandler(async (req, res, next) => {
     expiresIn: '30d',
   });
 
-  res.status(200).json({ accessToken, refreshToken });
+  res.status(200).json({ accessToken, refreshToken, ...user });
 });
 
 exports.sendMeCode = asyncHandler(async (req, res, next) => {
