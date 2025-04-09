@@ -14,7 +14,7 @@ const {
   getAllMessages,
   createMessage,
 } = require('../controllers/aiChatMessageController');
-router.post('/chat', requirePrivyAuth, handleChat);
+// router.post('/chat', requirePrivyAuth, handleChat);
 
 // User routes
 // router.get('/', asyncHandler(getAllChats));
