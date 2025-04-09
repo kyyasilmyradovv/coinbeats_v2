@@ -10,9 +10,18 @@ export const authApi = apiSlice.injectEndpoints({
                     body: auth
                 }
             }
+        }),
+        sendCode: builder.mutation({
+            query: (auth) => {
+                return {
+                    url: '/user/auth/send-me-code',
+                    method: 'POST',
+                    body: auth
+                }
+            }
         })
     }),
     overrideExisting: false
 })
 
-export const { useAuthMutation } = authApi
+export const { useAuthMutation, useSendCodeMutation } = authApi

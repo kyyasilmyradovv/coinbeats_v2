@@ -11,9 +11,12 @@ import { ROUTES } from '@/shared/links'
 import { usePathname, useRouter } from 'next/navigation'
 import { NavMenu } from './navigation'
 import { LoginModal } from './loginModal'
+import { useAppDispatch } from '@/store/hooks'
+import { setLoginModalOpen } from '@/store/general/generalSlice'
 
 // THIS IS A TEMPORARY HEADER FOR SIGNUP AND LANDING PAGE WHILE SITE IS NOT LIVE YET
 export function Header() {
+    const dispatch = useAppDispatch()
     const { theme = 'dark' } = useTheme()
     const pathname = usePathname()
     const router = useRouter()
@@ -57,7 +60,15 @@ export function Header() {
                     {/* <Button variant="ghost" className="cursor-pointer">
                         <p className="gradient-text">Sign in</p>
                     </Button> */}
-                    <LoginModal />
+                    <Button
+                        onClick={() => {
+                            dispatch(setLoginModalOpen(true))
+                        }}
+                        variant="outline"
+                        className="cursor-pointer"
+                    >
+                        <p className="gradient-text">Sign in</p>
+                    </Button>
                     {/* <Avatar>
                         <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
                         <AvatarFallback className="p-2">DG</AvatarFallback>

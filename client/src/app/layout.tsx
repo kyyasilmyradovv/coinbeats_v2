@@ -8,6 +8,8 @@ import './animations.css'
 import { Footer } from '@/components/footer'
 import { StoreProvider } from '@/providers/storeProvider'
 import BackTopButton from '@/components/backToTop'
+import { LoginModal } from '@/components/loginModal'
+import { SignUpModal } from '@/components/signUpModal'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -35,6 +37,8 @@ export default function RootLayout({
                         <main className="flex-1 ">
                             {children}
                             <BackTopButton />
+                            <LoginModal />
+                            <SignUpModal />
                         </main>
 
                         <footer className="pt-0 pb-20">

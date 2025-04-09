@@ -132,13 +132,15 @@ exports.sendMeCode = asyncHandler(async (req, res, next) => {
   const existingUser = await prisma.user.findUnique({
     where: { email },
   });
+
   if (existingUser) {
     return res.status(409).json({ message: 'Email already in use' });
   }
 
   const code = Math.floor(100000 + Math.random() * 900000).toString();
 
-  await prisma.emailVerifications.upsert({
+  console.log('---------------', code);
+  await prisma.emailVerifications?.upsert({
     where: { email },
     update: { code, created_at: new Date() },
     create: { email, code, created_at: new Date() },

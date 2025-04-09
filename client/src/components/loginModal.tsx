@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { set, useForm } from 'react-hook-form'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
@@ -15,6 +15,8 @@ import { Toaster } from './ui/sonner'
 import { toast } from 'sonner'
 import { SignUpModal } from './signUpModal'
 import { signIn } from 'next-auth/react'
+import { useAppDispatch, useAppSelector } from '@/store/hooks'
+import { setLoginModalOpen, setSignUpModalOpen } from '@/store/general/generalSlice'
 
 type TSignInFields = {
     email: string
@@ -23,6 +25,8 @@ type TSignInFields = {
 }
 
 export function LoginModal() {
+    const dispatch = useAppDispatch()
+    const loginModalOpen = useAppSelector((state) => state.generalSlice.loginModalOpen)
     const [showPassword, setShowPassword] = useState(false)
 
     const [auth, { isSuccess, data, isError, error, isLoading, reset }] = useAuthMutation()
@@ -41,6 +45,7 @@ export function LoginModal() {
                 description: 'Welcome back! You have successfully logged into your account.',
                 position: 'top-right'
             })
+            dispatch(setLoginModalOpen(false))
         }
         reset()
     }, [isSuccess, isError])
@@ -60,12 +65,12 @@ export function LoginModal() {
     }
 
     return (
-        <Dialog>
-            <DialogTrigger asChild>
-                <Button variant="outline" className="cursor-pointer">
-                    <p className="gradient-text">Sign in</p>
-                </Button>
-            </DialogTrigger>
+        <Dialog
+            open={loginModalOpen}
+            onOpenChange={() => {
+                dispatch(setLoginModalOpen(!loginModalOpen))
+            }}
+        >
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
                     <DialogTitle>Sign In</DialogTitle>
@@ -143,7 +148,15 @@ export function LoginModal() {
                             </Button>
                         </DialogFooter>
 
-                        <SignUpModal />
+                        <p
+                            onClick={() => {
+                                dispatch(setSignUpModalOpen(true))
+                                dispatch(setLoginModalOpen(false))
+                            }}
+                            className="text-sm text-muted-foreground text-center mt-2"
+                        >
+                            Don&apos;t have an account? <span className="text-primary hover:underline cursor-pointer">Sign up</span>
+                        </p>
                     </form>
                 </Form>
             </DialogContent>
