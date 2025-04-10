@@ -1,0 +1,25 @@
+components:
+  schemas:
+    QuizQuestion:
+      type: object
+      properties:
+        id:
+          type: integer
+        question:
+          type: string
+        answer:
+          type: string
+        quizQuestion:
+          type: string
+        xp:
+          type: integer
+          example: 100
+        choices:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              text:
+                type: string
