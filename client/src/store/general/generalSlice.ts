@@ -6,6 +6,7 @@ type SliceState = {
     loginModalOpen: boolean
     signUpModalOpen: boolean
     step: TSteps
+    newMail?: string
 }
 
 const initialState: SliceState = {
@@ -26,9 +27,12 @@ export const generalSlice = createSlice({
         },
         setStep(state, action: PayloadAction<TSteps>) {
             state.step = action.payload
+        },
+        setNewMail(state, action: PayloadAction<string>) {
+            state.newMail = action.payload
         }
     }
 })
 
-export const { setLoginModalOpen, setSignUpModalOpen, setStep } = generalSlice.actions
+export const { setLoginModalOpen, setSignUpModalOpen, setStep, setNewMail } = generalSlice.actions
 export default generalSlice.reducer

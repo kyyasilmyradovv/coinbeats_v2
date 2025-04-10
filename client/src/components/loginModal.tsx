@@ -17,6 +17,7 @@ import { SignUpModal } from './signUpModal'
 import { signIn } from 'next-auth/react'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { setLoginModalOpen, setSignUpModalOpen } from '@/store/general/generalSlice'
+import { setProfil } from '@/store/user/userSlice'
 
 type TSignInFields = {
     email: string
@@ -41,6 +42,7 @@ export function LoginModal() {
         if (isSuccess) {
             localStorage.setItem('coinbeatsAT', data.accessToken)
             localStorage.setItem('coinbeatsRT', data.refreshToken)
+            dispatch(setProfil(data))
             toast('Successfully signed in!', {
                 description: 'Welcome back! You have successfully logged into your account.',
                 position: 'top-right'
@@ -51,11 +53,7 @@ export function LoginModal() {
     }, [isSuccess, isError])
 
     const form = useForm({
-        defaultValues: {
-            email: 'kyyas.ilmyradov@gmail.com',
-            password: '!k2y0y0a1s!'
-            // remember: false
-        }
+        defaultValues: {}
     })
 
     const onSubmit = async (values: TSignInFields) => {

@@ -10,25 +10,22 @@ import { Separator } from './ui/separator'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Eye, EyeOff, Loader, MoveLeft } from 'lucide-react'
 import Image from 'next/image'
-import { useAuthMutation, useSendCodeMutation } from '@/store/api/auth.api'
+import { useAuthMutation, useCreateProfileMutation, useSendCodeMutation, useVerifyMutation } from '@/store/api/auth.api'
 import { Toaster } from './ui/sonner'
 import { toast } from 'sonner'
 import { signIn } from 'next-auth/react'
-import { setLoginModalOpen, setSignUpModalOpen, setStep } from '@/store/general/generalSlice'
+import { setLoginModalOpen, setNewMail, setSignUpModalOpen, setStep } from '@/store/general/generalSlice'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { InputOTP, InputOTPGroup, InputOTPSlot } from './ui/input-otp'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { setProfil } from '@/store/user/userSlice'
 
 const FormSchema = z.object({
-    pin: z.string().min(6, {
+    code: z.string().min(6, {
         message: 'Your one-time password must be 6 characters.'
     })
 })
-
-type TSignInFields = {
-    code: number
-}
 
 function SendCode() {
     const dispatch = useAppDispatch()
@@ -43,11 +40,22 @@ function SendCode() {
         if (isSuccess) {
             dispatch(setStep(2))
         }
+        if (isError) {
+            let errorMessage = 'Something went wrong!'
+            if ('data' in error && typeof error.data === 'object' && error.data !== null && 'message' in error.data) {
+                errorMessage = (error.data as { message?: string }).message ?? errorMessage
+            }
+
+            toast(errorMessage, {
+                position: 'top-center'
+            })
+        }
     }, [isSuccess, isError])
 
-    const onSubmit = async (values: TSignInFields) => {
+    const onSubmit = async (values: { email: string }) => {
         const valuesToSend = values
         await sendCode(valuesToSend)
+        dispatch(setNewMail(valuesToSend.email))
     }
     return (
         <DialogContent className="sm:max-w-[425px]">
@@ -85,7 +93,7 @@ function SendCode() {
 
                     <DialogFooter>
                         <Button type="submit" className="w-full">
-                            {isLoading ? <Loader size={30} className="animate-spin" /> : 'CREATE ACCOUNT'}
+                            {isLoading ? <Loader size={30} className="animate-scode" /> : 'CREATE ACCOUNT'}
                         </Button>
                     </DialogFooter>
                     <p
@@ -104,24 +112,39 @@ function SendCode() {
 }
 function Verify() {
     const dispatch = useAppDispatch()
+    const newMail = useAppSelector((state) => state.general.newMail)
     const form = useForm<z.infer<typeof FormSchema>>({
         resolver: zodResolver(FormSchema),
         defaultValues: {
-            pin: ''
+            code: ''
         }
     })
-    const [sendCode, { isSuccess, data, isError, error, isLoading, reset }] = useSendCodeMutation()
+    const [verify, { isSuccess, data, isError, error, isLoading, reset }] = useVerifyMutation()
 
     useEffect(() => {
-        if (isError) {
+        if (isSuccess) {
+            localStorage.setItem('coinbeatsAT', data.accessToken)
+            localStorage.setItem('coinbeatsRT', data.refreshToken)
+            dispatch(setProfil(data))
             dispatch(setStep(3))
+        }
+        if (isError) {
+            let errorMessage = 'Something went wrong!'
+            if ('data' in error && typeof error.data === 'object' && error.data !== null && 'message' in error.data) {
+                errorMessage = (error.data as { message?: string }).message ?? errorMessage
+            }
+
+            toast(errorMessage, {
+                position: 'top-center'
+            })
         }
     }, [isSuccess, isError])
 
-    const onSubmit = async (values: TSignInFields) => {
-        const valuesToSend = values
-        await sendCode(valuesToSend)
+    const onSubmit = async (values: { code: string }) => {
+        const valuesToSend = { ...values, email: newMail }
+        await verify(valuesToSend)
     }
+
     return (
         <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
@@ -130,7 +153,7 @@ function Verify() {
                     <p>Verify Your Email</p>
                 </DialogTitle>
                 <DialogDescription>
-                    Enter the verification code that has been sent to your email address <span className="font-semibold">(didargayypow@gmail.com)</span>
+                    Enter the verification code that has been sent to your email address <span className="font-semibold">({newMail})</span>
                 </DialogDescription>
             </DialogHeader>
 
@@ -138,7 +161,7 @@ function Verify() {
                 <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4 pb-2 pt-0">
                     <FormField
                         control={form.control}
-                        name="pin"
+                        name="code"
                         render={({ field }) => (
                             <FormItem>
                                 <FormControl>
@@ -160,7 +183,7 @@ function Verify() {
 
                     <DialogFooter>
                         <Button type="submit" className="w-full">
-                            {isLoading ? <Loader size={30} className="animate-spin" /> : 'Verify'}
+                            {isLoading ? <Loader size={30} className="animate-scode" /> : 'Verify'}
                         </Button>
                     </DialogFooter>
                 </form>
@@ -169,7 +192,106 @@ function Verify() {
     )
 }
 function Register() {
-    return <DialogContent className="sm:max-w-[425px]">Register</DialogContent>
+    const dispatch = useAppDispatch()
+    const newMail = useAppSelector((state) => state.general.newMail)
+    const profile = useAppSelector((state) => state.user.profile)
+    const form = useForm({
+        defaultValues: {
+            name: profile?.name,
+            password: ''
+        }
+    })
+    const [showPassword, setShowPassword] = useState(false)
+    const [createProfile, { isSuccess, data, isError, error, isLoading, reset }] = useCreateProfileMutation()
+
+    useEffect(() => {
+        if (isSuccess) {
+            localStorage.setItem('coinbeatsAT', data.accessToken)
+            localStorage.setItem('coinbeatsRT', data.refreshToken)
+            dispatch(setProfil(data))
+            dispatch(setStep(1))
+            dispatch(setSignUpModalOpen(false))
+        }
+        if (isError) {
+            let errorMessage = 'Something went wrong!'
+            if ('data' in error && typeof error.data === 'object' && error.data !== null && 'message' in error.data) {
+                errorMessage = (error.data as { message?: string }).message ?? errorMessage
+            }
+
+            toast(errorMessage, {
+                position: 'top-center'
+            })
+        }
+    }, [isSuccess, isError])
+
+    const onSubmit = async (values: { name: string; password: string }) => {
+        const valuesToSend = { ...values }
+        await createProfile(valuesToSend)
+    }
+
+    return (
+        <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+                <DialogTitle className="flex items-center gap-1.5">
+                    <p>Finish your sign up</p>
+                </DialogTitle>
+            </DialogHeader>
+
+            <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4 pb-2 pt-0">
+                    {/* Email */}
+                    <FormField
+                        control={form.control}
+                        name="name"
+                        rules={{ required: 'Name is required' }}
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Name</FormLabel>
+                                <FormControl>
+                                    <Input placeholder="you" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+
+                    {/* Password */}
+                    <FormField
+                        control={form.control}
+                        name="password"
+                        rules={{
+                            required: 'Password is required',
+                            minLength: {
+                                value: 5,
+                                message: 'Password must be at least 5 characters'
+                            }
+                        }}
+                        render={({ field }) => (
+                            <FormItem className="relative">
+                                <FormLabel>Password</FormLabel>
+                                <FormControl>
+                                    <Input type={showPassword ? 'text' : 'password'} placeholder="••••••••" className="pr-10" {...field} />
+                                </FormControl>
+                                <div
+                                    className="absolute right-3 top-[30px] cursor-pointer text-muted-foreground"
+                                    onClick={() => setShowPassword((prev) => !prev)}
+                                >
+                                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                </div>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+
+                    <DialogFooter>
+                        <Button type="submit" className="w-full">
+                            {isLoading ? <Loader size={30} className="animate-spin" /> : 'FINISH'}
+                        </Button>
+                    </DialogFooter>
+                </form>
+            </Form>
+        </DialogContent>
+    )
 }
 
 export function SignUpModal() {

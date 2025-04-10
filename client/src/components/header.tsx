@@ -3,7 +3,7 @@ import * as React from 'react'
 import Link from 'next/link'
 import { Button } from './ui/button'
 import { ThemeToggle } from './theme toggle/theme-toggle'
-import { AlertCircle, ArrowBigLeft, Bell, BellRing, Coins } from 'lucide-react'
+import { AlertCircle, ArrowBigLeft, Bell, BellRing, Coins, User } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar'
 import Image from 'next/image'
 import { useTheme } from 'next-themes'
@@ -66,11 +66,14 @@ export function Header() {
                     </Button> */}
                     {profileIsLoading || profileIsFetching ? (
                         <Loading size={30} />
-                    ) : profil?.name ? (
-                        <Avatar>
-                            <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
-                            <AvatarFallback className="p-2">DG</AvatarFallback>
-                        </Avatar>
+                    ) : profil?.id ? (
+                        <Button variant="ghost" className="flex items-center gap-2 cursor-pointer">
+                            <User className="w-6 h-6 " />
+                            <div className="flex-1 space-y-1 hidden md:block justify-items-start">
+                                <p className="text-sm font-medium leading-none">{profil?.name}</p>
+                                <p className="text-sm text-muted-foreground">{profil?.email}</p>
+                            </div>
+                        </Button>
                     ) : (
                         <Button
                             onClick={() => {

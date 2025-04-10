@@ -1,4 +1,4 @@
-import { TProfile } from '@/types/user'
+import { TProfile, TTokens } from '@/types/user'
 import { apiSlice } from './apiSlice'
 import { setProfil } from '../user/userSlice'
 
@@ -23,6 +23,15 @@ export const authApi = apiSlice.injectEndpoints({
                 }
             }
         }),
+        verify: builder.mutation({
+            query: (auth) => {
+                return {
+                    url: '/user/auth/verify',
+                    method: 'POST',
+                    body: auth
+                }
+            }
+        }),
         profile: builder.query<TProfile, any>({
             query: () => {
                 return {
@@ -39,9 +48,19 @@ export const authApi = apiSlice.injectEndpoints({
                 }
             },
             providesTags: ['Profile']
+        }),
+        createProfile: builder.mutation<TProfile & TTokens, any>({
+            query: (params) => {
+                return {
+                    url: `/user/auth/profile`,
+                    method: 'PUT',
+                    body: params
+                }
+            },
+            invalidatesTags: ['Profile']
         })
     }),
     overrideExisting: false
 })
 
-export const { useAuthMutation, useSendCodeMutation, useProfileQuery } = authApi
+export const { useAuthMutation, useSendCodeMutation, useProfileQuery, useVerifyMutation, useCreateProfileMutation } = authApi
