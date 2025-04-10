@@ -8,10 +8,7 @@ exports.getAllAcademies = asyncHandler(async (req, res, next) => {
   const where = { status: 'approved' };
 
   if (keyword && keyword.trim().length > 0) {
-    where.name = {
-      contains: keyword.trim(),
-      mode: 'insensitive',
-    };
+    where.name = { contains: keyword.trim(), mode: 'insensitive' };
   }
   if (categoryId) where.categories = { some: { id: +categoryId } };
   if (chainId) where.chains = { some: { id: +chainId } };
