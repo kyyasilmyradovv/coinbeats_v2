@@ -8,7 +8,7 @@ let requiredFields = {
   refresh_token: ['refreshToken'],
   verify: ['email', 'code'],
   profile: [],
-  submit_quiz: ['questionId', 'choiceId', 'seconds'],
+  submit_quiz: ['questionId', 'choiceId', 'secondsLeft'],
 };
 
 // Common Functions
@@ -88,7 +88,7 @@ let typeCheckers = {
   value: parentFunctions.isNumber,
   choiceId: parentFunctions.isNumber,
   questionId: parentFunctions.isNumber,
-  seconds: parentFunctions.isNumber,
+  secondsLeft: parentFunctions.isNumber,
   // Score
   rate: parentFunctions.isScore,
   // Boolean

@@ -38,11 +38,11 @@ components:
       required:
         - questionId
         - choiceId
-        - seconds
+        - secondsLeft
       properties:
         questionId:
           type: integer
         choiceId:
           type: integer
-        seconds:
+        secondsLeft:
           type: integer

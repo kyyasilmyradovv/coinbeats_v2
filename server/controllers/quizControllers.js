@@ -33,7 +33,7 @@ exports.getQuestions = asyncHandler(async (req, res, next) => {
 });
 
 exports.submitAnswer = asyncHandler(async (req, res, next) => {
-  const { questionId: academyQuestionId, choiceId, seconds } = req.body;
+  const { questionId: academyQuestionId, choiceId, secondsLeft } = req.body;
 
   const alreadyAnswered = await prisma.userResponse.findFirst({
     where: { userId: req.user.id, academyQuestionId },
@@ -54,12 +54,12 @@ exports.submitAnswer = asyncHandler(async (req, res, next) => {
   let pointsAwarded = 0;
   if (choice.isCorrect) {
     const totalXP = choice.academyQuestion.xp;
-    if (seconds > 25) {
+    if (secondsLeft > 25) {
       pointsAwarded = totalXP;
-    } else if (seconds > 0) {
+    } else if (secondsLeft > 0) {
       const basePoints = Math.floor(totalXP * 0.25);
       const remainingPoints = totalXP - basePoints;
-      const elapsedSeconds = 25 - seconds;
+      const elapsedSeconds = 25 - secondsLeft;
       const pointsDeducted = Math.floor(
         (remainingPoints / 25) * elapsedSeconds
       );
