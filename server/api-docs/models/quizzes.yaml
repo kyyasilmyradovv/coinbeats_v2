@@ -23,3 +23,13 @@ components:
                 type: integer
               text:
                 type: string
+              userResponses:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    isCorrect:
+                      type: boolean
+                    pointsAwarded:
+                      type: integer
+                      example: 50

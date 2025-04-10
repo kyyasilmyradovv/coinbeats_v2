@@ -220,3 +220,32 @@ exports.protectForUser = asyncHandler(async (req, res, next) => {
 
   next();
 });
+
+exports.weakProtect = asyncHandler(async (req, res, next) => {
+  let token,
+    auth = req.headers?.authorization;
+  if (auth?.startsWith('Bearer')) token = auth.split(' ')[1];
+
+  if (token) {
+    try {
+      var decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
+    } catch (error) {
+      console.log(error);
+      if (error.name === 'TokenExpiredError') {
+        return res.status(498).json({
+          status: 'Failed',
+          message: 'Token expired',
+        });
+      } else {
+        return res.status(400).json({
+          status: 'Failed',
+          message: 'Token not valid',
+        });
+      }
+    }
+
+    req.user = decoded;
+  }
+
+  next();
+});

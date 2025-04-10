@@ -9,20 +9,23 @@ exports.getQuestions = asyncHandler(async (req, res, next) => {
     where: { academyId: +academyId },
     select: {
       id: true,
-      // initialQuestionId: true,
       question: true,
       answer: true,
       quizQuestion: true,
-      // video: true,
       xp: true,
       choices: {
         where: { text: { not: '' } },
-        select: { id: true, text: true },
+        select: {
+          id: true,
+          text: true,
+          userResponses: {
+            where: { userId: req.user.id },
+            select: { isCorrect: true, pointsAwarded: true },
+          },
+        },
       },
-      // initialQuestion: true,
     },
   });
-
   if (!questions || questions.length === 0)
     return res.status(404).json({ message: 'Questions not found' });
 
