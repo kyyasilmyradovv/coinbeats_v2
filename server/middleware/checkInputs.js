@@ -7,7 +7,7 @@ let requiredFields = {
   send_me_code: ['email'],
   refresh_token: ['refreshToken'],
   verify: ['email', 'code'],
-  profile: ['name'],
+  profile: [],
 };
 
 // Common Functions

@@ -3,7 +3,7 @@ paths:
     get:
       tags: [Quizzes]
       description: Fetch questions of academy quizzes
-      statuses: [404]
+      statuses: [401, 404]
       parameters:
         - in: query
           name: academyId
@@ -19,4 +19,4 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Academy'
+                  $ref: '#/components/schemas/QuizQuestion'

@@ -11,11 +11,14 @@ exports.getMyProfile = asyncHandler(async (req, res, next) => {
 });
 
 exports.updateProfile = asyncHandler(async (req, res, next) => {
-  const { name } = req.body;
+  const { name, password } = req.body;
 
   const user = await prisma.user.update({
     where: { id: req.user.id },
-    data: { name },
+    data: {
+      name,
+      ...(password ? { password: await bcrypt.hash(password, 10) } : {}),
+    },
     select: { id: true, roles: true, email: true, name: true },
   });
   if (!user) {
@@ -216,6 +219,35 @@ exports.protectForUser = asyncHandler(async (req, res, next) => {
   }
 
   req.user = decoded;
+
+  next();
+});
+
+exports.weakProtect = asyncHandler(async (req, res, next) => {
+  let token,
+    auth = req.headers?.authorization;
+  if (auth?.startsWith('Bearer')) token = auth.split(' ')[1];
+
+  if (token) {
+    try {
+      var decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
+    } catch (error) {
+      console.log(error);
+      if (error.name === 'TokenExpiredError') {
+        return res.status(498).json({
+          status: 'Failed',
+          message: 'Token expired',
+        });
+      } else {
+        return res.status(400).json({
+          status: 'Failed',
+          message: 'Token not valid',
+        });
+      }
+    }
+
+    req.user = decoded;
+  }
 
   next();
 });

@@ -13,20 +13,8 @@ exports.getAllAcademies = asyncHandler(async (req, res, next) => {
       mode: 'insensitive',
     };
   }
-  if (categoryId) {
-    where.categories = {
-      some: {
-        id: +categoryId,
-      },
-    };
-  }
-  if (chainId) {
-    where.chains = {
-      some: {
-        id: +chainId,
-      },
-    };
-  }
+  if (categoryId) where.categories = { some: { id: +categoryId } };
+  if (chainId) where.chains = { some: { id: +chainId } };
 
   const academies = await prisma.academy.findMany({
     where,
@@ -50,16 +38,9 @@ exports.getAllAcademies = asyncHandler(async (req, res, next) => {
 
 exports.getAcademy = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
-  // const { id: userId, roles } = req.user;
-
-  // if (!roles.includes('ADMIN') && !roles.includes('SUPERADMIN')) {
-  //   return next(
-  //     createError(403, 'You are not authorized to access this academy')
-  //   );
-  // }
 
   const academy = await prisma.academy.findUnique({
-    where: { id: +id }, // add creatorId: userId for admin side
+    where: { id: +id },
     select: {
       id: true,
       name: true,
@@ -72,7 +53,6 @@ exports.getAcademy = asyncHandler(async (req, res, next) => {
       coverPhotoUrl: true,
       logoUrl: true,
       dexScreener: true,
-      // tokenomics: true,
       xp: true,
       pointCount: true,
       fomoNumber: true,
@@ -83,24 +63,12 @@ exports.getAcademy = asyncHandler(async (req, res, next) => {
           name: true,
         },
       },
-      chains: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
-      academyType: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
+      chains: { select: { id: true, name: true } },
+      academyType: { select: { id: true, name: true } },
       overallRaffle: {
         where: {
           isActive: true,
-          deadline: {
-            gte: new Date(),
-          },
+          deadline: { gte: new Date() },
         },
         select: {
           id: true,
@@ -111,26 +79,17 @@ exports.getAcademy = asyncHandler(async (req, res, next) => {
           reward: true,
         },
       },
+      ...(req.user?.id
+        ? {
+            points: {
+              where: { userId: req.user.id, verificationTaskId: null },
+              select: { value: true },
+            },
+          }
+        : {}),
     },
   });
   if (!academy) return res.status(404).json({ message: 'Academy not found' });
-
-  // if(req.user){  // TODO: uncomment after auth logic done
-  const pointsSum = await prisma.point.aggregate({
-    where: {
-      // userId: req.user.id,
-      userId: 12,
-      academyId: +id,
-    },
-    _sum: {
-      value: true,
-    },
-  });
-
-  academy.earnedPoints =
-    pointsSum._sum.value !== null ? pointsSum._sum.value : -1;
-
-  // }
 
   res.json(academy);
 });
