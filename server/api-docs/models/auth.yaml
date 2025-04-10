@@ -63,6 +63,8 @@ components:
       properties:
         name:
           type: string
+        password:
+          type: string
     LoginFieldsOfUsers:
       type: object
       required:
@@ -74,7 +76,7 @@ components:
           example: kyyas.ilmyradov@gmail.com
         password:
           type: string
-          example: '!k2y0y0a1s!'
+          example: '123'
     AuthResponseOfUser:
       type: object
       properties:

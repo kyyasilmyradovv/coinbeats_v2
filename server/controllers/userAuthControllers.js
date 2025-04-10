@@ -11,11 +11,14 @@ exports.getMyProfile = asyncHandler(async (req, res, next) => {
 });
 
 exports.updateProfile = asyncHandler(async (req, res, next) => {
-  const { name } = req.body;
+  const { name, password } = req.body;
 
   const user = await prisma.user.update({
     where: { id: req.user.id },
-    data: { name },
+    data: {
+      name,
+      ...(password ? { password: await bcrypt.hash(password, 10) } : {}),
+    },
     select: { id: true, roles: true, email: true, name: true },
   });
   if (!user) {
