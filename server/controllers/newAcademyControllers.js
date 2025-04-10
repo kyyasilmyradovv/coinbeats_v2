@@ -13,20 +13,8 @@ exports.getAllAcademies = asyncHandler(async (req, res, next) => {
       mode: 'insensitive',
     };
   }
-  if (categoryId) {
-    where.categories = {
-      some: {
-        id: +categoryId,
-      },
-    };
-  }
-  if (chainId) {
-    where.chains = {
-      some: {
-        id: +chainId,
-      },
-    };
-  }
+  if (categoryId) where.categories = { some: { id: +categoryId } };
+  if (chainId) where.chains = { some: { id: +chainId } };
 
   const academies = await prisma.academy.findMany({
     where,
@@ -75,24 +63,12 @@ exports.getAcademy = asyncHandler(async (req, res, next) => {
           name: true,
         },
       },
-      chains: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
-      academyType: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
+      chains: { select: { id: true, name: true } },
+      academyType: { select: { id: true, name: true } },
       overallRaffle: {
         where: {
           isActive: true,
-          deadline: {
-            gte: new Date(),
-          },
+          deadline: { gte: new Date() },
         },
         select: {
           id: true,

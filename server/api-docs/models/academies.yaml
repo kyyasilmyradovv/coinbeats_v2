@@ -105,7 +105,7 @@ components:
         - $ref: '#/components/schemas/AcademyDetails'
         - type: object
           properties:
-            raffles:
+            overallRaffle:
               type: array
               items:
                 type: object
@@ -138,3 +138,10 @@ components:
                   type: integer
                 name:
                   type: string
+            points:
+              type: array
+              items:
+                type: object
+                properties:
+                  value:
+                    type: integer
