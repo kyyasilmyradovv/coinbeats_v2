@@ -174,8 +174,8 @@ function Register() {
 
 export function SignUpModal() {
     const dispatch = useAppDispatch()
-    const signUpModal = useAppSelector((state) => state.generalSlice.signUpModalOpen)
-    const step = useAppSelector((state) => state.generalSlice.step)
+    const signUpModal = useAppSelector((state) => state.general.signUpModalOpen)
+    const step = useAppSelector((state) => state.general.step)
 
     return (
         <Dialog

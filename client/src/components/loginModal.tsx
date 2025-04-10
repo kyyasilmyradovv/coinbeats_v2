@@ -26,7 +26,7 @@ type TSignInFields = {
 
 export function LoginModal() {
     const dispatch = useAppDispatch()
-    const loginModalOpen = useAppSelector((state) => state.generalSlice.loginModalOpen)
+    const loginModalOpen = useAppSelector((state) => state.general.loginModalOpen)
     const [showPassword, setShowPassword] = useState(false)
 
     const [auth, { isSuccess, data, isError, error, isLoading, reset }] = useAuthMutation()

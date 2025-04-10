@@ -25,7 +25,7 @@ export const academiesApi = apiSlice.injectEndpoints({
         academy: builder.query<TAcademySingle, string>({
             query: (id) => {
                 return {
-                    url: `academies/${id}`,
+                    url: `/academies/${id}`,
                     method: 'GET'
                 }
             },

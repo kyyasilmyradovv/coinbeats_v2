@@ -15,7 +15,7 @@ const initialState: SliceState = {
 }
 
 export const generalSlice = createSlice({
-    name: 'academy',
+    name: 'general',
     initialState,
     reducers: {
         setLoginModalOpen(state, action: PayloadAction<boolean>) {

@@ -11,8 +11,10 @@ import { ROUTES } from '@/shared/links'
 import { usePathname, useRouter } from 'next/navigation'
 import { NavMenu } from './navigation'
 import { LoginModal } from './loginModal'
-import { useAppDispatch } from '@/store/hooks'
+import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { setLoginModalOpen } from '@/store/general/generalSlice'
+import { useProfileQuery } from '@/store/api/auth.api'
+import Loading from './loading'
 
 // THIS IS A TEMPORARY HEADER FOR SIGNUP AND LANDING PAGE WHILE SITE IS NOT LIVE YET
 export function Header() {
@@ -20,6 +22,8 @@ export function Header() {
     const { theme = 'dark' } = useTheme()
     const pathname = usePathname()
     const router = useRouter()
+    const { currentData, isLoading: profileIsLoading, isFetching: profileIsFetching } = useProfileQuery({})
+    const profil = useAppSelector((state) => state.user.profile)
 
     const imageSrc = theme === 'dark' ? '/coinbeats-light.svg' : '/coinbeats-dark.svg'
 
@@ -60,15 +64,25 @@ export function Header() {
                     {/* <Button variant="ghost" className="cursor-pointer">
                         <p className="gradient-text">Sign in</p>
                     </Button> */}
-                    <Button
-                        onClick={() => {
-                            dispatch(setLoginModalOpen(true))
-                        }}
-                        variant="outline"
-                        className="cursor-pointer"
-                    >
-                        <p className="gradient-text">Sign in</p>
-                    </Button>
+                    {profileIsLoading || profileIsFetching ? (
+                        <Loading size={30} />
+                    ) : profil?.name ? (
+                        <Avatar>
+                            <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
+                            <AvatarFallback className="p-2">DG</AvatarFallback>
+                        </Avatar>
+                    ) : (
+                        <Button
+                            onClick={() => {
+                                dispatch(setLoginModalOpen(true))
+                            }}
+                            variant="outline"
+                            className="cursor-pointer"
+                        >
+                            <p className="gradient-text">Sign in</p>
+                        </Button>
+                    )}
+
                     {/* <Avatar>
                         <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
                         <AvatarFallback className="p-2">DG</AvatarFallback>
