@@ -10,6 +10,28 @@ exports.getMyProfile = asyncHandler(async (req, res, next) => {
   res.status(200).json(req.user);
 });
 
+exports.updateProfile = asyncHandler(async (req, res, next) => {
+  const { name } = req.body;
+
+  const user = await prisma.user.update({
+    where: { id: req.user.id },
+    data: { name },
+    select: { id: true, roles: true, email: true, name: true },
+  });
+  if (!user) {
+    return res.status(404).json({ message: 'User not found' });
+  }
+
+  const accessToken = jwt.sign(user, process.env.JWT_SECRET, {
+    expiresIn: '2h',
+  });
+  const refreshToken = jwt.sign(user, process.env.JWT_REFRESH_SECRET, {
+    expiresIn: '30d',
+  });
+
+  res.status(200).json({ accessToken, refreshToken, ...user });
+});
+
 exports.login = asyncHandler(async (req, res, next) => {
   const { email, password } = req.body;
 
@@ -19,7 +41,6 @@ exports.login = asyncHandler(async (req, res, next) => {
       id: true,
       roles: true,
       name: true,
-      telegramUserId: true,
       email: true,
       password: true,
     },
@@ -29,22 +50,16 @@ exports.login = asyncHandler(async (req, res, next) => {
     return res.status(400).json({ message: 'Invalid email or password' });
   }
 
-  const tokenPayload = {
-    id: user.id,
-    roles: user.roles,
-    telegramUserId: user.telegramUserId ? user.telegramUserId.toString() : null,
-    email: user.email,
-    name: user.name,
-  };
+  delete user.password;
 
-  const accessToken = jwt.sign(tokenPayload, process.env.JWT_SECRET, {
+  const accessToken = jwt.sign(user, process.env.JWT_SECRET, {
     expiresIn: '2h',
   });
-  const refreshToken = jwt.sign(tokenPayload, process.env.JWT_REFRESH_SECRET, {
+  const refreshToken = jwt.sign(user, process.env.JWT_REFRESH_SECRET, {
     expiresIn: '30d',
   });
 
-  res.status(200).json({ accessToken, refreshToken, ...tokenPayload });
+  res.status(200).json({ accessToken, refreshToken, ...user });
 });
 
 exports.signinGoogle = asyncHandler(async (req, res, next) => {
@@ -60,22 +75,8 @@ exports.signinGoogle = asyncHandler(async (req, res, next) => {
       emailConfirmed: true,
     },
     update: {},
-    select: {
-      id: true,
-      roles: true,
-      telegramUserId: true,
-      email: true,
-      name: true,
-    },
+    select: { id: true, roles: true, email: true, name: true },
   });
-
-  const tokenPayload = {
-    id: user.id,
-    roles: user.roles,
-    telegramUserId: user.telegramUserId ? user.telegramUserId.toString() : null,
-    email: user.email,
-    name: user.name,
-  };
 
   const accessToken = jwt.sign(tokenPayload, process.env.JWT_SECRET, {
     expiresIn: '2h',
@@ -99,13 +100,7 @@ exports.refreshToken = asyncHandler(async (req, res, next) => {
 
   const user = await prisma.user.findUnique({
     where: { id: +decoded.id, isBanned: false },
-    select: {
-      id: true,
-      roles: true,
-      telegramUserId: true,
-      email: true,
-      name: true,
-    },
+    select: { id: true, roles: true, email: true, name: true },
   });
 
   if (!user) {
@@ -115,18 +110,10 @@ exports.refreshToken = asyncHandler(async (req, res, next) => {
     });
   }
 
-  const tokenPayload = {
-    id: user.id,
-    roles: user.roles,
-    telegramUserId: user.telegramUserId ? user.telegramUserId.toString() : null,
-    email: user.email,
-    name: user.name,
-  };
-
-  const accessToken = jwt.sign(tokenPayload, process.env.JWT_SECRET, {
+  const accessToken = jwt.sign(user, process.env.JWT_SECRET, {
     expiresIn: '2h',
   });
-  const refreshToken = jwt.sign(tokenPayload, process.env.JWT_REFRESH_SECRET, {
+  const refreshToken = jwt.sign(user, process.env.JWT_REFRESH_SECRET, {
     expiresIn: '30d',
   });
 
@@ -160,36 +147,44 @@ exports.sendMeCode = asyncHandler(async (req, res, next) => {
   res.status(200).json({ message: 'Code sent' });
 });
 
-exports.verify = asyncHandler(async (req, res, next) => {
-  const { email } = req.body;
+exports.verifyMyEmail = asyncHandler(async (req, res, next) => {
+  const { email, code } = req.body;
+  const TEN_MINUTES_AGO = new Date(Date.now() - 10 * 60 * 1000);
 
-  const ipAddress = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-
-  const existingUser = await prisma.user.findUnique({
-    where: { email },
+  const verification = await prisma.emailVerifications.findFirst({
+    where: {
+      email,
+      created_at: { gte: TEN_MINUTES_AGO },
+    },
   });
 
-  const user = await prisma.user.findUnique({
-    where: { email, isBanned: false },
-  });
-
-  if (!user || !(await bcrypt.compare(password, user.password))) {
-    return res.status(401).json({ message: 'Invalid email or password' });
+  if (!verification || verification.code !== code) {
+    return res.status(400).json({ message: 'Invalid verification code' });
   }
 
-  const tokenPayload = {
-    id: user.id.toString(),
-    roles: user.roles,
-    telegramUserId: user.telegramUserId ? user.telegramUserId.toString() : null,
-    email: user.email,
-  };
+  await prisma.emailVerifications.delete({ where: { email } });
 
-  const accessToken = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: '2h' });
-  const refreshToken = jwt.sign(tokenPayload, JWT_REFRESH_SECRET, {
+  const user = await prisma.user.upsert({
+    where: { email },
+    update: { emailConfirmed: true },
+    create: {
+      email,
+      name: email.split('@')[0],
+      roles: ['USER'],
+      isBanned: false,
+      emailConfirmed: true,
+    },
+    select: { id: true, roles: true, email: true, name: true },
+  });
+
+  const accessToken = jwt.sign(user, process.env.JWT_SECRET, {
+    expiresIn: '2h',
+  });
+  const refreshToken = jwt.sign(user, process.env.JWT_REFRESH_SECRET, {
     expiresIn: '30d',
   });
 
-  res.json({ accessToken, refreshToken });
+  res.status(200).json({ accessToken, refreshToken, ...user });
 });
 
 exports.protectForUser = asyncHandler(async (req, res, next) => {

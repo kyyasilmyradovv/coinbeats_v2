@@ -6,6 +6,8 @@ let requiredFields = {
   login: ['email', 'password'],
   send_me_code: ['email'],
   refresh_token: ['refreshToken'],
+  verify: ['email', 'code'],
+  profile: ['name'],
 };
 
 // Common Functions
@@ -78,6 +80,7 @@ let typeCheckers = {
   description: parentFunctions.isString,
   referral_profile: parentFunctions.isString,
   refreshToken: parentFunctions.isString,
+  code: parentFunctions.isString,
   // Number
   order: parentFunctions.isNumber,
   count: parentFunctions.isNumber,

@@ -1,249 +1,127 @@
-# paths:
-/api/v2/user/auth/login:
-  post:
-    tags: [Authentication]
-    description: Login as user
-    statuses: [400, 404]
-    requestBody:
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/LoginFieldsOfUsers'
-    responses:
-      '200':
+paths:
+  /api/v2/user/auth/login:
+    post:
+      tags: [Authentication]
+      description: Login as user
+      statuses: [400, 404]
+      requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AuthResponseOfUser'
-/api/v2/user/auth/google-signin:
-  post:
-    tags: [Authentication]
-    description: Login as user
-    statuses: [400, 404]
-    requestBody:
-      content:
-        application/json:
-          schema:
-            type: object
-            properties:
-              email:
-                type: string
-                example: 'kyyas.ilmyradov@gmail.com'
-              name:
-                type: string
-                example: 'kyyas'
-    responses:
-      '200':
+              $ref: '#/components/schemas/LoginFieldsOfUsers'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponseOfUser'
+  /api/v2/user/auth/google-signin:
+    post:
+      tags: [Authentication]
+      description: Login as user
+      statuses: [400, 404]
+      requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AuthResponseOfUser'
-  #   /api/v1/user/auth/logout:
-  #     post:
-  #       tags: [Authentication]
-  #       description: Logout from the system
-  #       statuses: [400]
-  #       responses:
-  #         '200':
-  #           description: Logged out successfully
-  #   /api/v1/user/auth/logout-for-login:
-  #     post:
-  #       tags: [Authentication]
-  #       description: Logout one device to create empty place for the current logging device
-  #       statuses: [400]
-  #       requestBody:
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/LogoutForLoginFields'
-  #       responses:
-  #         '200':
-  #           description: Logged out successfully
-  #   /api/v1/user/auth/signup:
-  #     post:
-  #       tags: [Authentication]
-  #       description: Signup as new user
-  #       statuses: [400, 404, 409]
-  #       requestBody:
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/SignupFieldsOfUsers'
-  #       responses:
-  #         '200':
-  #           description: 'Verification code successfully sent'
-/api/v2/user/auth/send-me-code:
-  post:
-    tags: [Authentication]
-    description: Send me email verification code
-    statuses: [400, 409]
-    requestBody:
-      content:
-        application/json:
-          schema:
-            type: object
-            properties:
-              email:
-                type: string
-                example: 'kyyas.ilmyradov@gmail.com'
-    responses:
-      '200':
-        description: 'Code sent'
-#   /api/v1/user/auth/verify:
-#     post:
-#       tags: [Authentication]
-#       description: Verify new user phone number
-#       statuses: [400, 404, 409]
-#       requestBody:
-#         content:
-#           application/json:
-#             schema:
-#               $ref: '#/components/schemas/VerificationFieldsOfUsers'
-#       responses:
-#         '200':
-#           description: 'Verification done successfully'
-#           content:
-#             application/json:
-#               schema:
-#                 type: object
-#                 properties:
-#                   token:
-#                     type: string
-#                   refreshToken:
-#                     type: string
-/api/v2/user/auth/refresh-token:
-  post:
-    tags: [Authentication]
-    description: Refresh user token
-    statuses: []
-    requestBody:
-      content:
-        application/json:
-          schema:
-            properties:
-              refreshToken:
-                type: string
-    responses:
-      '200':
+              type: object
+              properties:
+                email:
+                  type: string
+                  example: 'kyyas.ilmyradov@gmail.com'
+                name:
+                  type: string
+                  example: 'kyyas'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponseOfUser'
+  /api/v2/user/auth/send-me-code:
+    post:
+      tags: [Authentication]
+      description: Send me email verification code
+      statuses: [400, 409]
+      requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AuthResponseOfUser'
-      '409':
-        description: 'Refresh token expired or invalid'
-/api/v2/user/auth/profile:
-  get:
-    tags: [Authentication]
-    description: Get my profile
-    statuses: [401]
-    responses:
-      '200':
+              type: object
+              properties:
+                email:
+                  type: string
+                  example: 'kyyas.ilmyradov@gmail.com'
+      responses:
+        '200':
+          description: 'Code sent'
+  /api/v2/user/auth/verify:
+    post:
+      tags: [Authentication]
+      description: Verify new user email
+      statuses: [400, 404, 409]
+      requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ProfileOfUser'
-#     put:
-#       tags: [Authentication]
-#       description: Update my profile
-#       statuses: [400, 404, 409]
-#       requestBody:
-#         content:
-#           application/json:
-#             schema:
-#               $ref: '#/components/schemas/UpdateFieldsOfUsersProfile'
-#       responses:
-#         '200':
-#           description: 'Profile updated successfully'
-#   /api/v1/user/auth/device:
-#     put:
-#       deprecated: true
-#       tags: [Authentication]
-#       description: Update my device
-#       statuses: [400, 404, 409]
-#       requestBody:
-#         content:
-#           application/json:
-#             schema:
-#               $ref: '#/components/schemas/DeviceFieldsOfUsers'
-#       responses:
-#         '200':
-#           content:
-#             application/json:
-#               schema:
-#                 type: object
-#                 properties:
-#                   token:
-#                     type: string
-#   /api/v1/user/auth/tv-login:
-#     post:
-#       tags: [Authentication]
-#       description: Login as tv
-#       statuses: [400, 404, 409]
-#       requestBody:
-#         content:
-#           application/json:
-#             schema:
-#               $ref: '#/components/schemas/LoginFieldsOfTv'
-#       responses:
-#         '200':
-#           content:
-#             application/json:
-#               schema:
-#                 type: object
-#                 properties:
-#                   token:
-#                     type: string
-#                   refreshToken:
-#                     type: string
-#   /api/v1/user/auth/qr-share:
-#     post:
-#       tags: [Authentication]
-#       description: Share my device qr to get login & subscription
-#       statuses: [404]
-#       requestBody:
-#         content:
-#           application/json:
-#             schema:
-#               required:
-#                 - shareCode
-#               properties:
-#                 shareCode:
-#                   type: integer
-#       responses:
-#         '200':
-#           description: Qr successfully shared
-#   /api/v1/user/auth/qr-confirm:
-#     post:
-#       tags: [Authentication]
-#       description: Confirm qr to share your login & subscription
-#       statuses: [404]
-#       requestBody:
-#         content:
-#           application/json:
-#             schema:
-#               required:
-#                 - shareCode
-#               properties:
-#                 shareCode:
-#                   type: integer
-#       responses:
-#         '200':
-#           description: Qr successfully confirmed
-#   /api/v1/user/auth/qr-check:
-#     post:
-#       tags: [Authentication]
-#       description: Check qr state if confirmed or not yet
-#       statuses: [404]
-#       responses:
-#         '200':
-#           description: Confirmed
-#           content:
-#             application/json:
-#               schema:
-#                 properties:
-#                   token:
-#                     type: string
-#                   refreshToken:
-#                     type: string
-#         '204':
-#           description: Not confirmed
+              type: object
+              properties:
+                email:
+                  type: string
+                  example: 'kyyas.ilmyradov@gmail.com'
+                code:
+                  type: string
+                  example: '123456'
+      responses:
+        '200':
+          description: 'Verification done successfully'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponseOfUser'
+  /api/v2/user/auth/refresh-token:
+    post:
+      tags: [Authentication]
+      description: Refresh user token
+      statuses: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                refreshToken:
+                  type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponseOfUser'
+        '409':
+          description: 'Refresh token expired or invalid'
+  /api/v2/user/auth/profile:
+    get:
+      tags: [Authentication]
+      description: Get my profile
+      statuses: [401]
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileOfUser'
+    put:
+      tags: [Authentication]
+      description: Update my profile
+      statuses: [400, 401, 404]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateFieldsOfUsersProfile'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileOfUser'
