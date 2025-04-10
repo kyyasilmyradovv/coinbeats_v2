@@ -9,20 +9,23 @@ exports.getQuestions = asyncHandler(async (req, res, next) => {
     where: { academyId: +academyId },
     select: {
       id: true,
-      initialQuestionId: true,
       question: true,
       answer: true,
       quizQuestion: true,
-      video: true,
       xp: true,
       choices: {
         where: { text: { not: '' } },
-        select: { id: true, text: true },
+        select: {
+          id: true,
+          text: true,
+          userResponses: {
+            where: { userId: req.user.id },
+            select: { isCorrect: true, pointsAwarded: true },
+          },
+        },
       },
-      initialQuestion: true,
     },
   });
-
   if (!questions || questions.length === 0)
     return res.status(404).json({ message: 'Questions not found' });
 
@@ -51,10 +54,7 @@ exports.submitAnswer = asyncHandler(async (req, res, next) => {
   );
 
   const existingPoints = await prisma.point.findFirst({
-    where: {
-      userId: userId,
-      academyId: parseInt(academyId, 10),
-    },
+    where: { userId: userId, academyId: parseInt(academyId, 10) },
   });
 
   if (existingPoints) {
@@ -79,11 +79,7 @@ exports.submitAnswer = asyncHandler(async (req, res, next) => {
   } else {
     // Otherwise, create a new record
     await prisma.point.create({
-      data: {
-        userId,
-        academyId: parseInt(academyId, 10),
-        value: totalPoints,
-      },
+      data: { userId, academyId: parseInt(academyId, 10), value: totalPoints },
     });
 
     // Increase academy pointCount
@@ -131,9 +127,7 @@ exports.submitAnswer = asyncHandler(async (req, res, next) => {
     if (hasRunningRaffle != null) {
       await prisma.academyRaffleEntries.upsert({
         where: { userId_academyId: { userId, academyId } },
-        update: {
-          amount: { increment: incrementAmount },
-        },
+        update: { amount: { increment: incrementAmount } },
         create: {
           userId,
           academyId: parseInt(academyId, 10),
