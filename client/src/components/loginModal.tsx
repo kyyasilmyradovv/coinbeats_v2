@@ -1,19 +1,16 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { set, useForm } from 'react-hook-form'
+import { useForm } from 'react-hook-form'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Separator } from './ui/separator'
-import { Checkbox } from '@/components/ui/checkbox'
 import { Eye, EyeOff, Loader } from 'lucide-react'
 import Image from 'next/image'
 import { useAuthMutation } from '@/store/api/auth.api'
-import { Toaster } from './ui/sonner'
 import { toast } from 'sonner'
-import { SignUpModal } from './signUpModal'
 import { signIn } from 'next-auth/react'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { setLoginModalOpen, setSignUpModalOpen } from '@/store/general/generalSlice'
@@ -22,7 +19,6 @@ import { setProfil } from '@/store/user/userSlice'
 type TSignInFields = {
     email: string
     password: string
-    // remember?: boolean
 }
 
 export function LoginModal() {
@@ -52,8 +48,11 @@ export function LoginModal() {
         reset()
     }, [isSuccess, isError])
 
-    const form = useForm({
-        defaultValues: {}
+    const form = useForm<TSignInFields>({
+        defaultValues: {
+            email: '',
+            password: ''
+        }
     })
 
     const onSubmit = async (values: TSignInFields) => {

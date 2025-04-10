@@ -7,11 +7,9 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Separator } from './ui/separator'
-import { Checkbox } from '@/components/ui/checkbox'
 import { Eye, EyeOff, Loader, MoveLeft } from 'lucide-react'
 import Image from 'next/image'
-import { useAuthMutation, useCreateProfileMutation, useSendCodeMutation, useVerifyMutation } from '@/store/api/auth.api'
-import { Toaster } from './ui/sonner'
+import { useCreateProfileMutation, useSendCodeMutation, useVerifyMutation } from '@/store/api/auth.api'
 import { toast } from 'sonner'
 import { signIn } from 'next-auth/react'
 import { setLoginModalOpen, setNewMail, setSignUpModalOpen, setStep } from '@/store/general/generalSlice'
@@ -197,7 +195,7 @@ function Register() {
     const profile = useAppSelector((state) => state.user.profile)
     const form = useForm({
         defaultValues: {
-            name: profile?.name,
+            name: profile?.name || '', // Ensure name is always a string
             password: ''
         }
     })
