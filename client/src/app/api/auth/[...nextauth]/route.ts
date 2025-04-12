@@ -23,13 +23,35 @@ const handler = NextAuth({
                     })
                     const data = await response.json()
 
-                    // TODO: Didar sutayda gelen refresh tokeni ve access tokeni store ya sessine nereye kaydetiyorsan etmen lazim burada. username email sheyleri de kaydetmen lazim
+                    if (!data?.accessToken || !data?.refreshToken) {
+                        console.error('No tokens received from backend.')
+                        return false
+                    }
+                    // Instead of trying to call localStorage here (which doesn't work on the server),
+                    // attach the tokens to the user object.
+                    user.accessToken = data.accessToken
+                    user.refreshToken = data.refreshToken
                 } catch (error) {
                     console.error('Error syncing with backend:', error)
+                    return false
                 }
             }
-
             return true
+        },
+        async jwt({ token, account, user }) {
+            // On initial sign in, attach tokens from user to token.
+            if (account && user) {
+                token.accessToken = user.accessToken
+                token.refreshToken = user.refreshToken
+            }
+            return token
+        },
+        async session({ session, token }) {
+            if (session.user) {
+                session.accessToken = token.accessToken
+                session.refreshToken = token.refreshToken
+            }
+            return session
         }
     },
     pages: {
