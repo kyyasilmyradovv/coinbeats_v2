@@ -175,13 +175,14 @@ model Choice {
 }
 
 model UserResponse {
-  id            Int     @id @default(autoincrement())
-  userId        Int
-  choiceId      Int
-  isCorrect     Boolean
-  pointsAwarded Int
-  choice        Choice  @relation(fields: [choiceId], references: [id], onDelete: Cascade)
-  user          User    @relation(fields: [userId], references: [id])
+  id                     Int          @id @default(autoincrement())
+  userId                 Int
+  choiceId               Int
+  isCorrect              Boolean
+  pointsAwarded          Int
+  academyQuestionId      Int?
+  choice                 Choice       @relation(fields: [choiceId], references: [id], onDelete: Cascade)
+  user                   User         @relation(fields: [userId], references: [id])
 }
 
 model Raffle {

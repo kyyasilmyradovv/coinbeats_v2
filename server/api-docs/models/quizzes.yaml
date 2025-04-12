@@ -33,3 +33,19 @@ components:
                     pointsAwarded:
                       type: integer
                       example: 50
+<<<<<<< HEAD
+=======
+    QuizSubmission:
+      type: object
+      required:
+        - questionId
+        - choiceId
+        - secondsLeft
+      properties:
+        questionId:
+          type: integer
+        choiceId:
+          type: integer
+        secondsLeft:
+          type: integer
+>>>>>>> fe91c413e717618dd6fc13585c17f20aae5600be
