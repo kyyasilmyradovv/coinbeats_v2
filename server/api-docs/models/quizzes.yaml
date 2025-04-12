@@ -33,8 +33,6 @@ components:
                     pointsAwarded:
                       type: integer
                       example: 50
-<<<<<<< HEAD
-=======
     QuizSubmission:
       type: object
       required:
@@ -48,4 +46,3 @@ components:
           type: integer
         secondsLeft:
           type: integer
->>>>>>> fe91c413e717618dd6fc13585c17f20aae5600be

@@ -4,45 +4,40 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collap
 import { Card, CardHeader, CardTitle } from './ui/card'
 import { ChevronDown, Loader2 } from 'lucide-react'
 import { useParams } from 'next/navigation'
-import { useQuizzesQuery } from '@/store/api/quiz.api'
+import { useQuizzesQuery, useSubmitQuizMutation } from '@/store/api/quiz.api'
 import { RadioGroup, RadioGroupItem } from './ui/radio-group'
 import { Label } from './ui/label'
 import { Button } from './ui/button'
 import { cn } from '@/lib/utils'
 import { TQuiz } from '@/types/quiz'
+import { useAppSelector } from '@/store/hooks'
 
 interface TQuizProps {}
 
 export function Quiz({}: TQuizProps) {
     const params = useParams()
     const id = params.academyId
-    const [open, setOpen] = React.useState(true)
-    const { currentData: quizzes, isLoading, isFetching } = useQuizzesQuery({ academyId: id as string }, { skip: !id })
+    const quizzes = useAppSelector((state) => state.quiz.quizzes)
 
-    const [selected, setSelected] = React.useState('')
+    const [open, setOpen] = React.useState(true)
+    const [currentQuiz, setCurrentQuiz] = React.useState(0)
+    const [selected, setSelected] = React.useState()
     const [status, setStatus] = React.useState<'idle' | 'loading' | 'checked'>('idle')
     const [isCorrect, setIsCorrect] = React.useState(false)
 
-    const correctAnswer = 'option-two'
+    const { isLoading, isFetching } = useQuizzesQuery({ academyId: id as string }, { skip: !id })
 
-    const options = [
-        { value: 'option-one', label: 'Option One' },
-        { value: 'option-two', label: 'Option Two' },
-        { value: 'option-three', label: 'Option Three' },
-        { value: 'option-four', label: 'Option Four' }
-    ]
+    const [checkAnswer, { isSuccess, data, isError, error, isLoading: checkIsLoading, reset }] = useSubmitQuizMutation()
 
-    const handleCheck = () => {
+    let correctAnswer = ''
+
+    const handleCheck = async () => {
         if (!selected) return
-        setStatus('loading')
-        setTimeout(() => {
-            setIsCorrect(selected === correctAnswer)
-            setStatus('checked')
-        }, 1500)
+        await checkAnswer({ choiceId: Number(selected), questionId: quizzes[currentQuiz].id, secondsLeft: 10 })
     }
 
     const handleNext = () => {
-        setSelected('')
+        setSelected(undefined)
         setStatus('idle')
         setIsCorrect(false)
     }
@@ -61,8 +56,8 @@ export function Quiz({}: TQuizProps) {
                         </CollapsibleTrigger>
                     </CardHeader>
                     <CollapsibleContent>
-                        <p className="text-lg leading-relaxed">Moonshot is a Telegram sniping bot to snipe memecoin launches</p>
-                        <p className="text-muted-foreground leading-relaxed mt-1">Moonshot is an app that simplifies buying and selling memecoins...</p>
+                        <p className="text-lg leading-relaxed">{quizzes[currentQuiz]?.question}</p>
+                        <p className="text-muted-foreground leading-relaxed mt-1">{quizzes[currentQuiz]?.answer}</p>
                     </CollapsibleContent>
                 </Card>
             </Collapsible>
@@ -80,35 +75,38 @@ export function Quiz({}: TQuizProps) {
                     </CardHeader>
                     <CollapsibleContent>
                         <div>
-                            <p className="text-lg leading-relaxed mb-4">What does the protocol do?</p>
+                            <p className="text-lg leading-relaxed mb-4">{quizzes[currentQuiz]?.quizQuestion}</p>
                             <RadioGroup
                                 value={selected}
-                                onValueChange={status === 'idle' ? setSelected : () => {}}
+                                onValueChange={(e) => {
+                                    setSelected(e)
+                                    console.log(e)
+                                }}
                                 className="grid grid-cols-1 sm:grid-cols-2 gap-4"
                             >
-                                {options.map((opt) => {
-                                    const isChecked = selected === opt.value
-                                    const isCorrectAnswer = opt.value === correctAnswer
+                                {quizzes[currentQuiz]?.choices?.map((opt) => {
+                                    const isChecked = selected === opt.id
+                                    const isCorrectAnswer = opt.id.toString() === correctAnswer
                                     const isWrongSelected = isChecked && !isCorrect && status === 'checked'
                                     const isRightSelected = isChecked && isCorrect && status === 'checked'
                                     const showCorrectBorder = status === 'checked' && isCorrectAnswer
 
                                     return (
-                                        <div key={opt.value}>
-                                            <RadioGroupItem id={opt.value} value={opt.value} className="peer hidden" />
+                                        <div key={opt.id.toString()}>
+                                            <RadioGroupItem id={opt.id.toString()} value={opt.id.toString()} className="peer hidden" />
                                             <Label
-                                                htmlFor={opt.value}
+                                                htmlFor={opt.id.toString()}
                                                 className={cn('block w-full p-4 border rounded-xl cursor-pointer transition-all', 'hover:bg-muted/50', {
                                                     // Show gradient only when selected and not yet checked
-                                                    'border border-brand bg-brand/10 text-brand': selected === opt.value && status === 'idle',
+                                                    'border border-brand bg-brand/10 text-brand': selected === opt.id.toString() && status === 'idle',
 
                                                     // After checking
-                                                    'border-green-500 bg-green-100 text-green-700': status === 'checked' && opt.value === correctAnswer,
+                                                    'border-green-500 bg-green-100 text-green-700': status === 'checked' && opt.id.toString() === correctAnswer,
                                                     'border-red-500 bg-red-100 text-red-700':
-                                                        status === 'checked' && selected === opt.value && selected !== correctAnswer
+                                                        status === 'checked' && selected === opt.id && selected !== correctAnswer
                                                 })}
                                             >
-                                                {opt.label}
+                                                {opt.text}
                                             </Label>
                                         </div>
                                     )
@@ -116,12 +114,8 @@ export function Quiz({}: TQuizProps) {
                             </RadioGroup>
 
                             <div className="mt-4">
-                                <Button
-                                    disabled={status === 'loading' || !selected}
-                                    onClick={status === 'checked' ? handleNext : handleCheck}
-                                    className="w-full"
-                                >
-                                    {status === 'loading' ? (
+                                <Button disabled={checkIsLoading || !selected} onClick={status === 'checked' ? handleNext : handleCheck} className="w-full">
+                                    {checkIsLoading ? (
                                         <>
                                             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                                             Checking...

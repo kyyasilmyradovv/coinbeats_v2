@@ -16,3 +16,14 @@ export type TUserResponse = {
     pointsAwarded: number
 }
 export type TChoise = { id: number; text: string; userResponses: TUserResponse[] }
+
+export type TSubmitParams = {
+    questionId: number
+    choiceId: number
+    secondsLeft: number
+}
+
+export type TSubmitResponse = {
+    isCorrect: boolean
+    pointsAwarded: number
+}
