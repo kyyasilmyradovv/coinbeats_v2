@@ -22,6 +22,7 @@ const handler = NextAuth({
                         })
                     })
                     const data = await response.json()
+
                     // TODO: Didar sutayda gelen refresh tokeni ve access tokeni store ya sessine nereye kaydetiyorsan etmen lazim burada. username email sheyleri de kaydetmen lazim
                 } catch (error) {
                     console.error('Error syncing with backend:', error)

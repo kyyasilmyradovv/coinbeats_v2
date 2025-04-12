@@ -81,10 +81,10 @@ exports.signinGoogle = asyncHandler(async (req, res, next) => {
     select: { id: true, roles: true, email: true, name: true },
   });
 
-  const accessToken = jwt.sign(tokenPayload, process.env.JWT_SECRET, {
+  const accessToken = jwt.sign(user, process.env.JWT_SECRET, {
     expiresIn: '2h',
   });
-  const refreshToken = jwt.sign(tokenPayload, process.env.JWT_REFRESH_SECRET, {
+  const refreshToken = jwt.sign(user, process.env.JWT_REFRESH_SECRET, {
     expiresIn: '30d',
   });
 

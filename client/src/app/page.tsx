@@ -29,6 +29,7 @@ import { ChainFilter } from '@/components/chainFilter'
 import { SearchBar } from '@/components/search'
 import { useTheme } from 'next-themes'
 import { cn } from '@/lib/utils'
+import { useSession } from 'next-auth/react'
 
 // Sorting options component
 interface SortOptionsProps {}

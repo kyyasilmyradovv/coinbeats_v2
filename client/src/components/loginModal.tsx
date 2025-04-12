@@ -74,7 +74,14 @@ export function LoginModal() {
                     <DialogDescription>Welcome back, please sign in to continue.</DialogDescription>
                 </DialogHeader>
 
-                <Button variant="outline" className="cursor-pointer flex gap-2 items-center" type="button" onClick={() => signIn('google')}>
+                <Button
+                    variant="outline"
+                    className="cursor-pointer flex gap-2 items-center"
+                    type="button"
+                    onClick={() => {
+                        signIn('google')
+                    }}
+                >
                     <div className="relative w-[20px] h-[20px]">
                         <Image src="google-icon-logo-svgrepo-com.svg" alt="google" fill className="object-contain" />
                     </div>
