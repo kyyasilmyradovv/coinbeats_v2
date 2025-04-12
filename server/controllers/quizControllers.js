@@ -52,6 +52,8 @@ exports.submitAnswer = asyncHandler(async (req, res, next) => {
   }
 
   let pointsAwarded = 0;
+  let correctChoiceId = null;
+
   if (choice.isCorrect) {
     const totalXP = choice.academyQuestion.xp;
     if (secondsLeft > 25) {
@@ -67,6 +69,12 @@ exports.submitAnswer = asyncHandler(async (req, res, next) => {
     } else {
       pointsAwarded = Math.floor(totalXP * 0.25);
     }
+  } else {
+    const correctChoice = await prisma.choice.findFirst({
+      where: { academyQuestionId, isCorrect: true },
+      select: { id: true },
+    });
+    correctChoiceId = correctChoice?.id;
   }
 
   await prisma.userResponse.create({
@@ -79,5 +87,7 @@ exports.submitAnswer = asyncHandler(async (req, res, next) => {
     },
   });
 
-  res.status(200).json({ isCorrect: choice.isCorrect, pointsAwarded });
+  res
+    .status(200)
+    .json({ isCorrect: choice.isCorrect, pointsAwarded, correctChoiceId });
 });
