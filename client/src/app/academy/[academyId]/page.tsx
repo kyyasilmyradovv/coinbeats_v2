@@ -6,7 +6,7 @@ import { useParams } from 'next/navigation'
 import { useAcademyQuery } from '@/store/api/academy.api'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { ArrowLeftRight, BrickWallIcon, Check, Chrome, List, Loader, Recycle, Rocket, Send, Twitter, Users } from 'lucide-react'
+import { ArrowLeftRight, BrickWallIcon, Check, ChevronDown, Chrome, List, Loader, Recycle, Rocket, Send, Twitter, Users } from 'lucide-react'
 import { TAcademySingle } from '@/types/academy'
 import { Button } from '@/components/ui/button'
 import coinsEarnedAnimationData from '@/animations/earned-coins.json'
@@ -14,6 +14,8 @@ import Lottie from 'react-lottie'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import { SOCIALS } from '@/shared/socials'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
+import { Quiz } from '@/components/quiz'
 
 interface TTabsProps {
     academy: TAcademySingle | undefined
@@ -25,7 +27,7 @@ function ActTypes({ academy }: TTabsProps) {
             <Tabs defaultValue="general">
                 <TabsList className="grid w-full grid-cols-4">
                     <TabsTrigger value="general">GENERAL</TabsTrigger>
-                    <TabsTrigger value="read">READ</TabsTrigger>
+                    <TabsTrigger value="quiz">QUIZ</TabsTrigger>
                     <TabsTrigger value="tutorial">TUTORIAL</TabsTrigger>
                     <TabsTrigger value="quests">QUESTS</TabsTrigger>
                 </TabsList>
@@ -82,6 +84,9 @@ function ActTypes({ academy }: TTabsProps) {
 
                     <EarnedCoins academy={academy} />
                 </TabsContent>
+                <TabsContent value="quiz" className="mt-2">
+                    <Quiz />
+                </TabsContent>
             </Tabs>
         </section>
     )
@@ -104,11 +109,11 @@ function EarnedCoins({ academy }: TEarnedCoinsProps) {
         <div className="h-full gap-1 flex flex-col flex-1">
             <Card className="px-2 py-1 flex-1 flex flex-row items-center justify-between">
                 <div className="flex flex-row gap-2 items-center text-xs md:text-[14px]">
-                    {academy?.earnedPoints === -1 ? (
-                        <p className="gradient-text">Earn {academy?.fomoNumber > +academy?.pointCount ? academy?.fomoXp : academy?.xp} points by doing quiz!</p>
+                    {academy?.points?.length === 0 ? (
+                        <p className="gradient-text">Earn {academy?.xp} points by doing quiz!</p>
                     ) : (
                         <p className="gradient-text">
-                            Earned Poins: {academy?.earnedPoints}/{academy?.fomoNumber! > +academy?.pointCount! ? academy?.fomoXp : academy?.xp}
+                            Earned Poins: {academy?.points?.[0]?.value}/{academy?.fomoNumber! > +academy?.pointCount! ? academy?.fomoXp : academy?.xp}
                         </p>
                     )}
                 </div>
@@ -182,7 +187,7 @@ export default function Academy() {
                             <h2 className="text-4xl font-bold gradient-text mt-1 mb-3">{academy?.name}</h2>
                             <div className="flex w-full items-center justify-center gap-12">
                                 <Badge variant="default" className="flex items-center">
-                                    <p>+{academy?.pointCount ?? 0 > academy?.fomoNumber! ? academy?.xp : academy?.fomoXp}</p>
+                                    <p>{academy?.points?.length ? academy?.points?.[0]?.value : academy?.xp}</p>
                                     <Check className="h-5.5 w-5.5" />
                                 </Badge>
                                 <Badge variant="default" className="flex items-center gap-1 ">

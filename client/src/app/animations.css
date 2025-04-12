@@ -261,7 +261,7 @@
 /* Media query for mobile devices */
 @media (max-width: 768px) {
     .card-gradient > div {
-        padding: 1rem;
+        /* padding: 1rem; */
     }
 
     .feature-list {

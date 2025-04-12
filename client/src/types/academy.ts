@@ -47,5 +47,5 @@ export type TAcademySingle = {
     categories: TCategory[]
     chains: TChain[]
     academyType: TGlobal
-    earnedPoints: number
+    points?: { value: number }[]
 }
