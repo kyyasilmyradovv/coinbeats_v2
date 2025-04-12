@@ -125,6 +125,9 @@
 .border-input {
     border-color: var(--border);
 }
+.background-brand {
+    background: linear-gradient(135deg, #c400b2 0%, #c4c439 50%, #c400b2 100%);
+}
 
 @layer base {
     * {

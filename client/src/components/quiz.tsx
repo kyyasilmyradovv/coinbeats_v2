@@ -16,7 +16,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog'
 export function Quiz() {
     const params = useParams()
     const id = params.academyId
-    const quizzes = useAppSelector((state) => state.quiz.quizzes)
 
     const [open, setOpen] = React.useState(true)
     const [currentQuiz, setCurrentQuiz] = React.useState(0)
@@ -24,6 +23,8 @@ export function Quiz() {
     const [seconds, setSeconds] = React.useState(45)
     const [xp, setXp] = React.useState(0)
     const [showSuccessModal, setShowSuccessModal] = React.useState(false)
+
+    const quizzes = useAppSelector((state) => state.quiz.quizzes)
 
     const { isLoading } = useQuizzesQuery({ academyId: id as string }, { skip: !id })
 
@@ -39,27 +40,26 @@ export function Quiz() {
         setSelected(undefined)
         setCurrentQuiz((prev) => prev + 1)
         setOpen(true)
-        setSeconds(40)
+        setSeconds(45)
         setShowSuccessModal(false)
     }
 
     const current = quizzes[currentQuiz]
     const totalQuestions = quizzes.length
+    const haveAnswered = !!current?.choices?.map((choice) => Object.keys(choice.userResponses?.[0] ?? {})?.length)?.filter((e) => e > 0)?.length
 
     // Timer logic
     React.useEffect(() => {
-        const answered = Object.keys(data ?? {})?.length > 0
-        if (answered || !selected) return
-
         const interval = setInterval(() => {
-            setSeconds((prev) => {
-                if (prev <= 1) {
-                    clearInterval(interval)
-                    handleCheck()
-                    return 0
-                }
-                return prev - 1
-            })
+            if (!haveAnswered) {
+                setSeconds((prev) => {
+                    if (prev <= 1) {
+                        clearInterval(interval)
+                        return 0
+                    }
+                    return prev - 1
+                })
+            }
         }, 1000)
 
         return () => clearInterval(interval)
@@ -92,9 +92,13 @@ export function Quiz() {
                     <div className="text-sm font-semibold text-brand">XP: {xp}</div>
                 </div>
                 <div className="w-full h-2 rounded-full bg-muted mb-2 overflow-hidden">
-                    <div className="h-full bg-brand transition-all duration-300" style={{ width: `${((currentQuiz + 1) / totalQuestions) * 100}%` }} />
+                    <div className="h-full background-brand transition-all duration-300" style={{ width: `${((currentQuiz + 1) / totalQuestions) * 100}%` }} />
                 </div>
-                <div className="flex justify-end text-sm text-muted-foreground">
+                <div
+                    className={cn('flex justify-end text-sm text-muted-foreground', {
+                        hidden: haveAnswered
+                    })}
+                >
                     ⏱️ Time Left: <span className={cn('ml-1 font-bold', seconds <= 10 ? 'text-red-500' : '')}>{seconds}s</span>
                 </div>
             </div>
@@ -123,7 +127,7 @@ export function Quiz() {
                     <CardHeader className="m-0 p-2">
                         <CollapsibleTrigger onClick={() => setOpen(!open)} className="w-full flex justify-between items-center group">
                             <CardTitle className="flex items-center text-xl gradient-text">
-                                <span className="font-semibold">Question</span>
+                                <span className="font-semibold">Question?</span>
                             </CardTitle>
                             <ChevronDown className="h-8 w-8 transition-transform duration-300 group-data-[state=open]:rotate-180 mr-3 text-brand/70" />
                         </CollapsibleTrigger>
@@ -135,6 +139,13 @@ export function Quiz() {
                                 {current?.choices?.map((opt) => {
                                     const isChecked = selected === opt.id.toString()
                                     const answered = Object.keys(data ?? {})?.length > 0
+                                    const isSelected = isChecked && !answered
+                                    const isTrue =
+                                        (Object.keys(opt?.userResponses?.[0] ?? {})?.length && opt?.userResponses?.[0]?.isCorrect) ||
+                                        (isChecked && answered && (data?.isCorrect || data?.correctChoiceId === opt.id))
+                                    const isWrong =
+                                        (Object.keys(opt?.userResponses?.[0] ?? {})?.length && !opt?.userResponses?.[0]?.isCorrect) ||
+                                        (isChecked && answered && !data?.isCorrect)
 
                                     return (
                                         <div key={opt.id}>
@@ -142,9 +153,9 @@ export function Quiz() {
                                             <Label
                                                 htmlFor={opt.id.toString()}
                                                 className={cn('block w-full p-4 border rounded-xl cursor-pointer transition-all', 'hover:bg-muted/50', {
-                                                    'border border-brand bg-brand/10 text-brand': isChecked && !answered,
-                                                    'border-green-500 bg-green-100 text-green-700': answered && data?.isCorrect && isChecked,
-                                                    'border-red-500 bg-red-100 text-red-700': answered && !data?.isCorrect && isChecked
+                                                    'border border-brand bg-brand/10 text-brand': isSelected,
+                                                    'border-green-500 bg-green-100 text-green-700': isTrue,
+                                                    'border-red-500 bg-red-100 text-red-700': isWrong
                                                 })}
                                             >
                                                 {opt.text}
@@ -156,8 +167,8 @@ export function Quiz() {
 
                             <div className="mt-4">
                                 <Button
-                                    disabled={checkIsLoading || !selected}
-                                    onClick={Object.keys(data ?? {})?.length ? handleNext : handleCheck}
+                                    disabled={(checkIsLoading || !selected) && !haveAnswered}
+                                    onClick={Object.keys(data ?? {})?.length || haveAnswered ? handleNext : handleCheck}
                                     className="w-full"
                                 >
                                     {checkIsLoading ? (
@@ -165,7 +176,7 @@ export function Quiz() {
                                             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                                             Checking...
                                         </>
-                                    ) : Object.keys(data ?? {})?.length ? (
+                                    ) : Object.keys(data ?? {})?.length || haveAnswered ? (
                                         'Next Question'
                                     ) : (
                                         'Check Answer'

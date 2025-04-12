@@ -14,6 +14,7 @@ export type TQuizSendInfo = {
 export type TUserResponse = {
     isCorrect: boolean
     pointsAwarded: number
+    correctChoiceId: number
 }
 export type TChoise = { id: number; text: string; userResponses: TUserResponse[] }
 
@@ -26,4 +27,5 @@ export type TSubmitParams = {
 export type TSubmitResponse = {
     isCorrect: boolean
     pointsAwarded: number
+    correctChoiceId: number
 }
