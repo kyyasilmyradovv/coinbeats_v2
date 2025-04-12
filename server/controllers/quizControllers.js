@@ -18,6 +18,7 @@ exports.getQuestions = asyncHandler(async (req, res, next) => {
         select: {
           id: true,
           text: true,
+          isCorrect: true,
           userResponses: {
             where: { userId: req.user.id },
             select: { isCorrect: true, pointsAwarded: true },
@@ -28,6 +29,28 @@ exports.getQuestions = asyncHandler(async (req, res, next) => {
   });
   if (!questions || questions.length === 0)
     return res.status(404).json({ message: 'Questions not found' });
+
+  // Process each question to determine whether to keep isCorrect
+  for (let question of questions) {
+    let hasIncorrectAnswer = false;
+
+    for (let choice of question.choices) {
+      if (
+        choice.userResponses &&
+        choice.userResponses.length > 0 &&
+        choice.userResponses[0].isCorrect === false
+      ) {
+        hasIncorrectAnswer = true;
+        break;
+      }
+    }
+
+    if (!hasIncorrectAnswer) {
+      for (let choice of question.choices) {
+        delete choice.isCorrect;
+      }
+    }
+  }
 
   res.json(questions);
 });
