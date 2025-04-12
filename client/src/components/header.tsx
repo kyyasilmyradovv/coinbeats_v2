@@ -28,7 +28,7 @@ export function Header() {
     const imageSrc = theme === 'dark' ? '/coinbeats-light.svg' : '/coinbeats-dark.svg'
 
     return (
-        <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4 justify-between sticky top-0 z-10 bg-background ">
+        <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4 justify-between sticky top-0 z-50 bg-background ">
             {/* {pathname === ROUTES.HOME ? (
         <Link href={ROUTES.COINS} className="z-100">
           <Button variant="outline" size="icon">
