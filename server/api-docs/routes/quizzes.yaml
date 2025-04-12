@@ -20,3 +20,24 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/QuizQuestion'
+  /api/v2/quizzes/submit:
+    post:
+      tags: [Quizzes]
+      description: Submit answer to quiz question
+      statuses: [400, 401, 404, 409]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuizSubmission'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                properties:
+                  isCorrect:
+                    type: boolean
+                  pointsAwarded:
+                    type: integer
+                    example: 50
