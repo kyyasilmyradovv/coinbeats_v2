@@ -108,12 +108,17 @@ export function Quiz() {
     // XP gain
     React.useEffect(() => {
         if (data?.pointsAwarded) {
+            console.log(data?.pointsAwarded)
             setXp((prev) => prev + data.pointsAwarded)
             if (data.isCorrect) {
                 setShowSuccessModal(true)
             }
         }
-    }, [data])
+        if (current?.choices?.map((choice) => choice?.userResponses?.[0]?.pointsAwarded)?.filter((e) => e > 0)?.length) {
+            const earnedPoint = current?.choices?.map((choice) => choice.userResponses?.[0]?.pointsAwarded)?.filter((e) => e > 0)?.[0] ?? 0
+            setXp((prev) => prev + earnedPoint)
+        }
+    }, [data, current])
 
     React.useEffect(() => {
         if (haveAnswered) {
