@@ -67,7 +67,7 @@ function RaffleCard({ raffle }: RaffleCardProps) {
     }
 
     return (
-        <div className="flex flex-col relative rounded-lg mb-4">
+        <div className="flex flex-col relative rounded-lg">
             <Card className="h-full flex flex-col py-4 gradient-border">
                 <CardHeader className="flex items-center justify-between px-4 align-middle">
                     <Badge variant="outline" className="flex items-center">
