@@ -126,17 +126,17 @@ function Filters({}: SortOptionsProps) {
     const { currentData: totalAcademies, isLoading, isFetching, isUninitialized } = useCounterQuery({ table: 'Academy' })
     return (
         <div>
-            <div className="mb-6 flex gap-2 flex-wrap">
+            <div className="mb-6 flex gap-2 flex-wrap items-center w-full">
                 <SearchBar onSearch={(e) => dispatch(setAcademySendInfo({ ...academySendInfo, keyword: e, offset: 0 }))} />
                 <CategoryFilter onSelect={(e) => dispatch(setAcademySendInfo({ ...academySendInfo, categoryId: e ? Number(e) : undefined, offset: 0 }))} />
                 <ChainFilter onSelect={(e) => dispatch(setAcademySendInfo({ ...academySendInfo, chainId: e ? Number(e) : undefined, offset: 0 }))} />
-            </div>
-            <div className="flex justify-center items-center mb-2">
-                {isLoading || isFetching ? (
-                    <Loader size={15} className="animate-spin" />
-                ) : (
-                    <div className="text-sm font-medium text-muted-foreground">Total Academies: {totalAcademies}</div>
-                )}
+                <div className="ml-auto">
+                    {isLoading || isFetching ? (
+                        <Loader size={15} className="animate-spin" />
+                    ) : (
+                        <div className="text-sm font-medium text-muted-foreground">Total Academies: {totalAcademies}</div>
+                    )}
+                </div>
             </div>
         </div>
     )

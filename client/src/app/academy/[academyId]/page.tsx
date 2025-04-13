@@ -16,15 +16,29 @@ import { Badge } from '@/components/ui/badge'
 import { SOCIALS } from '@/shared/socials'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { Quiz } from '@/components/quiz'
+import { useState } from 'react'
+import { useAppDispatch } from '@/store/hooks'
+import { setLoginModalOpen } from '@/store/general/generalSlice'
 
 interface TTabsProps {
     academy: TAcademySingle | undefined
 }
 
 function ActTypes({ academy }: TTabsProps) {
+    const dispatch = useAppDispatch()
+    const [activeTab, setActiveTab] = useState('general')
+
+    const handleTabChange = (tab: string) => {
+        const token = localStorage.getItem('coinbeatsAT')
+        if (tab === 'quiz' && !token) {
+            dispatch(setLoginModalOpen(true))
+            return
+        }
+        setActiveTab(tab)
+    }
     return (
         <section className="mb-4">
-            <Tabs defaultValue="general">
+            <Tabs value={activeTab} onValueChange={handleTabChange} defaultValue="general">
                 <TabsList className="grid w-full grid-cols-4">
                     <TabsTrigger value="general">GENERAL</TabsTrigger>
                     <TabsTrigger value="quiz">QUIZ</TabsTrigger>
