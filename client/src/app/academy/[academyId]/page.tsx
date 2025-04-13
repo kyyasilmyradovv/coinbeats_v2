@@ -47,7 +47,7 @@ function ActTypes({ academy }: TTabsProps) {
                 </TabsList>
                 <TabsContent value="general" className="mt-2">
                     <div className="container mx-auto ">
-                        <Card className="h-full py-2 px-2">
+                        <Card className="h-full py-2 px-2 ">
                             {/* Ticker */}
                             <div className="overflow-auto flex items-center">
                                 <div className="flex items-center">

@@ -46,7 +46,9 @@ export function Quiz() {
     }
 
     const handleNext = () => {
-        reset()
+        if (currentQuiz + 1 !== quizzes?.length) {
+            reset()
+        }
         setSelected(undefined)
         setCurrentQuiz((prev) => prev + 1)
         setOpen(true)
@@ -71,23 +73,23 @@ export function Quiz() {
     const totalQuestions = quizzes.length
     const haveAnswered = !!current?.choices?.map((choice) => Object.keys(choice.userResponses?.[0] ?? {})?.length)?.filter((e) => e > 0)?.length
 
-    React.useEffect(() => {
-        if (currentQuiz + 1 === quizzes?.length) {
-            if (isSuccess) {
-                setStep('end')
-            }
-            if (isError) {
-                let errorMessage = 'Something went wrong!'
-                if ('data' in error && typeof error.data === 'object' && error.data !== null && 'message' in error.data) {
-                    errorMessage = (error.data as { message?: string }).message ?? errorMessage
-                }
+    // React.useEffect(() => {
+    //     if (currentQuiz + 1 === quizzes?.length) {
+    //         if (isSuccess) {
+    //             setStep('end')
+    //         }
+    //         if (isError) {
+    //             let errorMessage = 'Something went wrong!'
+    //             if ('data' in error && typeof error.data === 'object' && error.data !== null && 'message' in error.data) {
+    //                 errorMessage = (error.data as { message?: string }).message ?? errorMessage
+    //             }
 
-                toast(errorMessage, {
-                    position: 'top-center'
-                })
-            }
-        }
-    }, [isSuccess, isError])
+    //             toast(errorMessage, {
+    //                 position: 'top-center'
+    //             })
+    //         }
+    //     }
+    // }, [isSuccess, isError])
     // Timer logic
     React.useEffect(() => {
         const interval = setInterval(() => {
@@ -167,7 +169,7 @@ export function Quiz() {
 
             {/* ℹ️ Info Panel */}
             <Collapsible className="w-full" open={open}>
-                <Card className="backdrop-blur-sm bg-card/50 border-0 card-gradient gap-1 p-4">
+                <Card className="backdrop-blur-sm bg-card/50  card-gradient gap-1 p-4">
                     <CardHeader className="m-0 p-2">
                         <CollapsibleTrigger onClick={() => setOpen(!open)} className="w-full flex justify-between items-center group">
                             <CardTitle className="flex items-center text-xl gradient-text">
@@ -185,7 +187,7 @@ export function Quiz() {
 
             {/* ❓ Quiz Panel */}
             <Collapsible className="w-full" open={!open}>
-                <Card className="backdrop-blur-sm bg-card/50 border-0 card-gradient gap-1 p-4">
+                <Card className="backdrop-blur-sm bg-card/50  card-gradient gap-1 p-4">
                     <CardHeader className="m-0 p-2">
                         <CollapsibleTrigger onClick={() => setOpen(!open)} className="w-full flex justify-between items-center group">
                             <CardTitle className="flex items-center text-xl gradient-text">
@@ -247,7 +249,7 @@ export function Quiz() {
                                             Checking...
                                         </>
                                     ) : currentQuiz + 1 === quizzes?.length && (Object.keys(data ?? {})?.length || haveAnswered) ? (
-                                        'Submit Quiz'
+                                        'See Result'
                                     ) : Object.keys(data ?? {})?.length || haveAnswered ? (
                                         'Next Question'
                                     ) : (
@@ -297,7 +299,7 @@ const StartQuiz: React.FC<StartQuizProps> = ({ onStart }) => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
         >
-            <Card className="w-full max-w-lg shadow-2xl rounded-2xl border-0">
+            <Card className="w-full max-w-lg shadow-2xl rounded-2xl ">
                 <CardHeader className="text-center">
                     <CardTitle className="text-2xl font-bold text-purple-700">Ready to Begin?</CardTitle>
                     <CardDescription className="mt-2">
@@ -354,7 +356,7 @@ const EndedQuiz: React.FC<EndedQuizProps> = ({ result, loading }) => {
                     <Loader size={40} className="animate-spin" />
                 </div>
             ) : !!Object.keys(result ?? {})?.length ? (
-                <Card className="w-full max-w-xl rounded-2xl shadow-xl border-0">
+                <Card className="w-full max-w-xl">
                     <CardHeader className="text-center">
                         <Trophy className="w-10 h-10 mx-auto text-yellow-500" />
                         <CardTitle className="text-2xl font-bold mt-2 text-purple-700">Quiz Completed 🎉</CardTitle>
