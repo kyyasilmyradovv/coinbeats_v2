@@ -28,7 +28,7 @@ exports.getLeaderboard = asyncHandler(async (req, res, next) => {
 exports.getMyStats = async (req, res, next) => {
   const user = await prisma.user.findUnique({
     where: { id: req.user.id },
-    select: { pointCount: true, lastWeekPointCount: true },
+    select: { raffleAmount, pointCount: true, lastWeekPointCount: true },
   });
   if (!user) {
     return res.status(404).json({ message: 'User not found' });
@@ -43,6 +43,7 @@ exports.getMyStats = async (req, res, next) => {
   });
 
   res.status(200).json({
+    raffleAmount: user.raffleAmount,
     pointCount: user.pointCount,
     lastWeekPointCount: user.lastWeekPointCount,
     rankOverall: rankOverall + 1,

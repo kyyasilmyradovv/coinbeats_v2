@@ -1,0 +1,23 @@
+components:
+  schemas:
+    OverallRaffle:
+      type: object
+      properties:
+        name:
+          type: string
+        logoUrl:
+          type: string
+        deadline:
+          type: string
+          format: date-time
+        reward:
+          type: string
+        winnersCount:
+          type: integer
+          example: 10
+        yourRaffleCount:
+          type: integer
+          example: 15
+        type:
+          type: string
+          enum: ['PLATFORM', 'ACADEMY']
