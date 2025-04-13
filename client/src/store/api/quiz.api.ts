@@ -28,15 +28,9 @@ export const quizzesApi = apiSlice.injectEndpoints({
                 method: 'POST',
                 body: params
             })
-        }),
-        finishQuiz: builder.mutation<TQuizFinishResult, TQuizSendInfo>({
-            query: (params: TQuizSendInfo) => ({
-                url: buildUrlWithParams('/quizzes/finish', removeEmpty(params)),
-                method: 'POST'
-            })
         })
     }),
     overrideExisting: false
 })
 
-export const { useQuizzesQuery, useSubmitQuizMutation, useFinishQuizMutation } = quizzesApi
+export const { useQuizzesQuery, useSubmitQuizMutation } = quizzesApi

@@ -22,13 +22,15 @@ export type TSubmitParams = {
     questionId: number
     choiceId: number
     secondsLeft: number
+    isLastQuestion?: boolean
 }
 
-export type TSubmitResponse = {
-    isCorrect: boolean
-    pointsAwarded: number
-    correctChoiceId: number
-}
+export type TSubmitResponse =
+    | {
+          isCorrect: boolean
+          pointsAwarded: number
+          correctChoiceId: number
+      } & TQuizFinishResult
 
 export type TQuizFinishResult = {
     totalPoints: number

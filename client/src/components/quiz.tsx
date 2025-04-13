@@ -4,7 +4,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collap
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './ui/card'
 import { ArrowLeft, ArrowRight, ChevronDown, Loader, Loader2, Sparkles, Trophy, Star, CheckCircle, HelpCircle } from 'lucide-react'
 import { useParams } from 'next/navigation'
-import { useFinishQuizMutation, useQuizzesQuery, useSubmitQuizMutation } from '@/store/api/quiz.api'
+import { useQuizzesQuery, useSubmitQuizMutation } from '@/store/api/quiz.api'
 import { RadioGroup, RadioGroupItem } from './ui/radio-group'
 import { Label } from './ui/label'
 import { Button } from './ui/button'
@@ -37,24 +37,12 @@ export function Quiz() {
 
     const [checkAnswer, { isSuccess, data, isError, error, isLoading: checkIsLoading, reset }] = useSubmitQuizMutation()
 
-    const [
-        finishQuiz,
-        { isSuccess: finishIsSuccess, data: finishData, isError: finishIsError, error: finishError, isLoading: finishIsLoading, reset: finishReset }
-    ] = useFinishQuizMutation()
-
     const handleCheck = async () => {
-        if (!selected) return
-        await checkAnswer({ choiceId: Number(selected), questionId: quizzes[currentQuiz].id, secondsLeft: seconds })
-    }
-    const handleSubmit = async () => {
-        reset()
-        setSelected(undefined)
-        setCurrentQuiz(0)
-        setOpen(true)
-        setSeconds(45)
-        setShowSuccessModal(false)
-        setStep('end')
-        await finishQuiz({ academyId: id as string })
+        if (quizzes?.length === currentQuiz + 1) {
+            await checkAnswer({ choiceId: Number(selected), questionId: quizzes[currentQuiz].id, secondsLeft: seconds, isLastQuestion: true })
+        } else {
+            await checkAnswer({ choiceId: Number(selected), questionId: quizzes[currentQuiz].id, secondsLeft: seconds, isLastQuestion: false })
+        }
     }
 
     const handleNext = () => {
@@ -64,6 +52,9 @@ export function Quiz() {
         setOpen(true)
         setSeconds(45)
         setShowSuccessModal(false)
+        if (currentQuiz + 1 === quizzes?.length) {
+            setStep('end')
+        }
     }
 
     const handleStart = () => {
@@ -81,22 +72,26 @@ export function Quiz() {
     const haveAnswered = !!current?.choices?.map((choice) => Object.keys(choice.userResponses?.[0] ?? {})?.length)?.filter((e) => e > 0)?.length
 
     React.useEffect(() => {
-        if (finishIsError) {
-            let errorMessage = 'Something went wrong!'
-            if ('data' in finishError! && typeof finishError.data === 'object' && finishError.data !== null && 'message' in finishError.data) {
-                errorMessage = (finishError.data as { message?: string }).message ?? errorMessage
+        if (currentQuiz + 1 === quizzes?.length) {
+            if (isSuccess) {
+                setStep('end')
             }
+            if (isError) {
+                let errorMessage = 'Something went wrong!'
+                if ('data' in error && typeof error.data === 'object' && error.data !== null && 'message' in error.data) {
+                    errorMessage = (error.data as { message?: string }).message ?? errorMessage
+                }
 
-            toast(errorMessage, {
-                position: 'top-center'
-            })
+                toast(errorMessage, {
+                    position: 'top-center'
+                })
+            }
         }
-    }, [finishIsSuccess, finishIsError])
-
+    }, [isSuccess, isError])
     // Timer logic
     React.useEffect(() => {
         const interval = setInterval(() => {
-            if (!haveAnswered) {
+            if (!haveAnswered && !checkIsLoading && !Object.keys(data ?? {}).length) {
                 setSeconds((prev) => {
                     if (prev <= 1) {
                         clearInterval(interval)
@@ -108,7 +103,7 @@ export function Quiz() {
         }, 1000)
 
         return () => clearInterval(interval)
-    }, [currentQuiz, selected])
+    }, [currentQuiz, data, checkIsLoading])
 
     // XP gain
     React.useEffect(() => {
@@ -130,7 +125,7 @@ export function Quiz() {
         return <StartQuiz onStart={handleStart} />
     }
     if (step === 'end') {
-        return <EndedQuiz result={finishData} loading={finishIsLoading} />
+        return <EndedQuiz result={data} loading={isLoading} />
     }
 
     return isLoading ? (
@@ -147,15 +142,21 @@ export function Quiz() {
                     </div>
                     <div className="text-sm font-semibold text-brand">XP: {xp}</div>
                 </div>
+
                 <div className="w-full h-2 rounded-full bg-muted mb-2 overflow-hidden">
                     <div className="h-full background-brand transition-all duration-300" style={{ width: `${((currentQuiz + 1) / totalQuestions) * 100}%` }} />
                 </div>
-                <div
-                    className={cn('flex justify-end text-sm text-muted-foreground', {
-                        hidden: haveAnswered
-                    })}
-                >
-                    ⏱️ Time Left: <span className={cn('ml-1 font-bold', seconds <= 10 ? 'text-red-500' : '')}>{seconds}s</span>
+
+                <div className={cn('flex justify-center items-center gap-1 text-sm font-medium transition-all duration-300', haveAnswered && 'hidden')}>
+                    <span className="text-muted-foreground">⏱️ Time Left:</span>
+                    <span
+                        className={cn(
+                            'px-2 py-0.5 rounded-md font-bold transition-all duration-300',
+                            seconds <= 10 ? 'bg-red-500 text-white animate-pulse' : 'text-brand bg-brand/10'
+                        )}
+                    >
+                        {seconds}s
+                    </span>
                 </div>
             </div>
 
@@ -227,14 +228,10 @@ export function Quiz() {
                                 <Button
                                     disabled={(checkIsLoading || !selected) && !haveAnswered}
                                     onClick={() => {
-                                        if (currentQuiz + 1 === quizzes?.length && (Object.keys(data ?? {})?.length || haveAnswered)) {
-                                            handleSubmit()
+                                        if (Object.keys(data ?? {})?.length || haveAnswered) {
+                                            handleNext()
                                         } else {
-                                            if (Object.keys(data ?? {})?.length || haveAnswered) {
-                                                handleNext()
-                                            } else {
-                                                handleCheck()
-                                            }
+                                            handleCheck()
                                         }
                                     }}
                                     className="w-full"
@@ -271,11 +268,7 @@ export function Quiz() {
                     <div className="text-4xl font-bold text-brand mt-1">+{data?.pointsAwarded ?? 0} XP</div>
                     <Button
                         onClick={() => {
-                            if (currentQuiz + 1 === quizzes?.length && (Object.keys(data ?? {})?.length || haveAnswered)) {
-                                handleSubmit()
-                            } else {
-                                handleNext()
-                            }
+                            handleNext()
                         }}
                         className="mt-6 w-full"
                     >
@@ -355,7 +348,7 @@ const EndedQuiz: React.FC<EndedQuizProps> = ({ result, loading }) => {
                 <div className="w-full h-[40vh] flex items-center justify-center">
                     <Loader size={40} className="animate-spin" />
                 </div>
-            ) : (
+            ) : !!Object.keys(result ?? {})?.length ? (
                 <Card className="w-full max-w-xl rounded-2xl shadow-xl border-0">
                     <CardHeader className="text-center">
                         <Trophy className="w-10 h-10 mx-auto text-yellow-500" />
@@ -369,6 +362,19 @@ const EndedQuiz: React.FC<EndedQuizProps> = ({ result, loading }) => {
                         <ResultItem icon={CheckCircle} label="Correct Answers" value={result?.correctAnswers} color="green" />
                         <ResultItem icon={HelpCircle} label="Total Questions" value={result?.totalQuestions} color="blue" />
                     </CardContent>
+                    <CardFooter className="flex flex-col gap-2">
+                        <Button className="w-full cursor-pointer">EARN BY DOING QUESTS</Button>
+                        <Link href={ROUTES.HOME} key={1} scroll={false} className="w-full">
+                            <Button className="cursor-pointer w-full btn-gradient">EXPLORE MORE ACADEMIES</Button>
+                        </Link>
+                    </CardFooter>
+                </Card>
+            ) : (
+                <Card className="w-full max-w-xl rounded-2xl shadow-xl border-0">
+                    <CardHeader className="text-center">
+                        <CardTitle className="text-2xl font-bold mt-2 text-purple-700">You Have Already Submitted</CardTitle>
+                    </CardHeader>
+
                     <CardFooter className="flex flex-col gap-2">
                         <Button className="w-full cursor-pointer">EARN BY DOING QUESTS</Button>
                         <Link href={ROUTES.HOME} key={1} scroll={false} className="w-full">
