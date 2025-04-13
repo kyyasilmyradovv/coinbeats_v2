@@ -16,7 +16,7 @@ export type TUserResponse = {
     pointsAwarded: number
     correctChoiceId: number
 }
-export type TChoise = { id: number; text: string; userResponses: TUserResponse[] }
+export type TChoise = { id: number; text: string; isCorrect: boolean; userResponses: TUserResponse[] }
 
 export type TSubmitParams = {
     questionId: number

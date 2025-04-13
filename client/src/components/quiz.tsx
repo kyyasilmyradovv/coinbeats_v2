@@ -142,7 +142,9 @@ export function Quiz() {
                                     const isSelected = isChecked && !answered
                                     const isTrue =
                                         (Object.keys(opt?.userResponses?.[0] ?? {})?.length && opt?.userResponses?.[0]?.isCorrect) ||
-                                        (isChecked && answered && (data?.isCorrect || data?.correctChoiceId === opt.id))
+                                        opt?.isCorrect ||
+                                        data?.correctChoiceId === opt.id ||
+                                        (isChecked && answered && data?.isCorrect)
                                     const isWrong =
                                         (Object.keys(opt?.userResponses?.[0] ?? {})?.length && !opt?.userResponses?.[0]?.isCorrect) ||
                                         (isChecked && answered && !data?.isCorrect)
