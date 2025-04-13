@@ -1,5 +1,4 @@
 const express = require('express');
-const { authenticateToken, authorizeRoles } = require('../middleware/auth');
 const {
   getAllAcademyTypes,
 } = require('../controllers/newAcademyTypeControllers');
