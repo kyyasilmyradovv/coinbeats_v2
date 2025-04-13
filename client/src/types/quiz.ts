@@ -29,3 +29,10 @@ export type TSubmitResponse = {
     pointsAwarded: number
     correctChoiceId: number
 }
+
+export type TQuizFinishResult = {
+    totalPoints: number
+    rafflesEarned: number
+    correctAnswers: number
+    totalQuestions: number
+}

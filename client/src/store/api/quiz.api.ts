@@ -1,6 +1,6 @@
 import { buildUrlWithParams, removeEmpty } from '@/lib/utils'
 import { apiSlice } from './apiSlice'
-import { TSubmitParams, TSubmitResponse } from '@/types/quiz'
+import { TQuizFinishResult, TQuizSendInfo, TSubmitParams, TSubmitResponse } from '@/types/quiz'
 import { setQuizzes } from '../quiz/quizSlice'
 
 export const quizzesApi = apiSlice.injectEndpoints({
@@ -28,9 +28,15 @@ export const quizzesApi = apiSlice.injectEndpoints({
                 method: 'POST',
                 body: params
             })
+        }),
+        finishQuiz: builder.mutation<TQuizFinishResult, TQuizSendInfo>({
+            query: (params: TQuizSendInfo) => ({
+                url: buildUrlWithParams('/quizzes/finish', removeEmpty(params)),
+                method: 'POST'
+            })
         })
     }),
     overrideExisting: false
 })
 
-export const { useQuizzesQuery, useSubmitQuizMutation } = quizzesApi
+export const { useQuizzesQuery, useSubmitQuizMutation, useFinishQuizMutation } = quizzesApi

@@ -330,3 +330,7 @@
         }
     }
 }
+
+.btn-gradient {
+    @apply bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 text-white hover:opacity-90;
+}
