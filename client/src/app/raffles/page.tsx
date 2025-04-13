@@ -3,7 +3,6 @@ import RaffleCard from '@/components/raffleCard'
 import { useRafflesQuery } from '@/store/api/raffle.api'
 import { Skeleton } from '@/components/ui/skeleton'
 import { TRaffle } from '@/types/raffle'
-import { Clock, Gift, Trophy, Ticket } from 'lucide-react'
 import { Card, CardHeader, CardContent } from '@/components/ui/card'
 
 export default function Raffles() {
@@ -33,9 +32,7 @@ function RaffleCardSkeleton() {
         <div className="flex flex-col relative rounded-lg mb-4">
             <Card className="h-full flex flex-col py-4 gradient-border">
                 <CardHeader className="flex items-center justify-between px-4 align-middle">
-                    {/* Badge for platform/academy type */}
                     <Skeleton className="h-6 w-20 rounded-full" />
-                    {/* Badge for deadline date */}
                     <Skeleton className="h-6 w-28 rounded-full" />
                 </CardHeader>
 
@@ -56,19 +53,16 @@ function RaffleCardSkeleton() {
 
                     {/* Raffle details skeleton - match each row exactly */}
                     <div className="flex flex-col gap-2 w-full mt-2">
-                        {/* Reward row */}
                         <div className="flex justify-between items-center h-6">
                             <Skeleton className="h-4 w-16 rounded" />
                             <Skeleton className="h-4 w-20 rounded" />
                         </div>
 
-                        {/* Winners row */}
                         <div className="flex justify-between items-center h-6">
                             <Skeleton className="h-4 w-18 rounded" />
                             <Skeleton className="h-4 w-10 rounded" />
                         </div>
 
-                        {/* Entries row */}
                         <div className="flex justify-between items-center h-6">
                             <Skeleton className="h-4 w-24 rounded" />
                             <Skeleton className="h-4 w-8 rounded" />
