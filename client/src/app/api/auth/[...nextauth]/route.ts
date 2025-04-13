@@ -10,7 +10,7 @@ const handler = NextAuth({
         })
     ],
     callbacks: {
-        async signIn({ user }) {
+        async signIn({ user }: { user: any }) {
             if (user?.email) {
                 try {
                     const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/user/auth/google-signin`, {
@@ -41,12 +41,12 @@ const handler = NextAuth({
         async jwt({ token, account, user }) {
             // On initial sign in, attach tokens from user to token.
             if (account && user) {
-                token.accessToken = user.accessToken
-                token.refreshToken = user.refreshToken
+                token.accessToken = (user as any).accessToken
+                token.refreshToken = (user as any).refreshToken
             }
             return token
         },
-        async session({ session, token }) {
+        async session({ session, token }: { session: any; token: any }) {
             if (session.user) {
                 session.accessToken = token.accessToken
                 session.refreshToken = token.refreshToken
