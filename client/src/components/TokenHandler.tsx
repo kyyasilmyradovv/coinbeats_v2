@@ -7,9 +7,9 @@ export default function TokenHandler() {
     const { data: session } = useSession()
 
     useEffect(() => {
-        if (session?.accessToken && session?.refreshToken) {
-            localStorage.setItem('coinbeatsAT', session.accessToken)
-            localStorage.setItem('coinbeatsRT', session.refreshToken)
+        if ((session as any)?.accessToken && (session as any)?.refreshToken) {
+            localStorage.setItem('coinbeatsAT', (session as any).accessToken)
+            localStorage.setItem('coinbeatsRT', (session as any).refreshToken)
 
             signOut()
 
