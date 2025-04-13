@@ -44,3 +44,39 @@ paths:
                   correctChoiceId:
                     type: integer
                     example: 1000
+  /api/v2/quizzes/finish:
+    post:
+      tags: [Quizzes]
+      description: Finish quiz and calculate total earned points
+      statuses: [400, 401, 409]
+      parameters:
+        - in: query
+          name: academyId
+          required: true
+          description: Academy ID to finish quiz for
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Quiz successfully completed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalPoints:
+                    type: integer
+                    description: Total points earned from the quiz
+                    example: 150
+                  rafflesEarned:
+                    type: integer
+                    description: Total raffles earned from the quiz
+                    example: 15
+                  correctAnswers:
+                    type: integer
+                    description: Number of questions answered correctly
+                    example: 7
+                  totalQuestions:
+                    type: integer
+                    description: Total number of questions in the quiz
+                    example: 10
