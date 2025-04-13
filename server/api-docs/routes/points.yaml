@@ -1,0 +1,63 @@
+paths:
+  /api/v2/points/leaderboard:
+    get:
+      tags: [Points]
+      description: Fetch leaderboard
+      statuses: [404]
+      parameters:
+        - in: query
+          name: period
+          required: true
+          description: Fetch leaderboard by period
+          schema:
+            type: string
+            enum: ['weekly', 'overall']
+        - in: query
+          name: limit
+          description: Pagination limit
+          schema:
+            type: integer
+            example: 20
+        - in: query
+          name: offset
+          description: Pagination offset
+          schema:
+            type: integer
+            example: 0
+      responses:
+        '200':
+          description: An array of objects which consist of leaderboard data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    pointCount:
+                      type: integer
+                    lastWeekPointCount:
+                      type: integer
+  /api/v2/points/my-stats:
+    get:
+      tags: [Points]
+      description: Fetch my(user's) own stats
+      statuses: [401, 404]
+      responses:
+        '200':
+          description: An objects which consist of user own stats data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  pointCount:
+                    type: integer
+                  lastWeekPointCount:
+                    type: integer
+                  rankOverall:
+                    type: integer
+                  rankLastWeek:
+                    type: integer
