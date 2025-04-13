@@ -57,20 +57,37 @@ exports.getQuestions = asyncHandler(async (req, res, next) => {
 });
 
 exports.submitAnswer = asyncHandler(async (req, res, next) => {
-  const { questionId: academyQuestionId, choiceId, secondsLeft } = req.body;
+  const {
+    questionId: academyQuestionId,
+    choiceId,
+    secondsLeft,
+    isLastQuestion,
+  } = req.body;
+  const userId = req.user.id;
 
+  // Handle current answer
   const alreadyAnswered = await prisma.userResponse.findFirst({
-    where: { userId: req.user.id, academyQuestionId },
+    where: { userId, academyQuestionId },
     select: { id: true },
   });
+
   if (alreadyAnswered) {
     return res.status(409).json({ message: 'Already answered' });
   }
 
   const choice = await prisma.choice.findFirst({
     where: { id: choiceId },
-    select: { isCorrect: true, academyQuestion: { select: { xp: true } } },
+    select: {
+      isCorrect: true,
+      academyQuestion: {
+        select: {
+          xp: true,
+          academyId: true,
+        },
+      },
+    },
   });
+
   if (!choice) {
     return res.status(404).json({ message: 'Choice not found' });
   }
@@ -103,7 +120,7 @@ exports.submitAnswer = asyncHandler(async (req, res, next) => {
 
   await prisma.userResponse.create({
     data: {
-      userId: req.user.id,
+      userId,
       choiceId,
       isCorrect: choice.isCorrect,
       academyQuestionId,
@@ -111,19 +128,18 @@ exports.submitAnswer = asyncHandler(async (req, res, next) => {
     },
   });
 
-  res
-    .status(200)
-    .json({ isCorrect: choice.isCorrect, pointsAwarded, correctChoiceId });
-});
+  // If not last question, return just the answer response
+  if (!isLastQuestion) {
+    return res.status(200).json({
+      isCorrect: choice.isCorrect,
+      pointsAwarded,
+      correctChoiceId,
+    });
+  }
 
-exports.finishQuiz = asyncHandler(async (req, res, next) => {
-  const academyId = +req.query?.academyId,
-    userId = req.user.id;
+  // Handle quiz completion
+  const academyId = choice.academyQuestion.academyId;
 
-  if (!academyId)
-    return res.status(400).json({ message: 'Academy ID is required.' });
-
-  // Find all user responses for the given academy
   const userResponses = await prisma.userResponse.findMany({
     where: {
       userId,
@@ -134,34 +150,49 @@ exports.finishQuiz = asyncHandler(async (req, res, next) => {
   if (userResponses.length === 0) {
     return res
       .status(409)
-      .json({ message: 'No answers submitted for this quiz.' });
+      .json({ message: 'No answers submitted for this quiz' });
   }
 
-  // Sum up the points awarded
+  // Check if already completed
+  const existingPoints = await prisma.point.findFirst({
+    where: { userId, academyId },
+    select: { value: true },
+  });
+
+  if (existingPoints) {
+    // Quiz already completed - return previous results without updating
+    const correctAnswers = userResponses.filter((r) => r.isCorrect).length;
+    const totalQuestions = userResponses.length;
+    const rafflesEarned = Math.floor(existingPoints.value / 100);
+
+    return res.status(200).json({
+      isCorrect: choice.isCorrect,
+      pointsAwarded,
+      correctChoiceId,
+      quizCompleted: true,
+      totalPoints: existingPoints.value,
+      rafflesEarned,
+      correctAnswers,
+      totalQuestions,
+    });
+  }
+
+  // Calculate total points
   const totalPoints = userResponses.reduce(
     (sum, response) => sum + response.pointsAwarded,
     0
   );
 
-  // Save the total points to the Points table
-  const existingPoints = await prisma.point.findFirst({
-    where: { userId, academyId },
-  });
-  if (existingPoints) {
-    return res.status(409).json({ message: 'You already submitted' });
-  }
-
+  // Save the points
   await prisma.point.create({
     data: { userId, academyId, value: totalPoints },
   });
 
-  // Increase academy pointCount
   await prisma.academy.update({
     where: { id: academyId },
     data: { pointCount: { increment: 1 } },
   });
 
-  // Increase user pointCount & lastWeekPointCount
   await prisma.user.update({
     where: { id: userId },
     data: {
@@ -170,44 +201,44 @@ exports.finishQuiz = asyncHandler(async (req, res, next) => {
     },
   });
 
+  // Handle raffles
   let raffleIncrement = 0;
   if (totalPoints > 99) {
     raffleIncrement = Math.floor(totalPoints / 100);
 
-    // Create a raffle entry
     await prisma.raffle.create({
       data: { userId, academyId, amount: raffleIncrement },
     });
 
-    // Update user's raffleAmount
     await prisma.user.update({
       where: { id: userId },
       data: { raffleAmount: { increment: raffleIncrement } },
     });
 
-    // Check for active raffle and update entries if found
     const hasRunningRaffle = await prisma.overallRaffle.findFirst({
-      where: { academyId: academyId, isActive: true },
+      where: { academyId, isActive: true },
     });
 
     if (hasRunningRaffle) {
       await prisma.academyRaffleEntries.create({
-        userId,
-        academyId,
-        amount: raffleIncrement,
+        data: {
+          userId,
+          academyId,
+          amount: raffleIncrement,
+        },
       });
     }
   }
 
   await checkAndApplyLevelUp(userId);
 
-  // Get the number of correct answers
-  const correctAnswers = userResponses.filter(
-    (response) => response.isCorrect
-  ).length;
+  const correctAnswers = userResponses.filter((r) => r.isCorrect).length;
   const totalQuestions = userResponses.length;
 
   return res.status(200).json({
+    isCorrect: choice.isCorrect,
+    pointsAwarded,
+    correctChoiceId,
     totalPoints,
     rafflesEarned: raffleIncrement,
     correctAnswers,

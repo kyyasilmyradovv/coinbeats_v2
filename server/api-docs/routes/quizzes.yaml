@@ -23,60 +23,61 @@ paths:
   /api/v2/quizzes/submit:
     post:
       tags: [Quizzes]
-      description: Submit answer to quiz question
+      description: Submit answer to quiz question, can also complete the quiz
       statuses: [400, 401, 404, 409]
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/QuizSubmission'
+              allOf:
+                - $ref: '#/components/schemas/QuizSubmission'
+                - type: object
+                  properties:
+                    isLastQuestion:
+                      type: boolean
+                      description: Set to true on the last question to complete the quiz
+                      example: false
       responses:
         '200':
           content:
             application/json:
               schema:
-                properties:
-                  isCorrect:
-                    type: boolean
-                  pointsAwarded:
-                    type: integer
-                    example: 50
-                  correctChoiceId:
-                    type: integer
-                    example: 1000
-  /api/v2/quizzes/finish:
-    post:
-      tags: [Quizzes]
-      description: Finish quiz and calculate total earned points
-      statuses: [400, 401, 409]
-      parameters:
-        - in: query
-          name: academyId
-          required: true
-          description: Academy ID to finish quiz for
-          schema:
-            type: integer
-      responses:
-        '200':
-          description: Quiz successfully completed
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  totalPoints:
-                    type: integer
-                    description: Total points earned from the quiz
-                    example: 150
-                  rafflesEarned:
-                    type: integer
-                    description: Total raffles earned from the quiz
-                    example: 15
-                  correctAnswers:
-                    type: integer
-                    description: Number of questions answered correctly
-                    example: 7
-                  totalQuestions:
-                    type: integer
-                    description: Total number of questions in the quiz
-                    example: 10
+                oneOf:
+                  - type: object
+                    description: Response when submitting a regular question
+                    properties:
+                      isCorrect:
+                        type: boolean
+                      pointsAwarded:
+                        type: integer
+                        example: 50
+                      correctChoiceId:
+                        type: integer
+                        example: 1000
+                  - type: object
+                    description: Response when submitting the last question (isLastQuestion=true)
+                    properties:
+                      isCorrect:
+                        type: boolean
+                      pointsAwarded:
+                        type: integer
+                        example: 50
+                      correctChoiceId:
+                        type: integer
+                        example: 1000
+                      totalPoints:
+                        type: integer
+                        description: Total points earned from the quiz
+                        example: 150
+                      rafflesEarned:
+                        type: integer
+                        description: Total raffles earned from the quiz
+                        example: 1
+                      correctAnswers:
+                        type: integer
+                        description: Number of questions answered correctly
+                        example: 7
+                      totalQuestions:
+                        type: integer
+                        description: Total number of questions in the quiz
+                        example: 10
