@@ -1,6 +1,7 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const asyncHandler = require('../utils/asyncHandler');
+const { checkAndApplyLevelUp } = require('../services/levelService');
 
 exports.getQuestions = asyncHandler(async (req, res, next) => {
   const { academyId } = req.query;
@@ -113,4 +114,103 @@ exports.submitAnswer = asyncHandler(async (req, res, next) => {
   res
     .status(200)
     .json({ isCorrect: choice.isCorrect, pointsAwarded, correctChoiceId });
+});
+
+exports.finishQuiz = asyncHandler(async (req, res, next) => {
+  const academyId = +req.query?.academyId,
+    userId = req.user.id;
+
+  if (!academyId)
+    return res.status(400).json({ message: 'Academy ID is required.' });
+
+  // Find all user responses for the given academy
+  const userResponses = await prisma.userResponse.findMany({
+    where: {
+      userId,
+      choice: { academyQuestion: { academyId } },
+    },
+  });
+
+  if (userResponses.length === 0) {
+    return res
+      .status(409)
+      .json({ message: 'No answers submitted for this quiz.' });
+  }
+
+  // Sum up the points awarded
+  const totalPoints = userResponses.reduce(
+    (sum, response) => sum + response.pointsAwarded,
+    0
+  );
+
+  // Save the total points to the Points table
+  const existingPoints = await prisma.point.findFirst({
+    where: { userId, academyId },
+  });
+  if (existingPoints) {
+    return res.status(409).json({ message: 'You already submitted' });
+  }
+
+  await prisma.point.create({
+    data: { userId, academyId, value: totalPoints },
+  });
+
+  // Increase academy pointCount
+  await prisma.academy.update({
+    where: { id: academyId },
+    data: { pointCount: { increment: 1 } },
+  });
+
+  // Increase user pointCount & lastWeekPointCount
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      pointCount: { increment: totalPoints },
+      lastWeekPointCount: { increment: totalPoints },
+    },
+  });
+
+  let raffleIncrement = 0;
+  if (totalPoints > 99) {
+    raffleIncrement = Math.floor(totalPoints / 100);
+
+    // Create a raffle entry
+    await prisma.raffle.create({
+      data: { userId, academyId, amount: raffleIncrement },
+    });
+
+    // Update user's raffleAmount
+    await prisma.user.update({
+      where: { id: userId },
+      data: { raffleAmount: { increment: raffleIncrement } },
+    });
+
+    // Check for active raffle and update entries if found
+    const hasRunningRaffle = await prisma.overallRaffle.findFirst({
+      where: { academyId: academyId, isActive: true },
+    });
+
+    if (hasRunningRaffle) {
+      await prisma.academyRaffleEntries.create({
+        userId,
+        academyId,
+        amount: raffleIncrement,
+      });
+    }
+  }
+
+  await checkAndApplyLevelUp(userId);
+
+  // Get the number of correct answers
+  const correctAnswers = userResponses.filter(
+    (response) => response.isCorrect
+  ).length;
+  const totalQuestions = userResponses.length;
+
+  return res.status(200).json({
+    totalPoints,
+    rafflesEarned: raffleIncrement,
+    correctAnswers,
+    totalQuestions,
+  });
 });
