@@ -1,4 +1,4 @@
-import { Chrome, Send, Twitter } from 'lucide-react'
+import { Chrome, Send, X } from 'lucide-react'
 import Image from 'next/image'
 
 export const SOCIALS = [
@@ -11,7 +11,7 @@ export const SOCIALS = [
     {
         label: 'Twitter',
         href: '/',
-        icon: <Twitter size={30} />,
+        icon: <X size={30} />,
         hrefKey: 'twitter'
     },
     {

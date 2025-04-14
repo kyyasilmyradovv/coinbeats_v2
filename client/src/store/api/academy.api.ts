@@ -30,9 +30,13 @@ export const academiesApi = apiSlice.injectEndpoints({
                 }
             },
             providesTags: ['Academy']
+        }),
+        academyContent: builder.query({
+            query: (id) => `/academies/${id}/content`,
+            providesTags: (result, error, id) => [{ type: 'Academy', id }]
         })
     }),
     overrideExisting: false
 })
 
-export const { useAcademiesQuery, useAcademyQuery } = academiesApi
+export const { useAcademiesQuery, useAcademyQuery, useAcademyContentQuery } = academiesApi
