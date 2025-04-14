@@ -6,7 +6,7 @@ import { useParams } from 'next/navigation'
 import { useAcademyQuery, useAcademyContentQuery } from '@/store/api/academy.api'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card } from '@/components/ui/card'
-import { ArrowLeftRight, Check, List, Loader, Recycle, Rocket, Users } from 'lucide-react'
+import { ArrowLeftRight, Check, List, Recycle, Rocket, Users } from 'lucide-react'
 import { TAcademySingle } from '@/types/academy'
 import { Button } from '@/components/ui/button'
 import coinsEarnedAnimationData from '@/animations/earned-coins.json'
@@ -18,6 +18,8 @@ import { Quiz } from '@/components/quiz'
 import { useState } from 'react'
 import { useAppDispatch } from '@/store/hooks'
 import { setLoginModalOpen } from '@/store/general/generalSlice'
+import { AcademySkeleton } from './academy-skeleton'
+import { AcademyContentSkeleton } from './academy-content-skeleton'
 
 interface TTabsProps {
     academy: TAcademySingle | undefined
@@ -52,10 +54,9 @@ function ActTypes({ academy }: TTabsProps) {
                 <TabsContent value="general" className="mt-2">
                     <div className="container mx-auto">
                         <Card className="p-4">
-                            {/* Top section: Ticker, Categories, Chains */}
-                            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                            <div className="grid grid-cols-2 lg:flex lg:justify-between lg:px-6 gap-4 lg:gap-0">
                                 {/* Ticker */}
-                                <div>
+                                <div className="lg:w-1/3">
                                     <div className="flex items-center mb-2">
                                         <Rocket className="h-3.5 w-3.5 text-brand mr-1.5 flex-shrink-0" />
                                         <p className="text-sm font-medium">Ticker</p>
@@ -72,7 +73,7 @@ function ActTypes({ academy }: TTabsProps) {
                                 </div>
 
                                 {/* Categories */}
-                                <div>
+                                <div className="lg:w-1/3 lg:flex lg:flex-col lg:items-center">
                                     <div className="flex items-center mb-2">
                                         <List className="h-3.5 w-3.5 text-brand mr-1.5 flex-shrink-0" />
                                         <p className="text-sm font-medium truncate">Categories</p>
@@ -91,7 +92,7 @@ function ActTypes({ academy }: TTabsProps) {
                                 </div>
 
                                 {/* Chains */}
-                                <div className="col-span-2 lg:col-span-1">
+                                <div className="col-span-2 lg:col-span-1 lg:w-1/3 lg:flex lg:flex-col lg:items-end">
                                     <div className="flex items-center mb-2">
                                         <Recycle className="h-3.5 w-3.5 text-brand mr-1.5 flex-shrink-0" />
                                         <p className="text-sm font-medium truncate">Chains</p>
@@ -212,7 +213,12 @@ function AcademyContent({ academyId }: AcademyContentProps) {
         skip: !academyId
     })
 
-    if (isLoading || !contentItems?.length) {
+    // Show skeleton while loading instead of returning null
+    if (isLoading) {
+        return <AcademyContentSkeleton />
+    }
+
+    if (!contentItems?.length) {
         return null
     }
 
@@ -290,13 +296,13 @@ export default function Academy() {
     const { currentData: academy, isLoading, isFetching } = useAcademyQuery(id as string, { skip: !id })
 
     return (
-        <div className="container mx-auto pt-4  pb-8 px-4 ">
+        <>
             {isLoading || isFetching ? (
-                <Loading />
+                <AcademySkeleton />
             ) : (
-                <div>
+                <div className="container mx-auto pt-4 pb-8 px-4">
                     <div className="mb-4 relative overflow-hidden rounded-lg">
-                        {/* Background image with blur and darkening overlay */}
+                        {/* Background image */}
                         <div className="inset-0 z-0">
                             <div className="absolute inset-0 bg-black/60 z-10"></div>
                             <div
@@ -321,9 +327,9 @@ export default function Academy() {
 
                         {/* Content */}
                         <div className="p-8 relative z-20 flex flex-col items-center justify-center">
-                            <Avatar className="h-18 w-18 ">
+                            <Avatar className="h-18 w-18">
                                 <AvatarImage src={constructImageUrl(academy?.logoUrl)} alt="Logo" />
-                                <AvatarFallback className="text-xl">{academy?.name.slice(0, 2)}</AvatarFallback>
+                                <AvatarFallback className="text-xl">{academy?.name?.slice(0, 2)}</AvatarFallback>
                             </Avatar>
                             <h2 className="text-4xl font-bold gradient-text mt-1 mb-3">{academy?.name}</h2>
                             <div className="flex w-full items-center justify-center gap-12">
@@ -331,7 +337,7 @@ export default function Academy() {
                                     <p>{academy?.points?.length ? academy?.points?.[0]?.value : academy?.xp}</p>
                                     <Check className="h-5.5 w-5.5" />
                                 </Badge>
-                                <Badge variant="default" className="flex items-center gap-1 ">
+                                <Badge variant="default" className="flex items-center gap-1">
                                     <Users className="h-3.5 w-3.5" />
                                     <p>{academy?.pointCount}</p>
                                 </Badge>
@@ -341,14 +347,6 @@ export default function Academy() {
                     <ActTypes academy={academy} />
                 </div>
             )}
-        </div>
-    )
-}
-
-function Loading() {
-    return (
-        <div className="w-full h-[80vh] flex items-center justify-center">
-            <Loader size={50} className="animate-spin" />
-        </div>
+        </>
     )
 }

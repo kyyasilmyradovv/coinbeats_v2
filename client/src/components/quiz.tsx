@@ -1,21 +1,19 @@
 'use client'
 import * as React from 'react'
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './ui/card'
-import { ArrowLeft, ArrowRight, ChevronDown, Loader, Loader2, Sparkles, Trophy, Star, CheckCircle, HelpCircle } from 'lucide-react'
+import { ArrowRight, Loader, Loader2, Sparkles, Trophy, Star, CheckCircle, HelpCircle } from 'lucide-react'
 import { useParams } from 'next/navigation'
 import { useQuizzesQuery, useSubmitQuizMutation } from '@/store/api/quiz.api'
 import { RadioGroup, RadioGroupItem } from './ui/radio-group'
 import { Label } from './ui/label'
 import { Button } from './ui/button'
 import { cn } from '@/lib/utils'
-import { TQuiz, TQuizFinishResult } from '@/types/quiz'
+import { TQuizFinishResult } from '@/types/quiz'
 import { useAppSelector } from '@/store/hooks'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog'
 import { motion } from 'framer-motion'
-import { toast } from 'sonner'
 import Link from 'next/link'
-import { NAV_ITEMS, ROUTES } from '@/shared/links'
+import { ROUTES } from '@/shared/links'
 
 type TSteps = 'start' | 'quiz' | 'end'
 
@@ -24,12 +22,12 @@ export function Quiz() {
     const id = params.academyId
 
     const [step, setStep] = React.useState<TSteps>('start')
-    const [open, setOpen] = React.useState(true)
     const [currentQuiz, setCurrentQuiz] = React.useState(0)
     const [selected, setSelected] = React.useState<string | undefined>()
     const [seconds, setSeconds] = React.useState(45)
     const [xp, setXp] = React.useState(0)
     const [showSuccessModal, setShowSuccessModal] = React.useState(false)
+    const [isSubmitting, setIsSubmitting] = React.useState(false)
 
     const quizzes = useAppSelector((state) => state.quiz.quizzes)
 
@@ -38,6 +36,8 @@ export function Quiz() {
     const [checkAnswer, { isSuccess, data, isError, error, isLoading: checkIsLoading, reset }] = useSubmitQuizMutation()
 
     const handleCheck = async () => {
+        setIsSubmitting(true)
+
         if (quizzes?.length === currentQuiz + 1) {
             await checkAnswer({ choiceId: Number(selected), questionId: quizzes[currentQuiz].id, secondsLeft: seconds, isLastQuestion: true })
         } else {
@@ -51,9 +51,10 @@ export function Quiz() {
         }
         setSelected(undefined)
         setCurrentQuiz((prev) => prev + 1)
-        setOpen(true)
         setSeconds(45)
         setShowSuccessModal(false)
+        setIsSubmitting(false)
+
         if (currentQuiz + 1 === quizzes?.length) {
             setStep('end')
         }
@@ -63,7 +64,6 @@ export function Quiz() {
         reset()
         setSelected(undefined)
         setCurrentQuiz(0)
-        setOpen(true)
         setSeconds(45)
         setShowSuccessModal(false)
         setStep('quiz')
@@ -73,23 +73,6 @@ export function Quiz() {
     const totalQuestions = quizzes.length
     const haveAnswered = !!current?.choices?.map((choice) => Object.keys(choice.userResponses?.[0] ?? {})?.length)?.filter((e) => e > 0)?.length
 
-    // React.useEffect(() => {
-    //     if (currentQuiz + 1 === quizzes?.length) {
-    //         if (isSuccess) {
-    //             setStep('end')
-    //         }
-    //         if (isError) {
-    //             let errorMessage = 'Something went wrong!'
-    //             if ('data' in error && typeof error.data === 'object' && error.data !== null && 'message' in error.data) {
-    //                 errorMessage = (error.data as { message?: string }).message ?? errorMessage
-    //             }
-
-    //             toast(errorMessage, {
-    //                 position: 'top-center'
-    //             })
-    //         }
-    //     }
-    // }, [isSuccess, isError])
     // Timer logic
     React.useEffect(() => {
         const interval = setInterval(() => {
@@ -140,9 +123,9 @@ export function Quiz() {
             <Loader size={40} className="animate-spin" />
         </div>
     ) : (
-        <div className="space-y-4">
+        <div className="space-y-4 select-none">
             {/* 🔝 Timer and Progress */}
-            <div className="p-2 rounded-xl border bg-background/80 backdrop-blur-sm shadow-sm">
+            <div className="p-2 rounded-xl border bg-background/80 backdrop-blur-sm shadow-sm select-none">
                 <div className="flex justify-between items-center mb-2">
                     <div className="text-sm font-medium text-muted-foreground">
                         Question {currentQuiz + 1} of {totalQuestions}
@@ -159,112 +142,103 @@ export function Quiz() {
                     <span
                         className={cn(
                             'px-2 py-0.5 rounded-md font-bold transition-all duration-300',
-                            seconds <= 10 ? 'bg-red-500 text-white animate-pulse' : 'text-brand bg-brand/10'
+                            seconds <= 10 && seconds > 1 ? 'bg-red-500 text-white animate-pulse' : 'text-brand bg-brand/10'
                         )}
+                        style={seconds <= 10 && seconds > 1 ? { animationDuration: '1s' } : {}}
                     >
                         {seconds}s
                     </span>
                 </div>
             </div>
 
-            {/* ℹ️ Info Panel */}
-            <Collapsible className="w-full" open={open}>
-                <Card className="backdrop-blur-sm bg-card/50  card-gradient gap-1 p-4">
-                    <CardHeader className="m-0 p-2">
-                        <CollapsibleTrigger onClick={() => setOpen(!open)} className="w-full flex justify-between items-center group">
-                            <CardTitle className="flex items-center text-xl gradient-text">
-                                <span className="font-semibold">Information</span>
-                            </CardTitle>
-                            <ChevronDown className="h-8 w-8 transition-transform duration-300 group-data-[state=open]:rotate-180 mr-3 text-brand/70" />
-                        </CollapsibleTrigger>
-                    </CardHeader>
-                    <CollapsibleContent>
-                        <p className="text-lg leading-relaxed">{current?.question}</p>
-                        <p className="text-muted-foreground leading-relaxed mt-1">{current?.answer}</p>
-                    </CollapsibleContent>
-                </Card>
-            </Collapsible>
-
             {/* ❓ Quiz Panel */}
-            <Collapsible className="w-full" open={!open}>
-                <Card className="backdrop-blur-sm bg-card/50  card-gradient gap-1 p-4">
-                    <CardHeader className="m-0 p-2">
-                        <CollapsibleTrigger onClick={() => setOpen(!open)} className="w-full flex justify-between items-center group">
-                            <CardTitle className="flex items-center text-xl gradient-text">
-                                <span className="font-semibold">Question?</span>
-                            </CardTitle>
-                            <ChevronDown className="h-8 w-8 transition-transform duration-300 group-data-[state=open]:rotate-180 mr-3 text-brand/70" />
-                        </CollapsibleTrigger>
-                    </CardHeader>
-                    <CollapsibleContent>
-                        <div>
-                            <p className="text-lg leading-relaxed mb-4">{current?.quizQuestion}</p>
-                            <RadioGroup value={selected} onValueChange={(e) => setSelected(e)} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                {current?.choices?.map((opt) => {
-                                    const isChecked = selected === opt.id.toString()
-                                    const answered = Object.keys(data ?? {})?.length > 0
-                                    const isSelected = isChecked && !answered
-                                    const isTrue =
-                                        (Object.keys(opt?.userResponses?.[0] ?? {})?.length && opt?.userResponses?.[0]?.isCorrect) ||
-                                        opt?.isCorrect ||
-                                        data?.correctChoiceId === opt.id ||
-                                        (isChecked && answered && data?.isCorrect)
-                                    const isWrong =
-                                        (Object.keys(opt?.userResponses?.[0] ?? {})?.length && !opt?.userResponses?.[0]?.isCorrect) ||
-                                        (isChecked && answered && !data?.isCorrect)
+            <Card className="backdrop-blur-sm bg-card/50  card-gradient gap-1 p-4 select-none">
+                <div>
+                    <p className="text-lg leading-relaxed mb-4 select-none">{current?.quizQuestion}</p>
+                    <RadioGroup
+                        value={selected}
+                        onValueChange={(e) => {
+                            if (!Object.keys(data ?? {})?.length && !haveAnswered && !isSubmitting && !checkIsLoading) {
+                                setSelected(e)
+                            }
+                        }}
+                        className="grid grid-cols-1 sm:grid-cols-2 gap-4"
+                    >
+                        {current?.choices?.map((opt) => {
+                            const isChecked = selected === opt.id.toString()
 
-                                    return (
-                                        <div key={opt.id}>
-                                            <RadioGroupItem id={opt.id.toString()} value={opt.id.toString()} className="peer hidden" />
-                                            <Label
-                                                htmlFor={opt.id.toString()}
-                                                className={cn('block w-full p-4 border rounded-xl cursor-pointer transition-all', 'hover:bg-muted/50', {
-                                                    'border border-brand bg-brand/10 text-brand': isSelected,
-                                                    'border-green-500 bg-green-100 text-green-700': isTrue,
-                                                    'border-red-500 bg-red-100 text-red-700': isWrong
-                                                })}
-                                            >
-                                                {opt.text}
-                                            </Label>
-                                        </div>
-                                    )
-                                })}
-                            </RadioGroup>
+                            const fullyAnswered = Object.keys(data ?? {})?.length > 0 || haveAnswered
+                            const processingAnswer = isSubmitting || checkIsLoading
+                            const answered = fullyAnswered || processingAnswer
 
-                            <div className="mt-4">
-                                <Button
-                                    disabled={(checkIsLoading || !selected) && !haveAnswered}
-                                    onClick={() => {
-                                        if (Object.keys(data ?? {})?.length || haveAnswered) {
-                                            handleNext()
-                                        } else {
-                                            handleCheck()
-                                        }
-                                    }}
-                                    className="w-full"
-                                >
-                                    {checkIsLoading ? (
-                                        <>
-                                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                            Checking...
-                                        </>
-                                    ) : currentQuiz + 1 === quizzes?.length && (Object.keys(data ?? {})?.length || haveAnswered) ? (
-                                        'See Result'
-                                    ) : Object.keys(data ?? {})?.length || haveAnswered ? (
-                                        'Next Question'
-                                    ) : (
-                                        'Check Answer'
-                                    )}
-                                </Button>
-                            </div>
-                        </div>
-                    </CollapsibleContent>
-                </Card>
-            </Collapsible>
+                            // Keep selected styling during submission process
+                            const isSelected = isChecked && !fullyAnswered
+
+                            // Only apply true/wrong styles after we have a response
+                            const isTrue =
+                                (Object.keys(opt?.userResponses?.[0] ?? {})?.length && opt?.userResponses?.[0]?.isCorrect) ||
+                                opt?.isCorrect ||
+                                data?.correctChoiceId === opt.id ||
+                                (isChecked && fullyAnswered && data?.isCorrect)
+
+                            const isWrong =
+                                (Object.keys(opt?.userResponses?.[0] ?? {})?.length && !opt?.userResponses?.[0]?.isCorrect) ||
+                                (isChecked && fullyAnswered && !data?.isCorrect)
+
+                            return (
+                                <div key={opt.id}>
+                                    <RadioGroupItem id={opt.id.toString()} value={opt.id.toString()} className="peer hidden" />
+                                    <Label
+                                        htmlFor={opt.id.toString()}
+                                        className={cn('block w-full p-4 border rounded-xl transition-all select-none', {
+                                            'cursor-pointer hover:bg-muted/50': !answered,
+                                            'cursor-not-allowed': answered,
+                                            'border border-brand bg-brand/10 text-brand': isSelected,
+                                            'border-green-500 bg-green-100 text-green-700': isTrue,
+                                            'border-red-500 bg-red-100 text-red-700': isWrong
+                                        })}
+                                    >
+                                        {opt.text}
+                                    </Label>
+                                </div>
+                            )
+                        })}
+                    </RadioGroup>
+
+                    <div className="mt-6 mb-2">
+                        <Button
+                            disabled={(checkIsLoading || !selected) && !haveAnswered}
+                            onClick={() => {
+                                if (Object.keys(data ?? {})?.length || haveAnswered) {
+                                    handleNext()
+                                } else {
+                                    handleCheck()
+                                }
+                            }}
+                            className="w-full"
+                        >
+                            {checkIsLoading ? (
+                                <>
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                    Checking...
+                                </>
+                            ) : currentQuiz + 1 === quizzes?.length && (Object.keys(data ?? {})?.length || haveAnswered) ? (
+                                'See My Results'
+                            ) : Object.keys(data ?? {})?.length || haveAnswered ? (
+                                'Next Question'
+                            ) : selected ? (
+                                'Check My Answer'
+                            ) : (
+                                'Select Answer'
+                            )}
+                        </Button>
+                    </div>
+                </div>
+            </Card>
 
             {/* 🎉 Success Modal */}
             <Dialog open={showSuccessModal} onOpenChange={setShowSuccessModal}>
-                <DialogContent className="text-center">
+                <DialogContent className="text-center select-none">
                     <DialogHeader>
                         <DialogTitle className="text-green-600 text-2xl flex flex-col items-center">
                             🎉 Correct Answer!
