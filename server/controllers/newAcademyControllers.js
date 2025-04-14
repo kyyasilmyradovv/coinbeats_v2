@@ -62,6 +62,7 @@ exports.getAcademy = asyncHandler(async (req, res, next) => {
       },
       chains: { select: { id: true, name: true } },
       academyType: { select: { id: true, name: true } },
+      academyQuestions: { select: { question: true, answer: true } },
       overallRaffle: {
         where: {
           isActive: true,
@@ -89,4 +90,15 @@ exports.getAcademy = asyncHandler(async (req, res, next) => {
   if (!academy) return res.status(404).json({ message: 'Academy not found' });
 
   res.json(academy);
+});
+
+exports.getAcademyContent = asyncHandler(async (req, res, next) => {
+  const { id } = req.params;
+
+  const questions = await prisma.academyQuestion.findMany({
+    where: { academyId: +id },
+    select: { question: true, answer: true },
+  });
+
+  res.json(questions);
 });
