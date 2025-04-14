@@ -81,7 +81,7 @@ function ActTypes({ academy }: TTabsProps) {
                                     <div className="flex flex-wrap gap-2">
                                         {academy?.categories?.length ? (
                                             academy.categories.map((e) => (
-                                                <Badge key={e.id} variant="outline" className="gradient-background text-white">
+                                                <Badge key={e.id} variant="outline" className="py-1 gradient-background text-white">
                                                     {e.name}
                                                 </Badge>
                                             ))
@@ -234,25 +234,23 @@ function AcademyContent({ academyId }: AcademyContentProps) {
                 return <p className="text-muted-foreground">N/A</p>
             }
 
+            // Convert to array, filter empty values, and sort by display value length
+            const sortedEntries = Object.entries(tokenomicsData)
+                .filter(([_, value]) => value !== '' && value !== 'N/A' && !(Array.isArray(value) && value.length === 0))
+                .map(([key, value]) => {
+                    const displayValue = Array.isArray(value) ? value.join(', ') : String(value)
+                    return { key, value, displayValue, length: displayValue.length }
+                })
+                .sort((a, b) => a.length - b.length)
+
             return (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
-                    {Object.entries(tokenomicsData).map(([key, value]) => {
-                        // Skip empty values
-                        if (value === '' || value === 'N/A' || (Array.isArray(value) && value.length === 0)) {
-                            return null
-                        }
-
-                        // Format the value based on its length and type
-                        const isLongText = typeof value === 'string' && value.length > 30
-                        const displayValue = Array.isArray(value) ? value.join(', ') : String(value)
-
-                        return (
-                            <div key={key} className="flex flex-col border rounded-md p-3 bg-muted/30">
-                                <span className="text-xs text-muted-foreground mb-1 capitalize">{key}</span>
-                                <span className={`font-medium text-sm ${isLongText ? 'break-all' : 'break-words'}`}>{displayValue}</span>
-                            </div>
-                        )
-                    })}
+                    {sortedEntries.map(({ key, displayValue }) => (
+                        <div key={key} className="flex flex-col border rounded-md p-3 bg-muted/30">
+                            <span className="text-xs text-muted-foreground mb-1 capitalize">{key}</span>
+                            <span className="text-sm break-words">{displayValue}</span>
+                        </div>
+                    ))}
                 </div>
             )
         } catch (e) {
