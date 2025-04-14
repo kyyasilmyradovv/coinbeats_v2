@@ -63,6 +63,31 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AcademyWithIncludes'
+  /api/v2/academies/{id}/content:
+    get:
+      tags: [Academies]
+      description: Fetch academy content(questions)
+      statuses: [401, 404]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          description: Academy id
+      responses:
+        '200':
+          description: An array of objects which consist of academy questions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    question:
+                      type: string
+                    answer:
+                      type: string
   #   put:
   #     tags: [Academies]
   #     description: Edit existing academy
