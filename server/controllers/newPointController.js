@@ -6,7 +6,7 @@ const asyncHandler = require('../utils/asyncHandler');
 
 exports.getLeaderboard = asyncHandler(async (req, res, next) => {
   const { period, limit, offset } = req.query;
-  if (offset >= 500) res.status(200).json([]);
+  if (offset >= 400) res.status(200).json([]);
 
   let orderBy =
     period === 'weekly'

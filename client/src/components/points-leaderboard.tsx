@@ -16,13 +16,9 @@ export function PointsLeaderboard() {
     const [totalItems, setTotalItems] = useState<TPoint[]>([])
     const [displayItems, setDisplayItems] = useState<TPoint[]>([])
     const [displayRange, setDisplayRange] = useState({ start: 0, end: 50 })
-
-    // Set limit to about the number of rows visible (e.g. 8)
-    const limit = 20
-
     const containerRef = useRef<HTMLDivElement>(null)
     const sentinelRef = useRef<HTMLDivElement>(null)
-
+    const limit = 20
     const offset = page * limit
 
     const { data: leaderboard, isLoading, isFetching } = usePointsQuery({ offset, limit, period } as TPointSendInfo, { refetchOnMountOrArgChange: true })
@@ -49,46 +45,32 @@ export function PointsLeaderboard() {
 
     const scrollToTop = () => {
         if (containerRef.current) {
-            containerRef.current.scrollTo({
-                top: 0,
-                behavior: 'smooth'
-            })
+            containerRef.current.scrollTo({ top: 0, behavior: 'smooth' })
         }
     }
 
     useEffect(() => {
         if (leaderboard?.length) {
             setTotalItems((prev) => {
-                // For page 0, always reset the list
                 if (page === 0) return [...leaderboard]
 
-                // For subsequent pages, use name as a key for deduplication
-                // since items don't have an id property
                 const newItemsMap = new Map()
-
-                // First add all existing items to the map
                 prev.forEach((item) => newItemsMap.set(item.name, item))
+                leaderboard.forEach((item: { name: string }) => newItemsMap.set(item.name, item))
 
-                // Then add new items, replacing any duplicates
-                leaderboard.forEach((item) => newItemsMap.set(item.name, item))
-
-                // Convert map back to array and return
                 return Array.from(newItemsMap.values())
             })
 
-            if (leaderboard.length < limit) {
+            if (leaderboard.length < limit * page) {
                 setHasMore(false)
             }
         } else if (leaderboard && leaderboard.length === 0) {
-            // Stop fetching as soon as we get an empty array, regardless of page
             setHasMore(false)
         }
     }, [leaderboard, page, limit])
 
     useEffect(() => {
         if (!totalItems.length) return
-        // IMPORTANT: This change ensures we only slice the visible window
-        // and that item positions are calculated correctly
         const items = totalItems.slice(displayRange.start, displayRange.end)
         setDisplayItems(items)
     }, [displayRange, totalItems])
@@ -98,7 +80,7 @@ export function PointsLeaderboard() {
         const updateVisibleItems = () => {
             if (!containerRef.current) return
             const { scrollTop } = containerRef.current
-            const rowHeight = 60 // adjust if your row height differs
+            const rowHeight = 60
             const approximateStart = Math.max(0, Math.floor(scrollTop / rowHeight) - 10)
             const approximateEnd = Math.min(totalItems.length, approximateStart + 70)
             setDisplayRange({ start: approximateStart, end: approximateEnd })
@@ -112,9 +94,9 @@ export function PointsLeaderboard() {
         }
     }, [totalItems])
 
-    // Using IntersectionObserver on a sentinel element at the bottom of the list.
     useEffect(() => {
-        if (!containerRef.current || !sentinelRef.current) return
+        if (!containerRef.current || !sentinelRef.current || !hasMore) return
+
         const observer = new IntersectionObserver(
             (entries) => {
                 const entry = entries[0]
@@ -128,8 +110,9 @@ export function PointsLeaderboard() {
                     setPage((prev) => prev + 1)
                 }
             },
-            { root: containerRef.current, threshold: 1.0 }
+            { root: containerRef.current, threshold: 0.5 }
         )
+
         observer.observe(sentinelRef.current)
         return () => {
             if (sentinelRef.current) observer.unobserve(sentinelRef.current)
@@ -141,12 +124,10 @@ export function PointsLeaderboard() {
             setTotalItems([])
             setDisplayRange({ start: 0, end: 50 })
         }
-        console.log(`Page changed: ${page} (offset: ${page * limit})`)
     }, [page])
 
     useEffect(() => {
         if (totalItems.length === 0 && !isLoading && !isFetching) {
-            console.log('Forcing initial fetch')
             setPage(0)
         }
     }, [])
@@ -175,14 +156,7 @@ export function PointsLeaderboard() {
                     </Tabs>
                 </div>
             </div>
-            <div
-                ref={containerRef}
-                className="h-[450px] overflow-y-auto px-4 py-2 custom-scrollbar"
-                style={{
-                    scrollbarWidth: 'thin',
-                    scrollbarColor: 'rgba(155, 155, 155, 0.5) transparent'
-                }}
-            >
+            <div ref={containerRef} className="h-[450px] overflow-y-auto px-4 py-2 custom-scrollbar">
                 {(isLoading && page === 0) || changingTab ? (
                     <div className="flex justify-center py-8">
                         <Loader className="h-6 w-6 animate-spin text-brand" />
@@ -197,15 +171,10 @@ export function PointsLeaderboard() {
                                     return (
                                         <li
                                             key={`${user.name}-${position}`}
-                                            className={`py-3 flex items-center space-x-3 px-2 ${
+                                            className={`absolute left-0 right-0 py-3 flex items-center space-x-3 px-2 ${
                                                 isTop3 ? 'bg-muted/30 rounded-md my-1 shadow-sm top-3-item' : ''
                                             } ${position === 0 ? 'top-1-item' : ''}`}
-                                            style={{
-                                                position: 'absolute',
-                                                top: `${position * 60}px`,
-                                                left: 0,
-                                                right: 0
-                                            }}
+                                            style={{ top: `${position * 60}px` }}
                                         >
                                             <div
                                                 className={`flex-shrink-0 flex items-center justify-center rounded-full ${
@@ -237,11 +206,18 @@ export function PointsLeaderboard() {
                                     )
                                 })}
                                 {isFetching && page > 0 && (
-                                    <li className="py-4 flex justify-center">
+                                    <li
+                                        className="absolute left-0 right-0 py-3 flex justify-center items-center"
+                                        style={{ top: `${totalItems.length * 60}px` }}
+                                    >
                                         <Loader className="h-5 w-5 animate-spin text-brand" />
                                     </li>
                                 )}
-                                {!hasMore && <li className="py-3 text-center text-muted-foreground text-sm">No more results</li>}
+                                {!hasMore && (
+                                    <li className="absolute bottom-0 left-0 right-0 text-center text-muted-foreground text-sm bg-background/80 backdrop-blur-sm z-10">
+                                        No more results
+                                    </li>
+                                )}
                             </ul>
                         ) : (
                             <div className="text-center text-muted-foreground py-6">No users found</div>
@@ -254,7 +230,7 @@ export function PointsLeaderboard() {
                         onClick={scrollToTop}
                         size="sm"
                         variant="outline"
-                        className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-10 rounded-full h-10 w-10 p-0 shadow-md"
+                        className="absolute bottom-2 right-4 z-10 rounded-full h-10 w-10 shadow-md bg-card dark:bg-muted"
                         aria-label="Scroll to top"
                     >
                         <ChevronUp className="h-5 w-5" />
@@ -262,6 +238,10 @@ export function PointsLeaderboard() {
                 )}
             </div>
             <style jsx global>{`
+                .custom-scrollbar {
+                    scrollbar-width: thin;
+                    scrollbar-color: rgba(155, 155, 155, 0.5) transparent;
+                }
                 .custom-scrollbar::-webkit-scrollbar {
                     width: 6px;
                 }
