@@ -1,14 +1,11 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
-import Link from 'next/link'
-import { Card, CardHeader, CardContent, CardFooter, CardTitle, CardDescription } from '@/components/ui/card'
+import React from 'react'
+import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import InfiniteScroll from 'react-infinite-scroll-component'
 import AcademyCard from '@/components/academyCard'
-import { ROUTES } from '@/shared/links'
 import coinsEarnedAnimationData from '@/animations/earned-coins.json'
 import bunnyHappyAnimationData from '../animations/bunny-happy.json'
 import dynamic from 'next/dynamic'
@@ -16,20 +13,14 @@ const Lottie = dynamic(() => import('react-lottie'), { ssr: false })
 import Image from 'next/image'
 import { Loader, Send } from 'lucide-react'
 import { useAcademiesQuery } from '@/store/api/academy.api'
-import { TAcademy, TAcademySendInfo } from '@/types/academy'
+import { TAcademy } from '@/types/academy'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { setAcademySendInfo } from '@/store/academy/academySlice'
-import { useCategoryOptionsQuery } from '@/store/api/category.api'
-import { useChainOptionsQuery } from '@/store/api/chain.api'
-import { Command, CommandInput } from '@/components/ui/command'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { CategoryFilter } from '@/components/categoryFilter'
 import { ChainFilter } from '@/components/chainFilter'
 import { SearchBar } from '@/components/search'
 import { useTheme } from 'next-themes'
 import { cn } from '@/lib/utils'
-import { useSession } from 'next-auth/react'
 import { useCounterQuery } from '@/store/api/counter.api'
 
 // Sorting options component
@@ -146,7 +137,7 @@ export default function Home() {
     const dispatch = useAppDispatch()
     const academySendInfo = useAppSelector((state) => state.academy.academySendInfo)
 
-    const { currentData: academies, isLoading, isFetching, isUninitialized } = useAcademiesQuery(academySendInfo)
+    const { currentData: academies, isLoading, isFetching } = useAcademiesQuery(academySendInfo)
 
     const handleFetchMore = () => {
         if (!isFetching) {

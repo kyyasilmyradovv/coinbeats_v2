@@ -150,6 +150,7 @@ function ActTypes({ academy }: TTabsProps) {
         </section>
     )
 }
+
 interface TEarnedCoinsProps {
     academy: TAcademySingle | undefined
     onSwitchToQuiz?: () => void

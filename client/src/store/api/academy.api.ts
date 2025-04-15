@@ -1,7 +1,6 @@
 import { buildUrlWithParams, removeEmpty } from '@/lib/utils'
 import { apiSlice } from './apiSlice'
-import { createEntityAdapter } from '@reduxjs/toolkit'
-import { TAcademy, TAcademySingle } from '@/types/academy'
+import { TAcademySingle } from '@/types/academy'
 
 export const academiesApi = apiSlice.injectEndpoints({
     endpoints: (builder) => ({
