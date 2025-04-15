@@ -3,7 +3,7 @@ const { protectForUser } = require('../controllers/userAuthControllers');
 const {
   getLeaderboard,
   getMyStats,
-} = require('../controllers/newPointsController');
+} = require('../controllers/newPointController');
 const router = express.Router();
 
 router.get('/leaderboard', getLeaderboard);

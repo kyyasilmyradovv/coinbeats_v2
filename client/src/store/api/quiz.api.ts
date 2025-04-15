@@ -1,6 +1,6 @@
 import { buildUrlWithParams, removeEmpty } from '@/lib/utils'
 import { apiSlice } from './apiSlice'
-import { TQuizFinishResult, TQuizSendInfo, TSubmitParams, TSubmitResponse } from '@/types/quiz'
+import { TSubmitParams, TSubmitResponse } from '@/types/quiz'
 import { setQuizzes } from '../quiz/quizSlice'
 
 export const quizzesApi = apiSlice.injectEndpoints({
