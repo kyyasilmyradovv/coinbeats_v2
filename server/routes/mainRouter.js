@@ -10,5 +10,6 @@ router.use('/quizzes', require('./quizzesRouter'));
 router.use('/user/auth', require('./userAuthRouter'));
 router.use('/points', require('./pointsRouter'));
 router.use('/raffles', require('./rafflesRouter'));
+router.use('/discover', require('./discoverRouter'));
 
 module.exports = router;

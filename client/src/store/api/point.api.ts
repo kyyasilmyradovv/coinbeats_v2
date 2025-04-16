@@ -19,9 +19,26 @@ export const pointsApi = apiSlice.injectEndpoints({
             },
             forceRefetch: ({ currentArg, previousArg }) => currentArg !== previousArg,
             providesTags: ['Points']
+        }),
+        history: builder.query({
+            query: (parameters) => {
+                return {
+                    url: buildUrlWithParams('/points/history', removeEmpty(parameters)),
+                    method: 'GET'
+                }
+            },
+            serializeQueryArgs: ({ endpointName }) => endpointName,
+            merge: (currentCache, newItems, { arg: { offset } }) => {
+                if (offset === 0) {
+                    currentCache.length = 0
+                }
+                currentCache.push(...newItems)
+            },
+            forceRefetch: ({ currentArg, previousArg }) => currentArg !== previousArg,
+            providesTags: ['PointHistory']
         })
     }),
     overrideExisting: false
 })
 
-export const { usePointsQuery } = pointsApi
+export const { usePointsQuery, useHistoryQuery } = pointsApi
