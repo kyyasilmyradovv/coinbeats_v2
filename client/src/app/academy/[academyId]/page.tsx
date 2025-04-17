@@ -18,8 +18,8 @@ import { Quiz } from '@/components/quiz'
 import { useState } from 'react'
 import { useAppDispatch } from '@/store/hooks'
 import { setLoginModalOpen } from '@/store/general/generalSlice'
-import { AcademySkeleton } from './academy-skeleton'
-import { AcademyContentSkeleton } from './academy-content-skeleton'
+import { AcademySkeleton } from './academySkeleton'
+import { AcademyContentSkeleton } from './academyContentSkeleton'
 
 interface TTabsProps {
     academy: TAcademySingle | undefined
@@ -305,12 +305,9 @@ export default function Academy() {
                         <div className="inset-0 z-0">
                             <div className="absolute inset-0 bg-black/60 z-10"></div>
                             <div
+                                className="absolute w-full h-full blur-xs scale-[1.55] origin-center"
                                 style={{
-                                    filter: `blur(2px)`,
-                                    transform: `scale(${155 / 100}) translate(0%, ${(73 - 50) / 5}%)`,
-                                    height: '100%',
-                                    width: '100%',
-                                    position: 'absolute'
+                                    transform: `scale(${155 / 100}) translate(0%, ${(73 - 50) / 5}%)`
                                 }}
                             >
                                 <Image

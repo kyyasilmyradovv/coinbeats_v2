@@ -1,5 +1,6 @@
 'use client'
-import { PointsLeaderboard } from '@/components/points-leaderboard'
+import { Leaderboard } from './components/leaderboard'
+import { Summary } from './components/summary'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useState } from 'react'
 
@@ -20,15 +21,11 @@ export default function Points() {
                 <TabsContent value="leaderboard" className="mt-4">
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <div className="lg:col-span-2">
-                            <PointsLeaderboard />
+                            <Leaderboard />
                         </div>
 
                         <div>
-                            {/* Sidebar content - could be point stats, your ranking, etc. */}
-                            <div className="bg-card p-4 rounded-lg border">
-                                <h3 className="font-semibold mb-2">Your Points</h3>
-                                <p className="text-muted-foreground">Stats and information about your points will appear here.</p>
-                            </div>
+                            <Summary />
                         </div>
                     </div>
                 </TabsContent>

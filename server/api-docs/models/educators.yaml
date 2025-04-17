@@ -1,0 +1,62 @@
+components:
+  schemas:
+    Academy:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the educator
+        name:
+          type: string
+          description: Name of the educator
+        bio:
+          type: string
+          description: Educator's biography or description
+          nullable: true
+        avatarUrl:
+          type: string
+          description: URL to the educator's avatar image
+          nullable: true
+        coverPhotoUrl:
+          type: string
+          description: URL to the educator's cover photo
+          nullable: true
+        logoUrl:
+          type: string
+          description: URL to the educator's logo
+          nullable: true
+    EducatorWithIncludes:
+      allOf:
+        - $ref: '#/components/schemas/Academy'
+        - type: object
+          properties:
+            chains:
+              type: array
+              items:
+                type: object
+                properties:
+                  title:
+                    type: string
+                    description: Title of the lesson
+            categories:
+              type: array
+              items:
+                type: object
+                properties:
+                  title:
+                    type: string
+                    description: Title of the lesson
+            _count:
+              type: object
+              description: Count of related entities
+              properties:
+                lessons:
+                  type: integer
+                  description: Number of lessons by this educator
+                chains:
+                  type: integer
+                  description: Number of chains associated with this educator
+                categories:
+                  type: integer
+                  description: Number of categories this educator belongs to

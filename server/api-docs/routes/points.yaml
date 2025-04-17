@@ -63,3 +63,37 @@ paths:
                     type: integer
                   rankLastWeek:
                     type: integer
+  /api/v2/points/history:
+    get:
+      tags: [Points]
+      description: Fetch my(user's) points' history
+      statuses: [401, 404]
+      responses:
+        '200':
+          description: An objects which consist of user own points history data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    value:
+                      type: integer
+                    description:
+                      type: string
+                    createdAt:
+                      type: string
+                      format: date-time
+                    academy:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                        logoUrl:
+                          type: string
+                    verificationTask:
+                      type: object
+                      properties:
+                        name:
+                          type: string

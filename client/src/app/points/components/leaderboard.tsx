@@ -7,7 +7,7 @@ import { TPoint, TPointSendInfo } from '@/types/point'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 
-export function PointsLeaderboard() {
+export function Leaderboard() {
     const [period, setPeriod] = useState<'weekly' | 'overall'>('weekly')
     const [page, setPage] = useState(0)
     const [hasMore, setHasMore] = useState(true)

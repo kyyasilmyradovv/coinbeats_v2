@@ -1,0 +1,71 @@
+paths:
+  /api/v2/discover/educators:
+    get:
+      tags: [Discover]
+      description: Returns a list of all educators
+      statuses: [404]
+      responses:
+        '200':
+          description: An array of objects which consist of educators data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EducatorWithIncludes'
+  /api/v2/discover/tutorials:
+    get:
+      tags: [Discover]
+      description: Returns a list of all tutorials
+      statuses: [404]
+      responses:
+        '200':
+          description: An array of objects which consist of tutorials data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TutorialWithIncludes'
+  /api/v2/discover/podcasts:
+    get:
+      tags: [Discover]
+      description: Returns a list of all podcasts
+      statuses: [404]
+      responses:
+        '200':
+          description: An array of objects which consist of podcasts data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PodcastWithIncludes'
+  /api/v2/discover/channels:
+    get:
+      tags: [Discover]
+      description: Returns a list of all youtube channels
+      statuses: [404]
+      responses:
+        '200':
+          description: An array of objects which consist of youtube channels data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ChannelWithIncludes'
+  /api/v2/discover/groups:
+    get:
+      tags: [Discover]
+      description: Returns a list of all telegram groups
+      statuses: [404]
+      responses:
+        '200':
+          description: An array of objects which consist of telegram groups data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GroupWithIncludes'

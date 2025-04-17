@@ -1,0 +1,53 @@
+components:
+  schemas:
+    Group:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the educator
+        title:
+          type: string
+          description: Name of the educator
+        description:
+          type: string
+        coverPhotoUrl:
+          type: string
+          description: URL to the educator's cover photo
+          nullable: true
+        logoUrl:
+          type: string
+          description: URL to the educator's logo
+          nullable: true
+    GroupWithIncludes:
+      allOf:
+        - $ref: '#/components/schemas/Group'
+        - type: object
+          properties:
+            chains:
+              type: array
+              items:
+                type: object
+                properties:
+                  title:
+                    type: string
+                    description: Title of the lesson
+            categories:
+              type: array
+              items:
+                type: object
+                properties:
+                  title:
+                    type: string
+                    description: Title of the lesson
+            _count:
+              type: object
+              description: Count of related entities
+              properties:
+                chains:
+                  type: integer
+                  description: Number of chains associated with this educator
+                categories:
+                  type: integer
+                  description: Number of categories this educator belongs to
