@@ -27,6 +27,20 @@ exports.getAllEducators = asyncHandler(async (req, res, next) => {
   res.status(200).json(educators);
 });
 
+exports.getEducator = asyncHandler(async (req, res, next) => {
+  const educator = await prisma.educator.findFirst({
+    where: { id: +req.params.id },
+    include: {
+      chains: { select: { name: true } },
+      categories: { select: { name: true } },
+      lessons: true,
+      _count: { select: { lessons: true, chains: true, categories: true } },
+    },
+  });
+
+  res.status(200).json(educator);
+});
+
 exports.getAllTutorials = asyncHandler(async (req, res, next) => {
   const { limit, offset } = req.query;
   if (limit > 40) limit = 40;
@@ -47,6 +61,19 @@ exports.getAllTutorials = asyncHandler(async (req, res, next) => {
   });
 
   res.status(200).json(tutorials);
+});
+
+exports.getTutorial = asyncHandler(async (req, res, next) => {
+  const tutorial = await prisma.tutorial.findFirst({
+    where: { id: +req.params.id },
+    include: {
+      chains: { select: { name: true } },
+      categories: { select: { name: true } },
+      _count: { select: { chains: true, categories: true } },
+    },
+  });
+
+  res.status(200).json(tutorial);
 });
 
 exports.getAllPodcasts = asyncHandler(async (req, res, next) => {
@@ -71,6 +98,19 @@ exports.getAllPodcasts = asyncHandler(async (req, res, next) => {
   res.status(200).json(podcasts);
 });
 
+exports.getPodcast = asyncHandler(async (req, res, next) => {
+  const podcast = await prisma.podcast.findFirst({
+    where: { id: +req.params.id },
+    include: {
+      chains: { select: { name: true } },
+      categories: { select: { name: true } },
+      _count: { select: { chains: true, categories: true } },
+    },
+  });
+
+  res.status(200).json(podcast);
+});
+
 exports.getAllChannels = asyncHandler(async (req, res, next) => {
   const { limit, offset } = req.query;
   if (limit > 40) limit = 40;
@@ -93,6 +133,19 @@ exports.getAllChannels = asyncHandler(async (req, res, next) => {
   res.status(200).json(channels);
 });
 
+exports.getChannel = asyncHandler(async (req, res, next) => {
+  const channel = await prisma.youtubeChannel.findFirst({
+    where: { id: +req.params.id },
+    include: {
+      chains: { select: { name: true } },
+      categories: { select: { name: true } },
+      _count: { select: { chains: true, categories: true } },
+    },
+  });
+
+  res.status(200).json(channel);
+});
+
 exports.getAllGroups = asyncHandler(async (req, res, next) => {
   const { limit, offset } = req.query;
   if (limit > 40) limit = 40;
@@ -113,4 +166,17 @@ exports.getAllGroups = asyncHandler(async (req, res, next) => {
   });
 
   res.status(200).json(groups);
+});
+
+exports.getGroup = asyncHandler(async (req, res, next) => {
+  const gorup = await prisma.telegramGroup.findFirst({
+    where: { id: +req.params.id },
+    include: {
+      chains: { select: { name: true } },
+      categories: { select: { name: true } },
+      _count: { select: { chains: true, categories: true } },
+    },
+  });
+
+  res.status(200).json(gorup);
 });

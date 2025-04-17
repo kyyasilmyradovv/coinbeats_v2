@@ -13,6 +13,21 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/EducatorWithIncludes'
+  /api/v2/discover/educators/{id}:
+    get:
+      tags: [Discover]
+      description: Fetch educator by id
+      statuses: [404]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The ID of the educator to retrieve
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: An object which consist of educator data -- Fetch to see the response --
   /api/v2/discover/tutorials:
     get:
       tags: [Discover]
@@ -27,6 +42,21 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/TutorialWithIncludes'
+  /api/v2/discover/tutorials/{id}:
+    get:
+      tags: [Discover]
+      description: Fetch tutorial by id
+      statuses: [404]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The ID of the tutorial to retrieve
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: An object which consist of tutorial data -- Fetch to see the response  --
   /api/v2/discover/podcasts:
     get:
       tags: [Discover]
@@ -41,6 +71,21 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/PodcastWithIncludes'
+  /api/v2/discover/podcasts/{id}:
+    get:
+      tags: [Discover]
+      description: Fetch podcast by id
+      statuses: [404]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The ID of the podcast to retrieve
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: An object which consist of podcast data -- Fetch to see the response  --
   /api/v2/discover/channels:
     get:
       tags: [Discover]
@@ -55,6 +100,21 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/ChannelWithIncludes'
+  /api/v2/discover/channels/{id}:
+    get:
+      tags: [Discover]
+      description: Fetch youtube channel by id
+      statuses: [404]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The ID of the youtube channel to retrieve
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: An object which consist of youtube channel data -- Fetch to see the response  --
   /api/v2/discover/groups:
     get:
       tags: [Discover]
@@ -69,3 +129,18 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/GroupWithIncludes'
+  /api/v2/discover/groups/{id}:
+    get:
+      tags: [Discover]
+      description: Fetch telegram group by id
+      statuses: [404]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The ID of the telegram group to retrieve
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: An object which consist of telegram group data -- Fetch to see the response  --
