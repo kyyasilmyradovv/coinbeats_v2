@@ -22,6 +22,7 @@ import { SearchBar } from '@/components/search'
 import { useTheme } from 'next-themes'
 import { cn } from '@/lib/utils'
 import { useCounterQuery } from '@/store/api/counter.api'
+import { useMyStatsQuery } from '@/store/api/point.api'
 
 // Sorting options component
 interface SortOptionsProps {}
@@ -39,6 +40,8 @@ const formatPoints = (points: number): string => {
 
 function ExtraDetail() {
     const { theme } = useTheme()
+    const { currentData: myStats, isLoading, isFetching, isUninitialized } = useMyStatsQuery(undefined, { refetchOnMountOrArgChange: true })
+
     const coinsEarnedAnimation = {
         loop: true,
         autoplay: true,
@@ -55,7 +58,9 @@ function ExtraDetail() {
             preserveAspectRatio: 'xMidYMid slice'
         }
     }
-    return (
+    return isLoading || isFetching ? (
+        <MyStatsSkeleton />
+    ) : (
         <div className="mb-6 flex gap-2 w-full">
             <Card className="px-0 py-1 flex items-center">
                 <CardContent className="px-1 flex flex-col justify-center items-center">
@@ -63,7 +68,7 @@ function ExtraDetail() {
                         <div className="w-8 h-8">
                             <Lottie options={coinsEarnedAnimation} height={36} width={36} />
                         </div>
-                        <div className="text-md font-bold flex-grow text-end mr-2 mt-1">{formatPoints(1244124)}</div>
+                        <div className="text-md font-bold flex-grow text-end mr-2 mt-1">{formatPoints(myStats?.pointCount ?? 0)}</div>
                     </div>
 
                     <div className="flex flex-row items-center mt-2 w-full">
@@ -76,7 +81,7 @@ function ExtraDetail() {
                         </div>
                         <div className="flex flex-col file:text-md font-bold text-black dark:text-white flex-grow text-end mr-2 mt-1">
                             <div className="flex flex-row items-center justify-center">
-                                <span className="text-center">{500}</span>
+                                <span className="text-center">{myStats?.rankOverall ?? 0}</span>
                             </div>
                             <div className="flex flex-row items-center justify-center">
                                 <span className={cn('text-xs', theme === 'dark' ? 'text-gray-300' : 'text-gray-500')}>Rank</span>
@@ -185,7 +190,6 @@ export default function Home() {
     )
 }
 
-// Skeleton component for loading state
 function AnalysisCardSkeleton() {
     return (
         <div className="flex flex-col relative rounded-lg mb-4">
@@ -207,6 +211,47 @@ function AnalysisCardSkeleton() {
                     </div>
                 </CardFooter>
             </Card>
+        </div>
+    )
+}
+
+function MyStatsSkeleton() {
+    return (
+        <div className="mb-6 flex gap-2 w-full">
+            <Card className="px-0 py-1 flex items-center">
+                <CardContent className="px-1 flex flex-col justify-center items-center w-[160px]">
+                    <div className="flex flex-row items-center justify-between w-full gap-2">
+                        <Skeleton className="w-8 h-8 rounded-full" />
+                        <Skeleton className="h-4 w-16 mt-1" />
+                    </div>
+
+                    <div className="flex flex-row items-center mt-2 w-full">
+                        <Skeleton className="w-8 h-8 rounded-full" />
+                        <div className="flex flex-col flex-grow text-end mr-2 mt-1 items-end">
+                            <Skeleton className="h-4 w-10 mb-1" />
+                            <Skeleton className="h-3 w-8" />
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+
+            <div className="h-full gap-1 flex flex-col flex-1">
+                <Card className="px-2 py-1 flex-1 flex flex-row items-center justify-between">
+                    <div className="flex flex-row gap-2 items-center text-xs md:text-[14px]">
+                        <Skeleton className="h-5 w-5 rounded-full" />
+                        <Skeleton className="h-4 w-24" />
+                    </div>
+                    <Skeleton className="h-6 w-24 rounded-md" />
+                </Card>
+
+                <Card className="px-2 py-1 flex-1 flex flex-row items-center justify-between">
+                    <div className="flex flex-row gap-2 items-center text-xs md:text-[14px]">
+                        <Skeleton className="h-5 w-5 rounded-full" />
+                        <Skeleton className="h-4 w-28" />
+                    </div>
+                    <Skeleton className="h-6 w-24 rounded-md" />
+                </Card>
+            </div>
         </div>
     )
 }

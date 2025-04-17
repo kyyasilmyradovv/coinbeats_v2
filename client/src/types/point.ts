@@ -10,3 +10,10 @@ export type TPointSendInfo = {
     offset: number
     limit: number
 }
+export type TMyStats = {
+    raffleAmount: number
+    pointCount: number
+    lastWeekPointCount: number
+    rankOverall: number
+    rankLastWeek: number
+}

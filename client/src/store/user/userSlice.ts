@@ -4,19 +4,25 @@ import { createSlice } from '@reduxjs/toolkit'
 
 type SliceState = {
     profile?: TProfile
+    isProfileSheetOpen: boolean
 }
 
-const initialState: SliceState = {}
+const initialState: SliceState = {
+    isProfileSheetOpen: false
+}
 
 export const userSlice = createSlice({
     name: 'user',
     initialState,
     reducers: {
-        setProfil(state, action: PayloadAction<TProfile>) {
+        setProfil(state, action: PayloadAction<TProfile | undefined>) {
             state.profile = action.payload
+        },
+        setIsProfilSheetOpen(state, action: PayloadAction<boolean>) {
+            state.isProfileSheetOpen = action.payload
         }
     }
 })
 
-export const { setProfil } = userSlice.actions
+export const { setProfil, setIsProfilSheetOpen } = userSlice.actions
 export default userSlice.reducer
