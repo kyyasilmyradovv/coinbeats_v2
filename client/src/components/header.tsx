@@ -15,7 +15,8 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { setLoginModalOpen } from '@/store/general/generalSlice'
 import { useProfileQuery } from '@/store/api/auth.api'
 import Loading from './loading'
-import { ProfileSheet } from './profileSheet'
+import { DropdownMenuProfil } from './profileMenu'
+import { Skeleton } from './ui/skeleton'
 
 // THIS IS A TEMPORARY HEADER FOR SIGNUP AND LANDING PAGE WHILE SITE IS NOT LIVE YET
 export function Header() {
@@ -54,7 +55,8 @@ export function Header() {
                 <Button variant="ghost" size="icon">
                     <Bell className="h-[1.2rem] w-[1.2rem]" />
                 </Button>
-                <ProfileSheet />
+
+                <DropdownMenuProfil />
             </div>
         </header>
     )
