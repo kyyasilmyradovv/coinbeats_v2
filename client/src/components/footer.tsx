@@ -9,7 +9,7 @@ import { Award, Compass, Gift, GraduationCap, Star } from 'lucide-react'
 export function Footer() {
     const pathname = usePathname()
     return (
-        <div className="left-0 bottom-0 h-20 border-t fixed w-full bg-background flex items-center justify-between md:justify-around  md:gap-4 md:px-2 md:hidden">
+        <div className="left-0 bottom-0 h-10 border-t fixed w-full bg-background flex items-center justify-between md:justify-around  md:gap-4 md:px-2 md:hidden">
             {NAV_ITEMS.map((item) => (
                 <Link href={item.href} key={item.label} scroll={false} className="flex-1">
                     <Button
