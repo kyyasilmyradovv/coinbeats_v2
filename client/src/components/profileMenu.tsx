@@ -36,6 +36,7 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { Skeleton } from './ui/skeleton'
 import { setLoginModalOpen } from '@/store/general/generalSlice'
 import { setIsProfilSheetOpen, setProfil } from '@/store/user/userSlice'
+import Image from 'next/image'
 
 export function DropdownMenuProfil() {
     const dispatch = useAppDispatch()
@@ -59,7 +60,7 @@ export function DropdownMenuProfil() {
                 ) : profile?.id ? (
                     <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="flex items-center gap-2">
-                            <User className="w-5 h-5" />
+                            <Image src={'/bunny-head.png'} alt="avatar" width={20} height={20} priority />
                         </Button>
                     </DropdownMenuTrigger>
                 ) : (

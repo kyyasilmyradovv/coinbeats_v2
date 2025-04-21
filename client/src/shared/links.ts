@@ -4,13 +4,18 @@ export const ROUTES = {
     // Main routes
     HOME: '/',
     COINS: '/coins',
-    LEARN: '/learn',
+    LEARN: '/discover',
     RAFFLES: '/raffles',
     EARN: '/earn',
     POINTS: '/points',
+    EDUCATORS: '/educators',
 
     // Nested routes and dynamic routes with params
-    getAcademyDetails: (id: number) => `/academy/${id}`
+    getAcademyDetails: (id: number) => `/academy/${id}`,
+    getEducatorDetails: (id: number) => `/educator/${id}`,
+    getPodcastDetails: (id: number) => `/podcast/${id}`,
+    getChannelDetails: (id: number) => `/channel/${id}`,
+    getTutorialDetails: (id: number) => `/tutorial/${id}`
 }
 
 export const NAV_ITEMS = [
