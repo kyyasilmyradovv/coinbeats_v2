@@ -335,3 +335,19 @@
 .btn-gradient {
     @apply bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 text-white hover:opacity-90;
 }
+
+.glow-animation {
+    animation: subtle-glow 3s ease-in-out infinite;
+}
+
+@keyframes subtle-glow {
+    0% {
+        box-shadow: 0 0 5px rgba(249, 115, 22, 0.2);
+    }
+    50% {
+        box-shadow: 0 0 8px rgba(249, 115, 22, 0.4);
+    }
+    100% {
+        box-shadow: 0 0 5px rgba(249, 115, 22, 0.2);
+    }
+}
