@@ -27,11 +27,12 @@ export type TTutorialSendInfo = {
 }
 
 export type TTutorialSingle = {
+    [key: string]: any
     id: number
     title: string
     contentUrl: string
-    xp: number
     type: string
+    xp: number
     coverPhotoUrl: string
     description: string
     logoUrl: string
@@ -39,7 +40,7 @@ export type TTutorialSingle = {
     createdAt: string
     updatedAt: string
     visitCount: number
-    chains: TChain
+    chains: TChain[]
     categories: TCategory[]
     _count: TCount
 }

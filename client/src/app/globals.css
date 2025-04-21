@@ -126,7 +126,8 @@
     border-color: var(--border);
 }
 .background-brand {
-    background: linear-gradient(135deg, #c400b2 0%, #c4c439 50%, #c400b2 100%);
+    background: linear-gradient(90deg, #c400b2 0%, #c49639 50%, #c400b2 100%);
+    color: white;
 }
 
 @layer base {

@@ -16,10 +16,7 @@ export interface PodcastCardProps {
 function PodcastCard({ podcast }: PodcastCardProps) {
     return (
         <Card
-            className={cn(
-                'relative overflow-hidden rounded-3xl backdrop-blur-lg shadow-xl transition hover:scale-[1.015] hover:shadow-2xl',
-                'flex flex-col min-h-[420px] duration-300'
-            )}
+            className={cn('relative overflow-hidden rounded-3xl  transition hover:scale-[1.015]', 'flex flex-col min-h-[420px] duration-300 gradient-border')}
         >
             {/* Cover */}
             <div className="relative h-36 w-full">
@@ -69,9 +66,9 @@ function PodcastCard({ podcast }: PodcastCardProps) {
                 </div>
             </CardContent>
 
-            <CardFooter className="mt-auto px-6 py-4 flex justify-center">
-                <Link href={ROUTES.getPodcastDetails(podcast.id)} passHref>
-                    <Button variant="outline" className="rounded-full px-6  border-brand cursor-pointer">
+            <CardFooter className="mt-auto px-6 py-4 flex justify-center w-full">
+                <Link href={ROUTES.getPodcastDetails(podcast.id)} passHref className="w-full">
+                    <Button variant="outline" className="rounded-full px-6  border-brand cursor-pointer background-brand font-bold w-full">
                         View
                     </Button>
                 </Link>

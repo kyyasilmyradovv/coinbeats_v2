@@ -17,12 +17,7 @@ export interface EducatorCardProps {
 
 function EducatorCard({ educator }: EducatorCardProps) {
     return (
-        <Card
-            className={cn(
-                'relative overflow-hidden rounded-3xl backdrop-blur-lg shadow-xl transition hover:scale-[1.015] hover:shadow-2xl',
-                'flex flex-col min-h-[420px] duration-300'
-            )}
-        >
+        <Card className={cn('relative overflow-hidden rounded-3xl transition ', 'flex flex-col min-h-[420px] duration-300 gradient-border ')}>
             {/* Cover */}
             <div className="relative h-36 w-full">
                 <img src={constructImageUrl(educator.coverPhotoUrl)} alt="cover" className="w-full h-full object-cover" />
@@ -76,9 +71,9 @@ function EducatorCard({ educator }: EducatorCardProps) {
                 </div>
             </CardContent>
 
-            <CardFooter className="mt-auto px-6 py-4 flex justify-center">
-                <Link href={ROUTES.getEducatorDetails(educator.id)} passHref>
-                    <Button variant="outline" className="rounded-full px-6  border-brand cursor-pointer">
+            <CardFooter className="mt-auto px-6 py-4 flex justify-center w-full">
+                <Link href={ROUTES.getEducatorDetails(educator.id)} passHref className="w-full">
+                    <Button variant="outline" className="rounded-full px-6  border-brand cursor-pointer background-brand font-bold w-full">
                         View
                     </Button>
                 </Link>

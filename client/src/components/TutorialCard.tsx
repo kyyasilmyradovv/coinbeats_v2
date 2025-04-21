@@ -15,12 +15,7 @@ export interface TutorialCardProps {
 
 function TutorialCard({ tutorial }: TutorialCardProps) {
     return (
-        <Card
-            className={cn(
-                'relative overflow-hidden rounded-3xl backdrop-blur-lg shadow-xl transition hover:scale-[1.015] hover:shadow-2xl',
-                'flex flex-col min-h-[420px] duration-300'
-            )}
-        >
+        <Card className={cn('relative overflow-hidden rounded-3xl transition hover:scale-[1.015]', 'flex flex-col min-h-[420px] duration-300 gradient-border')}>
             {/* Cover */}
             <div className="relative h-36 w-full">
                 <img src={constructImageUrl(tutorial.coverPhotoUrl)} alt="cover" className="w-full h-full object-cover" />
@@ -69,9 +64,9 @@ function TutorialCard({ tutorial }: TutorialCardProps) {
                 </div>
             </CardContent>
 
-            <CardFooter className="mt-auto px-6 py-4 flex justify-center">
-                <Link href={ROUTES.getTutorialDetails(tutorial.id)} passHref>
-                    <Button variant="outline" className="rounded-full px-6  border-brand cursor-pointer">
+            <CardFooter className="mt-auto px-6 py-4 flex justify-center w-full">
+                <Link href={ROUTES.getTutorialDetails(tutorial.id)} passHref className="w-full">
+                    <Button variant="outline" className="rounded-full px-6  border-brand cursor-pointer background-brand font-bold w-full">
                         View
                     </Button>
                 </Link>

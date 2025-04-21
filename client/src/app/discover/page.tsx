@@ -5,6 +5,8 @@ import Podcasts from './podcasts'
 import { cn } from '@/lib/utils'
 import Channels from './channel'
 import Tutorials from './tutorial'
+import AICard from '@/components/AICard'
+import AI from './AI'
 
 function TabsSection() {
     return (
@@ -48,7 +50,9 @@ function TabsSection() {
             <TabsContent value="tutorials">
                 <Tutorials />
             </TabsContent>
-            <TabsContent value="AI"></TabsContent>
+            <TabsContent value="AI">
+                <AI />
+            </TabsContent>
         </Tabs>
     )
 }

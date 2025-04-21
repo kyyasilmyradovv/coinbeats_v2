@@ -27,6 +27,7 @@ export type TChannelSendInfo = {
 }
 
 export type TChannelSingle = {
+    [key: string]: any
     id: number
     name: string
     description: string
@@ -37,7 +38,7 @@ export type TChannelSingle = {
     createdAt: string
     updatedAt: string
     visitCount: number
-    chains: TChain
-    categories: TCategory
+    chains: TChain[]
+    categories: TCategory[]
     _count: TCount
 }

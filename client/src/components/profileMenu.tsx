@@ -1,34 +1,12 @@
-import {
-    Cloud,
-    CreditCard,
-    Github,
-    Keyboard,
-    LifeBuoy,
-    LogOut,
-    Mail,
-    MessageSquare,
-    Plus,
-    PlusCircle,
-    Settings,
-    User,
-    User2Icon,
-    UserPlus,
-    Users
-} from 'lucide-react'
-
+import { CreditCard, LifeBuoy, LogOut, User2Icon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
     DropdownMenu,
     DropdownMenuContent,
-    DropdownMenuGroup,
     DropdownMenuItem,
     DropdownMenuLabel,
-    DropdownMenuPortal,
     DropdownMenuSeparator,
     DropdownMenuShortcut,
-    DropdownMenuSub,
-    DropdownMenuSubContent,
-    DropdownMenuSubTrigger,
     DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
 import { useProfileQuery } from '@/store/api/auth.api'
@@ -37,6 +15,9 @@ import { Skeleton } from './ui/skeleton'
 import { setLoginModalOpen } from '@/store/general/generalSlice'
 import { setIsProfilSheetOpen, setProfil } from '@/store/user/userSlice'
 import Image from 'next/image'
+import dynamic from 'next/dynamic'
+import avatarAnimationData from '@/animations/Avatar.json'
+const Lottie = dynamic(() => import('react-lottie'), { ssr: false })
 
 export function DropdownMenuProfil() {
     const dispatch = useAppDispatch()
@@ -52,6 +33,15 @@ export function DropdownMenuProfil() {
         dispatch(setIsProfilSheetOpen(false))
     }
 
+    const avatarAnimation = {
+        loop: true,
+        autoplay: true,
+        animationData: avatarAnimationData,
+        rendererSettings: {
+            preserveAspectRatio: 'xMidYMid slice'
+        }
+    }
+
     return (
         <DropdownMenu>
             <div className="p-1">
@@ -60,7 +50,8 @@ export function DropdownMenuProfil() {
                 ) : profile?.id ? (
                     <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="flex items-center gap-2">
-                            <Image src={'/bunny-head.png'} alt="avatar" width={20} height={20} priority />
+                            <Lottie options={avatarAnimation} height={50} width={35} />
+                            {/* <Image src={'/bunny-head.png'} alt="avatar" width={20} height={20} priority /> */}
                         </Button>
                     </DropdownMenuTrigger>
                 ) : (
