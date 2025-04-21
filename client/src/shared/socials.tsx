@@ -80,7 +80,7 @@ export const SOCIALSDISCOVER = [
     {
         label: 'substack',
         href: '/',
-        icon: <Image src={'/substack-icon.svg'} alt="discord" height={33} width={33} />,
+        icon: <Image src={'/substack-icon.svg'} alt="discord" height={22} width={22} />,
         hrefKey: 'substackUrl'
     }
 ]
