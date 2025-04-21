@@ -1,5 +1,5 @@
 import { EarIcon, LeafyGreen, Pointer, ProjectorIcon, Rabbit } from 'lucide-react'
-
+import { GraduationCap, Compass, Gift, Star, Award } from 'lucide-react'
 export const ROUTES = {
     // Main routes
     HOME: '/',
@@ -24,29 +24,34 @@ export const NAV_ITEMS = [
         href: ROUTES.HOME,
         icon: '/graduation-hat.png',
         color: 'text-orange-500'
+        // iconComponent: <GraduationCap className={`w-6 h-6 text-foreground `} />
     },
     {
         label: 'Learn',
         href: ROUTES.LEARN,
         icon: '/discover.png',
         color: 'text-green-500'
+        // iconComponent: <Compass className={`w-6 h-6 text-foreground `} />
     },
     {
         label: 'Raffles',
         href: ROUTES.RAFFLES,
         icon: '/raffles.png',
         color: 'text-green-500'
+        // iconComponent: <Gift className={`w-6 h-6 text-foreground `} />
     },
     {
         label: 'Earn',
         href: ROUTES.EARN,
         icon: '/game-pad.png',
         color: 'text-green-500'
+        // iconComponent: <Star className={`w-6 h-6 text-foreground `} />
     },
     {
         label: 'Points',
         href: ROUTES.POINTS,
         icon: '/trophy.png',
         color: 'text-green-500'
+        // iconComponent: <Award className={`w-6 h-6 text-foreground `} />
     }
 ]
