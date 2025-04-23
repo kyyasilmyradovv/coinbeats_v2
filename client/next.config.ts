@@ -10,7 +10,7 @@ const nextConfig: NextConfig = {
             },
             {
                 source: '/api/:path*',
-                destination: 'http://localhost:4004/api/v2/:path*',
+                destination: 'https://coinbeats-v2.onrender.com/api/v2/:path*',
                 has: [
                     {
                         type: 'header',
@@ -23,7 +23,7 @@ const nextConfig: NextConfig = {
     },
     env: {
         // NEXT_PUBLIC_API_BASE_URL: 'https://coinbeats-v2.onrender.com/api/v2' // Base URL for apiClient
-        NEXT_PUBLIC_API_BASE_URL: 'http://localhost:4004/api/v2' // Base URL for apiClient
+        NEXT_PUBLIC_API_BASE_URL: 'https://coinbeats-v2.onrender.com/api/v2' // Base URL for apiClient
     },
     images: {
         remotePatterns: [
