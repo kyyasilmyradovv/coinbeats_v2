@@ -10,7 +10,6 @@ import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import InfiniteScroll from 'react-infinite-scroll-component'
 import { TPodcast } from '@/types/podcast'
-import AcademyCard from '@/components/academyCard'
 
 import { cn } from '@/lib/utils'
 import PodcastCard from '@/components/PodcastCard'

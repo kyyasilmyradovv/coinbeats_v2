@@ -22,14 +22,13 @@ const nextConfig: NextConfig = {
         ]
     },
     env: {
-        // NEXT_PUBLIC_API_BASE_URL: 'https://coinbeats-v2.onrender.com/api/v2' // Base URL for apiClient
         NEXT_PUBLIC_API_BASE_URL: 'https://coinbeats-v2.onrender.com/api/v2' // Base URL for apiClient
     },
     images: {
         remotePatterns: [
             {
                 protocol: 'http',
-                hostname: '45.76.162.32',
+                hostname: 'telegram.coinbeats.xyz',
                 port: '5000'
             }
         ]
