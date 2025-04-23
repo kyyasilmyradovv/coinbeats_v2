@@ -9,6 +9,7 @@ let requiredFields = {
   verify: ['email', 'code'],
   profile: [],
   submit_quiz: ['questionId', 'choiceId', 'secondsLeft', 'isLastQuestion'],
+  chat: ['prompt'],
 };
 
 // Common Functions
@@ -82,6 +83,8 @@ let typeCheckers = {
   referral_profile: parentFunctions.isString,
   refreshToken: parentFunctions.isString,
   code: parentFunctions.isString,
+  prompt: parentFunctions.isString,
+  title: parentFunctions.isString,
   // Number
   order: parentFunctions.isNumber,
   count: parentFunctions.isNumber,

@@ -1,6 +1,6 @@
 import { buildUrlWithParams, removeEmpty } from '@/lib/utils'
 import { apiSlice } from './apiSlice'
-import { TAcademy, TAcademySendInfo } from '@/types/academy'
+import { TAcademy } from '@/types/academy'
 
 export const categoriesApi = apiSlice.injectEndpoints({
     endpoints: (builder) => ({

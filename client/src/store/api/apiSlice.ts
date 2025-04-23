@@ -72,6 +72,26 @@ export const apiSlice = createApi({
     reducerPath: 'api',
     baseQuery: baseQueryWithReAuth,
     refetchOnReconnect: true,
-    tagTypes: ['Academies', 'Academy', 'Categories', 'Chains', 'Profile', 'Quizzes', 'Raffles', 'Counter'],
+    tagTypes: [
+        'Academies',
+        'Academy',
+        'Categories',
+        'Chains',
+        'Profile',
+        'Quizzes',
+        'Raffles',
+        'Counter',
+        'Points',
+        'PointHistory',
+        'MyStats',
+        'Educators',
+        'Educator',
+        'Podcasts',
+        'Podcast',
+        'Channels',
+        'Channel',
+        'Tutorials',
+        'Tutorial'
+    ],
     endpoints: () => ({})
 })

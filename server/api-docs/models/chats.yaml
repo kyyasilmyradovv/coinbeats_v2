@@ -1,0 +1,18 @@
+components:
+  schemas:
+    Chat:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+    ChatInput:
+      type: object
+      required:
+        - prompt
+      properties:
+        title:
+          type: string
+        prompt:
+          type: string

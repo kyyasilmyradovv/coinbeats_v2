@@ -90,3 +90,14 @@ exports.getAcademy = asyncHandler(async (req, res, next) => {
 
   res.json(academy);
 });
+
+exports.getAcademyContent = asyncHandler(async (req, res, next) => {
+  const { id } = req.params;
+
+  const questions = await prisma.academyQuestion.findMany({
+    where: { academyId: +id },
+    select: { question: true, answer: true },
+  });
+
+  res.json(questions);
+});

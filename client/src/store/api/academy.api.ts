@@ -1,7 +1,6 @@
 import { buildUrlWithParams, removeEmpty } from '@/lib/utils'
 import { apiSlice } from './apiSlice'
-import { createEntityAdapter } from '@reduxjs/toolkit'
-import { TAcademy, TAcademySingle } from '@/types/academy'
+import { TAcademySingle } from '@/types/academy'
 
 export const academiesApi = apiSlice.injectEndpoints({
     endpoints: (builder) => ({
@@ -30,9 +29,13 @@ export const academiesApi = apiSlice.injectEndpoints({
                 }
             },
             providesTags: ['Academy']
+        }),
+        academyContent: builder.query({
+            query: (id) => `/academies/${id}/content`,
+            providesTags: (result, error, id) => [{ type: 'Academy', id }]
         })
     }),
     overrideExisting: false
 })
 
-export const { useAcademiesQuery, useAcademyQuery } = academiesApi
+export const { useAcademiesQuery, useAcademyQuery, useAcademyContentQuery } = academiesApi

@@ -1,0 +1,146 @@
+paths:
+  /api/v2/discover/educators:
+    get:
+      tags: [Discover]
+      description: Returns a list of all educators
+      statuses: [404]
+      responses:
+        '200':
+          description: An array of objects which consist of educators data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EducatorWithIncludes'
+  /api/v2/discover/educators/{id}:
+    get:
+      tags: [Discover]
+      description: Fetch educator by id
+      statuses: [404]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The ID of the educator to retrieve
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: An object which consist of educator data -- Fetch to see the response --
+  /api/v2/discover/tutorials:
+    get:
+      tags: [Discover]
+      description: Returns a list of all tutorials
+      statuses: [404]
+      responses:
+        '200':
+          description: An array of objects which consist of tutorials data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TutorialWithIncludes'
+  /api/v2/discover/tutorials/{id}:
+    get:
+      tags: [Discover]
+      description: Fetch tutorial by id
+      statuses: [404]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The ID of the tutorial to retrieve
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: An object which consist of tutorial data -- Fetch to see the response  --
+  /api/v2/discover/podcasts:
+    get:
+      tags: [Discover]
+      description: Returns a list of all podcasts
+      statuses: [404]
+      responses:
+        '200':
+          description: An array of objects which consist of podcasts data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PodcastWithIncludes'
+  /api/v2/discover/podcasts/{id}:
+    get:
+      tags: [Discover]
+      description: Fetch podcast by id
+      statuses: [404]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The ID of the podcast to retrieve
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: An object which consist of podcast data -- Fetch to see the response  --
+  /api/v2/discover/channels:
+    get:
+      tags: [Discover]
+      description: Returns a list of all youtube channels
+      statuses: [404]
+      responses:
+        '200':
+          description: An array of objects which consist of youtube channels data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ChannelWithIncludes'
+  /api/v2/discover/channels/{id}:
+    get:
+      tags: [Discover]
+      description: Fetch youtube channel by id
+      statuses: [404]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The ID of the youtube channel to retrieve
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: An object which consist of youtube channel data -- Fetch to see the response  --
+  /api/v2/discover/groups:
+    get:
+      tags: [Discover]
+      description: Returns a list of all telegram groups
+      statuses: [404]
+      responses:
+        '200':
+          description: An array of objects which consist of telegram groups data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GroupWithIncludes'
+  /api/v2/discover/groups/{id}:
+    get:
+      tags: [Discover]
+      description: Fetch telegram group by id
+      statuses: [404]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The ID of the telegram group to retrieve
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: An object which consist of telegram group data -- Fetch to see the response  --

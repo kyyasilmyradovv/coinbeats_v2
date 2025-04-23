@@ -28,8 +28,9 @@ const nextConfig: NextConfig = {
     images: {
         remotePatterns: [
             {
-                protocol: 'https',
-                hostname: 'telegram.coinbeats.xyz'
+                protocol: 'http',
+                hostname: '45.76.162.32',
+                port: '5000'
             }
         ]
     }

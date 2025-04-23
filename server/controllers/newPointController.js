@@ -6,6 +6,7 @@ const asyncHandler = require('../utils/asyncHandler');
 
 exports.getLeaderboard = asyncHandler(async (req, res, next) => {
   const { period, limit, offset } = req.query;
+  if (offset >= 400) res.status(200).json([]);
 
   let orderBy =
     period === 'weekly'
@@ -18,17 +19,17 @@ exports.getLeaderboard = asyncHandler(async (req, res, next) => {
     where,
     select: { name: true, pointCount: true, lastWeekPointCount: true },
     orderBy,
-    take: +limit || 30,
+    take: +limit || 20,
     skip: +offset || 0,
   });
 
   res.status(200).json(leaderboardData);
 });
 
-exports.getMyStats = async (req, res, next) => {
+exports.getMyStats = asyncHandler(async (req, res, next) => {
   const user = await prisma.user.findUnique({
     where: { id: req.user.id },
-    select: { raffleAmount, pointCount: true, lastWeekPointCount: true },
+    select: { raffleAmount: true, pointCount: true, lastWeekPointCount: true },
   });
   if (!user) {
     return res.status(404).json({ message: 'User not found' });
@@ -49,45 +50,25 @@ exports.getMyStats = async (req, res, next) => {
     rankOverall: rankOverall + 1,
     rankLastWeek: rankLastWeek + 1,
   });
-};
+});
 
-// // Get user points breakdown
-// exports.getUserPointsBreakdown = async (req, res, next) => {
-//   console.log('getUserPointsBreakdown hit');
+exports.getMyPointsHistory = asyncHandler(async (req, res, next) => {
+  const { limit, offset } = req.query;
+  if (limit > 20) limit = 20;
 
-//   const { userId } = req.params;
+  const points = await prisma.point.findMany({
+    where: { userId: req.user?.id, is_active: true },
+    select: {
+      value: true,
+      description: true,
+      createdAt: true,
+      academy: { select: { name: true, logoUrl: true } },
+      verificationTask: { select: { name: true } },
+    },
+    orderBy: { id: 'desc' },
+    take: +limit || 20,
+    skip: +offset || 0,
+  });
 
-//   console.log(`Parameters received: userId = ${userId}`);
-
-//   if (!userId || userId === 'null') {
-//     console.log('Invalid user ID received');
-//     return res.status(400).json({ message: 'Invalid user ID' });
-//   }
-
-//   try {
-//     const points = await prisma.point.findMany({
-//       where: { userId: parseInt(userId, 10) },
-//       include: {
-//         academy: true,
-//         verificationTask: true,
-//       },
-//       orderBy: {
-//         createdAt: 'desc', // Order by createdAt directly in the query
-//       },
-//     });
-
-//     console.log(`Points fetched for User ID ${userId}:`);
-
-//     if (!points || points.length === 0) {
-//       console.log(`No points found for User ID ${userId}`);
-//       return res
-//         .status(404)
-//         .json({ message: `No points found for user ID ${userId}` });
-//     }
-
-//     res.status(200).json(points);
-//   } catch (error) {
-//     console.error('Error fetching user points breakdown:', error);
-//     return next(createError(500, 'Internal Server Error'));
-//   }
-// };
+  res.status(200).json(points || []);
+});

@@ -3,10 +3,12 @@ const { protectForUser } = require('../controllers/userAuthControllers');
 const {
   getLeaderboard,
   getMyStats,
-} = require('../controllers/newPointsController');
+  getMyPointsHistory,
+} = require('../controllers/newPointController');
 const router = express.Router();
 
 router.get('/leaderboard', getLeaderboard);
 router.get('/my-stats', protectForUser, getMyStats);
+router.get('/history', protectForUser, getMyPointsHistory);
 
 module.exports = router;
