@@ -24,7 +24,7 @@ function EducatorCard({ educator }: EducatorCardProps) {
                 {/* Avatar */}
                 <div className="absolute -bottom-10 left-1/2 -translate-x-1/2">
                     <Avatar className="h-20 w-20 border-[4px] ">
-                        <AvatarImage src={constructImageUrl(educator.avatarUrl)} alt={educator.name} />
+                        <AvatarImage src={constructImageUrl(educator.logoUrl)} alt={educator.name} />
                         <AvatarFallback className="text-xl font-semibold">{educator.name.slice(0, 2).toUpperCase()}</AvatarFallback>
                     </Avatar>
                 </div>
