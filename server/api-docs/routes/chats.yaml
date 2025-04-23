@@ -1,0 +1,31 @@
+paths:
+  /api/v2/ai-chat:
+    get:
+      tags: [Chat]
+      description: Fetch all chats list
+      statuses: [401, 404]
+      responses:
+        '200':
+          description: An array of objects which consist of chat data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Chat'
+    post:
+      tags: [Chat]
+      description: Add new chat
+      statuses: [400, 401]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatInput'
+      responses:
+        '201':
+          description: An object which consists newly created chat information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Chat'
