@@ -27,7 +27,7 @@ function AcademyCard({ academy }: AcademyCardProps) {
                 </CardHeader>
                 <CardContent className="flex items-center justify-center flex-col gap-3">
                     <Avatar className="h-16 w-16">
-                        <AvatarImage src={constructImageUrl(academy.logoUrl)} alt="Clearpool" />
+                        <AvatarImage src={constructImageUrl(academy.logoUrl)} alt="Clearpool" className="w-full h-full object-cover" />
                         <AvatarFallback className="text-xl">Cl</AvatarFallback>
                     </Avatar>
 

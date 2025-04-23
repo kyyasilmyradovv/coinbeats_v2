@@ -84,7 +84,7 @@ function ActTypes({ podcast }: TTabsProps) {
                             {/* Social Links */}
                             <div className="flex flex-col items-center">
                                 <div className="flex items-center mb-2">
-                                    <p className="text-sm font-medium text-center">Connect with the Project</p>
+                                    <p className="text-sm font-medium text-center">Join {podcast?.name} Community</p>
                                 </div>
                                 <div className="flex items-center justify-center gap-5">
                                     {SOCIALSDISCOVER.filter((social) => !!podcast?.[social.hrefKey])?.map((social, index) => (
@@ -173,10 +173,7 @@ export default function Podcast() {
 
                             <h2 className="text-2xl font-bold mb-3 text-white">{podcast?.name}</h2>
                             <p className="mb-2 text-white/90 text-center">{podcast?.bio}</p>
-
                             <p className="text-white/70 text-sm mt-1">Visited {podcast?.visitCount?.toLocaleString()} times</p>
-
-                            <p className="text-white/80 mt-4 text-sm">{podcast?.contentOrigin}</p>
                         </div>
                     </div>
                     <ActTypes podcast={podcast} />

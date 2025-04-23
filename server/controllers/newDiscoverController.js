@@ -5,10 +5,24 @@ const { format } = require('date-fns');
 const asyncHandler = require('../utils/asyncHandler');
 
 exports.getAllEducators = asyncHandler(async (req, res, next) => {
-  const { limit, offset } = req.query;
+  // Handle queries
+  let { keyword, categoryId, chainId, limit, offset } = req.query;
   if (limit > 40) limit = 40;
 
+  // Generate where contition
+  const where = {};
+  if (keyword && keyword.trim().length > 0) {
+    where.name = { contains: keyword.trim(), mode: 'insensitive' };
+  }
+  if (categoryId) {
+    where.categories = { some: { id: +categoryId } };
+  }
+  if (chainId) {
+    where.chains = { some: { id: +chainId } };
+  }
+
   const educators = await prisma.educator.findMany({
+    where,
     select: {
       id: true,
       name: true,
@@ -42,10 +56,24 @@ exports.getEducator = asyncHandler(async (req, res, next) => {
 });
 
 exports.getAllTutorials = asyncHandler(async (req, res, next) => {
-  const { limit, offset } = req.query;
+  // Handle queries
+  let { keyword, categoryId, chainId, limit, offset } = req.query;
   if (limit > 40) limit = 40;
 
+  // Generate where condition
+  const where = {};
+  if (keyword && keyword.trim().length > 0) {
+    where.title = { contains: keyword.trim(), mode: 'insensitive' };
+  }
+  if (categoryId) {
+    where.categories = { some: { id: +categoryId } };
+  }
+  if (chainId) {
+    where.chains = { some: { id: +chainId } };
+  }
+
   const tutorials = await prisma.tutorial.findMany({
+    where,
     select: {
       id: true,
       title: true,
@@ -77,10 +105,24 @@ exports.getTutorial = asyncHandler(async (req, res, next) => {
 });
 
 exports.getAllPodcasts = asyncHandler(async (req, res, next) => {
-  const { limit, offset } = req.query;
+  // Handle queries
+  let { keyword, categoryId, chainId, limit, offset } = req.query;
   if (limit > 40) limit = 40;
 
+  // Generate where condition
+  const where = {};
+  if (keyword && keyword.trim().length > 0) {
+    where.name = { contains: keyword.trim(), mode: 'insensitive' };
+  }
+  if (categoryId) {
+    where.categories = { some: { id: +categoryId } };
+  }
+  if (chainId) {
+    where.chains = { some: { id: +chainId } };
+  }
+
   const podcasts = await prisma.podcast.findMany({
+    where,
     select: {
       id: true,
       name: true,
@@ -112,10 +154,24 @@ exports.getPodcast = asyncHandler(async (req, res, next) => {
 });
 
 exports.getAllChannels = asyncHandler(async (req, res, next) => {
-  const { limit, offset } = req.query;
+  // Handle queries
+  let { keyword, categoryId, chainId, limit, offset } = req.query;
   if (limit > 40) limit = 40;
 
+  // Generate where condition
+  const where = {};
+  if (keyword && keyword.trim().length > 0) {
+    where.name = { contains: keyword.trim(), mode: 'insensitive' };
+  }
+  if (categoryId) {
+    where.categories = { some: { id: +categoryId } };
+  }
+  if (chainId) {
+    where.chains = { some: { id: +chainId } };
+  }
+
   const channels = await prisma.youtubeChannel.findMany({
+    where,
     select: {
       id: true,
       name: true,
@@ -147,10 +203,24 @@ exports.getChannel = asyncHandler(async (req, res, next) => {
 });
 
 exports.getAllGroups = asyncHandler(async (req, res, next) => {
-  const { limit, offset } = req.query;
+  // Handle queries
+  let { keyword, categoryId, chainId, limit, offset } = req.query;
   if (limit > 40) limit = 40;
 
+  // Generate where condition
+  const where = {};
+  if (keyword && keyword.trim().length > 0) {
+    where.name = { contains: keyword.trim(), mode: 'insensitive' };
+  }
+  if (categoryId) {
+    where.categories = { some: { id: +categoryId } };
+  }
+  if (chainId) {
+    where.chains = { some: { id: +chainId } };
+  }
+
   const groups = await prisma.telegramGroup.findMany({
+    where,
     select: {
       id: true,
       name: true,

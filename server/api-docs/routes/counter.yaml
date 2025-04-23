@@ -7,9 +7,18 @@ paths:
       parameters:
         - in: query
           name: table
+          required: true
           schema:
             type: string
-            enum: ['Academy']
+            enum:
+              [
+                'Academy',
+                'Educator',
+                'Podcast',
+                'YoutubeChannel',
+                'Tutorial',
+                'TelegramGroup',
+              ]
           description: Fetch counter by table name
       responses:
         '200':

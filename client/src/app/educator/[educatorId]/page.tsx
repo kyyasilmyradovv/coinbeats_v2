@@ -84,7 +84,7 @@ function ActTypes({ educator }: TTabsProps) {
                             {/* Social Links */}
                             <div className="flex flex-col items-center">
                                 <div className="flex items-center mb-2">
-                                    <p className="text-sm font-medium text-center">Connect with the Project</p>
+                                    <p className="text-sm font-medium text-center">Connect with {educator?.name}</p>
                                 </div>
                                 <div className="flex items-center justify-center gap-5">
                                     {SOCIALSDISCOVER.filter((social) => !!educator?.[social.hrefKey])?.map((social, index) => (
@@ -175,8 +175,6 @@ export default function Educator() {
                             <p className="mb-2 text-white/90 text-center">{educator?.bio}</p>
 
                             <p className="text-white/70 text-sm mt-1">Visited {educator?.visitCount?.toLocaleString()} times</p>
-
-                            <p className="text-white/80 mt-4 text-sm">{educator?.contentOrigin}</p>
                         </div>
                     </div>
                     <ActTypes educator={educator} />

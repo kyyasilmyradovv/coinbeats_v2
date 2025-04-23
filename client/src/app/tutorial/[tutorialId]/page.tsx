@@ -1,22 +1,14 @@
 'use client'
-
-import Loading from '@/components/loading'
 import { AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import { constructImageUrl } from '@/lib/utils'
-import { SOCIALSDISCOVER } from '@/shared/socials'
 import { useTutorialQuery } from '@/store/api/tutorial.api'
 import { Avatar } from '@radix-ui/react-avatar'
 import { List, Recycle, Send, X } from 'lucide-react'
 import Image from 'next/image'
-import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import TutorialSkeleton from './tutorialSkleton'
-import { TTutorialSingle } from '@/types/tutorial'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { useState } from 'react'
-import { Button } from '@/components/ui/button'
 
 export default function Tutorial() {
     const params = useParams()
@@ -60,10 +52,7 @@ export default function Tutorial() {
 
                             <h2 className="text-2xl font-bold mb-3 text-white">{tutorial?.title}</h2>
                             <p className="mb-2 text-white/90 text-center">{tutorial?.description}</p>
-
-                            <p className="text-white/70 text-sm mt-1">Visited {tutorial?.visitCount?.toLocaleString()} times</p>
-
-                            <p className="text-white/80 mt-4 text-sm">{tutorial?.contentOrigin}</p>
+                            <p className="text-white/70 text-sm mt-1">Watched {tutorial?.visitCount?.toLocaleString()} times</p>
                         </div>
                     </div>
                     <div className="container mx-auto">
@@ -134,29 +123,6 @@ export default function Tutorial() {
                                     </div>
                                 </div>
                             </div>
-
-                            <div className="border-t my-4" />
-
-                            {/* Social Links */}
-                            {SOCIALSDISCOVER.filter((social) => !!tutorial?.[social.hrefKey])?.length > 0 && (
-                                <div className="flex flex-col items-center">
-                                    <div className="flex items-center mb-2">
-                                        <p className="text-sm font-medium text-center">Connect with the Project</p>
-                                    </div>
-                                    <div className="flex items-center justify-center gap-5">
-                                        {SOCIALSDISCOVER.filter((social) => !!tutorial?.[social.hrefKey])?.map((social, index) => (
-                                            <Link
-                                                href={tutorial?.[social.hrefKey] || '#'}
-                                                key={index}
-                                                scroll={false}
-                                                className="text-muted-foreground hover:text-brand hover:scale-110 transition-all"
-                                            >
-                                                {social.icon}
-                                            </Link>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
                         </Card>
                     </div>
                 </div>

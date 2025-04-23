@@ -35,7 +35,7 @@ function AICard({}: AICardProps) {
             <CardFooter className="mt-auto px-2 py-4 flex justify-center w-full">
                 <Link href={'/'} passHref className="w-full">
                     <Button variant="outline" className="rounded-full px-6  border-brand cursor-pointer w-full background-brand font-bold">
-                        LEARN WIHT AI
+                        LEARN WITH AI
                     </Button>
                 </Link>
             </CardFooter>
