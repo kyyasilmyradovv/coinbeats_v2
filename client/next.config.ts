@@ -32,7 +32,7 @@ const nextConfig: NextConfig = {
                 port: '5000'
             }
         ],
-        domains: ['telegram.coinbeats.xyz'],
+        domains: ['http://telegram.coinbeats.xyz:5000'],
         loader: 'custom',
         loaderFile: './src/lib/image-loader.ts'
     }
