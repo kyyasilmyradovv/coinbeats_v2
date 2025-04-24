@@ -248,8 +248,8 @@ function AcademyContent({ academyId }: AcademyContentProps) {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
                     {sortedEntries.map(({ key, displayValue }) => (
                         <div key={key} className="flex flex-col border rounded-md p-3 bg-muted/30">
-                            <span className="text-xs text-muted-foreground mb-1 capitalize">{key}</span>
-                            <span className="text-sm break-words">{displayValue}</span>
+                            <span className="text-md text-muted-foreground mb-1 capitalize">{key}</span>
+                            <span className="text-md break-words">{displayValue}</span>
                         </div>
                     ))}
                 </div>
@@ -270,14 +270,11 @@ function AcademyContent({ academyId }: AcademyContentProps) {
 
                         return (
                             <div key={index} className={index > 0 ? 'mt-6 pt-4 border-t' : ''}>
-                                <h4 className="text-base font-medium mb-2">{item.question}</h4>
+                                <h4 className="text-muted-foreground font-medium mb-2">{item.question}</h4>
                                 {isTokenomics && isJsonString ? (
                                     renderTokenomicsData(item.answer)
                                 ) : (
-                                    <div
-                                        className="text-sm text-muted-foreground prose prose-sm max-w-none"
-                                        dangerouslySetInnerHTML={{ __html: item.answer }}
-                                    />
+                                    <div className="text-md max-w-none" dangerouslySetInnerHTML={{ __html: item.answer }} />
                                 )}
                             </div>
                         )
