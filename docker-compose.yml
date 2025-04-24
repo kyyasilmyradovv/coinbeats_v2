@@ -8,10 +8,10 @@ services:
     networks:
       - app-network
     depends_on:
-      - coinbeats-backend-blue-1
+      - backend-blue
     restart: always
 
-  coinbeats-backend-blue-1:
+  backend-blue:
     build:
       context: ./server
       dockerfile: Dockerfile
