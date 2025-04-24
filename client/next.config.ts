@@ -31,7 +31,10 @@ const nextConfig: NextConfig = {
                 hostname: 'telegram.coinbeats.xyz',
                 port: '5000'
             }
-        ]
+        ],
+        domains: ['telegram.coinbeats.xyz'],
+        loader: 'custom',
+        loaderFile: './src/lib/image-loader.ts'
     }
 }
 
