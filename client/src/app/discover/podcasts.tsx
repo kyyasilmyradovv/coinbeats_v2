@@ -18,7 +18,7 @@ import PodcastCard from '@/components/PodcastCard'
 function Filters({}: any) {
     const dispatch = useAppDispatch()
     const podcastSendInfo = useAppSelector((state) => state.podcast.podcastSendInfo)
-    const { currentData: totalAcademies, isLoading, isFetching, isUninitialized } = useCounterQuery({ table: 'Academy' })
+    const { currentData: totalAcademies, isLoading, isFetching, isUninitialized } = useCounterQuery({ table: 'Podcast' })
     return (
         <div>
             <div className="mb-6 flex gap-2 flex-wrap items-center w-full">

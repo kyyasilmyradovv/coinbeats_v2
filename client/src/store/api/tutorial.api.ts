@@ -18,7 +18,7 @@ export const tutorialsApi = apiSlice.injectEndpoints({
                 }
                 currentCache.push(...newItems)
             },
-            forceRefetch: ({ currentArg, previousArg }) => currentArg !== previousArg,
+            forceRefetch: ({ currentArg, previousArg }) => JSON.stringify(currentArg) !== JSON.stringify(previousArg),
             providesTags: ['Tutorials']
         }),
 

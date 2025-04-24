@@ -3,20 +3,14 @@ import * as React from 'react'
 import Link from 'next/link'
 import { Button } from './ui/button'
 import { ThemeToggle } from './theme toggle/theme-toggle'
-import { AlertCircle, ArrowBigLeft, Bell, BellRing, Coins, User } from 'lucide-react'
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar'
+import { ArrowLeft, Bell } from 'lucide-react'
 import Image from 'next/image'
 import { useTheme } from 'next-themes'
 import { ROUTES } from '@/shared/links'
 import { usePathname, useRouter } from 'next/navigation'
 import { NavMenu } from './navigation'
-import { LoginModal } from './loginModal'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
-import { setLoginModalOpen } from '@/store/general/generalSlice'
-import { useProfileQuery } from '@/store/api/auth.api'
-import Loading from './loading'
 import { DropdownMenuProfil } from './profileMenu'
-import { Skeleton } from './ui/skeleton'
 
 // THIS IS A TEMPORARY HEADER FOR SIGNUP AND LANDING PAGE WHILE SITE IS NOT LIVE YET
 export function Header() {
@@ -32,9 +26,8 @@ export function Header() {
             <div className="flex items-center gap-4">
                 {pathname !== ROUTES.HOME && (
                     <Link href={ROUTES.HOME} className="z-100">
-                        <Button onClick={() => router.back()} variant="outline" size="default">
-                            <ArrowBigLeft className="h-4 w-4" />
-                            <p className="hidden md:flex">Back</p>
+                        <Button onClick={() => router.back()} variant="ghost" size="default">
+                            <ArrowLeft className="h-4 w-4" />
                         </Button>
                     </Link>
                 )}

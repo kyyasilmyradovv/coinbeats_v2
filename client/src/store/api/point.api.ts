@@ -18,7 +18,7 @@ export const pointsApi = apiSlice.injectEndpoints({
                 }
                 currentCache.push(...newItems)
             },
-            forceRefetch: ({ currentArg, previousArg }) => currentArg !== previousArg,
+            forceRefetch: ({ currentArg, previousArg }) => JSON.stringify(currentArg) !== JSON.stringify(previousArg),
             providesTags: ['Points']
         }),
         history: builder.query({
@@ -35,7 +35,7 @@ export const pointsApi = apiSlice.injectEndpoints({
                 }
                 currentCache.push(...newItems)
             },
-            forceRefetch: ({ currentArg, previousArg }) => currentArg !== previousArg,
+            forceRefetch: ({ currentArg, previousArg }) => JSON.stringify(currentArg) !== JSON.stringify(previousArg),
             providesTags: ['PointHistory']
         }),
         myStats: builder.query<TMyStats, void>({

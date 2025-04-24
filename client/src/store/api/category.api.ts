@@ -20,14 +20,17 @@ export const categoriesApi = apiSlice.injectEndpoints({
 
                 return result
             },
-            serializeQueryArgs: ({ endpointName }) => endpointName,
+            serializeQueryArgs: ({ endpointName, queryArgs }) => {
+                const { offset, limit, ...rest } = queryArgs || {}
+                return JSON.stringify({ endpointName, ...rest })
+            },
             merge: (currentCache, newItems, { arg: { offset } }) => {
                 if (offset === 0) {
                     currentCache.length = 0
                 }
                 currentCache.push(...newItems)
             },
-            forceRefetch: ({ currentArg, previousArg }) => currentArg !== previousArg,
+            forceRefetch: ({ currentArg, previousArg }) => JSON.stringify(currentArg) !== JSON.stringify(previousArg),
             providesTags: ['Categories']
         })
     }),

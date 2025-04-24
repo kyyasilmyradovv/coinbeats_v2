@@ -34,10 +34,18 @@ export function SearchBar({ onSearch }: SearchBarProps) {
         return () => window.removeEventListener('keydown', handleKeyDown)
     }, [])
 
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') {
+            e.preventDefault()
+            onSearch(value)
+        }
+    }
+
     return (
         <div className="relative w-full max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4 pointer-events-none" />
             <Input
+                onKeyDown={handleKeyDown}
                 onChange={(e) => {
                     setValue(e.target.value)
                 }}

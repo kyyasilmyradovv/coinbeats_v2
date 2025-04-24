@@ -5,18 +5,26 @@ import Podcasts from './podcasts'
 import { cn } from '@/lib/utils'
 import Channels from './channel'
 import Tutorials from './tutorial'
-import AICard from '@/components/AICard'
 import AI from './AI'
+import { useAppDispatch, useAppSelector } from '@/store/hooks'
+import { setDiscoverMenuValue } from '@/store/general/generalSlice'
 
 function TabsSection() {
+    const dispatch = useAppDispatch()
+    const discoverMenuValue = useAppSelector((state) => state.general.discoverMenuValue)
+
+    const handleTabChange = (tab: string) => {
+        dispatch(setDiscoverMenuValue(tab))
+    }
+
     return (
-        <Tabs defaultValue="educators" className="w-full">
-            <TabsList className="grid w-full grid-cols-5">
+        <Tabs value={discoverMenuValue} onValueChange={handleTabChange} defaultValue="educators" className="w-full">
+            <TabsList className="grid w-full h-fit  grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2 mb-4">
                 {[
                     { value: 'educators', label: 'Educators' },
                     { value: 'podcasts', label: 'Podcasts' },
                     { value: 'ytbChannels', label: 'Youtube Channels' },
-                    // { value: 'tgGroups', label: 'TG Groups' },
+                    { value: 'tgGroups', label: 'Telegram Groups' },
                     { value: 'tutorials', label: 'Tutorials' },
                     { value: 'AI', label: 'AI' }
                 ].map(({ value, label }) => (
@@ -46,7 +54,7 @@ function TabsSection() {
             <TabsContent value="ytbChannels">
                 <Channels />
             </TabsContent>
-            {/* <TabsContent value="tgGroups"></TabsContent> */}
+            <TabsContent value="tgGroups"></TabsContent>
             <TabsContent value="tutorials">
                 <Tutorials />
             </TabsContent>

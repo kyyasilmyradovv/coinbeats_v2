@@ -7,12 +7,14 @@ type SliceState = {
     signUpModalOpen: boolean
     step: TSteps
     newMail?: string
+    discoverMenuValue: string
 }
 
 const initialState: SliceState = {
     loginModalOpen: false,
     signUpModalOpen: false,
-    step: 1
+    step: 1,
+    discoverMenuValue: 'educators'
 }
 
 export const generalSlice = createSlice({
@@ -30,9 +32,12 @@ export const generalSlice = createSlice({
         },
         setNewMail(state, action: PayloadAction<string>) {
             state.newMail = action.payload
+        },
+        setDiscoverMenuValue(state, action: PayloadAction<string>) {
+            state.discoverMenuValue = action.payload
         }
     }
 })
 
-export const { setLoginModalOpen, setSignUpModalOpen, setStep, setNewMail } = generalSlice.actions
+export const { setLoginModalOpen, setSignUpModalOpen, setStep, setNewMail, setDiscoverMenuValue } = generalSlice.actions
 export default generalSlice.reducer

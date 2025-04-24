@@ -28,6 +28,18 @@ export function NavMenu() {
                     if (pathname.split('/')[1] === 'academy' && item.href === '/') {
                         isActive = true
                     }
+                    if (pathname.split('/')[1] === 'educator' && item.href === '/discover') {
+                        isActive = true
+                    }
+                    if (pathname.split('/')[1] === 'podcast' && item.href === '/discover') {
+                        isActive = true
+                    }
+                    if (pathname.split('/')[1] === 'channel' && item.href === '/discover') {
+                        isActive = true
+                    }
+                    if (pathname.split('/')[1] === 'tutorial' && item.href === '/discover') {
+                        isActive = true
+                    }
 
                     return (
                         <NavigationMenuItem key={i} className="relative">

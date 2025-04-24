@@ -27,7 +27,7 @@ export const chainsApi = apiSlice.injectEndpoints({
                 }
                 currentCache.push(...newItems)
             },
-            forceRefetch: ({ currentArg, previousArg }) => currentArg !== previousArg,
+            forceRefetch: ({ currentArg, previousArg }) => JSON.stringify(currentArg) !== JSON.stringify(previousArg),
             providesTags: ['Chains']
         })
     }),
