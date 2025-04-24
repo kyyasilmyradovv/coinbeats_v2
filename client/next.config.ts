@@ -27,14 +27,10 @@ const nextConfig: NextConfig = {
     images: {
         remotePatterns: [
             {
-                protocol: 'http',
-                hostname: 'telegram.coinbeats.xyz',
-                port: '5000'
+                protocol: 'https',
+                hostname: 'telegram.coinbeats.xyz'
             }
-        ],
-        domains: ['http://telegram.coinbeats.xyz:5000'],
-        loader: 'custom',
-        loaderFile: './src/lib/image-loader.ts'
+        ]
     }
 }
 
