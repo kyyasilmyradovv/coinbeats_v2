@@ -20,8 +20,15 @@ export const buildUrlWithParams = (baseUrl: string, params: { [key: string]: any
     return `${baseUrl}?${queryParams.toString()}`
 }
 
-export const constructImageUrl = (url: string | undefined) => {
-    return `http://45.76.162.32:5000/${url}`
+export function constructImageUrl(path?: string) {
+    if (!path) return '/placeholder-image.jpg'
+
+    // If path is relative (doesn't start with http), add server base URL
+    if (path && !path.startsWith('http')) {
+        return `http://telegram.coinbeats.xyz:5000${path.startsWith('/') ? '' : '/'}${path}`
+    }
+
+    return path
 }
 
 export function removeEmpty(obj: Record<string, any>) {
