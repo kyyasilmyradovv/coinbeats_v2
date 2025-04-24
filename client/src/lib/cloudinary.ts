@@ -16,7 +16,7 @@ export function getProxiedImageUrl(imageUrl?: string) {
     if (!imageUrl) return '/placeholder-image.jpg'
 
     // If it's an HTTP URL from your server, proxy it through Cloudinary
-    if (imageUrl.includes('45.76.162.32')) {
+    if (imageUrl.includes('telegram.coinbeats.xyz:5000')) {
         // Manually construct the Cloudinary fetch URL
         const encodedUrl = encodeURIComponent(imageUrl)
         return `https://res.cloudinary.com/${CLOUD_NAME}/image/fetch/f_auto,q_auto/${encodedUrl}`
