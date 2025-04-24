@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils'
 function Filters({}: any) {
     const dispatch = useAppDispatch()
     const educatorSendInfo = useAppSelector((state) => state.educator.educatorSendInfo)
-    const { currentData: totalAcademies, isLoading, isFetching, isUninitialized } = useCounterQuery({ table: 'Academy' })
+    const { currentData: totalAcademies, isLoading, isFetching, isUninitialized } = useCounterQuery({ table: 'Educator' })
     return (
         <div>
             <div className="mb-6 flex gap-2 flex-wrap items-center w-full">

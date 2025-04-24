@@ -17,7 +17,7 @@ import ChannelCard from '@/components/ChannelCard'
 function Filters({}: any) {
     const dispatch = useAppDispatch()
     const channelSendInfo = useAppSelector((state) => state.channel.channelSendInfo)
-    const { currentData: totalAcademies, isLoading, isFetching, isUninitialized } = useCounterQuery({ table: 'Academy' })
+    const { currentData: totalAcademies, isLoading, isFetching, isUninitialized } = useCounterQuery({ table: 'YoutubeChannel' })
     return (
         <div>
             <div className="mb-6 flex gap-2 flex-wrap items-center w-full">

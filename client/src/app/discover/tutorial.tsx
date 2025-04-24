@@ -10,7 +10,6 @@ import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import InfiniteScroll from 'react-infinite-scroll-component'
 import { TTutorial } from '@/types/tutorial'
-import AcademyCard from '@/components/academyCard'
 
 import { cn } from '@/lib/utils'
 import TutorialCard from '@/components/TutorialCard'
@@ -18,7 +17,7 @@ import TutorialCard from '@/components/TutorialCard'
 function Filters({}: any) {
     const dispatch = useAppDispatch()
     const tutorialSendInfo = useAppSelector((state) => state.tutorial.tutorialSendInfo)
-    const { currentData: totalAcademies, isLoading, isFetching, isUninitialized } = useCounterQuery({ table: 'Academy' })
+    const { currentData: totalAcademies, isLoading, isFetching, isUninitialized } = useCounterQuery({ table: 'Tutorial' })
     return (
         <div>
             <div className="mb-6 flex gap-2 flex-wrap items-center w-full">

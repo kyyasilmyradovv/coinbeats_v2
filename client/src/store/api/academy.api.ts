@@ -18,7 +18,7 @@ export const academiesApi = apiSlice.injectEndpoints({
                 }
                 currentCache.push(...newItems)
             },
-            forceRefetch: ({ currentArg, previousArg }) => currentArg !== previousArg,
+            forceRefetch: ({ currentArg, previousArg }) => JSON.stringify(currentArg) !== JSON.stringify(previousArg),
             providesTags: ['Academies']
         }),
         academy: builder.query<TAcademySingle, string>({
