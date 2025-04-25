@@ -16,3 +16,69 @@ components:
           type: string
         prompt:
           type: string
+    ChatUpdate:
+      type: object
+      required:
+        - title
+      properties:
+        title:
+          type: string
+    ChatAsk:
+      type: object
+      required:
+        - prompt
+        - addresses
+      properties:
+        prompt:
+          type: string
+          example: "What is the capital of France?"
+        addresses:
+          type: array
+          items:
+            type: string
+          example: []
+          description: "Sent empty array for now"
+        messages:
+          type: array
+          items:
+            type: string
+          example: []
+          description: "Sent empty array for now"
+        chainId:
+          type: string
+    ChatMessage:
+      type: object
+      properties:
+        id:
+          type: integer
+        message:
+          type: string
+        sender:
+          type: string
+          enum: ['user', 'ai']
+        academies:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              name:
+                type: string
+              logoUrl:
+                type: string
+    ChatMessageInput:
+      type: object
+      required:
+        - message
+        - sender
+      properties:
+        message:
+          type: string
+        sender:
+          type: string
+          enum: ['user', 'ai']
+        academy_ids:
+          type: array
+          items:
+            type: integer

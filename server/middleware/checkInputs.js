@@ -10,6 +10,8 @@ let requiredFields = {
   profile: [],
   submit_quiz: ['questionId', 'choiceId', 'secondsLeft', 'isLastQuestion'],
   chat: ['prompt'],
+  ask_chat: ['prompt', 'addresses'],
+  chat_message: ['message', 'sender'],
 };
 
 // Common Functions
@@ -85,6 +87,9 @@ let typeCheckers = {
   code: parentFunctions.isString,
   prompt: parentFunctions.isString,
   title: parentFunctions.isString,
+  address: parentFunctions.isString,
+  chainId: parentFunctions.isString,
+  message: parentFunctions.isString,
   // Number
   order: parentFunctions.isNumber,
   count: parentFunctions.isNumber,
@@ -101,11 +106,14 @@ let typeCheckers = {
   auto_close_at: parentFunctions.isDate,
   // Uuid
   movieUuid: parentFunctions.isUuid,
+  // Array of integer
+  academy_ids: parentFunctions.isArrayOfIntegers,
   // Array of strings
   accesses: parentFunctions.isArrayOfStrings,
+  addresses: parentFunctions.isArrayOfStrings,
+  messages: parentFunctions.isArrayOfStrings,
   // Array of uuids
   awardUuids: parentFunctions.isArrayOfUuids,
-  audioUuids: parentFunctions.isArrayOfUuids,
   // Array of objects
   coins: parentFunctions.isArrayOfObjects,
   // Customized validators
@@ -113,6 +121,9 @@ let typeCheckers = {
   phone: parentFunctions.isPhoneNumber,
   language: function (value) {
     return typeof value === 'string' && ['tm', 'ru'].includes(value);
+  },
+  sender: function (value) {
+    return typeof value === 'string' && ['ai', 'user'].includes(value);
   },
 };
 

@@ -1,74 +1,57 @@
 const { PrismaClient } = require('@prisma/client');
-const createError = require('http-errors');
+const asyncHandler = require('../utils/asyncHandler');
 const prisma = new PrismaClient();
 
-exports.getAllMessages = async (req, res, next) => {
-  try {
-    const telegramUserId = +req.headers['x-telegram-user-id'];
-    if (!telegramUserId)
-      return next(createError(400, 'Telegram User ID is required'));
+exports.getAllMessages = asyncHandler(async (req, res, next) => {
+  const { id } = req.params;
+  const { limit = 10, offset = 0 } = req.query;
 
-    const user = await prisma.user.findUnique({
-      where: { telegramUserId },
-      select: { id: true },
-    });
-    if (!user) return next(createError(404, 'User not found'));
+  const chat = await prisma.aiChats.findUnique({
+    where: { id: +id, user_id: req.user?.id },
+    select: { id: true },
+  });
+  if (!chat) return res.status(404).json({ message: 'Chat not found' });
 
-    const { id } = req.params;
-    const { limit = 10, offset = 0 } = req.query;
+  let messages = await prisma.aiChatMessages.findMany({
+    where: { chat_id: +id },
+    select: {
+      id: true,
+      message: true,
+      sender: true,
+      academies: { select: { id: true, name: true, logoUrl: true } },
+    },
+    orderBy: { id: 'desc' },
+    take: +limit,
+    skip: +offset,
+  });
 
-    const where = { chat_id: +id, user_id: user?.id };
+  res.status(200).send(messages);
+});
 
-    let messages = await prisma.aiChatMessages.findMany({
-      where,
-      select: { id: true, message: true, sender: true },
-      orderBy: { id: 'desc' },
-      take: +limit,
-      skip: +offset,
-    });
+exports.createMessage = asyncHandler(async (req, res, next) => {
+  let { id } = req.params;
+  let { message, sender, academy_ids } = req.body;
 
-    res.status(200).send(messages);
-  } catch (error) {
-    console.error('Error fetching messages:', error);
-    next(createError(500, 'Error fetching messages'));
-  }
-};
+  const chat = await prisma.aiChats.findUnique({
+    where: { id: +id, user_id: req.user?.id },
+    select: { id: true },
+  });
+  if (!chat) return res.status(404).json({ message: 'Chat not found' });
 
-exports.createMessage = async (req, res, next) => {
-  try {
-    const telegramUserId = +req.headers['x-telegram-user-id'];
-    if (!telegramUserId)
-      return next(createError(400, 'Telegram User ID is required'));
+  const newMessage = await prisma.aiChatMessages.create({
+    data: {
+      message,
+      sender,
+      chat_id: +id,
+      user_id: req.user?.id,
+      ...(academy_ids?.length > 0 && {
+        academies: {
+          connect: academy_ids.map((id) => ({ id: +id })),
+        },
+      }),
+    },
+    select: { id: true, message: true, sender: true },
+  });
 
-    const user = await prisma.user.findUnique({
-      where: { telegramUserId },
-      select: { id: true },
-    });
-    if (!user) return next(createError(404, 'User not found'));
-
-    let { id } = req.params;
-    let { message, sender, academy_ids } = req.body;
-
-    if (!id || !message || !['user', 'ai'].includes(sender))
-      return next(createError(400, 'Bad request'));
-
-    const newMessage = await prisma.aiChatMessages.create({
-      data: {
-        message,
-        sender,
-        chat_id: +id,
-        user_id: user?.id,
-        ...(academy_ids?.length > 0 && {
-          academies: {
-            connect: academy_ids.map((id) => ({ id: +id })),
-          },
-        }),
-      },
-    });
-
-    res.status(200).send(newMessage);
-  } catch (error) {
-    console.error('Error creating message:', error);
-    next(createError(500, 'Error creating message'));
-  }
-};
+  res.status(200).send(newMessage);
+});

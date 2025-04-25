@@ -29,3 +29,112 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Chat'
+  /api/v2/ai-chat/{id}:
+    put:
+      tags: [Chat]
+      description: Update existing chat
+      statuses: [400, 401, 404]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          description: Chat id
+          required: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatUpdate'
+      responses:
+        '200':
+          description: An object which consists updated chat information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Chat'
+    delete:
+      tags: [Chat]
+      description: Delete chat
+      statuses: [204, 401, 404]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          description: Chat id
+          required: true
+  /api/v2/ai-chat/ask:
+    post:
+      tags: [Chat]
+      description: Ask a question to chat
+      statuses: [400, 401]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatAsk'
+      responses:
+        '200':
+          description: An object which consists updated chat information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+                    example: "Capital of France is Paris"
+  /api/v2/ai-chat/{id}/messages:
+    get:
+      tags: [Chat]
+      description: Fetch all messages of specific chat
+      statuses: [401, 404]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          description: Chat id
+          required: true
+      responses:
+        '200':
+          description: An array of objects which consist of chat messages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ChatMessage'
+    post:
+      tags: [Chat]
+      description: Create chat message to save user chats
+      statuses: [400, 401]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          description: Chat id
+          required: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatMessageInput'
+      responses:
+        '200':
+          description: An object which consists updated chat information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  message:
+                    type: string
+                  sender:
+                    type: string
+                    enum: ['user', 'ai']
+                    

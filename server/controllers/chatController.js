@@ -89,86 +89,58 @@ async function generateChatTitle(prompt) {
   }
 }
 
-/**
- * Handles the chat request:
- *  - If classified as "twitter", retrieve Twitter data from Brian.
- *  - If classified as "blockchain", try Brian’s agent.
- *    -> if Brian fails, fallback to OpenAI with our Coinbeats persona
- *  - Else, use OpenAI ChatGPT with our Coinbeats persona.
- */
-exports.handleChat = async (req, res) => {
-  try {
-    const { prompt, address, chainId, messages = [] } = req.body;
+exports.askChat = asyncHandler(async (req, res, next) => {
+  const { prompt, addresses: address, chainId, messages = [] } = req.body;
+  const taskType = await classifyPrompt(prompt);
 
-    // console.log('[chatController] Received chat request:', req.body);
-
-    if (!prompt || !address) {
-      return res.status(400).json({ error: 'Prompt and address required' });
-    }
-
-    const taskType = await classifyPrompt(prompt);
-    console.log(`[chatController] Classified prompt as: ${taskType}`);
-
-    if (taskType === 'twitter') {
-      // Twitter-related request: for example, get trends
-      const twitterData = await brianService.getTwitterTrends();
-      return res.status(200).json({ result: twitterData });
-    }
-
-    if (taskType === 'blockchain') {
-      // On-chain crypto/transaction question: use Brian's on-chain agent
-      const brianResponse = await brianService.interactWithAgent({
-        prompt,
-        address,
-        chainId,
-        messages,
-      });
-
-      // If Brian can't answer, fallback to OpenAI with Coinbeats system prompt
-      if (brianResponse.error) {
-        console.log('[chatController] Brian failed, switching to OpenAI...');
-        const fallbackResponse = await openaiClient.chat.completions.create({
-          model: 'gpt-4',
-          messages: [
-            {
-              role: 'system',
-              content:
-                agentVirtuals.description || 'A friendly coinbeats agent.',
-            },
-            { role: 'user', content: prompt },
-          ],
-        });
-        return res.status(200).json({
-          result: { answer: fallbackResponse.choices[0].message.content },
-        });
-      }
-
-      return res.status(200).json({ result: brianResponse });
-    }
-
-    // Otherwise, general chat: answer directly using OpenAI with Coinbeats persona
-    const chatResponse = await openaiClient.chat.completions.create({
-      model: 'gpt-4',
-      messages: [
-        {
-          role: 'system',
-          content:
-            agentVirtuals.description || 'A friendly Coinbeats AI agent.',
-        },
-        { role: 'user', content: prompt },
-      ],
-    });
-
-    return res.status(200).json({
-      result: { answer: chatResponse.choices[0].message.content },
-    });
-  } catch (error) {
-    console.error('Error in handleChat:', error);
-    return res
-      .status(500)
-      .json({ error: error.message || 'Internal server error' });
+  if (taskType === 'twitter') {
+    const twitterData = await brianService.getTwitterTrends();
+    return res.status(200).json({ result: twitterData });
   }
-};
+
+  if (taskType === 'blockchain') {
+    const brianResponse = await brianService.interactWithAgent({
+      prompt,
+      address,
+      chainId,
+      messages,
+    });
+
+    if (brianResponse.error) {
+      const fallbackResponse = await openaiClient.chat.completions.create({
+        model: 'gpt-4',
+        messages: [
+          {
+            role: 'system',
+            content: agentVirtuals.description || 'A friendly coinbeats agent.',
+          },
+          { role: 'user', content: prompt },
+        ],
+      });
+      return res.status(200).json({
+        result: { answer: fallbackResponse.choices[0].message.content },
+      });
+    }
+
+    return res.status(200).json({ result: brianResponse });
+  }
+
+  // Otherwise, general chat: answer directly using OpenAI with Coinbeats persona
+  const chatResponse = await openaiClient.chat.completions.create({
+    model: 'gpt-4',
+    messages: [
+      {
+        role: 'system',
+        content: agentVirtuals.description || 'A friendly Coinbeats AI agent.',
+      },
+      { role: 'user', content: prompt },
+    ],
+  });
+
+  return res.status(200).json({
+    result: { answer: chatResponse.choices[0].message.content },
+  });
+});
 
 exports.getAllChats = asyncHandler(async (req, res, next) => {
   const { keyword, limit = 20, offset = 0 } = req.query;
@@ -201,55 +173,26 @@ exports.createChat = asyncHandler(async (req, res, next) => {
   res.status(201).send(newChat);
 });
 
-exports.updateChat = async (req, res, next) => {
-  try {
-    const telegramUserId = +req.headers['x-telegram-user-id'];
-    if (!telegramUserId)
-      return next(createError(400, 'Telegram User ID is required'));
+exports.updateChat = asyncHandler(async (req, res, next) => {
+  const { id } = req.params;
+  const { title } = req.body;
 
-    const user = await prisma.user.findUnique({
-      where: { telegramUserId },
-      select: { id: true },
-    });
-    if (!user) return next(createError(404, 'User not found'));
+  const updatedChat = await prisma.aiChats.update({
+    where: { id: +id, user_id: req.user?.id },
+    data: { title },
+    select: { id: true, title: true },
+  });
 
-    const { id } = req.params;
-    const { title } = req.body;
+  res.status(200).send(updatedChat);
+});
 
-    await prisma.aiChats.update({
-      where: { id: +id, user_id: user?.id },
-      data: { title },
-    });
+exports.deleteChat = asyncHandler(async (req, res, next) => {
+  const { id } = req.params;
 
-    res.status(200).send();
-  } catch (error) {
-    console.error('Error updating chat:', error);
-    next(createError(500, 'Error updating chat'));
-  }
-};
+  await prisma.aiChats.update({
+    where: { id: +id, user_id: req.user?.id, is_deleted: false },
+    data: { is_deleted: true },
+  });
 
-exports.deleteChat = async (req, res, next) => {
-  try {
-    const telegramUserId = +req.headers['x-telegram-user-id'];
-    if (!telegramUserId)
-      return next(createError(400, 'Telegram User ID is required'));
-
-    const user = await prisma.user.findUnique({
-      where: { telegramUserId },
-      select: { id: true },
-    });
-    if (!user) return next(createError(404, 'User not found'));
-
-    const { id } = req.params;
-
-    await prisma.aiChats.update({
-      where: { id: +id, user_id: user?.id },
-      data: { is_deleted: true },
-    });
-
-    res.status(204).send();
-  } catch (error) {
-    console.error('Error deleting chat:', error);
-    next(createError(500, 'Error deleting chat'));
-  }
-};
+  res.status(204).send();
+});
