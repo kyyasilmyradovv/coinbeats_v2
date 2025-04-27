@@ -40,9 +40,9 @@ export default function RootLayout({ children, session }: { children: React.Reac
                                 <SignUpModal />
                             </main>
                         </Providers>
-                        <footer className="pt-0 pb-20">
+                        {/* <footer className="pt-0 pb-20">
                             <div className="px-2 text-center text-sm text-muted-foreground">© 2025 coinbeats All rights reserved.</div>
-                        </footer>
+                        </footer> */}
                         <Footer />
                     </ThemeProvider>
                 </body>
