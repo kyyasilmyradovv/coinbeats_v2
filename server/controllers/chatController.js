@@ -106,6 +106,8 @@ exports.askChat = asyncHandler(async (req, res, next) => {
       messages,
     });
 
+    console.log('Brian response:', brianResponse);
+
     if (brianResponse.error) {
       const fallbackResponse = await openaiClient.chat.completions.create({
         model: 'gpt-4',
