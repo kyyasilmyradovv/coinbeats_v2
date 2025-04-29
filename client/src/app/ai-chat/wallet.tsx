@@ -27,24 +27,8 @@ export default function WalletSidebar({ onClose }: { onClose?: () => void }) {
         address: account?.address
     })
 
-    console.log('++++++++')
-    console.log('++++++++')
-    console.log('++++++++')
-    console.log(wallet)
-    console.log('++++++++')
-    console.log('++++++++')
-    console.log('++++++++')
-
     // Get current network/chain info
     const chain = wallet?.getChain()
-
-    console.log('--------')
-    console.log('--------')
-    console.log('--------')
-    console.log(chain)
-    console.log('--------')
-    console.log('--------')
-    console.log('--------')
 
     const toggleExpanded = () => {
         setIsExpanded(!isExpanded)
@@ -91,8 +75,8 @@ export default function WalletSidebar({ onClose }: { onClose?: () => void }) {
         <div className="h-full w-full flex flex-col bg-background border-l">
             <div className="flex items-center justify-between px-4 pb-2">
                 <div className="flex items-center">
-                    <Wallet className="mr-2 h-5 w-5" />
-                    <h2 className="text-lg font-medium">My Wallet</h2>
+                    <Wallet className="mr-2 h-4 w-4" />
+                    <h2 className="text-md font-medium">My Wallet</h2>
                 </div>
                 <Button variant="ghost" size="icon" onClick={onClose}>
                     <X className="h-4 w-4" />
