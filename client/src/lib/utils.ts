@@ -27,3 +27,9 @@ export const constructImageUrl = (url: string | undefined) => {
 export function removeEmpty(obj: Record<string, any>) {
     return Object.fromEntries(Object.entries(obj).filter(([_, v]) => v !== undefined && v !== null))
 }
+
+export function truncateAddress(address: string, first = 6, last = 4): string {
+    if (!address) return ''
+    if (address.length <= first + last) return address
+    return `${address.slice(0, first)}...${address.slice(-last)}`
+}
