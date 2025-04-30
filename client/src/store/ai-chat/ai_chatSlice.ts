@@ -8,6 +8,7 @@ type SliceState = {
     chatSendInfo: TChatSendInfo
     chats: TChat[]
     messages: TMessage[]
+    isNewChat: boolean
 }
 
 const initialState: SliceState = {
@@ -17,7 +18,8 @@ const initialState: SliceState = {
         limit: 30
     },
     chats: [],
-    messages: []
+    messages: [],
+    isNewChat: false
 }
 
 export const ai_chatSlice = createSlice({
@@ -35,9 +37,12 @@ export const ai_chatSlice = createSlice({
         },
         setMessages(state, action: PayloadAction<TMessage[]>) {
             state.messages = action.payload
+        },
+        setIsNewChat(state, action: PayloadAction<boolean>) {
+            state.isNewChat = action.payload
         }
     }
 })
 
-export const { setPrompt, setChatSendInfo, setMessages, setChats } = ai_chatSlice.actions
+export const { setPrompt, setChatSendInfo, setMessages, setChats, setIsNewChat } = ai_chatSlice.actions
 export default ai_chatSlice.reducer

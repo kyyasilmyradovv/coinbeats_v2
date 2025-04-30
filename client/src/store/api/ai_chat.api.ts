@@ -1,6 +1,6 @@
 import { buildUrlWithParams, removeEmpty } from '@/lib/utils'
 import { apiSlice } from './apiSlice'
-import { TChat, TChatItemSendInfo, TChatSendInfo, TMessage } from '@/types/ai-chat'
+import { TAIQuestionRes, TAIQuestionSendInfo, TChat, TChatItemSendInfo, TChatSendInfo, TMessage } from '@/types/ai-chat'
 import { setChats, setMessages } from '../ai-chat/ai_chatSlice'
 
 export const chatApi = apiSlice.injectEndpoints({
@@ -57,14 +57,6 @@ export const chatApi = apiSlice.injectEndpoints({
                     method: 'GET'
                 }
             },
-            // serializeQueryArgs: ({ endpointName }) => endpointName,
-            // merge: (currentCache, newItems, { arg: { offset } }) => {
-            //     if (offset === 0) {
-            //         currentCache.length = 0
-            //     }
-            //     currentCache.push(...newItems)
-            // },
-            // forceRefetch: ({ currentArg, previousArg }) => JSON.stringify(currentArg) !== JSON.stringify(previousArg),
             onQueryStarted: async (arg, { dispatch, queryFulfilled }) => {
                 try {
                     const { data } = await queryFulfilled
@@ -75,9 +67,18 @@ export const chatApi = apiSlice.injectEndpoints({
                 }
             },
             providesTags: ['Chats']
+        }),
+        askQuestion: builder.mutation<TAIQuestionRes, TAIQuestionSendInfo>({
+            query: (params) => {
+                return {
+                    url: '/ai-chat/ask',
+                    method: 'POST',
+                    body: params
+                }
+            }
         })
     }),
     overrideExisting: false
 })
 
-export const { useChatsQuery, useChatQuery, useCreateChatMutation, useMessagesQuery } = chatApi
+export const { useChatsQuery, useChatQuery, useCreateChatMutation, useMessagesQuery, useAskQuestionMutation } = chatApi

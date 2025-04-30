@@ -16,6 +16,7 @@ export type TMessage = {
     message: string
     sender: TSender
     academies: TAcademy[]
+    streaming?: boolean
 }
 
 export type TChatItemSendInfo = {
@@ -24,3 +25,14 @@ export type TChatItemSendInfo = {
 }
 
 export type TSender = 'user' | 'ai'
+
+export type TAIQuestionSendInfo = {
+    prompt: string
+    addresses?: []
+    messages?: []
+    chainId?: string
+}
+
+export type TAIQuestionRes = {
+    result: { answer: string }
+}

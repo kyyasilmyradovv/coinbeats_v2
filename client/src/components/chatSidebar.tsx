@@ -16,9 +16,10 @@ import {
     useSidebar
 } from '@/components/ui/sidebar'
 import { useChatsQuery } from '@/store/api/ai_chat.api'
-import { useAppSelector } from '@/store/hooks'
+import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { ROUTES } from '@/shared/links'
 import Link from 'next/link'
+import { setIsNewChat } from '@/store/ai-chat/ai_chatSlice'
 
 // Skeleton component using Tailwind CSS
 function Skeleton({ className = '' }: { className?: string }) {
@@ -26,6 +27,7 @@ function Skeleton({ className = '' }: { className?: string }) {
 }
 
 export function ChatSidebar() {
+    const dispatch = useAppDispatch()
     const { open } = useSidebar()
     const chatSendInfo = useAppSelector((state) => state.ai_chat.chatSendInfo)
     const chats = useAppSelector((state) => state.ai_chat.chats)
@@ -60,7 +62,13 @@ export function ChatSidebar() {
                                   ))
                                 : chats?.map((chat) => (
                                       <SidebarMenuItem key={chat.id} className="mt-1">
-                                          <Link href={ROUTES.getMessages(chat.id)} className="block">
+                                          <Link
+                                              href={ROUTES.getMessages(chat.id)}
+                                              className="block"
+                                              onClick={() => {
+                                                  dispatch(setIsNewChat(false))
+                                              }}
+                                          >
                                               <SidebarMenuButton className="cursor-pointer">
                                                   <p className="flex w-full items-center rounded-md px-2 py-1.5 text-sm hover:bg-muted/50 transition-colors truncate">
                                                       {chat.title}

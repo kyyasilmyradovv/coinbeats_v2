@@ -8,7 +8,7 @@ import Image from 'next/image'
 import { useTheme } from 'next-themes'
 import { AIChatInitial } from '@/data/AIChat'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
-import { setChats, setMessages, setPrompt } from '@/store/ai-chat/ai_chatSlice'
+import { setChats, setIsNewChat, setMessages, setPrompt } from '@/store/ai-chat/ai_chatSlice'
 import Link from 'next/link'
 import { useCreateChatMutation } from '@/store/api/ai_chat.api'
 import { toast } from 'sonner'
@@ -44,9 +44,10 @@ export default function NewChat() {
             })
         }
         if (createChatIsSuccess) {
+            dispatch(setIsNewChat(true))
             dispatch(setPrompt(''))
             dispatch(setChats([createChatData, ...chats]))
-            // dispatch(setMessages([...messages, { id: 0, message: prompt, sender: 'user', academies: [] }]))
+            dispatch(setMessages([{ id: 0, message: prompt, sender: 'user', academies: [] }]))
             router.push('/ai-chat/' + createChatData.id)
         }
         createChatReset()
