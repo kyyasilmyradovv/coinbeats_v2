@@ -19,7 +19,7 @@ import { useChatsQuery } from '@/store/api/ai_chat.api'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { ROUTES } from '@/shared/links'
 import Link from 'next/link'
-import { setIsNewChat } from '@/store/ai-chat/ai_chatSlice'
+import { setIsNewChat, setMessages } from '@/store/ai-chat/ai_chatSlice'
 
 // Skeleton component using Tailwind CSS
 function Skeleton({ className = '' }: { className?: string }) {
@@ -67,6 +67,7 @@ export function ChatSidebar() {
                                               className="block"
                                               onClick={() => {
                                                   dispatch(setIsNewChat(false))
+                                                  dispatch(setMessages([]))
                                               }}
                                           >
                                               <SidebarMenuButton className="cursor-pointer">

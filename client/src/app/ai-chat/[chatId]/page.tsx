@@ -28,7 +28,8 @@ export default function ChatById() {
         isLoading,
         isFetching
     } = useMessagesQuery(id?.toString() ?? '', {
-        skip: isNewChat || !id
+        skip: isNewChat || !id,
+        refetchOnMountOrArgChange: true
     })
 
     const [
