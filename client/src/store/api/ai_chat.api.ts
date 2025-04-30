@@ -1,6 +1,6 @@
 import { buildUrlWithParams, removeEmpty } from '@/lib/utils'
 import { apiSlice } from './apiSlice'
-import { TAIQuestionRes, TAIQuestionSendInfo, TChat, TChatItemSendInfo, TChatSendInfo, TMessage } from '@/types/ai-chat'
+import { TAIQuestionRes, TAIQuestionSendInfo, TChat, TChatItemSendInfo, TChatSendInfo, TMessage, TSaveQuestionSendInfo } from '@/types/ai-chat'
 import { setChats, setMessages } from '../ai-chat/ai_chatSlice'
 
 export const chatApi = apiSlice.injectEndpoints({
@@ -76,9 +76,18 @@ export const chatApi = apiSlice.injectEndpoints({
                     body: params
                 }
             }
+        }),
+        saveQuestion: builder.mutation<TMessage, { id: number; params: TSaveQuestionSendInfo }>({
+            query: (params) => {
+                return {
+                    url: `/ai-chat/${params.id}/messages`,
+                    method: 'POST',
+                    body: params.params
+                }
+            }
         })
     }),
     overrideExisting: false
 })
 
-export const { useChatsQuery, useChatQuery, useCreateChatMutation, useMessagesQuery, useAskQuestionMutation } = chatApi
+export const { useChatsQuery, useChatQuery, useCreateChatMutation, useMessagesQuery, useAskQuestionMutation, useSaveQuestionMutation } = chatApi

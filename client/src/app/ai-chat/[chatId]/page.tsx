@@ -7,10 +7,10 @@ import { useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { setMessages, setPrompt } from '@/store/ai-chat/ai_chatSlice'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
-import { useAskQuestionMutation, useMessagesQuery } from '@/store/api/ai_chat.api'
+import { useAskQuestionMutation, useMessagesQuery, useSaveQuestionMutation } from '@/store/api/ai_chat.api'
 import { useParams } from 'next/navigation'
 import { toast } from 'sonner'
-import { TMessage } from '@/types/ai-chat'
+import { TMessage, TSender } from '@/types/ai-chat'
 
 export default function ChatById() {
     const { open } = useSidebar()
@@ -32,6 +32,18 @@ export default function ChatById() {
     })
 
     const [
+        saveQuestion,
+        {
+            isSuccess: saveQuestionIsSuccess,
+            data: saveQuestionData,
+            isError: saveQuestionIsError,
+            isLoading: saveQuestionIsLoading,
+            error: saveQuestionError,
+            reset: saveQuestionReset
+        }
+    ] = useSaveQuestionMutation()
+
+    const [
         askQuestion,
         {
             isSuccess: askQuestionIsSuccess,
@@ -48,6 +60,18 @@ export default function ChatById() {
             prompt: question,
             addresses: [],
             messages: []
+        })
+        saveQuesFunc(question, 'user')
+    }
+
+    const saveQuesFunc = async (question: string, sender: TSender) => {
+        await saveQuestion({
+            id: Number(id),
+            params: {
+                message: question,
+                sender: sender,
+                academy_ids: []
+            }
         })
     }
 
@@ -87,6 +111,7 @@ export default function ChatById() {
             }
 
             dispatch(setMessages(newMessages))
+            saveQuesFunc(askQuestionData.result.answer, 'ai')
         }
 
         askQuestionReset()
@@ -154,7 +179,7 @@ export default function ChatById() {
                                 msg.sender === 'user' ? 'bg-muted/80' : index === messages?.length - 1 ? 'h-[calc(100vh-160px)]' : ''
                             } rounded-xl px-3 py-2 max-w-[85%] text-sm sm:text-base`}
                         >
-                            {msg.streaming ? <span className="animate-pulse text-muted-foreground">Thinking...</span> : msg.message}
+                            {msg.streaming ? <span className="animate-pulse text-muted-foreground">Coinbeats AI Thinking...</span> : msg.message}
                         </div>
                     </div>
                 ))}

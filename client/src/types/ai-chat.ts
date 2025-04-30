@@ -36,3 +36,9 @@ export type TAIQuestionSendInfo = {
 export type TAIQuestionRes = {
     result: { answer: string }
 }
+
+export type TSaveQuestionSendInfo = {
+    message: string
+    sender: TSender
+    academy_ids?: []
+}
