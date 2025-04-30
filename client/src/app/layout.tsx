@@ -33,7 +33,7 @@ export default function RootLayout({ children, session }: { children: React.Reac
                         <Header />
                         <Providers session={session}>
                             <TokenHandler />
-                            <main className="flex-1 ">
+                            <main className="flex-1 mt-[56px]">
                                 {children}
                                 <BackTopButton />
                                 <LoginModal />
