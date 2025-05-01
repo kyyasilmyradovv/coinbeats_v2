@@ -12,6 +12,7 @@ import { LoginModal } from '@/components/loginModal'
 import { SignUpModal } from '@/components/signUpModal'
 import Providers from '@/components/Providers'
 import TokenHandler from '@/components/TokenHandler'
+import { ThirdwebProvider } from 'thirdweb/react'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -26,27 +27,29 @@ export const metadata: Metadata = {
 export default function RootLayout({ children, session }: { children: React.ReactNode; session: any }) {
     return (
         <StoreProvider>
-            <html lang="en">
-                <body className={`${inter.className} antialiased relative min-h-[100vh]`}>
-                    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
-                        <Toaster />
-                        <Header />
-                        <Providers session={session}>
-                            <TokenHandler />
-                            <main className="flex-1 ">
-                                {children}
-                                <BackTopButton />
-                                <LoginModal />
-                                <SignUpModal />
-                            </main>
-                        </Providers>
-                        <footer className="pt-0 pb-20">
+            <ThirdwebProvider>
+                <html lang="en">
+                    <body className={`${inter.className} antialiased relative min-h-[100vh]`}>
+                        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
+                            <Toaster />
+                            <Header />
+                            <Providers session={session}>
+                                <TokenHandler />
+                                <main className="flex-1 mt-[56px]">
+                                    {children}
+                                    <BackTopButton />
+                                    <LoginModal />
+                                    <SignUpModal />
+                                </main>
+                            </Providers>
+                            {/* <footer className="pt-0 pb-20">
                             <div className="px-2 text-center text-sm text-muted-foreground">© 2025 coinbeats All rights reserved.</div>
-                        </footer>
-                        <Footer />
-                    </ThemeProvider>
-                </body>
-            </html>
+                        </footer> */}
+                            <Footer />
+                        </ThemeProvider>
+                    </body>
+                </html>
+            </ThirdwebProvider>
         </StoreProvider>
     )
 }

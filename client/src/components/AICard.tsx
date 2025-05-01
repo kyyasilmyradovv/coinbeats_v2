@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils'
 import { useTheme } from 'next-themes'
 import dynamic from 'next/dynamic'
 import AIAnimationData from '@/animations/AI.json'
+import { ROUTES } from '@/shared/links'
 const Lottie = dynamic(() => import('react-lottie'), { ssr: false })
 
 export interface AICardProps {}
@@ -33,7 +34,7 @@ function AICard({}: AICardProps) {
             </CardContent>
 
             <CardFooter className="mt-auto px-2 py-4 flex justify-center w-full">
-                <Link href={'/'} passHref className="w-full">
+                <Link href={ROUTES.AI} passHref className="w-full">
                     <Button variant="outline" className="rounded-full px-6  border-brand cursor-pointer w-full background-brand font-bold">
                         LEARN WITH AI
                     </Button>

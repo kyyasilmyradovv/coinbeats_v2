@@ -1,5 +1,3 @@
-import { EarIcon, LeafyGreen, Pointer, ProjectorIcon, Rabbit } from 'lucide-react'
-import { GraduationCap, Compass, Gift, Star, Award } from 'lucide-react'
 export const ROUTES = {
     // Main routes
     HOME: '/',
@@ -9,13 +7,15 @@ export const ROUTES = {
     EARN: '/earn',
     POINTS: '/points',
     EDUCATORS: '/educators',
+    AI: '/ai-chat',
 
     // Nested routes and dynamic routes with params
     getAcademyDetails: (id: number) => `/academy/${id}`,
     getEducatorDetails: (id: number) => `/educator/${id}`,
     getPodcastDetails: (id: number) => `/podcast/${id}`,
     getChannelDetails: (id: number) => `/channel/${id}`,
-    getTutorialDetails: (id: number) => `/tutorial/${id}`
+    getTutorialDetails: (id: number) => `/tutorial/${id}`,
+    getMessages: (id: number | 'new') => `/ai-chat/${id}`
 }
 
 export const NAV_ITEMS = [

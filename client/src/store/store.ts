@@ -8,6 +8,7 @@ import { educatorSlice } from './educator/educatorSlice'
 import { podcastSlice } from './podcast/podcastSlice'
 import { channelSlice } from './channel/channelSlice'
 import { tutorialSlice } from './tutorial/tutorialSlice'
+import { ai_chatSlice } from './ai-chat/ai_chatSlice'
 
 const store = configureStore({
     reducer: {
@@ -19,7 +20,8 @@ const store = configureStore({
         educator: educatorSlice.reducer,
         podcast: podcastSlice.reducer,
         channel: channelSlice.reducer,
-        tutorial: tutorialSlice.reducer
+        tutorial: tutorialSlice.reducer,
+        ai_chat: ai_chatSlice.reducer
     },
     middleware: (getDefaultMiddleware) => getDefaultMiddleware({ serializableCheck: false }).concat(apiSlice.middleware)
 })

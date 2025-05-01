@@ -22,7 +22,7 @@ export function Header() {
     const imageSrc = theme === 'dark' ? '/coinbeats-light.svg' : '/coinbeats-dark.svg'
 
     return (
-        <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4 justify-between sticky top-0 z-50 bg-background ">
+        <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4 justify-between fixed w-full top-0 z-50 bg-background ">
             <div className="flex items-center gap-4">
                 {pathname !== ROUTES.HOME && (
                     <Link href={ROUTES.HOME} className="z-100">
