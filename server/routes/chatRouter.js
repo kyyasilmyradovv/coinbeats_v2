@@ -14,10 +14,12 @@ const {
 } = require('../controllers/aiChatMessageController');
 const { protectForUser } = require('../controllers/userAuthControllers');
 const { checkInputs } = require('../middleware/checkInputs');
+const { getAllTopics } = require('../controllers/aiTopicController');
 
 // User routes
 router.use('/', protectForUser);
 router.get('/', getAllChats);
+router.get('/topics', getAllTopics);
 router.post('/', checkInputs('chat', 'create'), createChat);
 router.put('/:id', checkInputs('chat', 'update'), updateChat);
 router.delete('/:id', deleteChat);
