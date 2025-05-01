@@ -1,6 +1,6 @@
 import { buildUrlWithParams, removeEmpty } from '@/lib/utils'
 import { apiSlice } from './apiSlice'
-import { TAIQuestionRes, TAIQuestionSendInfo, TChat, TChatItemSendInfo, TChatSendInfo, TMessage, TSaveQuestionSendInfo } from '@/types/ai-chat'
+import { TAIQuestionRes, TAIQuestionSendInfo, TChat, TChatItemSendInfo, TChatSendInfo, TMessage, TSaveQuestionSendInfo, TTopicRes } from '@/types/ai-chat'
 import { setChats, setMessages } from '../ai-chat/ai_chatSlice'
 
 export const chatApi = apiSlice.injectEndpoints({
@@ -93,9 +93,69 @@ export const chatApi = apiSlice.injectEndpoints({
                     method: 'GET'
                 }
             }
+        }),
+        topic: builder.query<TTopicRes, string>({
+            query: (id) => {
+                return {
+                    url: `/ai-chat/topics/${id}`,
+                    method: 'GET'
+                }
+            },
+            onQueryStarted: async (arg, { dispatch, queryFulfilled }) => {
+                try {
+                    const { data } = await queryFulfilled
+
+                    const userMessage: TMessage = {
+                        sender: 'user',
+                        message: data.title,
+                        id: 0,
+                        academies: []
+                    }
+                    const aiMessage: TMessage = {
+                        sender: 'ai',
+                        message: data.context,
+                        id: 0,
+                        academies: data.academies
+                    }
+
+                    dispatch(setMessages([userMessage, aiMessage]))
+                } catch (error) {
+                    console.error('Query failed:', error)
+                }
+            }
+        }),
+        deleteChat: builder.mutation<any, string>({
+            query: (id) => {
+                return {
+                    url: `/ai-chat/${id}`,
+                    method: 'DELETE'
+                }
+            },
+            invalidatesTags: ['Chats']
+        }),
+        editChat: builder.mutation<any, { id: string; params: { title: string } }>({
+            query: (params) => {
+                return {
+                    url: `/ai-chat/${params.id}`,
+                    method: 'PUT',
+                    body: params.params
+                }
+            },
+            invalidatesTags: ['Chats']
         })
     }),
     overrideExisting: false
 })
 
-export const { useChatsQuery, useChatQuery, useCreateChatMutation, useMessagesQuery, useAskQuestionMutation, useSaveQuestionMutation, useTopicsQuery } = chatApi
+export const {
+    useChatsQuery,
+    useChatQuery,
+    useCreateChatMutation,
+    useMessagesQuery,
+    useAskQuestionMutation,
+    useSaveQuestionMutation,
+    useTopicsQuery,
+    useTopicQuery,
+    useDeleteChatMutation,
+    useEditChatMutation
+} = chatApi

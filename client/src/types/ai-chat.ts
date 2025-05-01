@@ -42,3 +42,10 @@ export type TSaveQuestionSendInfo = {
     sender: TSender
     academy_ids?: []
 }
+
+export type TTopicRes = {
+    id: number
+    title: string
+    context: string
+    academies: TAcademy[]
+}

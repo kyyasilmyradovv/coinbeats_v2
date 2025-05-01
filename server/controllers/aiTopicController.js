@@ -4,7 +4,7 @@ const prisma = new PrismaClient();
 
 exports.getAllTopics = async (req, res, next) => {
   try {
-    const { keyword, limit, offset = 0 } = req.query;
+    const { keyword, limit = 6, offset = 0 } = req.query;
 
     const where = {};
     if (keyword) {
@@ -16,8 +16,8 @@ exports.getAllTopics = async (req, res, next) => {
       where,
       select: { id: true, title: true, is_active: true },
       orderBy: { order: 'asc' },
-      take: parseInt(limit),
-      skip: parseInt(offset),
+      take: +limit,
+      skip: +offset,
     });
 
     res.status(200).json(topics);

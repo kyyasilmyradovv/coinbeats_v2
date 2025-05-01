@@ -7,10 +7,13 @@ import { useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { setMessages, setPrompt } from '@/store/ai-chat/ai_chatSlice'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
-import { useAskQuestionMutation, useMessagesQuery, useSaveQuestionMutation } from '@/store/api/ai_chat.api'
+import { useAskQuestionMutation, useMessagesQuery, useSaveQuestionMutation, useTopicQuery } from '@/store/api/ai_chat.api'
 import { useParams } from 'next/navigation'
 import { toast } from 'sonner'
 import { TMessage, TSender } from '@/types/ai-chat'
+import Image from 'next/image'
+import { constructImageUrl } from '@/lib/utils'
+import { ROUTES } from '@/shared/links'
 
 export default function ChatById() {
     const { open } = useSidebar()
@@ -18,10 +21,12 @@ export default function ChatById() {
     const prompt = useAppSelector((state) => state.ai_chat.prompt)
     const messages = useAppSelector((state) => state.ai_chat.messages)
     const isNewChat = useAppSelector((state) => state.ai_chat.isNewChat)
+    const isTopic = useAppSelector((state) => state.ai_chat.isTopic)
     const textareaRef = useRef<HTMLTextAreaElement>(null)
-    const messagesEndRef = useRef<HTMLDivElement>(null)
     const params = useParams()
     const id = params.chatId
+
+    const { currentData: topic, isSuccess: topicIsSuccess } = useTopicQuery(localStorage.getItem('topicId') ?? '', { skip: !isTopic })
 
     const {
         currentData: _,
@@ -36,31 +41,42 @@ export default function ChatById() {
     const [askQuestion, { isSuccess: askQuestionIsSuccess, data: askQuestionData, isError: askQuestionIsError, reset: askQuestionReset }] =
         useAskQuestionMutation()
 
-    const askQuesFunc = async (question: string) => {
+    const askQuesFunc = async (question: string, academyIds?: string[]) => {
         await askQuestion({
             prompt: question,
             addresses: [],
             messages: []
         })
-        saveQuesFunc(question, 'user')
+        saveQuesFunc(question, 'user', academyIds)
     }
 
-    const saveQuesFunc = async (question: string, sender: TSender) => {
+    const saveQuesFunc = async (question: string, sender: TSender, academyIds?: string[]) => {
         await saveQuestion({
             id: Number(id),
             params: {
                 message: question,
                 sender: sender,
-                academy_ids: []
+                academy_ids: (academyIds as any) ?? ([] as any)
             }
         })
     }
 
     useEffect(() => {
-        if (isNewChat) {
+        if (isNewChat && !isTopic) {
             askQuesFunc(messages?.[0]?.message)
         }
     }, [id])
+
+    useEffect(() => {
+        if (topicIsSuccess) {
+            saveQuesFunc(topic?.title ?? '', 'user')
+            saveQuesFunc(
+                topic?.context ?? '',
+                'ai',
+                topic?.academies?.map((e) => e.id.toString())
+            )
+        }
+    }, [topicIsSuccess])
 
     useEffect(() => {
         if (askQuestionIsError) {
@@ -109,7 +125,7 @@ export default function ChatById() {
     }, [askQuestionIsSuccess, askQuestionIsError])
 
     const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+        window.scrollTo({ top: document.body.scrollHeight - 900, behavior: 'smooth' })
     }
 
     useEffect(() => {
@@ -158,22 +174,41 @@ export default function ChatById() {
                 </div>
             )}
 
-            <div className="h-[56px] w-full"></div>
-
             {/* Chat Messages */}
-            <div className="w-full max-w-3xl flex-1 mt-4 mb-2">
+            <div className="w-full max-w-3xl flex-1  mb-24">
                 {messages.map((msg, index) => (
                     <div key={index} className={`w-full mb-4 ${msg.sender === 'user' ? 'text-right' : 'text-left'} px-2`}>
                         <div
-                            ref={msg.sender === 'user' ? messagesEndRef : undefined}
+                            // ref={msg.sender === 'user' ? messagesEndRef : undefined}
                             className={`inline-block ${
-                                msg.sender === 'user' ? 'bg-muted/80' : index === messages?.length - 1 ? 'h-[calc(100vh-160px)] overflow-scroll' : ''
+                                msg.sender === 'user' ? 'bg-muted/80' : index === messages?.length - 1 ? 'min-h-[calc(100vh-160px)] ' : ''
                             } rounded-xl px-3 py-2 max-w-[85%] text-sm sm:text-base`}
                         >
                             <span>
                                 {msg.message}
                                 {msg.streaming && <span className="animate-pulse ml-1">|</span>}
                             </span>
+
+                            {/* Academy Cards */}
+                            {msg?.academies?.length > 0 && (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                                    {msg?.academies?.map((academy) => (
+                                        <Link href={ROUTES.getAcademyDetails(academy.id)} key={academy.id} className="block">
+                                            <div
+                                                key={academy.id}
+                                                className="flex items-center gap-4 p-4 rounded-xl border border-muted hover:shadow-md transition-shadow bg-card mb-2 cursor-pointer"
+                                            >
+                                                <div className="relative w-12 h-12 flex-shrink-0 rounded-full overflow-hidden border bg-white">
+                                                    <Image src={constructImageUrl(academy.logoUrl)} alt={academy.name} fill className="object-cover" />
+                                                </div>
+                                                <div className="text-left">
+                                                    <p className="font-medium text-base">{academy.name}</p>
+                                                </div>
+                                            </div>
+                                        </Link>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     </div>
                 ))}
