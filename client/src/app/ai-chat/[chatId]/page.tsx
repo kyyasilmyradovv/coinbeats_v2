@@ -32,29 +32,9 @@ export default function ChatById() {
         refetchOnMountOrArgChange: true
     })
 
-    const [
-        saveQuestion,
-        {
-            isSuccess: saveQuestionIsSuccess,
-            data: saveQuestionData,
-            isError: saveQuestionIsError,
-            isLoading: saveQuestionIsLoading,
-            error: saveQuestionError,
-            reset: saveQuestionReset
-        }
-    ] = useSaveQuestionMutation()
-
-    const [
-        askQuestion,
-        {
-            isSuccess: askQuestionIsSuccess,
-            data: askQuestionData,
-            isError: askQuestionIsError,
-            isLoading: askQuestionIsLoading,
-            error: askQuestionError,
-            reset: askQuestionReset
-        }
-    ] = useAskQuestionMutation()
+    const [saveQuestion] = useSaveQuestionMutation()
+    const [askQuestion, { isSuccess: askQuestionIsSuccess, data: askQuestionData, isError: askQuestionIsError, reset: askQuestionReset }] =
+        useAskQuestionMutation()
 
     const askQuesFunc = async (question: string) => {
         await askQuestion({
@@ -91,28 +71,38 @@ export default function ChatById() {
         }
 
         if (askQuestionIsSuccess && askQuestionData.result.answer) {
+            const answer = askQuestionData.result.answer
+            const words = answer.split(' ')
             const newMessages = [...messages]
             const lastIndex = newMessages.length - 1
 
-            // Replace the loading message
             if (newMessages[lastIndex]?.streaming) {
-                newMessages[lastIndex] = {
-                    ...newMessages[lastIndex],
-                    message: askQuestionData.result.answer,
-                    streaming: false
-                }
-            } else {
-                newMessages.push({
-                    id: 0,
-                    sender: 'ai',
-                    message: askQuestionData.result.answer,
-                    academies: [],
-                    streaming: false
-                })
-            }
+                let currentText = ''
+                let wordIndex = 0
 
-            dispatch(setMessages(newMessages))
-            saveQuesFunc(askQuestionData.result.answer, 'ai')
+                const interval = setInterval(() => {
+                    if (wordIndex >= words.length) {
+                        clearInterval(interval)
+                        newMessages[lastIndex] = {
+                            ...newMessages[lastIndex],
+                            message: currentText.trim(),
+                            streaming: false
+                        }
+                        dispatch(setMessages([...newMessages]))
+                        saveQuesFunc(answer, 'ai')
+                        return
+                    }
+
+                    currentText += words[wordIndex] + ' '
+                    newMessages[lastIndex] = {
+                        ...newMessages[lastIndex],
+                        message: currentText.trim(),
+                        streaming: true
+                    }
+                    dispatch(setMessages([...newMessages]))
+                    wordIndex++
+                }, 100) // Typing speed (ms per word)
+            }
         }
 
         askQuestionReset()
@@ -146,7 +136,7 @@ export default function ChatById() {
 
         const aiLoadingMessage: TMessage = {
             sender: 'ai',
-            message: '...',
+            message: '',
             id: 0,
             academies: [],
             streaming: true
@@ -177,10 +167,13 @@ export default function ChatById() {
                         <div
                             ref={msg.sender === 'user' ? messagesEndRef : undefined}
                             className={`inline-block ${
-                                msg.sender === 'user' ? 'bg-muted/80' : index === messages?.length - 1 ? 'h-[calc(100vh-160px)]' : ''
+                                msg.sender === 'user' ? 'bg-muted/80' : index === messages?.length - 1 ? 'h-[calc(100vh-160px)] overflow-scroll' : ''
                             } rounded-xl px-3 py-2 max-w-[85%] text-sm sm:text-base`}
                         >
-                            {msg.streaming ? <span className="animate-pulse text-muted-foreground">Coinbeats AI Thinking...</span> : msg.message}
+                            <span>
+                                {msg.message}
+                                {msg.streaming && <span className="animate-pulse ml-1">|</span>}
+                            </span>
                         </div>
                     </div>
                 ))}
@@ -188,7 +181,7 @@ export default function ChatById() {
 
             {/* Input Area */}
             <div className="w-full max-w-3xl fixed bottom-0 bg-background pb-2">
-                <div className="flex items-end gap-2 bg-muted/30 rounded-2xl px-4 py-2">
+                <div className="flex items-end gap-2 bg-muted/30 rounded-2xl px-4 py-2 border">
                     <textarea
                         ref={textareaRef}
                         value={prompt}

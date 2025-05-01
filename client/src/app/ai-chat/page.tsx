@@ -13,6 +13,7 @@ import Link from 'next/link'
 import { useCreateChatMutation } from '@/store/api/ai_chat.api'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
+import { TMessage } from '@/types/ai-chat'
 
 export default function NewChat() {
     const { open } = useSidebar()
@@ -47,7 +48,14 @@ export default function NewChat() {
             dispatch(setIsNewChat(true))
             dispatch(setPrompt(''))
             dispatch(setChats([createChatData, ...chats]))
-            dispatch(setMessages([{ id: 0, message: prompt, sender: 'user', academies: [] }]))
+            const aiLoadingMessage: TMessage = {
+                sender: 'ai',
+                message: '',
+                id: 0,
+                academies: [],
+                streaming: true
+            }
+            dispatch(setMessages([{ id: 0, message: prompt, sender: 'user', academies: [] }, aiLoadingMessage]))
             router.push('/ai-chat/' + createChatData.id)
         }
         createChatReset()

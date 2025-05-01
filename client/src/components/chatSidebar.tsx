@@ -15,11 +15,14 @@ import {
     SidebarTrigger,
     useSidebar
 } from '@/components/ui/sidebar'
+
 import { useChatsQuery } from '@/store/api/ai_chat.api'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { ROUTES } from '@/shared/links'
 import Link from 'next/link'
 import { setIsNewChat, setMessages } from '@/store/ai-chat/ai_chatSlice'
+import { useParams } from 'next/navigation'
+import Image from 'next/image'
 
 // Skeleton component using Tailwind CSS
 function Skeleton({ className = '' }: { className?: string }) {
@@ -32,6 +35,10 @@ export function ChatSidebar() {
     const chatSendInfo = useAppSelector((state) => state.ai_chat.chatSendInfo)
     const chats = useAppSelector((state) => state.ai_chat.chats)
     const { currentData: _, isLoading, isFetching } = useChatsQuery(chatSendInfo)
+    const params = useParams()
+    const id = params.chatId
+
+    const recommendedTopics = ['Tech News', 'Health Tips', 'Learning English', 'Marketing Ideas', 'Startup Advice']
 
     return (
         <Sidebar className="h-[calc(100vh-56px)] mt-[56px]">
@@ -48,9 +55,9 @@ export function ChatSidebar() {
                 </SidebarGroupAction>
             </SidebarHeader>
 
-            <SidebarContent>
-                <SidebarGroup>
-                    <SidebarGroupContent>
+            <SidebarContent className="flex flex-col flex-grow overflow-hidden">
+                <SidebarGroup className="flex-1 flex flex-col overflow-hidden">
+                    <SidebarGroupContent className="flex-1 overflow-y-auto pr-1">
                         <SidebarMenu>
                             {isLoading || isFetching
                                 ? Array.from({ length: 10 }).map((_, index) => (
@@ -71,7 +78,11 @@ export function ChatSidebar() {
                                               }}
                                           >
                                               <SidebarMenuButton className="cursor-pointer">
-                                                  <p className="flex w-full items-center rounded-md px-2 py-1.5 text-sm hover:bg-muted/50 transition-colors truncate">
+                                                  <p
+                                                      className={`flex w-full items-center rounded-md px-2 py-1.5 text-sm hover:bg-muted/50 transition-colors truncate ${
+                                                          id == chat.id.toString() ? 'btn-gradient text-white' : ''
+                                                      }`}
+                                                  >
                                                       {chat.title}
                                                   </p>
                                               </SidebarMenuButton>
@@ -80,11 +91,38 @@ export function ChatSidebar() {
                                   ))}
                         </SidebarMenu>
                     </SidebarGroupContent>
+
+                    {/* Recommended Topics: stays fixed below scrollable chats */}
+                    <div className="bg-background pt-2 pb-4">
+                        <div className="flex items-center my-4">
+                            <div className="flex-grow border-t border-muted" />
+                            <span className="mx-2 text-xs text-muted-foreground">Trending Topics</span>
+                            <div className="flex-grow border-t border-muted" />
+                        </div>
+                        <SidebarMenu>
+                            {recommendedTopics.map((topic, index) => (
+                                <SidebarMenuItem key={index} className="mt-1">
+                                    <Link href={`/ai-chat/topic/${encodeURIComponent(topic)}`}>
+                                        <SidebarMenuButton className="cursor-pointer">
+                                            <p className="flex w-full items-center rounded-md px-2 py-1.5 text-sm hover:bg-muted/50 transition-colors truncate">
+                                                {topic}
+                                            </p>
+                                        </SidebarMenuButton>
+                                    </Link>
+                                </SidebarMenuItem>
+                            ))}
+                        </SidebarMenu>
+                    </div>
                 </SidebarGroup>
             </SidebarContent>
 
             <SidebarFooter>
-                <p className="text-xs">Conbeats AI</p>
+                <div className="flex items-center gap-2 justify-center">
+                    <div className="relative w-[20px] h-[20px]">
+                        <Image src={'/coinbeats-l.svg'} alt="Coin-Beats" fill className="object-contain" />
+                    </div>
+                    <p className="text-xs">Conbeats AI</p>
+                </div>
             </SidebarFooter>
         </Sidebar>
     )

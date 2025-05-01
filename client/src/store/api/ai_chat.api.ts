@@ -85,9 +85,17 @@ export const chatApi = apiSlice.injectEndpoints({
                     body: params.params
                 }
             }
+        }),
+        topics: builder.query<TChat[], null>({
+            query: () => {
+                return {
+                    url: `/ai-chat/topics`,
+                    method: 'GET'
+                }
+            }
         })
     }),
     overrideExisting: false
 })
 
-export const { useChatsQuery, useChatQuery, useCreateChatMutation, useMessagesQuery, useAskQuestionMutation, useSaveQuestionMutation } = chatApi
+export const { useChatsQuery, useChatQuery, useCreateChatMutation, useMessagesQuery, useAskQuestionMutation, useSaveQuestionMutation, useTopicsQuery } = chatApi
