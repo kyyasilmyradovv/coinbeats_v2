@@ -13,7 +13,7 @@ const handler = NextAuth({
         async signIn({ user }: { user: any }) {
             if (user?.email) {
                 try {
-                    const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/user/auth/google-signin`, {
+                    const response = await fetch(`https://coinbeats.xyz/api/v2/user/auth/google-signin`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
