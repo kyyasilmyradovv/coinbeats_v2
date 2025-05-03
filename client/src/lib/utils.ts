@@ -21,7 +21,7 @@ export const buildUrlWithParams = (baseUrl: string, params: { [key: string]: any
 }
 
 export const constructImageUrl = (url: string | undefined) => {
-    return `https://telegram.coinbeats.xyz/${url}`
+    return `https://coinbeats.xyz/${url}`
 }
 
 export function removeEmpty(obj: Record<string, any>) {
