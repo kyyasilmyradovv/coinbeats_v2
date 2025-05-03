@@ -17,9 +17,9 @@ const { checkInputs } = require('../middleware/checkInputs');
 const { getAllTopics, getTopic } = require('../controllers/aiTopicController');
 
 // User routes
+router.get('/topics', getAllTopics);
 router.use('/', protectForUser);
 router.get('/', getAllChats);
-router.get('/topics', getAllTopics);
 router.get('/topics/:id', getTopic);
 router.post('/', checkInputs('chat', 'create'), createChat);
 router.put('/:id', checkInputs('chat', 'update'), updateChat);
