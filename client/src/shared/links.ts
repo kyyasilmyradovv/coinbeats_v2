@@ -7,7 +7,6 @@ export const ROUTES = {
     EARN: '/earn',
     POINTS: '/points',
     EDUCATORS: '/educators',
-    AI: '/',
 
     // Nested routes and dynamic routes with params
     getAcademyDetails: (id: number) => `/academy/${id}`,

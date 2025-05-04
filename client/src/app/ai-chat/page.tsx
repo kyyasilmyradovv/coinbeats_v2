@@ -1,5 +1,5 @@
 'use client'
-import { SidebarTrigger, useSidebar } from '@/components/ui/sidebar'
+import { SidebarTrigger, useSidebar, SidebarProvider } from '@/components/ui/sidebar'
 import { Button } from '@/components/ui/button'
 import { BrainCircuit, Loader2, MessageSquarePlus, Rocket, Send, Sparkles, TrendingUp } from 'lucide-react'
 import { useRef, useEffect, useState } from 'react'
@@ -8,7 +8,7 @@ import { useTheme } from 'next-themes'
 import { AIChatInitial } from '@/data/AIChat'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { setChats, setIsNewChat, setIsTopic, setMessages, setPrompt } from '@/store/ai-chat/ai_chatSlice'
-import { setSignUpModalOpen, setLoginModalOpen } from '@/store/general/generalSlice'
+import { setLoginModalOpen } from '@/store/general/generalSlice'
 import Link from 'next/link'
 import { useCreateChatMutation } from '@/store/api/ai_chat.api'
 import { toast } from 'sonner'
@@ -19,7 +19,15 @@ import { SignUpModal } from '@/components/signUpModal'
 import { LoginModal } from '@/components/loginModal'
 
 export default function NewChat() {
-    // Existing state and refs
+    return (
+        <SidebarProvider>
+            <AINewChatContent />
+        </SidebarProvider>
+    )
+}
+
+// Create a new component that uses the sidebar context
+function AINewChatContent() {
     const { open } = useSidebar()
     const router = useRouter()
     const { theme = 'dark' } = useTheme()
@@ -29,23 +37,19 @@ export default function NewChat() {
     const prompt = useAppSelector((state) => state.ai_chat.prompt)
     const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-    // Animation controls for idle animations
     const logoControls = useAnimation()
     const cardControls = useAnimation()
     const promptControls = useAnimation()
 
-    // Idle animation timer
     const [lastActivity, setLastActivity] = useState<number>(Date.now())
 
-    // Mutation remains the same
     const [
         createChat,
         { isSuccess: createChatIsSuccess, data: createChatData, isError: createChatIsError, isLoading: createChatIsLoading, reset: createChatReset }
     ] = useCreateChatMutation()
 
-    // Handle idle animations
     useEffect(() => {
-        const idleThreshold = 10000 // 10 seconds
+        const idleThreshold = 10000
 
         const handleUserActivity = () => {
             setLastActivity(Date.now())
@@ -56,7 +60,6 @@ export default function NewChat() {
             const idleTime = now - lastActivity
 
             if (idleTime > idleThreshold) {
-                // Start subtle idle animations
                 await logoControls.start({
                     scale: [1, 1.05, 1],
                     opacity: [1, 0.9, 1],
@@ -73,19 +76,16 @@ export default function NewChat() {
                     transition: { duration: 2, repeat: Infinity, repeatType: 'reverse' }
                 })
             } else {
-                // Stop animations when user is active
                 logoControls.stop()
                 cardControls.stop()
                 promptControls.stop()
             }
         }
 
-        // Set up event listeners to detect user activity
         window.addEventListener('mousemove', handleUserActivity)
         window.addEventListener('keydown', handleUserActivity)
         window.addEventListener('click', handleUserActivity)
 
-        // Check idle status periodically
         const idleInterval = setInterval(checkIdleStatus, 1000)
 
         return () => {
@@ -96,7 +96,6 @@ export default function NewChat() {
         }
     }, [lastActivity])
 
-    // Existing effects
     useEffect(() => {
         if (createChatIsError) {
             toast('Error!', { description: 'Server error. Please try again later.', position: 'top-right' })
@@ -126,11 +125,9 @@ export default function NewChat() {
     }
 
     const createChatHandler = async () => {
-        // Check if user is authenticated
         const accessToken = localStorage.getItem('coinbeatsAT')
 
         if (!accessToken) {
-            // Open login modal instead of signup modal
             dispatch(setLoginModalOpen(true))
             toast('Please log in to chat with Coinbeats Copilot', {
                 position: 'top-right'
@@ -138,7 +135,6 @@ export default function NewChat() {
             return
         }
 
-        // Proceed with creating chat if logged in
         if (!prompt.trim()) {
             toast('Please enter a prompt', { position: 'top-right' })
             return
@@ -159,7 +155,6 @@ export default function NewChat() {
                     </div>
                 )}
 
-                {/* Hero Section */}
                 <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -193,7 +188,6 @@ export default function NewChat() {
                     </motion.p>
                 </motion.div>
 
-                {/* Features Grid */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -217,7 +211,6 @@ export default function NewChat() {
                     />
                 </motion.div>
 
-                {/* Example Prompts */}
                 <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -247,7 +240,6 @@ export default function NewChat() {
                     </div>
                 </motion.div>
 
-                {/* Input Area */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -289,7 +281,6 @@ export default function NewChat() {
             </main>
             <SignUpModal />
 
-            {/* Update the CSS for gradient text effect */}
             <style jsx global>{`
                 .gradient-text-button {
                     background-image: linear-gradient(90deg, #4f46e5, #8b5cf6, #d946ef, #8b5cf6, #4f46e5);
@@ -321,7 +312,6 @@ export default function NewChat() {
     )
 }
 
-// Feature card component with hover effect and gradient animation
 const FeatureCard = ({ icon, title, description }: { icon: React.ReactNode; title: string; description: string }) => {
     return (
         <motion.div
@@ -331,7 +321,6 @@ const FeatureCard = ({ icon, title, description }: { icon: React.ReactNode; titl
                 transition: { type: 'spring', stiffness: 300, damping: 15 }
             }}
         >
-            {/* Animated gradient border */}
             <div
                 className="absolute -inset-0.5 bg-gradient-to-r from-primary/60 via-blue-500/60 to-violet-500/60 rounded-xl opacity-75 blur-[1px] group-hover:opacity-100 group-hover:blur-[2px]"
                 style={{
@@ -340,7 +329,6 @@ const FeatureCard = ({ icon, title, description }: { icon: React.ReactNode; titl
                 }}
             />
 
-            {/* Card content */}
             <div className="relative bg-background border border-muted-foreground/10 rounded-xl p-6 flex flex-col items-center text-center group-hover:shadow-lg transition-all duration-300">
                 <motion.div
                     className="mb-4 bg-primary/10 p-3 rounded-full"
@@ -354,7 +342,6 @@ const FeatureCard = ({ icon, title, description }: { icon: React.ReactNode; titl
                 <p className="text-sm text-muted-foreground">{description}</p>
             </div>
 
-            {/* Circular clockwise keyframes for the animation */}
             <style jsx>{`
                 @keyframes gradientRotate {
                     0% {
