@@ -147,100 +147,109 @@ export function ChatSidebar() {
                 <SidebarGroup className="flex-1 flex flex-col overflow-hidden">
                     <SidebarGroupContent className="flex-1 overflow-y-auto pr-1">
                         <SidebarMenu>
-                            {isLoading || isFetching
-                                ? Array.from({ length: 10 }).map((_, index) => (
-                                      <SidebarMenuItem key={index} className="mt-1">
-                                          <SidebarMenuButton className="cursor-pointer">
-                                              <Skeleton className="h-4 w-3/4 mx-2 my-2" />
-                                          </SidebarMenuButton>
-                                      </SidebarMenuItem>
-                                  ))
-                                : chats?.map((chat) => (
-                                      <SidebarMenuItem key={chat.id} className="mt-1">
-                                          <Link
-                                              href={ROUTES.getMessages(chat.id)}
-                                              className="block"
-                                              onClick={() => {
-                                                  dispatch(setIsNewChat(false))
-                                                  dispatch(setIsTopic(false))
-                                                  dispatch(setMessages([]))
-                                              }}
-                                          >
-                                              <SidebarMenuButton className="cursor-pointer flex items-center justify-between">
-                                                  {editingChatID === chat.id.toString() ? (
-                                                      <input
-                                                          type="text"
-                                                          value={newTitle}
-                                                          onChange={(e) => setNewTitle(e.target.value)}
-                                                          className="flex-1 rounded-md px-2 py-1.5 text-sm  focus:outline-none"
-                                                          autoFocus
-                                                      />
-                                                  ) : (
-                                                      <p
-                                                          className={`flex w-full items-center rounded-md px-2 py-1.5 text-sm hover:bg-muted/50 transition-colors truncate ${
-                                                              id == chat.id.toString() ? 'btn-gradient text-white' : ''
-                                                          }`}
-                                                      >
-                                                          {chat.title}
-                                                      </p>
-                                                  )}
-                                                  {editingChatID === chat.id.toString() ? (
-                                                      editChatIsLoading ? (
-                                                          <Loading size={10} />
-                                                      ) : (
-                                                          <div className="flex items-center g-2">
-                                                              <Check
-                                                                  onClick={() => {
-                                                                      handleEdit(chat?.id.toString())
-                                                                  }}
-                                                                  className="w-4 h-4 cursor-pointer opacity-100 text-green-500"
-                                                              />
-                                                              <X
-                                                                  onClick={() => {
-                                                                      setNewTitle('')
-                                                                      setEditingChatID('')
-                                                                  }}
-                                                                  className="w-4 h-4 cursor-pointer opacity-100 text-red-500"
-                                                              />
-                                                          </div>
-                                                      )
-                                                  ) : (
-                                                      <DropdownMenu>
-                                                          <DropdownMenuTrigger asChild>
-                                                              <MoreVertical className="w-4 h-4 cursor-pointer opacity-0 group-hover:opacity-100 transition" />
-                                                          </DropdownMenuTrigger>
-                                                          <DropdownMenuContent side="right" align="end">
-                                                              <DropdownMenuItem
-                                                                  onClick={(e) => {
-                                                                      e.preventDefault()
-                                                                      //   setIsEditing(true)
-                                                                      setEditingChatID(chat.id.toString())
-                                                                      setNewTitle(chat.title)
-                                                                  }}
-                                                              >
-                                                                  <Pencil className="w-4 h-4 mr-2" />
-                                                                  Rename
-                                                              </DropdownMenuItem>
-                                                              <DropdownMenuItem
-                                                                  onClick={(e) => {
-                                                                      e.preventDefault()
-                                                                      handleDelete(chat?.id.toString())
-                                                                  }}
-                                                              >
-                                                                  {deleteChatIsLoading ? (
-                                                                      <Loading size={10} />
-                                                                  ) : (
-                                                                      <Trash2 className="w-4 h-4 mr-2 text-red-500" />
-                                                                  )}
-                                                                  Delete
-                                                              </DropdownMenuItem>
-                                                          </DropdownMenuContent>
-                                                      </DropdownMenu>
-                                                  )}
-                                              </SidebarMenuButton>
-                                          </Link>
-                                      </SidebarMenuItem>
-                                  ))}
+                            {isLoading || isFetching ? (
+                                Array.from({ length: 10 }).map((_, index) => (
+                                    <SidebarMenuItem key={index} className="mt-1">
+                                        <SidebarMenuButton className="cursor-pointer">
+                                            <Skeleton className="h-4 w-3/4 mx-2 my-2" />
+                                        </SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                ))
+                            ) : chats?.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
+                                    <MessageSquarePlus className="h-10 w-10 mb-3 text-primary opacity-70" />
+                                    <h3 className="text-sm font-medium mb-1">Your chats will appear here</h3>
+                                    <p className="text-xs text-muted-foreground mb-4">Start a conversation and build your personal insights collection</p>
+                                    <Link
+                                        href="/ai-chat"
+                                        className="text-xs px-3 py-1.5 rounded-md bg-primary/10 hover:bg-primary/20 text-primary transition-colors"
+                                    >
+                                        Start new chat
+                                    </Link>
+                                </div>
+                            ) : (
+                                chats?.map((chat) => (
+                                    <SidebarMenuItem key={chat.id} className="mt-1">
+                                        <Link
+                                            href={ROUTES.getMessages(chat.id)}
+                                            className="block"
+                                            onClick={() => {
+                                                dispatch(setIsNewChat(false))
+                                                dispatch(setIsTopic(false))
+                                                dispatch(setMessages([]))
+                                            }}
+                                        >
+                                            <SidebarMenuButton className="cursor-pointer flex items-center justify-between">
+                                                {editingChatID === chat.id.toString() ? (
+                                                    <input
+                                                        type="text"
+                                                        value={newTitle}
+                                                        onChange={(e) => setNewTitle(e.target.value)}
+                                                        className="flex-1 rounded-md px-2 py-1.5 text-sm  focus:outline-none"
+                                                        autoFocus
+                                                    />
+                                                ) : (
+                                                    <p
+                                                        className={`flex w-full items-center rounded-md px-2 py-1.5 text-sm hover:bg-muted/50 transition-colors truncate ${
+                                                            id == chat.id.toString() ? 'btn-gradient text-white' : ''
+                                                        }`}
+                                                    >
+                                                        {chat.title}
+                                                    </p>
+                                                )}
+                                                {editingChatID === chat.id.toString() ? (
+                                                    editChatIsLoading ? (
+                                                        <Loading size={10} />
+                                                    ) : (
+                                                        <div className="flex items-center g-2">
+                                                            <Check
+                                                                onClick={() => {
+                                                                    handleEdit(chat?.id.toString())
+                                                                }}
+                                                                className="w-4 h-4 cursor-pointer opacity-100 text-green-500"
+                                                            />
+                                                            <X
+                                                                onClick={() => {
+                                                                    setNewTitle('')
+                                                                    setEditingChatID('')
+                                                                }}
+                                                                className="w-4 h-4 cursor-pointer opacity-100 text-red-500"
+                                                            />
+                                                        </div>
+                                                    )
+                                                ) : (
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                            <MoreVertical className="w-4 h-4 cursor-pointer opacity-0 group-hover:opacity-100 transition" />
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent side="right" align="end">
+                                                            <DropdownMenuItem
+                                                                onClick={(e) => {
+                                                                    e.preventDefault()
+                                                                    setEditingChatID(chat.id.toString())
+                                                                    setNewTitle(chat.title)
+                                                                }}
+                                                            >
+                                                                <Pencil className="w-4 h-4 mr-2" />
+                                                                Rename
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem
+                                                                onClick={(e) => {
+                                                                    e.preventDefault()
+                                                                    handleDelete(chat?.id.toString())
+                                                                }}
+                                                            >
+                                                                {deleteChatIsLoading ? <Loading size={10} /> : <Trash2 className="w-4 h-4 mr-2 text-red-500" />}
+                                                                Delete
+                                                            </DropdownMenuItem>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
+                                                )}
+                                            </SidebarMenuButton>
+                                        </Link>
+                                    </SidebarMenuItem>
+                                ))
+                            )}
                         </SidebarMenu>
                     </SidebarGroupContent>
 

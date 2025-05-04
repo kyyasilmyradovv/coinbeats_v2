@@ -1,13 +1,13 @@
 export const ROUTES = {
-    // Main routes
     HOME: '/',
+    PROTOCOLS: '/protocols',
     COINS: '/coins',
     LEARN: '/discover',
     RAFFLES: '/raffles',
     EARN: '/earn',
     POINTS: '/points',
     EDUCATORS: '/educators',
-    AI: '/ai-chat',
+    AI: '/',
 
     // Nested routes and dynamic routes with params
     getAcademyDetails: (id: number) => `/academy/${id}`,
@@ -20,38 +20,38 @@ export const ROUTES = {
 
 export const NAV_ITEMS = [
     {
-        label: 'Protocols',
+        label: 'AI Copilot',
         href: ROUTES.HOME,
+        color: 'text-primary'
+    },
+    {
+        label: 'Protocols',
+        href: ROUTES.PROTOCOLS,
         icon: '/graduation-hat.png',
         color: 'text-orange-500'
-        // iconComponent: <GraduationCap className={`w-6 h-6 text-foreground `} />
     },
     {
         label: 'Learn',
         href: ROUTES.LEARN,
         icon: '/discover.png',
         color: 'text-green-500'
-        // iconComponent: <Compass className={`w-6 h-6 text-foreground `} />
     },
     {
         label: 'Raffles',
         href: ROUTES.RAFFLES,
         icon: '/raffles.png',
         color: 'text-green-500'
-        // iconComponent: <Gift className={`w-6 h-6 text-foreground `} />
     },
     {
         label: 'Earn',
         href: ROUTES.EARN,
         icon: '/game-pad.png',
         color: 'text-green-500'
-        // iconComponent: <Star className={`w-6 h-6 text-foreground `} />
     },
     {
         label: 'Points',
         href: ROUTES.POINTS,
         icon: '/trophy.png',
         color: 'text-green-500'
-        // iconComponent: <Award className={`w-6 h-6 text-foreground `} />
     }
 ]
