@@ -23,7 +23,8 @@ const nextConfig: NextConfig = {
     },
     env: {
         // NEXT_PUBLIC_API_BASE_URL: 'https://coinbeats-v2.onrender.com/api/v2' // Base URL for apiClient
-        NEXT_PUBLIC_API_BASE_URL: 'https://coinbeats.xyz/api/v2'
+        NEXT_PUBLIC_API_BASE_URL: 'https://coinbeats.xyz/api/v2',
+        NEXTAUTH_URL: 'https://coinbeats.xyz'
     },
     images: {
         remotePatterns: [

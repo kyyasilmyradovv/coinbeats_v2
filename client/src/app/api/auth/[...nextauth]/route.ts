@@ -23,7 +23,10 @@ const handler = NextAuth({
             clientSecret: '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',
             authorization: {
                 params: {
-                    redirect_uri: 'https://coinbeats.xyz/api/auth/callback/google'
+                    redirect_uri: 'https://coinbeats.xyz/api/auth/callback/google',
+                    prompt: 'consent',
+                    access_type: 'offline',
+                    response_type: 'code'
                 }
             },
             httpOptions: {
