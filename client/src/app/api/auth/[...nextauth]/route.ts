@@ -4,10 +4,31 @@ import GoogleProvider from 'next-auth/providers/google'
 const handler = NextAuth({
     debug: true,
     secret: 'DQOD+Er5D9C5UTFjPORA6YhV3Bo2zkZs1Tw/NPt4Fno=',
+    useSecureCookies: true,
+    cookies: {
+        sessionToken: {
+            name: `next-auth.session-token`,
+            options: {
+                httpOnly: true,
+                sameSite: 'lax',
+                path: '/',
+                secure: true,
+                domain: process.env.NODE_ENV === 'production' ? '.coinbeats.xyz' : undefined
+            }
+        }
+    },
     providers: [
         GoogleProvider({
             clientId: '646655126202-085p616bh21gs8kkmi4o5qimjdrgpcrn.apps.googleusercontent.com',
-            clientSecret: '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'
+            clientSecret: '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',
+            authorization: {
+                params: {
+                    redirect_uri:
+                        process.env.NODE_ENV === 'production'
+                            ? 'https://coinbeats.xyz/api/auth/callback/google'
+                            : 'http://localhost:3000/api/auth/callback/google'
+                }
+            }
         })
     ],
     callbacks: {
