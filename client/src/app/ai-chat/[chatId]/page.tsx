@@ -1,5 +1,4 @@
 'use client'
-
 import { SidebarTrigger, useSidebar } from '@/components/ui/sidebar'
 import { Button } from '@/components/ui/button'
 import { MessageSquarePlus, Send } from 'lucide-react'

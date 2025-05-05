@@ -13,7 +13,6 @@ export interface AICardProps {}
 
 function AICard({}: AICardProps) {
     const { theme = 'dark' } = useTheme()
-
     const imageSrc = theme === 'dark' ? '/coinbeats-light.svg' : '/coinbeats-dark.svg'
 
     const AIAnimation = {

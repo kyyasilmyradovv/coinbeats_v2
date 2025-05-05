@@ -1,7 +1,7 @@
 'use client'
 import { SidebarTrigger, useSidebar, SidebarProvider } from '@/components/ui/sidebar'
 import { Button } from '@/components/ui/button'
-import { BrainCircuit, Loader2, MessageSquarePlus, Rocket, Send, Sparkles, TrendingUp } from 'lucide-react'
+import { Loader2, MessageSquarePlus, Send, Sparkles } from 'lucide-react'
 import { useRef, useEffect, useState } from 'react'
 import Image from 'next/image'
 import { useTheme } from 'next-themes'
@@ -26,7 +26,6 @@ export default function NewChat() {
     )
 }
 
-// Create a new component that uses the sidebar context
 function AINewChatContent() {
     const { open } = useSidebar()
     const router = useRouter()
@@ -38,7 +37,6 @@ function AINewChatContent() {
     const textareaRef = useRef<HTMLTextAreaElement>(null)
 
     const logoControls = useAnimation()
-    const cardControls = useAnimation()
     const promptControls = useAnimation()
 
     const [lastActivity, setLastActivity] = useState<number>(Date.now())
@@ -66,18 +64,12 @@ function AINewChatContent() {
                     transition: { duration: 2, repeat: Infinity, repeatType: 'reverse' }
                 })
 
-                await cardControls.start({
-                    y: [0, -5, 0],
-                    transition: { duration: 3, repeat: Infinity, repeatType: 'reverse', staggerChildren: 0.2 }
-                })
-
                 await promptControls.start({
                     boxShadow: ['0 4px 12px rgba(0,0,0,0.1)', '0 6px 16px rgba(0,0,0,0.15)', '0 4px 12px rgba(0,0,0,0.1)'],
                     transition: { duration: 2, repeat: Infinity, repeatType: 'reverse' }
                 })
             } else {
                 logoControls.stop()
-                cardControls.stop()
                 promptControls.stop()
             }
         }
@@ -189,29 +181,6 @@ function AINewChatContent() {
                 </motion.div>
 
                 <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.4, duration: 0.5 }}
-                    className="w-full max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-4 mb-10"
-                >
-                    <FeatureCard
-                        icon={<BrainCircuit className="h-8 w-8 text-primary" />}
-                        title="Crypto Insights"
-                        description="Get instant analysis on market trends, project fundamentals, and trading strategies."
-                    />
-                    <FeatureCard
-                        icon={<TrendingUp className="h-8 w-8 text-primary" />}
-                        title="Market Analysis"
-                        description="Understand price movements, market sentiment, and potential investment opportunities."
-                    />
-                    <FeatureCard
-                        icon={<Rocket className="h-8 w-8 text-primary" />}
-                        title="Learning Resources"
-                        description="Access personalized educational content based on your interests and knowledge level."
-                    />
-                </motion.div>
-
-                <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.6, duration: 0.5 }}
@@ -309,58 +278,5 @@ function AINewChatContent() {
                 }
             `}</style>
         </>
-    )
-}
-
-const FeatureCard = ({ icon, title, description }: { icon: React.ReactNode; title: string; description: string }) => {
-    return (
-        <motion.div
-            className="relative group"
-            whileHover={{
-                y: -5,
-                transition: { type: 'spring', stiffness: 300, damping: 15 }
-            }}
-        >
-            <div
-                className="absolute -inset-0.5 bg-gradient-to-r from-primary/60 via-blue-500/60 to-violet-500/60 rounded-xl opacity-75 blur-[1px] group-hover:opacity-100 group-hover:blur-[2px]"
-                style={{
-                    backgroundSize: '400% 400%',
-                    animation: 'gradientRotate 8s ease infinite'
-                }}
-            />
-
-            <div className="relative bg-background border border-muted-foreground/10 rounded-xl p-6 flex flex-col items-center text-center group-hover:shadow-lg transition-all duration-300">
-                <motion.div
-                    className="mb-4 bg-primary/10 p-3 rounded-full"
-                    initial={{ rotate: 0 }}
-                    whileHover={{ rotate: [0, -5, 5, -5, 0] }}
-                    transition={{ duration: 0.5 }}
-                >
-                    {icon}
-                </motion.div>
-                <h3 className="text-lg font-medium mb-2 group-hover:text-primary transition-colors duration-300">{title}</h3>
-                <p className="text-sm text-muted-foreground">{description}</p>
-            </div>
-
-            <style jsx>{`
-                @keyframes gradientRotate {
-                    0% {
-                        background-position: 0% 0%;
-                    }
-                    25% {
-                        background-position: 100% 0%;
-                    }
-                    50% {
-                        background-position: 100% 100%;
-                    }
-                    75% {
-                        background-position: 0% 100%;
-                    }
-                    100% {
-                        background-position: 0% 0%;
-                    }
-                }
-            `}</style>
-        </motion.div>
     )
 }
