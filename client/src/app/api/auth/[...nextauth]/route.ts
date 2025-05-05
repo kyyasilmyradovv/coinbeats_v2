@@ -2,7 +2,7 @@ import NextAuth from 'next-auth'
 import GoogleProvider from 'next-auth/providers/google'
 
 const handler = NextAuth({
-    debug: true,
+    debug: false,
     secret: 'DQOD+Er5D9C5UTFjPORA6YhV3Bo2zkZs1Tw/NPt4Fno=',
     useSecureCookies: true,
     cookies: {
@@ -13,7 +13,7 @@ const handler = NextAuth({
                 sameSite: 'lax',
                 path: '/',
                 secure: true,
-                domain: process.env.NODE_ENV === 'production' ? '.coinbeats.xyz' : undefined
+                domain: '.coinbeats.xyz'
             }
         }
     },
@@ -23,11 +23,11 @@ const handler = NextAuth({
             clientSecret: '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',
             authorization: {
                 params: {
-                    redirect_uri:
-                        process.env.NODE_ENV === 'production'
-                            ? 'https://coinbeats.xyz/api/auth/callback/google'
-                            : 'http://localhost:3000/api/auth/callback/google'
+                    redirect_uri: 'https://coinbeats.xyz/api/auth/callback/google'
                 }
+            },
+            httpOptions: {
+                timeout: 10000
             }
         })
     ],
@@ -41,7 +41,9 @@ const handler = NextAuth({
                         body: JSON.stringify({
                             email: user.email,
                             name: user.name
-                        })
+                        }),
+                        // Add timeout for this fetch as well
+                        signal: AbortSignal.timeout(8000)
                     })
                     const data = await response.json()
 
@@ -49,8 +51,7 @@ const handler = NextAuth({
                         console.error('No tokens received from backend.')
                         return false
                     }
-                    // Instead of trying to call localStorage here (which doesn't work on the server),
-                    // attach the tokens to the user object.
+                    // Attach tokens to user object
                     user.accessToken = data.accessToken
                     user.refreshToken = data.refreshToken
                 } catch (error) {
@@ -61,7 +62,6 @@ const handler = NextAuth({
             return true
         },
         async jwt({ token, account, user }) {
-            // On initial sign in, attach tokens from user to token.
             if (account && user) {
                 token.accessToken = (user as any).accessToken
                 token.refreshToken = (user as any).refreshToken
