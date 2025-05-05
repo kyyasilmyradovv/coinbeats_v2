@@ -176,7 +176,7 @@ export default function ChatById() {
             {/* Chat Messages */}
             <div className="w-full max-w-3xl flex-1  mb-24">
                 {messages.map((msg, index) => (
-                    <div key={index} className={`w-full mb-4 ${msg.sender === 'user' ? 'text-right' : 'text-left'} px-2`}>
+                    <div key={index} className={`w-full mb-4 ${msg.sender === 'user' ? 'text-right' : 'text-left'} px-4`}>
                         <div
                             // ref={msg.sender === 'user' ? messagesEndRef : undefined}
                             className={`inline-block ${

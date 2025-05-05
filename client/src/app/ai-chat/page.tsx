@@ -164,9 +164,7 @@ function AINewChatContent() {
                         className="flex items-center justify-center gap-2 mb-2"
                     >
                         <Sparkles className="h-6 w-6 text-primary" />
-                        <h1 className="text-3xl md:text-4xl font-bold">
-                            Coinbeats <span className="text-primary">Copilot</span> AI
-                        </h1>
+                        <h1 className="text-3xl md:text-4xl font-bold">Your Crypto Copilot</h1>
                     </motion.div>
 
                     <motion.p
