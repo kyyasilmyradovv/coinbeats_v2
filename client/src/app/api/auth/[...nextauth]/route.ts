@@ -30,7 +30,7 @@ const handler = NextAuth({
                 }
             },
             httpOptions: {
-                timeout: 10000
+                timeout: 20000
             }
         })
     ],
