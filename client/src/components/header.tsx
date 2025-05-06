@@ -32,7 +32,7 @@ export function Header() {
                     </Link>
                 )}
 
-                <Link href={ROUTES.HOME}>
+                <Link href={ROUTES.HOME} className="z-[60] relative">
                     <div className="relative w-[150px] h-[50px]">
                         <Image src={imageSrc} alt="Coin-Beats" fill className="object-contain" />
                     </div>
